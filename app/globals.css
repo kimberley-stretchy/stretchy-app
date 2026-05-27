@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --hot-blue: #2C8FE0;
+    --yellow:   #FFD166;
+    --cream:    #F5EDE3;
+    --olive:    #7A8330;
+    --ink:      #1A1A1A;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #F5EDE3;
+    color: #1A1A1A;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+}
+
+@layer components {
+  /* ─── BUTTONS ─────────────────────────────────────────── */
+  .btn-primary {
+    @apply text-white font-semibold px-6 py-3 rounded-pill
+           hover:brightness-110 active:scale-95 transition-all duration-150
+           text-base leading-none inline-flex items-center justify-center gap-2;
+    background-color: #2C8FE0;
+  }
+
+  .btn-secondary {
+    @apply bg-olive text-white font-semibold px-6 py-3 rounded-pill
+           hover:bg-olive-dark active:scale-95 transition-all duration-150
+           text-base leading-none inline-flex items-center justify-center gap-2;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-ink font-medium px-6 py-3 rounded-pill
+           border border-border hover:bg-sand-dark active:scale-95 transition-all duration-150
+           text-base leading-none inline-flex items-center justify-center gap-2;
+  }
+
+  .btn-yellow {
+    @apply text-ink font-semibold px-6 py-3 rounded-pill
+           hover:brightness-95 active:scale-95 transition-all duration-150
+           text-base leading-none inline-flex items-center justify-center gap-2;
+    background-color: #FFD166;
+  }
+
+  /* ─── CARDS ───────────────────────────────────────────── */
+  .card {
+    @apply bg-white rounded-card shadow-card p-4;
+  }
+
+  .card-yellow {
+    @apply text-ink rounded-card p-4;
+    background-color: #FFD166;
+  }
+
+  .card-olive {
+    @apply bg-olive text-white rounded-card p-4;
+  }
+
+  /* ─── PRICE PILL — JetBrains Mono, yellow bg ─────────── */
+  .price-pill {
+    @apply font-mono text-ink font-bold px-2.5 py-1 rounded-pill tabular-nums leading-none inline-block;
+    background-color: #FFD166;
+  }
+
+  .price-pill-lg {
+    @apply font-mono text-ink font-bold px-4 py-2 rounded-pill tabular-nums leading-none inline-block text-3xl;
+    background-color: #FFD166;
+  }
+
+  /* ─── SESSION STATUS PILLS ────────────────────────────── */
+  .pill-open {
+    @apply text-ink text-xs font-semibold px-3 py-1 rounded-pill;
+    background-color: #A8D5E2;  /* hold */
+  }
+
+  .pill-dropping {
+    @apply text-ink text-xs font-semibold px-3 py-1 rounded-pill;
+    background-color: #FFD166;  /* yellow */
+  }
+
+  .pill-filling {
+    @apply text-white text-xs font-semibold px-3 py-1 rounded-pill;
+    background-color: #FF6B35;  /* orange */
+  }
+
+  .pill-almost-full {
+    @apply text-white text-xs font-semibold px-3 py-1 rounded-pill;
+    background-color: #E63946;  /* red */
+  }
+
+  .pill-confirmed {
+    @apply text-white text-xs font-semibold px-3 py-1 rounded-pill;
+    background-color: #4CAF82;  /* green */
+  }
+
+  .pill-cancelled {
+    @apply bg-border text-muted text-xs font-semibold px-3 py-1 rounded-pill;
+  }
+
+  /* ─── PROGRESS BAR ────────────────────────────────────── */
+  .progress-track {
+    @apply w-full h-2 bg-sand-dark rounded-pill overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-pill transition-all duration-500 ease-out;
+  }
+
+  /* ─── PRICE DISPLAY (legacy — prefer price-pill) ──────── */
+  .price-display {
+    @apply font-mono font-bold text-display-md text-ink tabular-nums;
+  }
+
+  .price-display-large {
+    @apply font-mono font-bold text-display-lg text-ink tabular-nums;
+  }
+}
+
+/* ─── PRICE DROP ANIMATION ──────────────────────────────── */
+@keyframes priceFlash {
+  0%   { color: #FFD166; transform: scale(1.04); }
+  100% { color: inherit; transform: scale(1); }
+}
+
+.price-flash { animation: priceFlash 0.4s ease-out; }
+
+/* ─── SCROLLBAR ─────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #DDD0C0; border-radius: 3px; }
