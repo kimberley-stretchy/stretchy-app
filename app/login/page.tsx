@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 type Role = "attendee" | "host";
@@ -35,7 +36,10 @@ const ROLE_CONFIG = {
 type WaitlistRole = "mover" | "host" | "both";
 
 export default function LoginPage() {
-  const [role, setRole] = useState<Role>("attendee");
+  const searchParams = useSearchParams();
+  const [role, setRole] = useState<Role>(
+    searchParams.get("role") === "host" ? "host" : "attendee"
+  );
   const [email, setEmail]   = useState("");
   const [mobile, setMobile] = useState("");
   const [sent, setSent]     = useState(false);

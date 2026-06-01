@@ -110,7 +110,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">Do stuff</p>
             <MenuRow href="/sessions" label="Pick your stretch" icon="🧘" />
             <MenuRow href="/suggest" label="Float a Stretchy" icon="💡" />
-            <MenuRow href="/host/apply" label="Apply to be a host" icon="✦" />
+            <MenuRow href="/login?role=host" label="Apply to be a host" icon="✦" />
           </div>
 
           {/* STRETCHY HQ */}

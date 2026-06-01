@@ -208,7 +208,30 @@ export default function SuggestPage() {
           <button
             className="w-full font-semibold text-ink rounded-pill transition-all hover:brightness-95 active:scale-[0.98]"
             style={{ backgroundColor: "#F5EDE3", height: "50px", fontSize: "15px" }}
-            onClick={() => { if (type || when || where) setSubmitted(true); }}
+            onClick={() => {
+              if ((type || typeOther) && !submitted) {
+                const label = type === "Other" ? typeOther : type;
+                const COLORS: Record<string, string> = {
+                  Yoga: "#7A8330", Pilates: "#A535C7", Breathwork: "#4FB8E0",
+                  "Sound Bath": "#4FB8E0", "Run Club": "#E63946", Dance: "#FF6B35",
+                  HIIT: "#FF4D9E", Other: "#2C8FE0",
+                };
+                const newSuggestion: Suggestion = {
+                  id: `s${Date.now()}`,
+                  type: label,
+                  label: [label, when, where === "Other" ? whereOther : where].filter(Boolean).join(" · "),
+                  when: when,
+                  where: where,
+                  votes: 1,
+                  hot: false,
+                  color: COLORS[type] ?? "#7A8330",
+                  initial: label.charAt(0).toUpperCase(),
+                  voted: true,
+                };
+                setSuggestions((prev) => [newSuggestion, ...prev]);
+                setSubmitted(true);
+              }
+            }}
           >
             {submitted ? "✓ Floated — thanks!" : "Float it →"}
           </button>
