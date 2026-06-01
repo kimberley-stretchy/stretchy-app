@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -35,7 +35,7 @@ const ROLE_CONFIG = {
 
 type WaitlistRole = "mover" | "host" | "both";
 
-export default function LoginPage() {
+function LoginContent() {
   const searchParams = useSearchParams();
   const [role, setRole] = useState<Role>(
     searchParams.get("role") === "host" ? "host" : "attendee"
@@ -393,5 +393,13 @@ export default function LoginPage() {
 
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-cream" />}>
+      <LoginContent />
+    </Suspense>
   );
 }
