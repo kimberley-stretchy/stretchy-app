@@ -45,7 +45,7 @@ function LoginContent() {
   const [mobile, setMobile] = useState("");
   const [sent, setSent]     = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<"apple" | "google" | "email" | null>(null);
+  const [loading, setLoading] = useState<"google" | "email" | null>(null);
 
   const supabase = createClient();
 
@@ -59,15 +59,6 @@ function LoginContent() {
     if (error) { setAuthError(error.message); setLoading(null); }
   }
 
-  async function signInWithApple() {
-    setLoading("apple");
-    setAuthError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (error) { setAuthError(error.message); setLoading(null); }
-  }
 
   // ── International waitlist ──
   const [showWaitlist, setShowWaitlist] = useState(false);
@@ -196,24 +187,6 @@ function LoginContent() {
             </div>
           ) : (
             <form onSubmit={handleMagicLink} className="flex flex-col gap-3">
-
-              {/* Apple */}
-              <button
-                type="button"
-                onClick={signInWithApple}
-                disabled={loading !== null}
-                className="w-full flex items-center justify-center gap-2.5 font-semibold rounded-pill transition-all hover:brightness-125 active:scale-[0.98] disabled:opacity-60"
-                style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3", height: "56px", fontSize: "15px" }}
-              >
-                {loading === "apple" ? (
-                  <span className="w-4 h-4 border-2 border-cream/40 border-t-cream rounded-full animate-spin" />
-                ) : (
-                  <svg width="15" height="18" viewBox="0 0 814 1000" fill="currentColor" aria-hidden>
-                    <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.8-150.3-103.8c-52.4-71.6-96.5-185-96.5-291.6 0-167.5 109.1-256 215.7-256 81.8 0 149.3 53.3 199.8 53.3 48 0 124.1-56.5 215.9-56.5zm-181.7-152c37.4-44.5 64.7-106.1 64.7-167.8 0-8.4-.6-16.7-2-24.5-61.6 2.3-135.8 41.2-180.9 91.9-34.5 38.5-67.1 100.5-67.1 162.8 0 9.4 1.6 18.8 2.3 21.8 3.9.6 10.4 1.6 16.7 1.6 55.3 0 125.3-37.1 166.3-85.8z"/>
-                  </svg>
-                )}
-                {loading === "apple" ? "Redirecting…" : "Continue with Apple"}
-              </button>
 
               {/* Google */}
               <button
