@@ -72,12 +72,70 @@ export default function WelcomePage() {
       </div>
 
       {/* ── MONO FOOTER ── */}
-      <p
-        className="font-mono text-cream text-center mt-8 tracking-[0.10em] uppercase"
-        style={{ fontSize: "11px", opacity: 0.7 }}
-      >
-        Auckland · 187 sessions this month · 1,847 mates
-      </p>
+      <div className="flex flex-col items-center gap-3 mt-8">
+        <div className="flex items-center gap-4">
+          <a
+            href="https://www.instagram.com/stretchy.yoga/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-cream uppercase tracking-widest transition-opacity hover:opacity-100"
+            style={{ fontSize: "11px", opacity: 0.7 }}
+          >
+            Instagram
+          </a>
+          <span className="text-cream" style={{ opacity: 0.3 }}>·</span>
+          <a
+            href="https://www.tiktok.com/@stretchy.yoga"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-cream uppercase tracking-widest transition-opacity hover:opacity-100"
+            style={{ fontSize: "11px", opacity: 0.7 }}
+          >
+            TikTok
+          </a>
+          <span className="text-cream" style={{ opacity: 0.3 }}>·</span>
+          <a
+            href="https://substack.com/@stretchyyoga"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-cream uppercase tracking-widest transition-opacity hover:opacity-100"
+            style={{ fontSize: "11px", opacity: 0.7 }}
+          >
+            Substack
+          </a>
+        </div>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/terms"
+            className="font-mono text-cream uppercase tracking-widest transition-opacity hover:opacity-100"
+            style={{ fontSize: "11px", opacity: 0.5 }}
+          >
+            Terms
+          </Link>
+          <span className="text-cream" style={{ opacity: 0.3 }}>·</span>
+          <Link
+            href="/privacy"
+            className="font-mono text-cream uppercase tracking-widest transition-opacity hover:opacity-100"
+            style={{ fontSize: "11px", opacity: 0.5 }}
+          >
+            Privacy
+          </Link>
+          <span className="text-cream" style={{ opacity: 0.3 }}>·</span>
+          <Link
+            href="/contact"
+            className="font-mono text-cream uppercase tracking-widest transition-opacity hover:opacity-100"
+            style={{ fontSize: "11px", opacity: 0.5 }}
+          >
+            Contact
+          </Link>
+        </div>
+        <p
+          className="font-mono text-cream text-center tracking-[0.10em] uppercase"
+          style={{ fontSize: "10px", opacity: 0.4 }}
+        >
+          Auckland · Built in Aotearoa 🌿
+        </p>
+      </div>
     </main>
   );
 }
