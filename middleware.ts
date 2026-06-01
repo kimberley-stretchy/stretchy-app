@@ -40,13 +40,9 @@ const ADMIN_PREFIXES = ["/admin"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Bypass mode: Supabase not yet connected ───────────────────────────────
-  // Remove this block once NEXT_PUBLIC_SUPABASE_URL is set in your environment.
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl || supabaseUrl.includes("your-project")) {
-    // Dev / prototype mode — let everything through
-    return NextResponse.next();
-  }
+  // ── DEMO MODE: let everyone through for testing ───────────────────────────
+  // Remove this line when auth is ready for real users.
+  return NextResponse.next();
 
   // ── Check if this route needs protection ─────────────────────────────────
   const needsAuth = PROTECTED_PREFIXES.some((prefix) =>
