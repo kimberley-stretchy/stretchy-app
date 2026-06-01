@@ -49,12 +49,17 @@ function LoginContent() {
 
   const supabase = createClient();
 
+  // Redirect destination based on which tab they signed in from
+  const nextPath = role === "host" ? "/host/dashboard" : "/home";
+
   async function signInWithGoogle() {
     setLoading("google");
     setAuthError(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+      },
     });
     if (error) { setAuthError(error.message); setLoading(null); }
   }
@@ -78,7 +83,9 @@ function LoginContent() {
     setAuthError(null);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+      },
     });
     setLoading(null);
     if (error) { setAuthError(error.message); } else { setSent(true); }
@@ -275,7 +282,7 @@ function LoginContent() {
 
         {/* ── GUEST BYPASS (testing only) ── */}
         <div className="px-4 pt-2 pb-4 text-center">
-          <Link href="/home" className="text-sm text-muted hover:text-ink transition-colors">
+          <Link href={nextPath} className="text-sm text-muted hover:text-ink transition-colors">
             Continue as guest →
           </Link>
         </div>

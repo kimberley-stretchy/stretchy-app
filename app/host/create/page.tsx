@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createSession } from "./actions";
 import {
   calculatePrice,
   startingPrice,
@@ -727,11 +729,11 @@ function StepReview({ form }: { form: FormState }) {
         )}
       </div>
 
-      <div className="bg-yellow-stretchy/20 rounded-card border border-yellow-stretchy/30 px-4 py-3">
-        <p className="text-xs font-semibold text-ink mb-1">Almost there</p>
+      <div className="bg-olive/10 rounded-card border border-olive/20 px-4 py-3">
+        <p className="text-xs font-semibold text-ink mb-1">Almost there 🙌</p>
         <p className="text-xs text-muted leading-relaxed">
-          This is a preview build — submitting won't publish to the live platform yet.
-          In production, you'd be taken to your host dashboard.
+          Hit Publish and your session goes live. Holds can start coming in straight away.
+          You&apos;ll be able to manage it from your dashboard.
         </p>
       </div>
     </div>
@@ -791,16 +793,56 @@ function ProgressBar({ step }: { step: Step }) {
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 
 export default function CreateSessionPage() {
+  const router = useRouter();
   const [step, setStep] = useState<Step>(0);
   const [form, setForm] = useState<FormState>(INITIAL_STATE);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [createdSessionId, setCreatedSessionId] = useState<string | null>(null);
 
   const update = (patch: Partial<FormState>) =>
     setForm((prev) => ({ ...prev, ...patch }));
 
-  const advance = () => {
-    if (step < 3) setStep((s) => (s + 1) as Step);
-    else setSubmitted(true);
+  const advance = async () => {
+    if (step < 3) {
+      setStep((s) => (s + 1) as Step);
+      return;
+    }
+
+    // Final step — submit to Supabase
+    setSubmitting(true);
+    setSubmitError(null);
+
+    const result = await createSession({
+      sessionType: form.sessionType!,
+      title: form.title,
+      description: form.description,
+      durationMinutes: form.durationMinutes,
+      date: form.date,
+      time: form.time,
+      neighbourhood: form.neighbourhood,
+      venueName: form.venueName,
+      venueNotes: form.venueNotes,
+      hasSocialStretch: form.hasSocialStretch,
+      hostTarget: parseFloat(form.hostTarget),
+      minimumSpots: parseInt(form.minimumSpots),
+      maxCapacity: parseInt(form.maxCapacity),
+      isCharity: form.isCharity,
+      charityName: form.charityName,
+      charityWebsite: form.charityWebsite,
+      charityInstagram: form.charityInstagram,
+      charityNote: form.charityNote,
+    });
+
+    setSubmitting(false);
+
+    if (result.success) {
+      setCreatedSessionId(result.sessionId ?? null);
+      setSubmitted(true);
+    } else {
+      setSubmitError(result.error ?? "Something went wrong. Try again.");
+    }
   };
 
   const back = () => {
@@ -815,21 +857,29 @@ export default function CreateSessionPage() {
             ✓
           </div>
           <h1 className="font-display font-bold text-3xl text-ink mb-3 tracking-tight">
-            Session created!
+            Session live!
           </h1>
           <p className="text-muted mb-8 leading-relaxed">
-            In the live app, your session would now be published and visible to your community.
-            Holds can start coming in immediately.
+            Your session is published and holds can start coming in immediately.
+            Share the link with your community.
           </p>
           <div className="flex flex-col gap-3 items-center">
+            {createdSessionId && (
+              <button
+                onClick={() => router.push(`/sessions/${createdSessionId}`)}
+                className="btn-primary w-full max-w-xs"
+              >
+                View session page →
+              </button>
+            )}
             <button
-              onClick={() => { setForm(INITIAL_STATE); setStep(0); setSubmitted(false); }}
-              className="btn-primary w-full max-w-xs"
+              onClick={() => { setForm(INITIAL_STATE); setStep(0); setSubmitted(false); setCreatedSessionId(null); }}
+              className="btn-ghost text-sm px-5 py-2.5"
             >
-              Create another →
+              Create another
             </button>
-            <Link href="/home" className="btn-ghost text-sm px-5 py-2.5">
-              Back to home
+            <Link href="/host/dashboard" className="text-sm text-muted hover:text-ink transition-colors">
+              Back to dashboard
             </Link>
           </div>
         </div>
@@ -883,12 +933,20 @@ export default function CreateSessionPage() {
           {step === 3 && <StepReview form={form} />}
         </div>
 
+        {/* Submit error */}
+        {submitError && (
+          <div className="mb-3 rounded-card px-4 py-3 bg-red-50 border border-red-200">
+            <p className="text-sm text-red-700">{submitError}</p>
+          </div>
+        )}
+
         {/* Navigation */}
         <div className="flex gap-3">
           {step > 0 && (
             <button
               type="button"
               onClick={back}
+              disabled={submitting}
               className="btn-ghost flex-shrink-0 px-5 py-3"
             >
               ← Back
@@ -897,21 +955,24 @@ export default function CreateSessionPage() {
           <button
             type="button"
             onClick={advance}
-            disabled={!canAdvance(step, form)}
-            className={`flex-1 py-3 px-6 rounded-pill font-semibold text-base transition-all ${
-              canAdvance(step, form)
+            disabled={!canAdvance(step, form) || submitting}
+            className={`flex-1 py-3 px-6 rounded-pill font-semibold text-base transition-all flex items-center justify-center gap-2 ${
+              canAdvance(step, form) && !submitting
                 ? step === 3
                   ? "bg-pink-stretchy text-white hover:brightness-110 active:scale-95"
                   : "bg-ink text-white hover:bg-olive active:scale-95"
                 : "bg-border text-muted cursor-not-allowed"
             }`}
           >
-            {step === 3 ? "Publish session →" : "Continue →"}
+            {submitting && (
+              <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            )}
+            {submitting ? "Publishing…" : step === 3 ? "Publish session →" : "Continue →"}
           </button>
         </div>
 
         {/* Validation hint */}
-        {!canAdvance(step, form) && (
+        {!canAdvance(step, form) && !submitting && (
           <p className="text-center text-xs text-muted mt-3">
             {step === 0 && "Choose a session type and add a title to continue."}
             {step === 1 && "Add a date, neighbourhood and venue name to continue."}
