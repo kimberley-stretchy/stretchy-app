@@ -67,7 +67,7 @@ export default function LoginPage() {
         {/* NAV inside coloured block */}
         <nav className="relative flex items-center justify-center px-6 py-4 max-w-lg mx-auto w-full">
           <Link
-            href="/"
+            href="/home"
             className="absolute left-6 hover:opacity-70 transition-opacity"
             style={{ color: cfg.headlineColor }}
             aria-label="Back"
@@ -245,7 +245,7 @@ export default function LoginPage() {
 
         {/* ── GUEST BYPASS (testing only) ── */}
         <div className="px-4 pt-2 pb-4 text-center">
-          <Link href="/sessions" className="text-sm text-muted hover:text-ink transition-colors">
+          <Link href="/home" className="text-sm text-muted hover:text-ink transition-colors">
             Continue as guest →
           </Link>
         </div>

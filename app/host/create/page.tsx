@@ -828,7 +828,7 @@ export default function CreateSessionPage() {
             >
               Create another →
             </button>
-            <Link href="/" className="btn-ghost text-sm px-5 py-2.5">
+            <Link href="/home" className="btn-ghost text-sm px-5 py-2.5">
               Back to home
             </Link>
           </div>
@@ -855,10 +855,10 @@ export default function CreateSessionPage() {
     <main className="min-h-screen bg-cream">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-lg mx-auto">
-        <Link href="/" className="font-display font-bold text-xl text-ink tracking-tight">
+        <Link href="/home" className="font-display font-bold text-xl text-ink tracking-tight">
           STRETCHY
         </Link>
-        <Link href="/" className="text-sm text-muted hover:text-ink transition-colors">
+        <Link href="/home" className="text-sm text-muted hover:text-ink transition-colors">
           Cancel
         </Link>
       </nav>

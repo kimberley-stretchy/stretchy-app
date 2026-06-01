@@ -5,6 +5,7 @@ import Link from "next/link";
 import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
 import { useFavourites, FavouriteSession } from "@/hooks/useFavourites";
+import { MenuDrawer } from "@/components/MenuDrawer";
 
 // ─── TYPE CONFIG ──────────────────────────────────────────────────────────────
 const TYPE_COLORS: Record<string, string> = {
@@ -213,6 +214,7 @@ function SessionCard({
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 export default function SessionsPage() {
   const [activeHood, setActiveHood] = useState("All");
+  const [menuOpen, setMenuOpen] = useState(false);
   const { toggle, isFaved } = useFavourites();
 
   const filtered =
@@ -231,12 +233,12 @@ export default function SessionsPage() {
         <Link href="/home" className="text-ink">
           <SMark size={32} />
         </Link>
-        <Link
-          href="/home"
+        <button
+          onClick={() => setMenuOpen(true)}
           className="flex items-center gap-1.5 px-4 py-2 rounded-pill font-mono text-xs font-bold uppercase tracking-widest text-ink border border-border hover:bg-sand-dark transition-colors"
         >
           ≡ MENU
-        </Link>
+        </button>
         <Link href="/notifications" className="flex items-center px-3 py-1.5 rounded-pill relative" style={{ backgroundColor: "#F5EDE3", border: "1px solid #D4CFC9" }} aria-label="Notifications">
           <span className="text-base">🔔</span>
           <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-hot-blue border-2 border-cream block" />
@@ -322,6 +324,7 @@ export default function SessionsPage() {
         </div>
       </div>
 
+      <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
     </main>
   );
 }

@@ -110,7 +110,7 @@ export default function OnboardingPage() {
       {/* ── NAV ── */}
       <nav className="flex items-center gap-3 px-4 py-3 max-w-lg mx-auto w-full">
         {/* S-mark */}
-        <Link href="/" className="text-ink flex-shrink-0">
+        <Link href="/home" className="text-ink flex-shrink-0">
           <SMark size={28} />
         </Link>
 
