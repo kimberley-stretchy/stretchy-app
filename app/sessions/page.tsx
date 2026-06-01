@@ -228,9 +228,9 @@ export default function SessionsPage() {
 
       {/* ── NAV ── */}
       <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
-        <div className="text-ink">
+        <Link href="/home" className="text-ink">
           <SMark size={32} />
-        </div>
+        </Link>
         <Link
           href="/home"
           className="flex items-center gap-1.5 px-4 py-2 rounded-pill font-mono text-xs font-bold uppercase tracking-widest text-ink border border-border hover:bg-sand-dark transition-colors"

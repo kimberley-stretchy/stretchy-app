@@ -184,9 +184,9 @@ export default function HomePage() {
       {/* ── NAV ── */}
       <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto w-full">
         {/* S-mark */}
-        <div className="text-cream">
+        <Link href="/home" className="text-cream">
           <SMark size={28} />
-        </div>
+        </Link>
 
         {/* MENU + Bell pill — right side */}
         <div

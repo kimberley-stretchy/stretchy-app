@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import SMark from "@/components/SMark";
 
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
@@ -24,9 +25,9 @@ export default function GoingAheadPage() {
 
       {/* ── NAV ── */}
       <nav className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
-        <div className="text-white opacity-90">
+        <Link href="/home" className="text-white opacity-90">
           <SMark size={28} />
-        </div>
+        </Link>
         <p className="font-mono text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.65)" }}>
           Notification · 24H Before
         </p>
