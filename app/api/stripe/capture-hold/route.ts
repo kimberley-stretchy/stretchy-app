@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      amountCharged: paymentIntent.amount_captured / 100,
+      amountCharged: paymentIntent.amount_received / 100,
       currency: paymentIntent.currency,
     });
   } catch (error) {
