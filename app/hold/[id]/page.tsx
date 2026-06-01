@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
+import { googleCalendarUrl, downloadIcs } from "@/lib/calendar";
 
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
 const MOCK_HOLD = {
@@ -17,6 +18,10 @@ const MOCK_HOLD = {
   hoursUntilSession: 48,
   price: 28,
   socialVenue: "Little Bird Café next door",
+  venueAddress: "510 Richmond Road, Grey Lynn, Auckland",
+  // ISO dates used for calendar links (replace with real DB values when wired up)
+  startISO: "2026-06-08T09:00:00+12:00",
+  endISO:   "2026-06-08T10:00:00+12:00",
 };
 
 const canCancel = MOCK_HOLD.hoursUntilSession > 12;
@@ -157,10 +162,30 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
 
         {/* ── CALENDAR BUTTONS ── */}
         <div className="flex gap-3">
-          <button className="flex-1 font-mono text-xs font-bold text-ink rounded-pill border border-border py-3 transition-all hover:bg-sand-dark active:scale-[0.98]">
+          <a
+            href={googleCalendarUrl({
+              title: `Stretchy — ${MOCK_HOLD.title}`,
+              startISO: MOCK_HOLD.startISO,
+              endISO: MOCK_HOLD.endISO,
+              location: MOCK_HOLD.venueAddress,
+              description: `Session with ${MOCK_HOLD.host.fullName} in ${MOCK_HOLD.neighbourhood}. Stick around for the Social Stretch after at ${MOCK_HOLD.socialVenue}.`,
+            })}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-center font-mono text-xs font-bold text-ink rounded-pill border border-border py-3 transition-all hover:bg-sand-dark active:scale-[0.98]"
+          >
             + Google Cal
-          </button>
-          <button className="flex-1 font-mono text-xs font-bold text-ink rounded-pill border border-border py-3 transition-all hover:bg-sand-dark active:scale-[0.98]">
+          </a>
+          <button
+            onClick={() => downloadIcs({
+              title: `Stretchy — ${MOCK_HOLD.title}`,
+              startISO: MOCK_HOLD.startISO,
+              endISO: MOCK_HOLD.endISO,
+              location: MOCK_HOLD.venueAddress,
+              description: `Session with ${MOCK_HOLD.host.fullName} in ${MOCK_HOLD.neighbourhood}. Stick around for the Social Stretch after at ${MOCK_HOLD.socialVenue}.`,
+            })}
+            className="flex-1 font-mono text-xs font-bold text-ink rounded-pill border border-border py-3 transition-all hover:bg-sand-dark active:scale-[0.98]"
+          >
             + Apple Cal
           </button>
         </div>

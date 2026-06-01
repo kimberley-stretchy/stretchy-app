@@ -7,6 +7,7 @@ import SMark from "@/components/SMark";
 import { getPricingState, getPriceCurve, formatPrice } from "@/lib/pricing";
 import HowToStretchy from "@/components/HowToStretchy";
 import { useFavourites } from "@/hooks/useFavourites";
+import { googleCalendarUrl, downloadIcs } from "@/lib/calendar";
 
 // ─── MOCK SESSION ─────────────────────────────────────────────────────────────
 const MOCK_SESSION = {
@@ -33,6 +34,8 @@ const MOCK_SESSION = {
   venueName: "Grey Lynn Community Centre",
   venueAddress: "510 Richmond Road, Grey Lynn, Auckland",
   venueNotes: "Enter via the side gate on Surrey Crescent. Mats provided. BYO water.",
+  startISO: "2026-06-08T09:00:00+12:00",
+  endISO:   "2026-06-08T10:00:00+12:00",
   hostTarget: 200,
   minimumSpots: 8,
   maxCapacity: 20,
@@ -443,14 +446,42 @@ export default function SessionDetailPage({ params }: { params: { id: string } }
           {session.venueNotes && (
             <p className="text-sm text-muted bg-sand-dark rounded-card px-3 py-2 mb-3">{session.venueNotes}</p>
           )}
-          <a
-            href={`https://maps.google.com/?q=${encodeURIComponent(session.venueAddress)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-ghost text-sm px-4 py-2 inline-flex"
-          >
-            Directions →
-          </a>
+          <div className="flex gap-2 flex-wrap">
+            <a
+              href={`https://maps.google.com/?q=${encodeURIComponent(session.venueAddress)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost text-sm px-4 py-2 inline-flex"
+            >
+              📍 Directions
+            </a>
+            <a
+              href={googleCalendarUrl({
+                title: `Stretchy — ${session.title}`,
+                startISO: session.startISO,
+                endISO: session.endISO,
+                location: session.venueAddress,
+                description: `Session with ${session.host.name} in ${session.neighbourhood}.`,
+              })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost text-sm px-4 py-2 inline-flex"
+            >
+              + Google Cal
+            </a>
+            <button
+              onClick={() => downloadIcs({
+                title: `Stretchy — ${session.title}`,
+                startISO: session.startISO,
+                endISO: session.endISO,
+                location: session.venueAddress,
+                description: `Session with ${session.host.name} in ${session.neighbourhood}.`,
+              })}
+              className="btn-ghost text-sm px-4 py-2"
+            >
+              + Apple Cal
+            </button>
+          </div>
         </div>
 
         {/* ── SOCIAL STRETCH ── */}
