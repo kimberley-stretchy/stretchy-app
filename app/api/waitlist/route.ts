@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { cookies } from "next/headers";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = "Stretchy <kimberley@stretchyyoga.co.nz>";
@@ -63,48 +62,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // ── 1. Save to Supabase ───────────────────────────────────────────────────
-    const cookieStore = cookies();
-    const supabase = createServerClient(
+    console.log("Waitlist signup:", { name, email, city, role });
+    console.log("Env check — SUPABASE_URL:", !!process.env.NEXT_PUBLIC_SUPABASE_URL, "SERVICE_KEY:", !!process.env.SUPABASE_SERVICE_ROLE_KEY, "RESEND_KEY:", !!process.env.RESEND_API_KEY);
+
+    // ── 1. Save to Supabase (service role bypasses RLS) ───────────────────────
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll(); },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-            } catch {}
-          },
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
     const { error: dbError } = await supabase
       .from("waitlist")
       .insert({ name: name.trim(), email: email.trim().toLowerCase(), city: city.trim(), role });
 
-    // Ignore duplicate email errors (unique constraint) — just send the email anyway
-    if (dbError && !dbError.message.includes("duplicate") && !dbError.code?.includes("23505")) {
-      console.error("Waitlist DB error:", dbError);
-      // Don't fail — still send confirmation email
+    if (dbError && !dbError.code?.includes("23505")) {
+      console.error("Waitlist DB error:", JSON.stringify(dbError));
+    } else {
+      console.log("Waitlist DB insert OK");
     }
 
     // ── 2. Send confirmation email ────────────────────────────────────────────
-    await resend.emails.send({
+    const { error: resendError1 } = await resend.emails.send({
       from: FROM,
       to: email.trim(),
       subject: "You're on the Stretchy waitlist 🌏",
       html: emailWaitlistConfirm(name.trim(), city.trim(), role || "mover"),
     });
+    if (resendError1) console.error("Resend user email error:", JSON.stringify(resendError1));
+    else console.log("User confirmation email sent");
 
     // ── 3. Notify Kimberley ───────────────────────────────────────────────────
-    await resend.emails.send({
+    const { error: resendError2 } = await resend.emails.send({
       from: FROM,
       to: "kimberley@stretchyyoga.co.nz",
       subject: `New waitlist signup — ${name} (${city})`,
       html: `<p><strong>${name}</strong> (${email}) just joined the waitlist.</p><p>City: ${city}<br>Role: ${role || "mover"}</p>`,
     });
+    if (resendError2) console.error("Resend notify error:", JSON.stringify(resendError2));
+    else console.log("Kimberley notification sent");
 
     return NextResponse.json({ success: true });
   } catch (error) {
