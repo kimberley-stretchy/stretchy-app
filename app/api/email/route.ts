@@ -35,10 +35,16 @@ function emailFooter() {
       <p style="font-size: 12px; color: #888; text-align: center; margin: 0 0 12px; line-height: 1.5;">
         Questions? <a href="mailto:kimberley@stretchyyoga.co.nz" style="color: #1A1A1A; font-weight: 600; text-decoration: none;">kimberley@stretchyyoga.co.nz</a>
       </p>
-      <p style="font-size: 12px; color: #888; text-align: center; margin: 0 0 16px;">
-        <a href="https://www.instagram.com/stretchysocial" style="color: #888; text-decoration: none; margin: 0 8px;">Instagram</a>
+      <p style="font-size: 12px; color: #888; text-align: center; margin: 0 0 8px;">
+        <a href="https://www.instagram.com/stretchy.yoga/" style="color: #888; text-decoration: none; margin: 0 6px;">@stretchy.yoga</a>
         ·
-        <a href="https://stretchy.social" style="color: #888; text-decoration: none; margin: 0 8px;">stretchy.social</a>
+        <a href="https://www.instagram.com/stretchy.social/" style="color: #888; text-decoration: none; margin: 0 6px;">@stretchy.social</a>
+      </p>
+      <p style="font-size: 11px; color: #AAA; text-align: center; margin: 0 0 12px;">
+        Follow the build → <a href="https://www.instagram.com/caike.club/" style="color: #AAA; text-decoration: none;">@caike.club</a>
+      </p>
+      <p style="font-size: 12px; color: #888; text-align: center; margin: 0 0 12px;">
+        <a href="https://stretchy.social" style="color: #888; text-decoration: none;">stretchy.social</a>
       </p>
       <p style="font-size: 11px; color: #BBB; text-align: center; margin: 0;">Stretchy Social Movement Club · Built in Aotearoa 🌿</p>
     </div>

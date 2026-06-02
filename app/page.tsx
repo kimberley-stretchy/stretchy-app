@@ -127,10 +127,27 @@ function WaitlistForm() {
   const [city, setCity] = useState("");
   const [role, setRole] = useState<WaitlistRole>("mover");
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (name && email && city) setSent(true);
+    if (!name || !email || !city) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, city, role }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setSent(true);
+    } catch {
+      setError("Something went wrong. Try again or email kimberley@stretchyyoga.co.nz");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (sent) {
@@ -167,9 +184,10 @@ function WaitlistForm() {
           ))}
         </div>
       </div>
-      <button type="submit" className="w-full py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98]"
+      {error && <p className="text-red-200 text-sm text-center">{error}</p>}
+      <button type="submit" disabled={loading} className="w-full py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
         style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}>
-        Put me on the list →
+        {loading ? "Sending…" : "Put me on the list →"}
       </button>
     </form>
   );
@@ -270,26 +288,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* THE STORY — directly after the 5 steps */}
-      <section className="max-w-2xl mx-auto px-5 pb-20">
-        <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590] mb-3">The story</p>
-        <h2 className="font-bold text-[#1A1A1A] mb-6 leading-tight" style={{ fontSize: "clamp(26px, 6vw, 38px)", letterSpacing: "-0.03em" }}>
-          Started with yoga.<br />Became something bigger.
-        </h2>
-        <div className="space-y-4 text-sm text-[#6B6B6B] leading-relaxed max-w-xl">
-          <p>
-            Stretchy started as a social yoga community in Auckland in 2024. With the ambition of taking the concept of a run club, applying it to yoga to stretch bodies, minds &amp; social circles. Weekly all-level yoga classes followed by a &ldquo;social stretch&rdquo; (aka. coffees, matchas, wine, beer, banter).
-          </p>
-          <p>
-            Stretchy 1.0 was well loved but labour intensive. Some sessions barely breaking even, others earning hundreds. So there had to be a better &amp; fairer way to move together, for all.
-          </p>
-          <p>
-            Stretchy is evolving into a community movement platform. Yoga is one format. But the model works for anything — pilates, HIIT, breathwork, sound baths, run clubs, dance. If people want to do it together and the economics should reward group effort, Stretchy is the infrastructure. Vetted teachers and hosts have more flexibility to create their own sessions, their way, in their local communities.
-          </p>
-          <p className="text-[#1A1A1A] font-semibold">Stretching bodies, minds and social circles.</p>
-        </div>
-      </section>
-
       {/* FOR MOVERS */}
       <section style={{ backgroundColor: "#FFD166" }} className="px-5 py-20">
         <div className="max-w-2xl mx-auto">
@@ -365,13 +363,24 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FAQS */}
+      {/* THE STORY — bottom of page */}
       <section className="max-w-2xl mx-auto px-5 py-20">
-        <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590] mb-3">Quick answers</p>
-        <h2 className="font-bold text-[#1A1A1A] mb-10 leading-tight" style={{ fontSize: "clamp(26px, 6vw, 40px)", letterSpacing: "-0.03em" }}>
-          Everything you<br />want to know.
+        <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590] mb-3">The story</p>
+        <h2 className="font-bold text-[#1A1A1A] mb-6 leading-tight" style={{ fontSize: "clamp(26px, 6vw, 38px)", letterSpacing: "-0.03em" }}>
+          Started with yoga.<br />Became something bigger.
         </h2>
-        {FAQS.map((f) => <FaqItem key={f.q} q={f.q} a={f.a} />)}
+        <div className="space-y-4 text-sm text-[#6B6B6B] leading-relaxed max-w-xl">
+          <p>
+            Stretchy started as a social yoga community in Auckland in 2024. With the ambition of taking the concept of a run club, applying it to yoga to stretch bodies, minds &amp; social circles. Weekly all-level yoga classes followed by a &ldquo;social stretch&rdquo; (aka. coffees, matchas, wine, beer, banter).
+          </p>
+          <p>
+            Stretchy 1.0 was well loved but labour intensive. Some sessions barely breaking even, others earning hundreds. So there had to be a better &amp; fairer way to move together, for all.
+          </p>
+          <p>
+            Stretchy is evolving into a community movement platform. Yoga is one format. But the model works for anything — pilates, HIIT, breathwork, sound baths, run clubs, dance. If people want to do it together and the economics should reward group effort, Stretchy is the infrastructure. Vetted teachers and hosts have more flexibility to create their own sessions, their way, in their local communities.
+          </p>
+          <p className="text-[#1A1A1A] font-semibold">Stretching bodies, minds and social circles.</p>
+        </div>
       </section>
 
       {/* FINAL CTA */}
