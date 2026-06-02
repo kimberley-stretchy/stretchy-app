@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import SMark from "@/components/SMark";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 type WaitlistRole = "mover" | "host" | "both";
@@ -66,7 +67,6 @@ function PricingVisualiser() {
         <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590]">Live price calculator</p>
         <span className="text-xs bg-[#E8F3FF] text-[#2C8FE0] font-bold px-2 py-0.5 rounded-full">Try it</span>
       </div>
-
       <div className="my-4 flex items-center gap-2 flex-wrap">
         <div className="bg-[#FFD166] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Host target $200</div>
         <span className="text-[#9A9590] font-bold">+</span>
@@ -74,30 +74,19 @@ function PricingVisualiser() {
         <span className="text-[#9A9590] font-bold">÷</span>
         <div className="bg-[#E8F3FF] text-[#2C8FE0] rounded-full px-3 py-1.5 text-xs font-bold">{spots} people</div>
         <span className="text-[#9A9590] font-bold">=</span>
-        <div className="bg-[#1A1A1A] text-white rounded-full px-3 py-1.5 text-sm font-black">
-          ${price.toFixed(0)} each
-        </div>
+        <div className="bg-[#1A1A1A] text-white rounded-full px-3 py-1.5 text-sm font-black">${price.toFixed(0)} each</div>
       </div>
-
       <div className="mb-2">
         <div className="flex justify-between items-center mb-1">
           <span className="text-xs text-[#9A9590]">Drag to add people</span>
           <span className="text-sm font-bold text-[#1A1A1A]">{spots} people joining</span>
         </div>
-        <input
-          type="range"
-          min={MIN}
-          max={MAX}
-          value={spots}
-          onChange={(e) => setSpots(parseInt(e.target.value))}
-          className="w-full accent-[#2C8FE0] cursor-pointer"
-        />
+        <input type="range" min={MIN} max={MAX} value={spots} onChange={(e) => setSpots(parseInt(e.target.value))} className="w-full accent-[#2C8FE0] cursor-pointer" />
         <div className="flex justify-between text-xs text-[#9A9590] mt-1">
           <span>Minimum ({MIN})</span>
           <span>Full room ({MAX})</span>
         </div>
       </div>
-
       {spots > MIN ? (
         <div className="mt-3 bg-[#F0FFF6] rounded-xl px-4 py-2.5 flex items-center justify-between">
           <p className="text-sm text-[#2D6A4A] font-medium">Each person saves</p>
@@ -108,7 +97,6 @@ function PricingVisualiser() {
           <p className="text-xs text-[#CC5500] font-medium">← Add more people to see the price drop</p>
         </div>
       )}
-
       <p className="text-center text-xs text-[#9A9590] mt-3 leading-relaxed">
         The host always earns their $200 target. Stretchy always gets $23.<br />
         <strong className="text-[#1A1A1A]">The more who join, the less everyone pays.</strong>
@@ -121,131 +109,14 @@ function PricingVisualiser() {
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <button
-      onClick={() => setOpen(!open)}
-      className="w-full text-left border-b border-[#E0D9D0] py-4"
-    >
+    <button onClick={() => setOpen(!open)} className="w-full text-left border-b border-[#E0D9D0] py-4">
       <div className="flex items-start justify-between gap-4">
         <span className="font-semibold text-[#1A1A1A] text-sm leading-snug text-left">{q}</span>
-        <span
-          className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-[#D4CFC9] flex items-center justify-center text-[#9A9590] transition-transform duration-200 mt-0.5"
-          style={{ transform: open ? "rotate(45deg)" : "rotate(0deg)" }}
-        >
-          +
-        </span>
+        <span className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-[#D4CFC9] flex items-center justify-center text-[#9A9590] transition-transform duration-200 mt-0.5"
+          style={{ transform: open ? "rotate(45deg)" : "rotate(0deg)" }}>+</span>
       </div>
-      {open && (
-        <p className="mt-3 text-sm text-[#6B6B6B] leading-relaxed pr-8 text-left">{a}</p>
-      )}
+      {open && <p className="mt-3 text-sm text-[#6B6B6B] leading-relaxed pr-8 text-left">{a}</p>}
     </button>
-  );
-}
-
-// ─── PHONE MOCKUP ─────────────────────────────────────────────────────────────
-function PhoneHome() {
-  return (
-    <div className="flex-shrink-0 w-40">
-      <div className="rounded-[24px] overflow-hidden border-4 border-[#1A1A1A] shadow-2xl" style={{ backgroundColor: "#2C8FE0", minHeight: "300px" }}>
-        <div className="px-3 pt-3 pb-2">
-          <p className="text-[7px] text-white/60 font-mono mb-2">9:41 — Auckland</p>
-          <p className="text-white font-black text-lg leading-tight mb-1">A social<br />movement.</p>
-          <p className="text-white/60 text-[7px] mb-3">The more who join, the better value.</p>
-          <div className="space-y-1.5">
-            <div className="bg-white/20 rounded-lg px-2 py-1.5 flex justify-between"><span className="text-white text-[8px] font-semibold">See this week</span><span className="text-white text-[8px]">→</span></div>
-            <div className="bg-[#FFD166] rounded-lg px-2 py-1.5 flex justify-between"><span className="text-[#1A1A1A] text-[8px] font-semibold">Host a Stretchy</span><span className="text-[8px]">→</span></div>
-          </div>
-          <div className="mt-3 bg-[#FFD166] rounded-xl p-2">
-            <p className="text-[#1A1A1A] text-[8px] font-bold leading-tight">The more who join,<br />the less you pay.</p>
-          </div>
-        </div>
-      </div>
-      <p className="text-center text-[9px] font-mono font-bold uppercase tracking-widest mt-2 text-[#9A9590]">Home</p>
-    </div>
-  );
-}
-
-function PhoneSession() {
-  return (
-    <div className="flex-shrink-0 w-40">
-      <div className="rounded-[24px] overflow-hidden border-4 border-[#1A1A1A] shadow-2xl" style={{ backgroundColor: "#F5EDE3", minHeight: "300px" }}>
-        <div className="px-3 pt-3 pb-2">
-          <p className="text-[7px] text-[#9A9590] mb-1">Sun · 9:00 AM · 60 min</p>
-          <p className="font-black text-[#1A1A1A] text-base leading-tight mb-0.5">Sunday Slow<br />Flow</p>
-          <p className="text-[7px] text-[#9A9590] mb-2">Tāne Ratima · Grey Lynn</p>
-          <div className="bg-[#FFD166] rounded-xl p-2 mb-2">
-            <div className="flex items-baseline gap-1">
-              <span className="text-[#1A1A1A] font-black text-2xl leading-none">$28</span>
-              <span className="text-[6px] text-[#1A1A1A]/60 font-mono uppercase">Starting</span>
-            </div>
-            <p className="text-[6px] text-[#1A1A1A]/70 mt-0.5">Price drops as the room fills.</p>
-          </div>
-          <div className="bg-[#1A1A1A] rounded-lg py-1.5 text-center">
-            <span className="text-white text-[8px] font-semibold">Hold my place →</span>
-          </div>
-        </div>
-      </div>
-      <p className="text-center text-[9px] font-mono font-bold uppercase tracking-widest mt-2 text-[#9A9590]">Session detail</p>
-    </div>
-  );
-}
-
-function PhoneHeld() {
-  return (
-    <div className="flex-shrink-0 w-40">
-      <div className="rounded-[24px] overflow-hidden border-4 border-[#1A1A1A] shadow-2xl" style={{ backgroundColor: "#F5EDE3", minHeight: "300px" }}>
-        <div className="px-3 pt-3 pb-2">
-          <p className="text-[7px] text-[#9A9590] font-mono uppercase mb-1">Receipt</p>
-          <div className="bg-[#FFD166] rounded-xl p-3 mb-2">
-            <p className="text-[6px] text-[#1A1A1A]/60 font-mono uppercase mb-1">● Holding</p>
-            <p className="text-[#1A1A1A] font-black text-lg leading-tight">Place<br />held.</p>
-            <div className="flex items-baseline gap-0.5 mt-1">
-              <span className="text-xs font-bold text-[#1A1A1A]">$</span>
-              <span className="text-2xl font-black text-[#1A1A1A] leading-none">28</span>
-            </div>
-          </div>
-          <p className="text-[6px] text-[#9A9590] text-center leading-relaxed mb-2">No charge yet. Cancel anytime in 24hrs.</p>
-          <div className="space-y-1">
-            <div className="bg-white rounded-lg px-2 py-1 text-center"><span className="text-[7px] font-semibold text-[#2C8FE0]">+ Add to Calendar</span></div>
-            <div className="bg-white rounded-lg px-2 py-1 text-center"><span className="text-[7px] text-[#9A9590]">Get directions</span></div>
-          </div>
-        </div>
-      </div>
-      <p className="text-center text-[9px] font-mono font-bold uppercase tracking-widest mt-2 text-[#9A9590]">Place held</p>
-    </div>
-  );
-}
-
-function PhoneHostDash() {
-  return (
-    <div className="flex-shrink-0 w-40">
-      <div className="rounded-[24px] overflow-hidden border-4 border-[#1A1A1A] shadow-2xl" style={{ backgroundColor: "#F5EDE3", minHeight: "300px" }}>
-        <div className="px-3 pt-3 pb-2">
-          <div className="bg-[#2C8FE0] rounded-xl p-2 mb-2">
-            <p className="text-white/60 text-[6px] font-mono uppercase">Host dashboard</p>
-            <p className="text-white font-black text-sm leading-tight">Kia ora,<br />Tāne.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-1 mb-2">
-            <div className="bg-[#FFD166] rounded-lg p-1.5">
-              <p className="text-[5px] text-[#1A1A1A]/60 font-mono uppercase">This month</p>
-              <p className="text-[#1A1A1A] font-black text-sm leading-none">$847</p>
-            </div>
-            <div className="bg-white rounded-lg p-1.5">
-              <p className="text-[5px] text-[#9A9590] font-mono uppercase">Repeat</p>
-              <p className="text-[#1A1A1A] font-black text-sm leading-none">68%</p>
-            </div>
-          </div>
-          <div className="bg-[#2C8FE0] rounded-lg py-1 text-center mb-1">
-            <span className="text-white text-[7px] font-semibold">+ Add a session</span>
-          </div>
-          <div className="bg-white rounded-lg p-1.5">
-            <p className="text-[6px] text-[#4CAF82] font-mono uppercase">● Confirmed</p>
-            <p className="text-[8px] font-bold text-[#1A1A1A]">Sunday Slow Flow</p>
-            <p className="text-[6px] text-[#9A9590]">9 held · $19/spot</p>
-          </div>
-        </div>
-      </div>
-      <p className="text-center text-[9px] font-mono font-bold uppercase tracking-widest mt-2 text-[#9A9590]">Host dashboard</p>
-    </div>
   );
 }
 
@@ -266,12 +137,8 @@ function WaitlistForm() {
     return (
       <div className="text-center py-10">
         <p className="text-5xl mb-4">🌏</p>
-        <h3 className="font-bold text-2xl text-white mb-2" style={{ letterSpacing: "-0.02em" }}>
-          You&apos;re in.
-        </h3>
-        <p className="text-white/70 leading-relaxed">
-          {city} noted. You&apos;ll be first to know.
-        </p>
+        <h3 className="font-bold text-2xl text-white mb-2" style={{ letterSpacing: "-0.02em" }}>You&apos;re in.</h3>
+        <p className="text-white/70 leading-relaxed">{city} noted. You&apos;ll be first to know.</p>
       </div>
     );
   }
@@ -300,8 +167,7 @@ function WaitlistForm() {
           ))}
         </div>
       </div>
-      <button type="submit"
-        className="w-full py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98]"
+      <button type="submit" className="w-full py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98]"
         style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}>
         Put me on the list →
       </button>
@@ -310,38 +176,40 @@ function WaitlistForm() {
 }
 
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
-export default function HomePage() {
+export default function LandingPage() {
   return (
     <main className="min-h-screen" style={{ backgroundColor: "#F5EDE3" }}>
 
-      {/* NAV */}
-      <nav style={{ backgroundColor: "#2C8FE0" }} className="px-5 py-4">
+      {/* NAV — olive hero bg */}
+      <nav style={{ backgroundColor: "#7A8330" }} className="px-5 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <span className="font-bold text-xl tracking-tight text-white">STRETCHY</span>
+          <Link href="/" className="text-cream" aria-label="Stretchy home">
+            <SMark size={32} />
+          </Link>
           <div className="flex items-center gap-3">
             <Link href="/sessions" className="text-sm font-semibold text-white/70 hover:text-white transition-colors hidden sm:block">Browse sessions</Link>
-            <Link href="/login" className="text-sm font-semibold px-4 py-2 rounded-full border-2 border-white/40 text-white hover:bg-white hover:text-[#2C8FE0] transition-all">Log in</Link>
+            <Link href="/login" className="text-sm font-semibold px-4 py-2 rounded-full border-2 border-white/40 text-white hover:bg-white hover:text-[#7A8330] transition-all">Log in</Link>
           </div>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section style={{ backgroundColor: "#2C8FE0" }} className="px-5 pt-10 pb-20">
+      {/* HERO — olive */}
+      <section style={{ backgroundColor: "#7A8330" }} className="px-5 pt-10 pb-20">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="inline-block font-mono text-xs font-bold uppercase tracking-widest mb-6 px-4 py-1.5 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.8)" }}>
+          <div className="inline-block font-mono text-xs font-bold uppercase tracking-widest mb-6 px-4 py-1.5 rounded-full"
+            style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.8)" }}>
             Auckland, New Zealand · Est. 2026
           </div>
-          <h1 className="font-bold text-white mb-6 leading-none" style={{ fontSize: "clamp(52px, 14vw, 88px)", letterSpacing: "-0.04em", lineHeight: "0.9" }}>
+          <h1 className="font-bold text-white mb-6 leading-none"
+            style={{ fontSize: "clamp(52px, 14vw, 88px)", letterSpacing: "-0.04em", lineHeight: "0.9" }}>
             A social<br />movement.
           </h1>
-          <p className="text-white/80 text-xl leading-relaxed mb-5 max-w-lg mx-auto">
-            Group movement classes where <strong className="text-white">the price drops as more people join.</strong> The more who move together, the better value for everyone.
-          </p>
-          <p className="text-white font-bold text-lg mb-10 italic">
-            &ldquo;Why hasn&apos;t anyone done this before?&rdquo;
+          <p className="text-white/80 text-xl leading-relaxed mb-10 max-w-lg mx-auto">
+            Community movement classes where <strong className="text-white">the price drops as more people join.</strong> The more who move together, the better value for everyone.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="#waitlist" className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98] text-center" style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}>
+            <a href="#waitlist" className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98] text-center"
+              style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}>
               Join the waitlist →
             </a>
             <Link href="/sessions" className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-base text-white border-2 border-white/40 hover:border-white transition-all text-center">
@@ -355,33 +223,22 @@ export default function HomePage() {
       <section className="max-w-2xl mx-auto px-5 py-16 text-center">
         <p className="font-bold text-[#1A1A1A] leading-tight" style={{ fontSize: "clamp(22px, 5vw, 36px)", letterSpacing: "-0.03em" }}>
           Yoga, pilates, HIIT, breathwork, run clubs —<br className="hidden sm:block" />
-          <span style={{ color: "#2C8FE0" }}> with a pricing model that rewards community.</span>
+          <span style={{ color: "#7A8330" }}> with a pricing model that rewards community.</span>
         </p>
       </section>
 
-      {/* PRICING MECHANIC */}
-      <section className="px-5 py-16" style={{ backgroundColor: "#1A1A1A" }}>
+      {/* PRICING MECHANIC — blue */}
+      <section className="px-5 py-16" style={{ backgroundColor: "#2C8FE0" }}>
         <div className="max-w-2xl mx-auto">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590] mb-3 text-center">The pricing mechanic</p>
-          <h2 className="font-bold text-white text-center mb-4 leading-tight" style={{ fontSize: "clamp(30px, 7vw, 50px)", letterSpacing: "-0.03em" }}>
+          <p className="font-mono text-xs font-bold uppercase tracking-widest text-white/60 mb-3 text-center">The pricing mechanic</p>
+          <h2 className="font-bold text-white text-center mb-4 leading-tight"
+            style={{ fontSize: "clamp(30px, 7vw, 50px)", letterSpacing: "-0.03em" }}>
             The more who join,<br />the less you pay.
           </h2>
-          <p className="text-[#9A9590] text-center mb-10 max-w-lg mx-auto">
+          <p className="text-white/70 text-center mb-10 max-w-lg mx-auto">
             Every session has a host target and a flat Stretchy fee. Split that across everyone who shows up. It&apos;s just maths — fair, transparent, and kind of obvious in hindsight.
           </p>
           <PricingVisualiser />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10">
-            {[
-              { n: "No percentage taken", d: "Stretchy charges a flat fee. Hosts keep exactly what they set." },
-              { n: "Price only goes down", d: "You'll never pay more than the price you see when you hold." },
-              { n: "Nothing charged upfront", d: "Card on file, charged 2 hours before. Zero risk to hold." },
-            ].map((item) => (
-              <div key={item.n} className="bg-white/5 rounded-2xl p-5">
-                <p className="font-bold text-white text-sm mb-1 leading-snug">{item.n}</p>
-                <p className="text-[#9A9590] text-xs leading-relaxed">{item.d}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -410,6 +267,26 @@ export default function HomePage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* THE STORY — directly after the 5 steps */}
+      <section className="max-w-2xl mx-auto px-5 pb-20">
+        <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590] mb-3">The story</p>
+        <h2 className="font-bold text-[#1A1A1A] mb-6 leading-tight" style={{ fontSize: "clamp(26px, 6vw, 38px)", letterSpacing: "-0.03em" }}>
+          Started with yoga.<br />Became something bigger.
+        </h2>
+        <div className="space-y-4 text-sm text-[#6B6B6B] leading-relaxed max-w-xl">
+          <p>
+            Stretchy started as a social yoga community in Auckland in 2024. With the ambition of taking the concept of a run club, applying it to yoga to stretch bodies, minds &amp; social circles. Weekly all-level yoga classes followed by a &ldquo;social stretch&rdquo; (aka. coffees, matchas, wine, beer, banter).
+          </p>
+          <p>
+            Stretchy 1.0 was well loved but labour intensive. Some sessions barely breaking even, others earning hundreds. So there had to be a better &amp; fairer way to move together, for all.
+          </p>
+          <p>
+            Stretchy is evolving into a community movement platform. Yoga is one format. But the model works for anything — pilates, HIIT, breathwork, sound baths, run clubs, dance. If people want to do it together and the economics should reward group effort, Stretchy is the infrastructure. Vetted teachers and hosts have more flexibility to create their own sessions, their way, in their local communities.
+          </p>
+          <p className="text-[#1A1A1A] font-semibold">Stretching bodies, minds and social circles.</p>
         </div>
       </section>
 
@@ -466,79 +343,20 @@ export default function HomePage() {
             ))}
           </div>
           <div className="mt-8 text-center">
-            <Link href="/host/apply" className="inline-block px-8 py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98]" style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}>
+            <Link href="/host/apply" className="inline-block px-8 py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98]"
+              style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}>
               Apply to be a host →
             </Link>
           </div>
         </div>
       </section>
 
-      {/* THE STORY */}
-      <section className="max-w-2xl mx-auto px-5 py-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 items-start">
-          <div>
-            <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590] mb-3">The story</p>
-            <h2 className="font-bold text-[#1A1A1A] mb-5 leading-tight" style={{ fontSize: "clamp(26px, 6vw, 38px)", letterSpacing: "-0.03em" }}>
-              Started with yoga.<br />Became something bigger.
-            </h2>
-            <div className="space-y-4 text-sm text-[#6B6B6B] leading-relaxed">
-              <p>Stretchy started as a yoga community in Auckland in 2024. The problem was simple: people wanted great movement but resented fixed pricing, empty promises, and the social isolation of walking into a studio alone.</p>
-              <p>The insight was that <strong className="text-[#1A1A1A]">people don&apos;t just want to move — they want to move together.</strong> And that&apos;s worth building a whole platform around.</p>
-              <p>By 2026, Stretchy evolved into a community movement platform. Yoga is one format. But the model works for anything — pilates, HIIT, breathwork, sound baths, run clubs, dance. If people want to do it together and the economics should reward group effort, Stretchy is the infrastructure.</p>
-              <p className="text-[#1A1A1A] font-semibold">Stretching bodies, minds and social circles.</p>
-            </div>
-          </div>
-          <div className="space-y-4">
-            {[
-              { y: "2024", t: "Yoga community", d: "IRL yoga sessions in Auckland parks and studios. Building the model.", col: "#FFD166" },
-              { y: "2025", t: "Community pricing", d: "The group pricing mechanic is born. The more who join, the less everyone pays.", col: "#2C8FE0" },
-              { y: "2026", t: "Movement platform", d: "From yoga to any movement format. The platform is live. The city is moving.", col: "#A535C7" },
-            ].map((m) => (
-              <div key={m.y} className="flex gap-4 items-start">
-                <div className="w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center font-mono font-black text-xs"
-                  style={{ backgroundColor: m.col, color: m.col === "#FFD166" ? "#1A1A1A" : "#fff" }}>
-                  {m.y}
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#1A1A1A] text-sm">{m.t}</h3>
-                  <p className="text-[#6B6B6B] text-xs leading-relaxed">{m.d}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* APP PREVIEW */}
-      <section style={{ backgroundColor: "#EDE8E2" }} className="px-5 py-20 overflow-hidden">
-        <div className="max-w-2xl mx-auto">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590] mb-3 text-center">The app</p>
-          <h2 className="font-bold text-[#1A1A1A] mb-4 leading-tight text-center" style={{ fontSize: "clamp(26px, 6vw, 40px)", letterSpacing: "-0.03em" }}>
-            See what you&apos;re signing up to.
-          </h2>
-          <p className="text-[#6B6B6B] text-center mb-10 max-w-md mx-auto text-sm">
-            No app store download. Works in your browser today.
-          </p>
-          <div className="flex gap-4 justify-center flex-wrap">
-            <PhoneHome />
-            <PhoneSession />
-            <PhoneHeld />
-            <PhoneHostDash />
-          </div>
-          <div className="text-center mt-8">
-            <Link href="/sessions" className="inline-block px-8 py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98]" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3" }}>
-              Explore the live app →
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* WAITLIST */}
-      <section id="waitlist" className="px-5 py-20" style={{ backgroundColor: "#2C8FE0" }}>
+      <section id="waitlist" className="px-5 py-20" style={{ backgroundColor: "#7A8330" }}>
         <div className="max-w-md mx-auto text-center">
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-white/60 mb-3">Get early access</p>
           <h2 className="font-bold text-white mb-4 leading-tight" style={{ fontSize: "clamp(30px, 7vw, 48px)", letterSpacing: "-0.03em" }}>
-            Be first in<br />your city.
+            Be first in<br />your area.
           </h2>
           <p className="text-white/70 mb-10 max-w-sm mx-auto leading-relaxed">
             Auckland is live. More cities coming. Tell us where you are and we&apos;ll let you know when Stretchy heads your way.
@@ -559,12 +377,14 @@ export default function HomePage() {
       {/* FINAL CTA */}
       <section style={{ backgroundColor: "#FFD166" }} className="px-5 py-20 text-center">
         <div className="max-w-xl mx-auto">
-          <h2 className="font-bold text-[#1A1A1A] mb-4 leading-tight" style={{ fontSize: "clamp(34px, 9vw, 60px)", letterSpacing: "-0.04em", lineHeight: "0.92" }}>
+          <h2 className="font-bold text-[#1A1A1A] mb-4 leading-tight"
+            style={{ fontSize: "clamp(34px, 9vw, 60px)", letterSpacing: "-0.04em", lineHeight: "0.92" }}>
             Move together.<br />Pay less.<br />Meet people.
           </h2>
           <p className="text-[#1A1A1A]/70 text-lg mb-10 max-w-md mx-auto">The highlight of your week, every week.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="#waitlist" className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-base transition-all hover:brightness-95 active:scale-[0.98] text-center" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3" }}>
+            <a href="#waitlist" className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-base transition-all hover:brightness-95 active:scale-[0.98] text-center"
+              style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3" }}>
               Join the waitlist →
             </a>
             <Link href="/sessions" className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-base border-2 border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-[#F5EDE3] transition-all text-center">
