@@ -3,7 +3,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM = "Stretchy <hello@stretchy.social>";
+const FROM = "Stretchy <kimberley@stretchyyoga.co.nz>";
 
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ function emailFooter() {
   return `
     <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #E0D8CE;">
       <p style="font-size: 12px; color: #888; text-align: center; margin: 0 0 12px; line-height: 1.5;">
-        Questions? <a href="mailto:hello@stretchy.social" style="color: #1A1A1A; font-weight: 600; text-decoration: none;">hello@stretchy.social</a>
+        Questions? <a href="mailto:kimberley@stretchyyoga.co.nz" style="color: #1A1A1A; font-weight: 600; text-decoration: none;">kimberley@stretchyyoga.co.nz</a>
       </p>
       <p style="font-size: 12px; color: #888; text-align: center; margin: 0 0 16px;">
         <a href="https://www.instagram.com/stretchysocial" style="color: #888; text-decoration: none; margin: 0 8px;">Instagram</a>
