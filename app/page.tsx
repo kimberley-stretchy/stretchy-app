@@ -53,53 +53,82 @@ const FAQS = [
 
 // ─── PRICING VISUALISER ────────────────────────────────────────────────────────
 function PricingVisualiser() {
+  const [target, setTarget] = useState(200);
+  const [minSpots, setMinSpots] = useState(8);
   const [spots, setSpots] = useState(8);
-  const TARGET = 200;
   const FEE = 23;
-  const MIN = 8;
-  const MAX = 20;
-  const price = Math.round(((TARGET + FEE) / spots) * 10) / 10;
-  const startPrice = Math.round(((TARGET + FEE) / MIN) * 10) / 10;
+  const MAX = 30;
+
+  const effectiveSpots = Math.max(spots, minSpots);
+  const price = Math.round(((target + FEE) / effectiveSpots) * 10) / 10;
+  const startPrice = Math.round(((target + FEE) / minSpots) * 10) / 10;
+  const savings = startPrice - price;
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-xl max-w-md mx-auto">
-      <div className="flex items-center justify-between mb-1">
-        <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590]">Live price calculator</p>
-        <span className="text-xs bg-[#E8F3FF] text-[#2C8FE0] font-bold px-2 py-0.5 rounded-full">Try it</span>
+    <div className="bg-white rounded-3xl p-6 shadow-xl max-w-lg mx-auto">
+      <div className="flex items-center justify-between mb-4">
+        <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590]">The movement maths</p>
+        <span className="text-xs bg-[#E8F3FF] text-[#2C8FE0] font-bold px-2 py-0.5 rounded-full">Interactive</span>
       </div>
-      <div className="my-4 flex items-center gap-2 flex-wrap">
-        <div className="bg-[#FFD166] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Host target $200</div>
+
+      {/* Formula display */}
+      <div className="flex items-center gap-2 flex-wrap mb-6">
+        <div className="bg-[#FFD166] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Target ${target}</div>
         <span className="text-[#9A9590] font-bold">+</span>
-        <div className="bg-[#F5EDE3] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Stretchy fee $23</div>
+        <div className="bg-[#F5EDE3] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Stretchy $23</div>
         <span className="text-[#9A9590] font-bold">÷</span>
-        <div className="bg-[#E8F3FF] text-[#2C8FE0] rounded-full px-3 py-1.5 text-xs font-bold">{spots} people</div>
+        <div className="bg-[#E8F3FF] text-[#2C8FE0] rounded-full px-3 py-1.5 text-xs font-bold">{effectiveSpots} people</div>
         <span className="text-[#9A9590] font-bold">=</span>
         <div className="bg-[#1A1A1A] text-white rounded-full px-3 py-1.5 text-sm font-black">${price.toFixed(0)} each</div>
       </div>
-      <div className="mb-2">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-xs text-[#9A9590]">Drag to add people</span>
-          <span className="text-sm font-bold text-[#1A1A1A]">{spots} people joining</span>
+
+      {/* Host revenue target */}
+      <div className="mb-5">
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="text-xs font-bold text-[#1A1A1A]">Host revenue target</label>
+          <span className="text-sm font-black text-[#1A1A1A]">${target}</span>
         </div>
-        <input type="range" min={MIN} max={MAX} value={spots} onChange={(e) => setSpots(parseInt(e.target.value))} className="w-full accent-[#2C8FE0] cursor-pointer" />
-        <div className="flex justify-between text-xs text-[#9A9590] mt-1">
-          <span>Minimum ({MIN})</span>
-          <span>Full room ({MAX})</span>
+        <input type="range" min={50} max={500} step={10} value={target} onChange={(e) => setTarget(parseInt(e.target.value))} className="w-full accent-[#FFD166] cursor-pointer" />
+        <div className="flex justify-between text-xs text-[#9A9590] mt-1"><span>$50</span><span>$500</span></div>
+      </div>
+
+      {/* Minimum viable spots */}
+      <div className="mb-5">
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="text-xs font-bold text-[#1A1A1A]">Minimum spots to go ahead</label>
+          <span className="text-sm font-black text-[#1A1A1A]">{minSpots} people</span>
+        </div>
+        <input type="range" min={3} max={20} value={minSpots} onChange={(e) => { const v = parseInt(e.target.value); setMinSpots(v); if (spots < v) setSpots(v); }} className="w-full accent-[#A535C7] cursor-pointer" />
+        <div className="flex justify-between text-xs text-[#9A9590] mt-1"><span>3</span><span>20</span></div>
+      </div>
+
+      {/* People in the room */}
+      <div className="mb-5">
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="text-xs font-bold text-[#1A1A1A]">People holding a spot</label>
+          <span className="text-sm font-black text-[#2C8FE0]">{effectiveSpots} in the room</span>
+        </div>
+        <input type="range" min={minSpots} max={MAX} value={effectiveSpots} onChange={(e) => setSpots(parseInt(e.target.value))} className="w-full accent-[#2C8FE0] cursor-pointer" />
+        <div className="flex justify-between text-xs text-[#9A9590] mt-1"><span>Min ({minSpots})</span><span>Max ({MAX})</span></div>
+      </div>
+
+      {/* Result */}
+      <div className="grid grid-cols-2 gap-3 mt-2">
+        <div className="bg-[#1A1A1A] rounded-2xl p-4 text-center">
+          <p className="text-xs text-white/50 font-mono uppercase tracking-wide mb-1">Price per person</p>
+          <p className="text-3xl font-black text-white">${price.toFixed(0)}</p>
+          <p className="text-xs text-white/50 mt-1">max you&apos;ll ever pay</p>
+        </div>
+        <div className="bg-[#F0FFF6] rounded-2xl p-4 text-center">
+          <p className="text-xs text-[#2D6A4A]/70 font-mono uppercase tracking-wide mb-1">Saving vs minimum</p>
+          <p className="text-3xl font-black text-[#2D6A4A]">{savings > 0 ? `$${savings.toFixed(0)}` : "$0"}</p>
+          <p className="text-xs text-[#2D6A4A]/60 mt-1">per person saved</p>
         </div>
       </div>
-      {spots > MIN ? (
-        <div className="mt-3 bg-[#F0FFF6] rounded-xl px-4 py-2.5 flex items-center justify-between">
-          <p className="text-sm text-[#2D6A4A] font-medium">Each person saves</p>
-          <p className="text-lg font-black text-[#2D6A4A]">${(startPrice - price).toFixed(0)}</p>
-        </div>
-      ) : (
-        <div className="mt-3 bg-[#FFF4E6] rounded-xl px-4 py-2.5">
-          <p className="text-xs text-[#CC5500] font-medium">← Add more people to see the price drop</p>
-        </div>
-      )}
-      <p className="text-center text-xs text-[#9A9590] mt-3 leading-relaxed">
-        The host always earns their $200 target. Stretchy always gets $23.<br />
-        <strong className="text-[#1A1A1A]">The more who join, the less everyone pays.</strong>
+
+      <p className="text-center text-xs text-[#9A9590] mt-4 leading-relaxed">
+        Host always earns their target. Stretchy always gets $23.<br/>
+        <strong className="text-[#1A1A1A]">Everyone else? The more who join, the less it costs.</strong>
       </p>
     </div>
   );
@@ -254,7 +283,7 @@ export default function LandingPage() {
             The more who join,<br />the less you pay.
           </h2>
           <p className="text-white/70 text-center mb-10 max-w-lg mx-auto">
-            Every session has a host target and a flat Stretchy fee. Split that across everyone who shows up. It&apos;s just maths — fair, transparent, and kind of obvious in hindsight.
+            Every session the host sets their revenue target. Add the Stretchy fee (flat $23/session). Split across everyone who holds a spot. It&apos;s fair, transparent, and good for all.
           </p>
           <PricingVisualiser />
         </div>
@@ -297,12 +326,10 @@ export default function LandingPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { e: "💸", t: "The price works for you", d: "The more your friends join, the cheaper everyone's session. Your friend group is literally a discount." },
+              { e: "💸", t: "The price works for you", d: "The more who join, the cheaper everyone's session. The people you meet (or friends you bring) literally become the discount." },
               { e: "📍", t: "Local sessions, real venues", d: "Parks, studios, rooftops, community halls. Not a big chain. Vetted hosts, local to you." },
               { e: "🤝", t: "The Social Stretch", d: "Every session ends with an optional hang. Coffee, matcha, wine — whatever fits the vibe. The best bit." },
-              { e: "🛡️", t: "Zero commitment until lock-in", d: "Hold your place, change your mind anytime up to 24 hours before. Your card never gets touched until you're confirmed." },
-              { e: "📲", t: "No app download needed", d: "Works in your browser. No monthly fee. You only pay when you actually go." },
-              { e: "🌿", t: "Wellness without the perfection", d: "No aspirational bullshit. Just good movement, real people, fair prices." },
+              { e: "🛡️", t: "You always know your maximum", d: "Hold your place with no charge upfront. Once the minimum number of people hold, the session is viable — and the price only drops from there. Your card is touched only when it's confirmed." },
             ].map((b) => (
               <div key={b.t} className="bg-white/50 rounded-2xl p-5">
                 <p className="text-2xl mb-2">{b.e}</p>
@@ -322,16 +349,16 @@ export default function LandingPage() {
             Set your target.<br />We handle the rest.
           </h2>
           <p className="text-white/70 mb-10 text-lg max-w-lg">
-            You decide what you need to earn. Stretchy adds a flat fee on top. The platform handles pricing, payments, notifications and payouts. You just run a great session.
+            You set your target. Stretchy handles pricing, payments, notifications and payouts. You just run a great session.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { e: "🎯", t: "You always earn your target", d: "Set $200. You get $200. No percentage taken. You know what you'll earn before a single hold comes in." },
-              { e: "📊", t: "No platform percentage", d: "Just a flat $20 + GST Stretchy fee added on top. Attendees pay it, not you." },
-              { e: "🧾", t: "Transparent pricing formula", d: "(Your target + $23) ÷ number of people = per-person price. Shown to you and your attendees." },
-              { e: "🔐", t: "Vetted once, active for 6 months", d: "One application, one vetting. Run as many sessions as you like. Change your schedule any time." },
-              { e: "💰", t: "Monday payouts", d: "Stripe Connect straight to your account every Monday. Full breakdown in the app." },
-              { e: "🤙", t: "Your community, your rules", d: "Your target, your neighbourhood, your format, your Social Stretch spot. Stretchy is the infrastructure." },
+              { e: "🎯", t: "Earn your target", d: "Set your revenue goal and the minimum number of attendees needed to make it happen. You know what you're earning before you host your sesh." },
+              { e: "🧾", t: "Transparent pricing formula", d: "(Your revenue target + $23 GST Stretchy fee) ÷ number of people = per-person price. Shown to you and your attendees." },
+              { e: "🔐", t: "Vetted once, active for 6 months", d: "One application to host, one vetting. Run as many sessions as you like. Change your schedule any time." },
+              { e: "🤙", t: "Be part of a social movement", d: "Expand your regular community and impact through the Stretchy platform. We list your classes to everyone in the area." },
+              { e: "🥂", t: "Host a Social Stretch", d: "The juicy bit after. Banter, community, new and old friends. Hosted by you." },
+              { e: "❤️", t: "Fundraising sessions", d: "Your earnings target could be a charity target. Stretchy lowers our platform pricing for fundraisers. Set your goals, tell us who you're raising for — the rest works out in community." },
             ].map((b) => (
               <div key={b.t} className="bg-white/10 rounded-2xl p-5">
                 <p className="text-2xl mb-2">{b.e}</p>
@@ -354,10 +381,10 @@ export default function LandingPage() {
         <div className="max-w-md mx-auto text-center">
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-white/60 mb-3">Get early access</p>
           <h2 className="font-bold text-white mb-4 leading-tight" style={{ fontSize: "clamp(30px, 7vw, 48px)", letterSpacing: "-0.03em" }}>
-            Be first in<br />your area.
+            Auckland will be<br />live Q3 2026.
           </h2>
           <p className="text-white/70 mb-10 max-w-sm mx-auto leading-relaxed">
-            Auckland is live. More cities coming. Tell us where you are and we&apos;ll let you know when Stretchy heads your way.
+            More cities coming. Tell us where you are and you&apos;ll be first to know when Stretchy heads your way.
           </p>
           <WaitlistForm />
         </div>
