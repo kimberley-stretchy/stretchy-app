@@ -57,7 +57,7 @@ function PricingVisualiser() {
   const [minSpots, setMinSpots] = useState(8);
   const [spots, setSpots] = useState(8);
   const FEE = 23;
-  const MAX = 30;
+  const MAX = 50;
 
   const effectiveSpots = Math.max(spots, minSpots);
   const price = Math.round(((target + FEE) / effectiveSpots) * 10) / 10;
@@ -69,17 +69,6 @@ function PricingVisualiser() {
       <div className="flex items-center justify-between mb-4">
         <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590]">The movement maths</p>
         <span className="text-xs bg-[#E8F3FF] text-[#2C8FE0] font-bold px-2 py-0.5 rounded-full">Interactive</span>
-      </div>
-
-      {/* Formula display */}
-      <div className="flex items-center gap-2 flex-wrap mb-6">
-        <div className="bg-[#FFD166] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Target ${target}</div>
-        <span className="text-[#9A9590] font-bold">+</span>
-        <div className="bg-[#F5EDE3] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Stretchy $23</div>
-        <span className="text-[#9A9590] font-bold">÷</span>
-        <div className="bg-[#E8F3FF] text-[#2C8FE0] rounded-full px-3 py-1.5 text-xs font-bold">{effectiveSpots} people</div>
-        <span className="text-[#9A9590] font-bold">=</span>
-        <div className="bg-[#1A1A1A] text-white rounded-full px-3 py-1.5 text-sm font-black">${price.toFixed(0)} each</div>
       </div>
 
       {/* Host revenue target */}
@@ -102,29 +91,33 @@ function PricingVisualiser() {
         <div className="flex justify-between text-xs text-[#9A9590] mt-1"><span>3</span><span>20</span></div>
       </div>
 
-      {/* People in the room */}
-      <div className="mb-5">
+      {/* People holding */}
+      <div className="mb-6">
         <div className="flex justify-between items-center mb-1.5">
           <label className="text-xs font-bold text-[#1A1A1A]">People holding a spot</label>
-          <span className="text-sm font-black text-[#2C8FE0]">{effectiveSpots} in the room</span>
+          <span className="text-sm font-black text-[#2C8FE0]">{effectiveSpots} people</span>
         </div>
         <input type="range" min={minSpots} max={MAX} value={effectiveSpots} onChange={(e) => setSpots(parseInt(e.target.value))} className="w-full accent-[#2C8FE0] cursor-pointer" />
         <div className="flex justify-between text-xs text-[#9A9590] mt-1"><span>Min ({minSpots})</span><span>Max ({MAX})</span></div>
       </div>
 
-      {/* Result */}
-      <div className="grid grid-cols-2 gap-3 mt-2">
-        <div className="bg-[#1A1A1A] rounded-2xl p-4 text-center">
-          <p className="text-xs text-white/50 font-mono uppercase tracking-wide mb-1">Price per person</p>
-          <p className="text-3xl font-black text-white">${price.toFixed(0)}</p>
-          <p className="text-xs text-white/50 mt-1">max you&apos;ll ever pay</p>
-        </div>
-        <div className="bg-[#F0FFF6] rounded-2xl p-4 text-center">
-          <p className="text-xs text-[#2D6A4A]/70 font-mono uppercase tracking-wide mb-1">Saving vs minimum</p>
-          <p className="text-3xl font-black text-[#2D6A4A]">{savings > 0 ? `$${savings.toFixed(0)}` : "$0"}</p>
-          <p className="text-xs text-[#2D6A4A]/60 mt-1">per person saved</p>
-        </div>
+      {/* Formula display */}
+      <div className="flex items-center gap-2 flex-wrap mb-6 justify-center">
+        <div className="bg-[#FFD166] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Target ${target}</div>
+        <span className="text-[#9A9590] font-bold">+</span>
+        <div className="bg-[#F5EDE3] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Stretchy $23</div>
+        <span className="text-[#9A9590] font-bold">÷</span>
+        <div className="bg-[#E8F3FF] text-[#2C8FE0] rounded-full px-3 py-1.5 text-xs font-bold">{effectiveSpots} people</div>
+        <span className="text-[#9A9590] font-bold">=</span>
+        <div className="bg-[#1A1A1A] text-white rounded-full px-4 py-2 text-2xl font-black">${price.toFixed(0)} each</div>
       </div>
+
+      {savings > 0 && (
+        <div className="bg-[#F0FFF6] rounded-2xl px-4 py-3 flex items-center justify-between mb-2">
+          <p className="text-sm text-[#2D6A4A] font-medium">Saving vs minimum price</p>
+          <p className="text-xl font-black text-[#2D6A4A]">${savings.toFixed(0)} each</p>
+        </div>
+      )}
 
       <p className="text-center text-xs text-[#9A9590] mt-4 leading-relaxed">
         Host always earns their target. Stretchy always gets $23.<br/>
