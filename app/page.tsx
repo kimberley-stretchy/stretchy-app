@@ -53,7 +53,7 @@ const FAQS = [
 
 // ─── PRICING VISUALISER ────────────────────────────────────────────────────────
 function PricingVisualiser() {
-  const [target, setTarget] = useState(400);
+  const [target, setTarget] = useState(250);
   const [minSpots, setMinSpots] = useState(8);
   const [spots, setSpots] = useState(8);
   const FEE = 23;
@@ -77,8 +77,8 @@ function PricingVisualiser() {
           <label className="text-xs font-bold text-[#1A1A1A]">Host revenue target</label>
           <span className="text-sm font-black text-[#1A1A1A]">${target}</span>
         </div>
-        <input type="range" min={50} max={500} step={10} value={target} onChange={(e) => setTarget(parseInt(e.target.value))} className="w-full accent-[#FFD166] cursor-pointer" />
-        <div className="flex justify-between text-xs text-[#9A9590] mt-1"><span>$50</span><span>$500</span></div>
+        <input type="range" min={50} max={400} step={10} value={target} onChange={(e) => setTarget(parseInt(e.target.value))} className="w-full accent-[#FFD166] cursor-pointer" />
+        <div className="flex justify-between text-xs text-[#9A9590] mt-1"><span>$50</span><span>$400</span></div>
       </div>
 
       {/* Minimum viable spots */}
