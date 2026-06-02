@@ -53,7 +53,7 @@ const FAQS = [
 
 // ─── PRICING VISUALISER ────────────────────────────────────────────────────────
 function PricingVisualiser() {
-  const [target, setTarget] = useState(200);
+  const [target, setTarget] = useState(400);
   const [minSpots, setMinSpots] = useState(8);
   const [spots, setSpots] = useState(8);
   const FEE = 23;
