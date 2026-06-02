@@ -112,13 +112,6 @@ function PricingVisualiser() {
         <div className="bg-[#1A1A1A] text-white rounded-full px-4 py-2 text-2xl font-black">${price.toFixed(0)} each</div>
       </div>
 
-      {savings > 0 && (
-        <div className="bg-[#F0FFF6] rounded-2xl px-4 py-3 flex items-center justify-between mb-2">
-          <p className="text-sm text-[#2D6A4A] font-medium">Saving vs minimum price</p>
-          <p className="text-xl font-black text-[#2D6A4A]">${savings.toFixed(0)} each</p>
-        </div>
-      )}
-
       <p className="text-center text-xs text-[#9A9590] mt-4 leading-relaxed">
         Host always earns their target. Stretchy always gets $23.<br/>
         <strong className="text-[#1A1A1A]">Everyone else? The more who join, the less it costs.</strong>
