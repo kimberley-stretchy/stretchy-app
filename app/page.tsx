@@ -1,442 +1,580 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import SMark from "@/components/SMark";
 
-// ─── TYPES ────────────────────────────────────────────────────────────────────
-type WaitlistRole = "mover" | "host" | "both";
+// ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
+const T = {
+  olive:  "#7A8330",
+  cream:  "#F5EDE3",
+  black:  "#1A1A1A",
+  yellow: "#FFD166",
+  purple: "#A535C7",
+  blue:   "#2C8FE0",
+  title:  "'Space Grotesk', system-ui, sans-serif",
+  mono:   "'JetBrains Mono', monospace",
+  display:"'Bagel Fat One', cursive",
+};
 
-// ─── FAQ DATA ─────────────────────────────────────────────────────────────────
-const FAQS = [
-  {
-    q: "What is a hold — am I charged straight away?",
-    a: "Nope. A hold is like saving your seat with no money down. Your card is on file but nothing leaves your account until the session is locked in — 2 hours before it starts.",
-  },
-  {
-    q: "When does my card actually get charged?",
-    a: "2 hours before the session starts. That's lock-in time. The final price is whatever the live price is at that moment — it can only go down from when you held your place.",
-  },
-  {
-    q: "How does the price actually drop?",
-    a: "Every session has a host target (what the host needs to earn) and a Stretchy fee ($20 + GST). That total is split equally across everyone who holds a place. More people = smaller share = lower price. Simple maths, shared fairly.",
-  },
-  {
-    q: "What's the most I'll ever pay?",
-    a: "The starting price shown when you hold. That's the ceiling. It can only go down as more people join. You'll never pay more than what you saw when you committed.",
-  },
-  {
-    q: "What if the minimum number of people isn't met?",
-    a: "The session doesn't go ahead and you pay nothing. Your hold is released, your card is never charged. No stress.",
-  },
-  {
-    q: "Can I cancel my hold?",
-    a: "Yes — up to 24 hours before the session. After that the session is heading into lock-in and cancellations affect everyone's price, so holds are locked from that point.",
-  },
-  {
-    q: "What is a Social Stretch?",
-    a: "The bit after the session — coffee, matcha, beers, wine, whatever. The host picks a spot nearby, you follow along if you're keen. No obligation, no pressure. Just the most underrated part of any class.",
-  },
-  {
-    q: "How do I become a host?",
-    a: "Apply in the app. We vet you once (experience, vibe, safety) and you're approved for 6 months. Then you set your sessions, set your target, and Stretchy handles everything else — pricing, payments, notifications.",
-  },
-  {
-    q: "Does Stretchy take a percentage of what I earn?",
-    a: "No. Hosts set their target and always get exactly that. Stretchy adds a flat $20 + GST fee on top of your target. Attendees pay it, not you. You always know exactly what you'll earn before the session even runs.",
-  },
-  {
-    q: "Where is Stretchy available?",
-    a: "Auckland, New Zealand right now. We're building city by city. Sign up below and tell us where you are — you'll be first to know when we head your way.",
-  },
-];
+type WaitlistRole = "move" | "host" | "both";
 
-// ─── PRICING VISUALISER ────────────────────────────────────────────────────────
-function PricingVisualiser() {
-  const [target, setTarget] = useState(250);
-  const [minSpots, setMinSpots] = useState(8);
-  const [spots, setSpots] = useState(8);
-  const FEE = 23;
-  const MAX = 50;
-
-  const effectiveSpots = Math.max(spots, minSpots);
-  const price = Math.round(((target + FEE) / effectiveSpots) * 10) / 10;
-  const startPrice = Math.round(((target + FEE) / minSpots) * 10) / 10;
-  const savings = startPrice - price;
-
+// ─── NAV ──────────────────────────────────────────────────────────────────────
+function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-xl max-w-lg mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590]">The movement maths</p>
-        <span className="text-xs bg-[#E8F3FF] text-[#2C8FE0] font-bold px-2 py-0.5 rounded-full">Interactive</span>
-      </div>
-
-      {/* Host revenue target */}
-      <div className="mb-5">
-        <div className="flex justify-between items-center mb-1.5">
-          <label className="text-xs font-bold text-[#1A1A1A]">Host revenue target</label>
-          <span className="text-sm font-black text-[#1A1A1A]">${target}</span>
+    <div style={{
+      position: "sticky", top: 0, zIndex: 50,
+      background: scrolled ? "rgba(245,237,227,0.92)" : "transparent",
+      backdropFilter: scrolled ? "blur(10px)" : "none",
+      borderBottom: scrolled ? "1px solid rgba(26,26,26,0.08)" : "1px solid transparent",
+      transition: "all .25s ease",
+    }}>
+      <div style={{
+        maxWidth: 1180, margin: "0 auto", padding: "14px 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <Link href="/" aria-label="Stretchy home">
+          <SMark size={32} />
+        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <a href="#how" style={navLinkStyle}>How it works</a>
+          <Link href="/home" style={navLinkStyle}>Explore the app</Link>
+          <a href="#waitlist" style={{
+            padding: "10px 20px", borderRadius: 999, background: T.black,
+            color: T.cream, fontFamily: T.title, fontSize: 14, fontWeight: 700,
+            textDecoration: "none", transition: "opacity .15s",
+          }}>Join the waitlist</a>
         </div>
-        <input type="range" min={50} max={400} step={10} value={target} onChange={(e) => setTarget(parseInt(e.target.value))} className="w-full accent-[#FFD166] cursor-pointer" />
-        <div className="flex justify-between text-xs text-[#9A9590] mt-1"><span>$50</span><span>$400</span></div>
       </div>
+    </div>
+  );
+}
+const navLinkStyle: React.CSSProperties = {
+  fontFamily: T.title, fontSize: 14, fontWeight: 600, color: T.black,
+  textDecoration: "none", padding: "8px 12px", display: "inline-block",
+};
 
-      {/* Minimum viable spots */}
-      <div className="mb-5">
-        <div className="flex justify-between items-center mb-1.5">
-          <label className="text-xs font-bold text-[#1A1A1A]">Minimum spots to go ahead</label>
-          <span className="text-sm font-black text-[#1A1A1A]">{minSpots} people</span>
+// ─── HERO ─────────────────────────────────────────────────────────────────────
+function Hero() {
+  return (
+    <div style={{ background: T.olive, color: T.cream, position: "relative", overflow: "hidden" }}>
+      {/* ghost S */}
+      <div style={{ position: "absolute", right: -80, top: -40, opacity: 0.07, pointerEvents: "none" }}>
+        <span style={{ color: T.cream }}><SMark size={520} /></span>
+      </div>
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "72px 24px 64px", position: "relative" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 40, alignItems: "center" }} className="hero-grid">
+          {/* left */}
+          <div>
+            <div style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.20em", opacity: 0.8, marginBottom: 22 }}>
+              AUCKLAND, AOTEAROA · EST. 2026
+            </div>
+            <h1 style={{
+              fontFamily: T.title, fontWeight: 700,
+              fontSize: "clamp(48px, 7vw, 92px)", lineHeight: 0.92,
+              letterSpacing: "-0.03em", margin: 0,
+            }}>
+              A social<br />movement.
+            </h1>
+            <p style={{ margin: "26px 0 0", fontSize: 19, lineHeight: 1.55, maxWidth: 480, opacity: 0.95 }}>
+              Community movement classes where <strong>the price drops as more people join.</strong> The more who move together, the better value for everyone. Plus the beloved "Social Stretch" after.
+            </p>
+            <div style={{ display: "flex", gap: 12, marginTop: 32, flexWrap: "wrap" }}>
+              <a href="#waitlist" style={{
+                padding: "16px 28px", borderRadius: 999, background: T.yellow,
+                color: T.black, fontFamily: T.title, fontSize: 16, fontWeight: 700,
+                textDecoration: "none",
+              }}>Join the waitlist →</a>
+              <Link href="/home" style={{
+                padding: "16px 28px", borderRadius: 999,
+                border: "2px solid rgba(245,237,227,0.5)", color: T.cream,
+                fontFamily: T.title, fontSize: 16, fontWeight: 700,
+                textDecoration: "none",
+              }}>Explore the app</Link>
+            </div>
+            <p style={{ margin: "26px 0 0", fontSize: 14, opacity: 0.7, maxWidth: 420, lineHeight: 1.5 }}>
+              Yoga, pilates, HIIT, breathwork, run clubs — with a pricing model that rewards community.
+            </p>
+          </div>
+          {/* right — phone mockup */}
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }} className="hero-phones">
+            <Image
+              src="/sunday-slow-flow.png"
+              alt="Stretchy app — the price drops as more people hold a spot"
+              width={252} height={500}
+              style={{ width: 252, height: "auto", filter: "drop-shadow(0 30px 60px rgba(0,0,0,0.42))" }}
+              priority
+            />
+          </div>
         </div>
-        <input type="range" min={3} max={20} value={minSpots} onChange={(e) => { const v = parseInt(e.target.value); setMinSpots(v); if (spots < v) setSpots(v); }} className="w-full accent-[#A535C7] cursor-pointer" />
-        <div className="flex justify-between text-xs text-[#9A9590] mt-1"><span>3</span><span>20</span></div>
       </div>
-
-      {/* People holding */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-1.5">
-          <label className="text-xs font-bold text-[#1A1A1A]">People holding a spot</label>
-          <span className="text-sm font-black text-[#2C8FE0]">{effectiveSpots} people</span>
-        </div>
-        <input type="range" min={minSpots} max={MAX} value={effectiveSpots} onChange={(e) => setSpots(parseInt(e.target.value))} className="w-full accent-[#2C8FE0] cursor-pointer" />
-        <div className="flex justify-between text-xs text-[#9A9590] mt-1"><span>Min ({minSpots})</span><span>Max ({MAX})</span></div>
-      </div>
-
-      {/* Formula display */}
-      <div className="flex items-center gap-2 flex-wrap mb-6 justify-center">
-        <div className="bg-[#FFD166] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Target ${target}</div>
-        <span className="text-[#9A9590] font-bold">+</span>
-        <div className="bg-[#F5EDE3] rounded-full px-3 py-1.5 text-xs font-bold text-[#1A1A1A]">Stretchy $23</div>
-        <span className="text-[#9A9590] font-bold">÷</span>
-        <div className="bg-[#E8F3FF] text-[#2C8FE0] rounded-full px-3 py-1.5 text-xs font-bold">{effectiveSpots} people</div>
-        <span className="text-[#9A9590] font-bold">=</span>
-        <div className="bg-[#1A1A1A] text-white rounded-full px-4 py-2 text-2xl font-black">${price.toFixed(0)} each</div>
-      </div>
-
-      <p className="text-center text-xs text-[#9A9590] mt-4 leading-relaxed">
-        Host always earns their target. Stretchy always gets $23.<br/>
-        <strong className="text-[#1A1A1A]">Everyone else? The more who join, the less it costs.</strong>
-      </p>
     </div>
   );
 }
 
-// ─── FAQ ITEM ─────────────────────────────────────────────────────────────────
-function FaqItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
+// ─── PRICING MECHANIC ─────────────────────────────────────────────────────────
+function RangeSlider({ label, value, min, max, step = 1, onChange, minLabel, maxLabel }: {
+  label: string; value: number; min: number; max: number; step?: number;
+  onChange: (v: number) => void; minLabel: string; maxLabel: string;
+}) {
+  const pct = ((value - min) / (max - min)) * 100;
   return (
-    <button onClick={() => setOpen(!open)} className="w-full text-left border-b border-[#E0D9D0] py-4">
-      <div className="flex items-start justify-between gap-4">
-        <span className="font-semibold text-[#1A1A1A] text-sm leading-snug text-left">{q}</span>
-        <span className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-[#D4CFC9] flex items-center justify-center text-[#9A9590] transition-transform duration-200 mt-0.5"
-          style={{ transform: open ? "rotate(45deg)" : "rotate(0deg)" }}>+</span>
+    <div style={{ marginBottom: 26 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+        <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: T.black }}>{label}</span>
+        <span style={{ fontFamily: T.title, fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em" }}>{value}</span>
       </div>
-      {open && <p className="mt-3 text-sm text-[#6B6B6B] leading-relaxed pr-8 text-left">{a}</p>}
-    </button>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        style={{
+          width: "100%", WebkitAppearance: "none", appearance: "none",
+          height: 8, borderRadius: 999, outline: "none", cursor: "pointer",
+          background: `linear-gradient(90deg, ${T.olive} 0% ${pct}%, rgba(26,26,26,0.10) ${pct}% 100%)`,
+        }}
+        className="stretchy-range"
+      />
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontFamily: T.mono, fontSize: 10, color: "#888", letterSpacing: "0.08em" }}>
+        <span>{minLabel}</span><span>{maxLabel}</span>
+      </div>
+    </div>
   );
 }
 
-// ─── WAITLIST FORM ─────────────────────────────────────────────────────────────
-function WaitlistForm() {
-  const [name, setName] = useState("");
+function PricingMechanic() {
+  const [target, setTarget] = useState(250);
+  const [minSpots, setMinSpots] = useState(8);
+  const [people, setPeople] = useState(8);
+  const FEE = 23;
+  const effective = Math.max(people, minSpots);
+  const perPerson = Math.round((target + FEE) / effective);
+  const startPrice = Math.round((target + FEE) / minSpots);
+  const confirmed = people >= minSpots;
+
+  return (
+    <div style={{ padding: "96px 0" }}>
+      <div style={{ textAlign: "center", marginBottom: 12 }}>
+        <Eyebrow color={T.olive}>The pricing mechanic</Eyebrow>
+      </div>
+      <h2 style={{
+        fontFamily: T.title, fontWeight: 700,
+        fontSize: "clamp(34px, 5vw, 56px)", lineHeight: 0.98,
+        letterSpacing: "-0.025em", textAlign: "center", margin: "0 auto 18px", maxWidth: 820,
+      }}>
+        The more who join, the better value exchange for all.
+      </h2>
+      <p style={{ textAlign: "center", maxWidth: 600, margin: "0 auto 48px", fontSize: 17, lineHeight: 1.55, color: "#555" }}>
+        The host sets their revenue target. Add the flat Stretchy fee of NZD $20 + GST. Split across everyone who holds a spot. Fair, transparent, good for all.
+      </p>
+
+      <div style={{
+        display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0,
+        background: "#fff", borderRadius: 32, overflow: "hidden",
+        border: "1.5px solid rgba(26,26,26,0.08)", boxShadow: "0 30px 60px rgba(26,26,26,0.06)",
+      }} className="mechanic-grid">
+        {/* controls */}
+        <div style={{ padding: 36 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 28,
+            fontFamily: T.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
+            background: T.olive, color: T.cream, padding: "6px 14px", borderRadius: 999,
+          }}>● INTERACTIVE — DRAG IT</div>
+          <RangeSlider label="HOST REVENUE TARGET" value={target} min={50} max={400} step={5}
+            onChange={setTarget} minLabel="$50" maxLabel="$400" />
+          <RangeSlider label="MINIMUM SPOTS TO GO AHEAD" value={minSpots} min={3} max={20}
+            onChange={(v) => { setMinSpots(v); if (people < v) setPeople(v); }} minLabel="3" maxLabel="20" />
+          <RangeSlider label="PEOPLE HOLDING A SPOT" value={people} min={3} max={50}
+            onChange={setPeople} minLabel="3" maxLabel="50" />
+        </div>
+
+        {/* readout */}
+        <div style={{
+          padding: 36, background: confirmed ? T.olive : "#2A2A2A",
+          color: T.cream, display: "flex", flexDirection: "column",
+          transition: "background .3s ease",
+        }}>
+          <div style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", opacity: 0.8 }}>
+            {confirmed ? "● GOING AHEAD" : `○ NEEDS ${minSpots - people} MORE TO CONFIRM`}
+          </div>
+
+          {/* formula chips */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", margin: "28px 0", fontFamily: T.mono, fontSize: 13 }}>
+            <span style={{ background: T.yellow, color: T.black, padding: "6px 12px", borderRadius: 10, fontWeight: 700 }}>${target} target</span>
+            <span style={{ opacity: 0.7, fontSize: 16 }}>+</span>
+            <span style={{ background: "rgba(245,237,227,0.16)", padding: "6px 12px", borderRadius: 10, fontWeight: 700 }}>$20 + GST</span>
+            <span style={{ opacity: 0.7, fontSize: 16 }}>÷</span>
+            <span style={{ background: "rgba(245,237,227,0.16)", padding: "6px 12px", borderRadius: 10, fontWeight: 700 }}>{people} people</span>
+          </div>
+
+          <div style={{ marginTop: "auto" }}>
+            <div style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", opacity: 0.8, marginBottom: 6 }}>EACH PERSON PAYS</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+              <span style={{ fontFamily: T.mono, fontSize: 32, fontWeight: 700, color: T.yellow }}>$</span>
+              <span style={{ fontFamily: T.display, fontSize: "clamp(72px, 9vw, 110px)", lineHeight: 0.82, color: T.yellow, letterSpacing: "-0.04em" }}>{perPerson}</span>
+            </div>
+            <p style={{ margin: "14px 0 0", fontSize: 13, lineHeight: 1.55, opacity: 0.9 }}>
+              Started at <strong style={{ color: T.cream }}>${startPrice}</strong> at minimum. Host always earns <strong style={{ color: T.cream }}>${target}</strong>. Stretchy always gets a flat <strong style={{ color: T.cream }}>$20 + GST</strong>. Everyone else? The more who join, the better the value.
+            </p>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        .stretchy-range { -webkit-appearance: none; appearance: none; }
+        .stretchy-range::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 999px; background: #F5EDE3; border: 3px solid #1A1A1A; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+        .stretchy-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 999px; background: #F5EDE3; border: 3px solid #1A1A1A; cursor: pointer; }
+        @media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr !important; } .hero-phones { display: none !important; } .mechanic-grid { grid-template-columns: 1fr !important; } }
+      `}</style>
+    </div>
+  );
+}
+
+// ─── EYEBROW ──────────────────────────────────────────────────────────────────
+function Eyebrow({ children, color = T.olive }: { children: React.ReactNode; color?: string }) {
+  return (
+    <div style={{
+      fontFamily: T.mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.22em",
+      textTransform: "uppercase", color, marginBottom: 18,
+      display: "inline-flex", alignItems: "center", gap: 10,
+    }}>
+      <span style={{ width: 22, height: 2, background: color, display: "inline-block" }} />
+      {children}
+    </div>
+  );
+}
+
+// ─── HOW IT WORKS ─────────────────────────────────────────────────────────────
+const STEPS = [
+  ["A session is listed.", "A vetted local host sets a session — yoga, pilates, HIIT, sound bath, whatever. They set a target and a max capacity."],
+  ["Hold your place.", "Find a session in your suburb. Tap to hold. No payment yet — your card is on file but nothing leaves your account."],
+  ["The more who hold, the lower the price.", "Every new hold splits the total more ways. Price drops in real time. Tell your mates — you're literally saving each other money."],
+  ["24 hours out — go or no go.", "If enough people held, it's confirmed and the price locks in. If not, all holds are released. Nothing charged."],
+  ["Show up. Move. Social Stretch.", "Card is charged 2 hours before at the final price. Turn up, move with your people, then head to the Social Stretch nearby."],
+];
+
+function HowItWorks() {
+  return (
+    <div id="how" style={{ background: T.purple, color: T.cream }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "96px 24px" }}>
+        <Eyebrow color={T.cream}>How it works</Eyebrow>
+        <h2 style={{
+          fontFamily: T.title, fontWeight: 700,
+          fontSize: "clamp(34px, 5vw, 56px)", lineHeight: 0.98,
+          letterSpacing: "-0.025em", margin: "0 0 48px", maxWidth: 700,
+        }}>
+          Five steps. That&apos;s it.
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+          {STEPS.map(([title, body], i) => (
+            <div key={i} style={{
+              background: i === 4 ? T.yellow : "#fff", color: T.black,
+              borderRadius: 26, padding: 26,
+              display: "flex", flexDirection: "column", gap: 12,
+            }}>
+              <div style={{ fontFamily: T.display, fontSize: 40, lineHeight: 0.85, color: i === 4 ? T.black : T.purple }}>
+                0{i + 1}
+              </div>
+              <h3 style={{ fontFamily: T.title, fontWeight: 700, fontSize: 18, lineHeight: 1.1, letterSpacing: "-0.01em", margin: 0 }}>{title}</h3>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "rgba(26,26,26,0.7)" }}>{body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FOR MOVERS ───────────────────────────────────────────────────────────────
+function ForMovers() {
+  return (
+    <div id="movers" style={{ padding: "96px 0" }}>
+      <Eyebrow color={T.olive}>For movers</Eyebrow>
+      <h2 style={{
+        fontFamily: T.title, fontWeight: 700,
+        fontSize: "clamp(34px, 5vw, 56px)", lineHeight: 0.98,
+        letterSpacing: "-0.025em", margin: "0 0 48px", maxWidth: 760,
+      }}>
+        Move more. Pay less.<br />Meet people.
+      </h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+        {[
+          ["💸", "The value exchange works for you", "The more who join, the better value everyone's session. The people you meet — or friends you bring — literally become the discount."],
+          ["📍", "Local sessions, real venues", "Parks, studios, rooftops, community halls. Not a big chain. Vetted hosts, local to you."],
+          ["🤝", "The Social Stretch", "Every session ends with an optional hang. Coffee, matcha, wine — whatever the vibe. The best bit."],
+          ["🛡️", "You always know your max", "Hold with no charge upfront. Once the minimum holds, the price only drops from there. Your card is touched only when it's confirmed."],
+        ].map(([icon, title, body]) => (
+          <div key={title as string} style={{ background: "#fff", borderRadius: 26, padding: 28, border: "1.5px solid rgba(26,26,26,0.08)" }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: 14, background: T.olive, color: T.cream,
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, marginBottom: 18,
+            }}>{icon}</div>
+            <h3 style={{ fontFamily: T.title, fontWeight: 700, fontSize: 19, letterSpacing: "-0.01em", margin: "0 0 10px" }}>{title}</h3>
+            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.55, color: "#666" }}>{body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── FOR HOSTS ────────────────────────────────────────────────────────────────
+function ForHosts() {
+  return (
+    <div id="hosts" style={{ background: T.purple, color: T.cream }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "96px 24px" }}>
+        <Eyebrow color={T.cream}>For hosts</Eyebrow>
+        <h2 style={{
+          fontFamily: T.title, fontWeight: 700,
+          fontSize: "clamp(34px, 5vw, 56px)", lineHeight: 0.98,
+          letterSpacing: "-0.025em", margin: "0 0 20px", maxWidth: 760,
+        }}>
+          Set your target.<br />We handle the rest.
+        </h2>
+        <p style={{ margin: "0 0 48px", fontSize: 18, lineHeight: 1.55, maxWidth: 560, opacity: 0.9 }}>
+          You set your target. Stretchy handles pricing, payments, notifications and payouts. You just run a great session.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+          {[
+            ["🎯", "Earn your target", "Set your revenue goal and the minimum attendees needed. You know what you're earning before you host."],
+            ["🧾", "Transparent formula", "(Target + $20 + GST fee) ÷ people = per-person price. Shown to you and your attendees."],
+            ["🔐", "Vetted once, active 6 months", "One application, one vetting. Run as many sessions as you like. Change your schedule any time."],
+            ["🤙", "Be part of a movement", "Expand your community and impact. We list your classes to everyone in the area."],
+            ["🥂", "Host a Social Stretch", "The juicy bit after. Banter, community, new and old friends. Hosted by you."],
+            ["❤️", "Fundraising sessions", "Your target could be a charity target. We lower our fee for fundraisers. Move for a cause."],
+          ].map(([icon, title, body]) => (
+            <div key={title as string} style={{ background: "rgba(245,237,227,0.08)", borderRadius: 26, padding: 28, border: "1px solid rgba(245,237,227,0.14)" }}>
+              <div style={{ fontSize: 28, marginBottom: 14 }}>{icon}</div>
+              <h3 style={{ fontFamily: T.title, fontWeight: 700, fontSize: 19, letterSpacing: "-0.01em", margin: "0 0 8px" }}>{title}</h3>
+              <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, opacity: 0.82 }}>{body}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 36 }}>
+          <Link href="/host/apply" style={{
+            padding: "16px 28px", borderRadius: 999, background: T.yellow,
+            color: T.black, fontFamily: T.title, fontSize: 16, fontWeight: 700,
+            textDecoration: "none", display: "inline-block",
+          }}>Apply to be a host →</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── STORY ────────────────────────────────────────────────────────────────────
+function Story() {
+  return (
+    <div style={{ maxWidth: 1180, margin: "0 auto", padding: "96px 24px" }}>
+      <div style={{ maxWidth: 760 }}>
+        <Eyebrow color={T.olive}>The backstory</Eyebrow>
+        <h2 style={{
+          fontFamily: T.title, fontWeight: 700,
+          fontSize: "clamp(32px, 4.5vw, 50px)", lineHeight: 1.0,
+          letterSpacing: "-0.025em", margin: "0 0 28px",
+        }}>
+          Started with yoga.<br />Became something bigger.
+        </h2>
+        <div style={{ fontSize: 17, lineHeight: 1.65, color: "#444", display: "flex", flexDirection: "column", gap: 18 }}>
+          <p style={{ margin: 0 }}>Stretchy started as a social yoga community in Auckland in 2024 — taking the run-club idea and applying it to yoga, to stretch bodies, minds and social circles. Weekly all-level classes followed by a &ldquo;social stretch&rdquo; — coffees, matchas, wine, beer, banter.</p>
+          <p style={{ margin: 0 }}>Stretchy 1.0 was well loved but labour intensive. Some sessions barely broke even, others earned hundreds. There had to be a better, fairer way to move together — for all.</p>
+          <p style={{ margin: 0 }}>Now Stretchy is evolving into a community movement platform. Yoga is one format. The model works for anything — pilates, HIIT, breathwork, sound baths, run clubs, dance. If people want to do it together, and the economics should reward group effort, Stretchy is the infrastructure.</p>
+        </div>
+        <p style={{ fontFamily: T.title, fontWeight: 700, fontSize: 22, letterSpacing: "-0.01em", margin: "32px 0 0", color: T.olive }}>
+          Stretching bodies, minds and social circles.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── WAITLIST ─────────────────────────────────────────────────────────────────
+function Waitlist() {
+  const [role, setRole] = useState<WaitlistRole>("move");
   const [email, setEmail] = useState("");
-  const [city, setCity] = useState("");
-  const [role, setRole] = useState<WaitlistRole>("mover");
-  const [sent, setSent] = useState(false);
+  const [suburb, setSuburb] = useState("");
+  const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name || !email || !city) return;
-    setLoading(true);
-    setError("");
+  async function submit() {
+    if (!email.trim()) return;
+    setLoading(true); setError("");
     try {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, city, role }),
+        body: JSON.stringify({ name: email.split("@")[0], email: email.trim(), city: suburb || "Not specified", role }),
       });
       if (!res.ok) throw new Error("Failed");
-      setSent(true);
+      setDone(true);
     } catch {
-      setError("Something went wrong. Try again or email kimberley@stretchyyoga.co.nz");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (sent) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-5xl mb-4">🌏</p>
-        <h3 className="font-bold text-2xl text-white mb-2" style={{ letterSpacing: "-0.02em" }}>You&apos;re in.</h3>
-        <p className="text-white/70 leading-relaxed">{city} noted. You&apos;ll be first to know.</p>
-      </div>
-    );
+      setError("Something went wrong. Email kimberley@stretchyyoga.co.nz");
+    } finally { setLoading(false); }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 max-w-md mx-auto">
-      <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required
-        className="w-full px-5 py-4 rounded-full border-2 border-white/20 bg-white/10 text-white placeholder-white/50 focus:outline-none focus:border-white text-base transition-colors" />
-      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" required
-        className="w-full px-5 py-4 rounded-full border-2 border-white/20 bg-white/10 text-white placeholder-white/50 focus:outline-none focus:border-white text-base transition-colors" />
-      <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Your city or suburb" required
-        className="w-full px-5 py-4 rounded-full border-2 border-white/20 bg-white/10 text-white placeholder-white/50 focus:outline-none focus:border-white text-base transition-colors" />
-      <div>
-        <p className="font-mono text-xs font-bold uppercase tracking-widest text-white/50 mb-2 pl-1">I want to</p>
-        <div className="flex gap-2">
-          {([
-            { v: "mover", l: "Move 🧘" },
-            { v: "host",  l: "Host 🎯" },
-            { v: "both",  l: "Both 🤙" },
-          ] as { v: WaitlistRole; l: string }[]).map(({ v, l }) => (
-            <button key={v} type="button" onClick={() => setRole(v)}
-              className="flex-1 py-3 rounded-full border-2 text-sm font-semibold transition-all"
-              style={{ backgroundColor: role === v ? "#FFD166" : "transparent", borderColor: role === v ? "#FFD166" : "rgba(255,255,255,0.3)", color: role === v ? "#1A1A1A" : "white" }}>
-              {l}
-            </button>
-          ))}
+    <div id="waitlist" style={{ background: T.yellow, color: T.black }}>
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "96px 24px", textAlign: "center" }}>
+        <span style={{ color: T.black }}><SMark size={72} /></span>
+        <div style={{ marginTop: 22, marginBottom: 12 }}>
+          <Eyebrow color={T.black}>Get early access</Eyebrow>
         </div>
+        <h2 style={{
+          fontFamily: T.title, fontWeight: 700,
+          fontSize: "clamp(36px, 6vw, 60px)", lineHeight: 0.95,
+          letterSpacing: "-0.03em", margin: "0 auto 18px",
+        }}>
+          Move together.<br />Pay less.<br />Better value for all.
+        </h2>
+        <p style={{ margin: "0 auto 40px", fontSize: 18, lineHeight: 1.5, maxWidth: 540 }}>
+          Auckland goes live Q3 2026 — more cities coming. Tell us where you are and you&apos;ll be first to know. The highlight of your week, every week.
+        </p>
+
+        {done ? (
+          <div style={{ background: T.black, color: T.cream, borderRadius: 28, padding: 40 }}>
+            <div style={{ marginBottom: 18 }}><span style={{ color: T.yellow }}><SMark size={64} /></span></div>
+            <h3 style={{ fontFamily: T.title, fontWeight: 700, fontSize: 28, margin: "0 0 10px", letterSpacing: "-0.02em" }}>You&apos;re on the list.</h3>
+            <p style={{ margin: 0, fontSize: 16, opacity: 0.85, lineHeight: 1.5 }}>
+              We&apos;ll be in touch as {role === "host" ? "a host" : role === "both" ? "a host & mover" : "a mover"}{suburb ? ` in ${suburb}` : ""}. Tell a mate — the more who join, the better it gets.
+            </p>
+          </div>
+        ) : (
+          <div style={{ background: "#fff", borderRadius: 28, padding: 32, textAlign: "left", boxShadow: "0 30px 60px rgba(26,26,26,0.10)" }}>
+            <div style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", color: "#666", marginBottom: 12 }}>I WANT TO</div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
+              {([["move", "Move 🧘"], ["host", "Host 🎯"], ["both", "Both 🤙"]] as [WaitlistRole, string][]).map(([key, label]) => (
+                <button key={key} onClick={() => setRole(key)} style={{
+                  flex: 1, padding: "14px", borderRadius: 16, cursor: "pointer",
+                  border: role === key ? "none" : "1.5px solid rgba(26,26,26,0.16)",
+                  background: role === key ? T.black : "transparent",
+                  color: role === key ? T.cream : T.black,
+                  fontFamily: T.title, fontSize: 15, fontWeight: 700,
+                }}>{label}</button>
+              ))}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <input value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.co.nz" type="email" style={inputStyle} />
+              <input value={suburb} onChange={(e) => setSuburb(e.target.value)}
+                placeholder="Your suburb or city" style={inputStyle} />
+              {error && <p style={{ margin: 0, fontSize: 13, color: "#E63946", textAlign: "center" }}>{error}</p>}
+              <button onClick={submit} disabled={loading} style={{
+                width: "100%", padding: "16px", borderRadius: 999,
+                background: T.black, color: T.yellow,
+                fontFamily: T.title, fontSize: 16, fontWeight: 700,
+                border: "none", cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1, marginTop: 6,
+              }}>{loading ? "Sending…" : "Put me on the list →"}</button>
+            </div>
+          </div>
+        )}
       </div>
-      {error && <p className="text-red-200 text-sm text-center">{error}</p>}
-      <button type="submit" disabled={loading} className="w-full py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
-        style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}>
-        {loading ? "Sending…" : "Put me on the list →"}
-      </button>
-    </form>
+    </div>
   );
 }
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "15px 18px", borderRadius: 14,
+  border: "1.5px solid rgba(26,26,26,0.16)", background: "#FFF8F4",
+  fontFamily: T.title, fontSize: 16, color: T.black, outline: "none",
+  boxSizing: "border-box",
+};
+
+// ─── FINAL CTA ────────────────────────────────────────────────────────────────
+function FinalCTA() {
+  return (
+    <div style={{ background: T.olive, color: T.cream, textAlign: "center" }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "96px 24px" }}>
+        <div style={{ marginBottom: 28 }}><span style={{ color: T.cream }}><SMark size={88} /></span></div>
+        <h2 style={{
+          fontFamily: T.title, fontWeight: 700,
+          fontSize: "clamp(40px, 6vw, 72px)", lineHeight: 0.95,
+          letterSpacing: "-0.03em", margin: "0 auto 22px", maxWidth: 720,
+        }}>
+          Move together. Pay less.<br />Meet people.
+        </h2>
+        <p style={{ fontSize: 19, opacity: 0.9, margin: "0 auto 34px" }}>The highlight of your week, every week.</p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <a href="#waitlist" style={{
+            padding: "16px 28px", borderRadius: 999, background: T.yellow,
+            color: T.black, fontFamily: T.title, fontSize: 16, fontWeight: 700, textDecoration: "none",
+          }}>Join the waitlist →</a>
+          <Link href="/home" style={{
+            padding: "16px 28px", borderRadius: 999,
+            border: "2px solid rgba(245,237,227,0.5)", color: T.cream,
+            fontFamily: T.title, fontSize: 16, fontWeight: 700, textDecoration: "none",
+          }}>Explore the app</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FOOTER ───────────────────────────────────────────────────────────────────
+function Footer() {
+  return (
+    <div style={{ background: T.yellow, color: T.black }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "56px 24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 32 }}>
+        <div style={{ maxWidth: 300 }}>
+          <div style={{ marginBottom: 12 }}><span style={{ color: T.black }}><SMark size={30} /></span></div>
+          <p style={{ margin: "0 0 14px", fontSize: 14, opacity: 0.7, lineHeight: 1.5 }}>A social movement. Built in Aotearoa 🌿</p>
+          <a href="mailto:kimberley@stretchyyoga.co.nz" style={{ fontFamily: T.mono, fontSize: 13, letterSpacing: "0.04em", color: T.black, textDecoration: "none", opacity: 0.8 }}>
+            kimberley@stretchyyoga.co.nz
+          </a>
+        </div>
+        <div style={{ display: "flex", gap: 40, flexWrap: "wrap", fontSize: 14 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", opacity: 0.5, marginBottom: 2 }}>EXPLORE</div>
+            <a href="#how" style={footLink}>How it works</a>
+            <Link href="/home" style={footLink}>Explore the app</Link>
+            <a href="#hosts" style={footLink}>For hosts</a>
+            <a href="#waitlist" style={footLink}>Join waitlist</a>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", opacity: 0.5, marginBottom: 2 }}>FOLLOW THE BUILD</div>
+            <a href="https://www.caike.club/" target="_blank" rel="noopener noreferrer" style={footLink}>caike.club ↗</a>
+            <a href="https://www.instagram.com/caike.club/" target="_blank" rel="noopener noreferrer" style={footLink}>@caike.club ↗</a>
+            <a href="https://instagram.com/stretchy.yoga" target="_blank" rel="noopener noreferrer" style={footLink}>@stretchy.yoga ↗</a>
+            <a href="https://instagram.com/stretchy.social" target="_blank" rel="noopener noreferrer" style={footLink}>@stretchy.social ↗</a>
+          </div>
+        </div>
+      </div>
+      <div style={{ borderTop: "1px solid rgba(26,26,26,0.15)" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "20px 24px", display: "flex", justifyContent: "space-between", fontFamily: T.mono, fontSize: 11, letterSpacing: "0.10em", color: "rgba(26,26,26,0.6)", flexWrap: "wrap", gap: 12 }}>
+          <span>© 2026 STRETCHY · AOTEAROA NEW ZEALAND</span>
+          <span>MOVE TOGETHER · BETTER VALUE FOR ALL</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+const footLink: React.CSSProperties = { color: T.black, opacity: 0.7, textDecoration: "none" };
 
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
-    <main className="min-h-screen" style={{ backgroundColor: "#F5EDE3" }}>
-
-      {/* NAV — olive hero bg */}
-      <nav style={{ backgroundColor: "#7A8330" }} className="px-5 py-4">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-cream" aria-label="Stretchy home">
-            <SMark size={32} />
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/sessions" className="text-sm font-semibold text-white/70 hover:text-white transition-colors hidden sm:block">Browse sessions</Link>
-            <Link href="/login" className="text-sm font-semibold px-4 py-2 rounded-full border-2 border-white/40 text-white hover:bg-white hover:text-[#7A8330] transition-all">Log in</Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* HERO — olive */}
-      <section style={{ backgroundColor: "#7A8330" }} className="px-5 pt-10 pb-20">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="inline-block font-mono text-xs font-bold uppercase tracking-widest mb-6 px-4 py-1.5 rounded-full"
-            style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.8)" }}>
-            Auckland, New Zealand · Est. 2026
-          </div>
-          <h1 className="font-bold text-white mb-6 leading-none"
-            style={{ fontSize: "clamp(52px, 14vw, 88px)", letterSpacing: "-0.04em", lineHeight: "0.9" }}>
-            A social<br />movement.
-          </h1>
-          <p className="text-white/80 text-xl leading-relaxed mb-10 max-w-lg mx-auto">
-            Community movement classes where <strong className="text-white">the price drops as more people join.</strong> The more who move together, the better value for everyone.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="#waitlist" className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98] text-center"
-              style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}>
-              Join the waitlist →
-            </a>
-            <Link href="/sessions" className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-base text-white border-2 border-white/40 hover:border-white transition-all text-center">
-              Explore the app
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ONE SENTENCE */}
-      <section className="max-w-2xl mx-auto px-5 py-16 text-center">
-        <p className="font-bold text-[#1A1A1A] leading-tight" style={{ fontSize: "clamp(22px, 5vw, 36px)", letterSpacing: "-0.03em" }}>
-          Yoga, pilates, HIIT, breathwork, run clubs —<br className="hidden sm:block" />
-          <span style={{ color: "#7A8330" }}> with a pricing model that rewards community.</span>
-        </p>
-      </section>
-
-      {/* PRICING MECHANIC — blue */}
-      <section className="px-5 py-16" style={{ backgroundColor: "#2C8FE0" }}>
-        <div className="max-w-2xl mx-auto">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-white/60 mb-3 text-center">The pricing mechanic</p>
-          <h2 className="font-bold text-white text-center mb-4 leading-tight"
-            style={{ fontSize: "clamp(30px, 7vw, 50px)", letterSpacing: "-0.03em" }}>
-            The more who join,<br />the less you pay.
-          </h2>
-          <p className="text-white/70 text-center mb-10 max-w-lg mx-auto">
-            Every session the host sets their revenue target. Add the Stretchy fee (flat $23/session). Split across everyone who holds a spot. It&apos;s fair, transparent, and good for all.
-          </p>
-          <PricingVisualiser />
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="max-w-2xl mx-auto px-5 py-20">
-        <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590] mb-3">How it works</p>
-        <h2 className="font-bold text-[#1A1A1A] mb-12 leading-tight" style={{ fontSize: "clamp(28px, 7vw, 44px)", letterSpacing: "-0.03em" }}>
-          Five steps.<br />That&apos;s it.
-        </h2>
-        <div className="space-y-8">
-          {[
-            { n: "01", t: "A session is listed.", d: "A vetted local host sets a session — yoga, pilates, HIIT, sound bath, whatever. They set a target (what they need to earn) and a max capacity.", col: "#2C8FE0" },
-            { n: "02", t: "Hold your place.", d: "Find a session in your suburb that fits your week. Tap to hold. No charge yet — your card is on file but nothing leaves your account.", col: "#FFD166" },
-            { n: "03", t: "The more who hold, the lower the price.", d: "Every new hold splits the total more ways. Price drops in real time. Tell your mates — you're literally saving each other money.", col: "#A535C7" },
-            { n: "04", t: "24 hours out — go or no go.", d: "If enough people have held, it's confirmed and the price locks in. If not, everyone's holds are released. Nothing charged.", col: "#4CAF82" },
-            { n: "05", t: "Show up. Move. Social Stretch.", d: "Your card is charged 2 hours before at the final locked price. Turn up, move with your people, then head to the Social Stretch — coffee, drinks, or whatever the host has organised nearby.", col: "#FF6B35" },
-          ].map((step) => (
-            <div key={step.n} className="flex gap-5">
-              <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-mono font-black text-sm"
-                style={{ backgroundColor: step.col, color: step.col === "#FFD166" ? "#1A1A1A" : "#fff" }}>
-                {step.n}
-              </div>
-              <div>
-                <h3 className="font-bold text-[#1A1A1A] text-lg mb-1 leading-snug">{step.t}</h3>
-                <p className="text-[#6B6B6B] text-sm leading-relaxed">{step.d}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FOR MOVERS */}
-      <section style={{ backgroundColor: "#FFD166" }} className="px-5 py-20">
-        <div className="max-w-2xl mx-auto">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#1A1A1A]/50 mb-3">For movers</p>
-          <h2 className="font-bold text-[#1A1A1A] mb-8 leading-tight" style={{ fontSize: "clamp(30px, 7vw, 48px)", letterSpacing: "-0.03em" }}>
-            Move more.<br />Pay less.<br />Meet people.
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { e: "💸", t: "The price works for you", d: "The more who join, the cheaper everyone's session. The people you meet (or friends you bring) literally become the discount." },
-              { e: "📍", t: "Local sessions, real venues", d: "Parks, studios, rooftops, community halls. Not a big chain. Vetted hosts, local to you." },
-              { e: "🤝", t: "The Social Stretch", d: "Every session ends with an optional hang. Coffee, matcha, wine — whatever fits the vibe. The best bit." },
-              { e: "🛡️", t: "You always know your maximum", d: "Hold your place with no charge upfront. Once the minimum number of people hold, the session is viable — and the price only drops from there. Your card is touched only when it's confirmed." },
-            ].map((b) => (
-              <div key={b.t} className="bg-white/50 rounded-2xl p-5">
-                <p className="text-2xl mb-2">{b.e}</p>
-                <h3 className="font-bold text-[#1A1A1A] mb-1">{b.t}</h3>
-                <p className="text-sm text-[#1A1A1A]/70 leading-relaxed">{b.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FOR HOSTS */}
-      <section style={{ backgroundColor: "#A535C7" }} className="px-5 py-20">
-        <div className="max-w-2xl mx-auto">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-white/50 mb-3">For hosts</p>
-          <h2 className="font-bold text-white mb-4 leading-tight" style={{ fontSize: "clamp(30px, 7vw, 48px)", letterSpacing: "-0.03em" }}>
-            Set your target.<br />We handle the rest.
-          </h2>
-          <p className="text-white/70 mb-10 text-lg max-w-lg">
-            You set your target. Stretchy handles pricing, payments, notifications and payouts. You just run a great session.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { e: "🎯", t: "Earn your target", d: "Set your revenue goal and the minimum number of attendees needed to make it happen. You know what you're earning before you host your sesh." },
-              { e: "🧾", t: "Transparent pricing formula", d: "(Your revenue target + $23 GST Stretchy fee) ÷ number of people = per-person price. Shown to you and your attendees." },
-              { e: "🔐", t: "Vetted once, active for 6 months", d: "One application to host, one vetting. Run as many sessions as you like. Change your schedule any time." },
-              { e: "🤙", t: "Be part of a social movement", d: "Expand your regular community and impact through the Stretchy platform. We list your classes to everyone in the area." },
-              { e: "🥂", t: "Host a Social Stretch", d: "The juicy bit after. Banter, community, new and old friends. Hosted by you." },
-              { e: "❤️", t: "Fundraising sessions", d: "Your earnings target could be a charity target. Stretchy lowers our platform pricing for fundraisers. Set your goals, tell us who you're raising for — the rest works out in community." },
-            ].map((b) => (
-              <div key={b.t} className="bg-white/10 rounded-2xl p-5">
-                <p className="text-2xl mb-2">{b.e}</p>
-                <h3 className="font-bold text-white mb-1">{b.t}</h3>
-                <p className="text-sm text-white/70 leading-relaxed">{b.d}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-8 text-center">
-            <Link href="/host/apply" className="inline-block px-8 py-4 rounded-full font-bold text-base transition-all hover:brightness-110 active:scale-[0.98]"
-              style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}>
-              Apply to be a host →
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* WAITLIST */}
-      <section id="waitlist" className="px-5 py-20" style={{ backgroundColor: "#7A8330" }}>
-        <div className="max-w-md mx-auto text-center">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-white/60 mb-3">Get early access</p>
-          <h2 className="font-bold text-white mb-4 leading-tight" style={{ fontSize: "clamp(30px, 7vw, 48px)", letterSpacing: "-0.03em" }}>
-            Auckland will be<br />live Q3 2026.
-          </h2>
-          <p className="text-white/70 mb-10 max-w-sm mx-auto leading-relaxed">
-            More cities coming. Tell us where you are and you&apos;ll be first to know when Stretchy heads your way.
-          </p>
-          <WaitlistForm />
-        </div>
-      </section>
-
-      {/* THE STORY — bottom of page */}
-      <section className="max-w-2xl mx-auto px-5 py-20">
-        <p className="font-mono text-xs font-bold uppercase tracking-widest text-[#9A9590] mb-3">The story</p>
-        <h2 className="font-bold text-[#1A1A1A] mb-6 leading-tight" style={{ fontSize: "clamp(26px, 6vw, 38px)", letterSpacing: "-0.03em" }}>
-          Started with yoga.<br />Became something bigger.
-        </h2>
-        <div className="space-y-4 text-sm text-[#6B6B6B] leading-relaxed max-w-xl">
-          <p>
-            Stretchy started as a social yoga community in Auckland in 2024. With the ambition of taking the concept of a run club, applying it to yoga to stretch bodies, minds &amp; social circles. Weekly all-level yoga classes followed by a &ldquo;social stretch&rdquo; (aka. coffees, matchas, wine, beer, banter).
-          </p>
-          <p>
-            Stretchy 1.0 was well loved but labour intensive. Some sessions barely breaking even, others earning hundreds. So there had to be a better &amp; fairer way to move together, for all.
-          </p>
-          <p>
-            Stretchy is evolving into a community movement platform. Yoga is one format. But the model works for anything — pilates, HIIT, breathwork, sound baths, run clubs, dance. If people want to do it together and the economics should reward group effort, Stretchy is the infrastructure. Vetted teachers and hosts have more flexibility to create their own sessions, their way, in their local communities.
-          </p>
-          <p className="text-[#1A1A1A] font-semibold">Stretching bodies, minds and social circles.</p>
-        </div>
-      </section>
-
-      {/* FINAL CTA */}
-      <section style={{ backgroundColor: "#FFD166" }} className="px-5 py-20 text-center">
-        <div className="max-w-xl mx-auto">
-          <h2 className="font-bold text-[#1A1A1A] mb-4 leading-tight"
-            style={{ fontSize: "clamp(34px, 9vw, 60px)", letterSpacing: "-0.04em", lineHeight: "0.92" }}>
-            Move together.<br />Pay less.<br />Meet people.
-          </h2>
-          <p className="text-[#1A1A1A]/70 text-lg mb-10 max-w-md mx-auto">The highlight of your week, every week.</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="#waitlist" className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-base transition-all hover:brightness-95 active:scale-[0.98] text-center"
-              style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3" }}>
-              Join the waitlist →
-            </a>
-            <Link href="/sessions" className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-base border-2 border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-[#F5EDE3] transition-all text-center">
-              Explore the app
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="max-w-2xl mx-auto px-5 py-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border-t border-[#E0D9D0] pt-8">
-          <div>
-            <p className="font-bold text-[#1A1A1A] mb-1">STRETCHY</p>
-            <p className="text-xs text-[#9A9590]">A social movement. Built in Aotearoa 🌿</p>
-          </div>
-          <div className="flex items-center gap-5 flex-wrap">
-            <a href="https://instagram.com/stretchy.yoga" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors">Instagram</a>
-            <a href="https://tiktok.com/@stretchy.yoga" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors">TikTok</a>
-            <a href="mailto:kimberley@stretchyyoga.co.nz" className="text-sm font-semibold text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors">kimberley@stretchyyoga.co.nz</a>
-          </div>
-        </div>
-        <div className="flex gap-5 mt-4 flex-wrap">
-          <Link href="/terms" className="text-xs text-[#9A9590] hover:text-[#6B6B6B] transition-colors">Terms</Link>
-          <Link href="/privacy" className="text-xs text-[#9A9590] hover:text-[#6B6B6B] transition-colors">Privacy</Link>
-          <Link href="/profile/help" className="text-xs text-[#9A9590] hover:text-[#6B6B6B] transition-colors">Help</Link>
-          <Link href="/admin" className="text-xs text-[#9A9590] hover:text-[#6B6B6B] transition-colors">Stretchy HQ</Link>
-        </div>
-      </footer>
-
-    </main>
+    <div style={{ background: T.cream, fontFamily: T.title }}>
+      <Nav />
+      <Hero />
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 24px" }}>
+        <PricingMechanic />
+      </div>
+      <HowItWorks />
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 24px" }}>
+        <ForMovers />
+      </div>
+      <ForHosts />
+      <div style={{ background: T.cream }}>
+        <Story />
+      </div>
+      <Waitlist />
+      <FinalCTA />
+      <Footer />
+    </div>
   );
 }
