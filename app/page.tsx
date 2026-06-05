@@ -573,7 +573,6 @@ export default function LandingPage() {
         <Story />
       </div>
       <Waitlist />
-      <FinalCTA />
       <Footer />
     </div>
   );
