@@ -98,7 +98,7 @@ function PriceCurveChart({ session: s }: { session: Session }) {
   }
 
   return (
-    <div style={{ position: "relative", maxWidth: 320 }}>
+    <div style={{ position: "relative", width: "100%" }}>
       {/* Hover tooltip */}
       <div style={{
         textAlign: "center", marginBottom: 8,
@@ -113,7 +113,7 @@ function PriceCurveChart({ session: s }: { session: Session }) {
       </div>
       <svg
         ref={svgRef}
-        width={W} height={H} viewBox={`0 0 ${W} ${H}`}
+        width="100%" viewBox={`0 0 ${W} ${H}`}
         style={{ cursor: "crosshair", touchAction: "none", display: "block" }}
         onMouseMove={handlePointer}
         onTouchMove={handlePointer}
