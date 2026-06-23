@@ -153,6 +153,29 @@
   }
 }
 
+/* ─── HOLD MODAL — bottom sheet on mobile, centered dialog on desktop ── */
+.hold-modal-sheet {
+  /* Mobile: bottom sheet */
+  bottom: 0; left: 0; right: 0;
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 40px;
+  max-height: 90vh;
+}
+
+@media (min-width: 640px) {
+  .hold-modal-sheet {
+    /* Desktop: centered dialog */
+    bottom: auto; left: 50%; right: auto;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 480px;
+    border-radius: 24px;
+    padding: 32px;
+    max-height: 85vh;
+    box-shadow: 0 24px 80px rgba(26,26,26,0.25);
+  }
+}
+
 /* ─── SCROLLBAR ─────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

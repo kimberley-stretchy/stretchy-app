@@ -200,10 +200,9 @@ export default function HoldModal({
         position: "fixed", inset: 0, background: "rgba(26,26,26,0.5)",
         zIndex: 40, backdropFilter: "blur(4px)",
       }} />
-      <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
-        background: T.cream, borderRadius: "24px 24px 0 0",
-        padding: "24px 20px 40px", maxWidth: 480, margin: "0 auto",
+      <div className="hold-modal-sheet" style={{
+        position: "fixed", zIndex: 50,
+        background: T.cream, overflowY: "auto",
       }}>
         <div style={{
           width: 40, height: 4, borderRadius: 2,
