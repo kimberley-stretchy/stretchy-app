@@ -136,7 +136,7 @@ function PricingMechanic() {
       <div style={{ maxWidth: MAXW, margin: "0 auto", padding: "96px 24px" }}>
         <Eyebrow>The pricing mechanic</Eyebrow>
         <h2 style={{ fontFamily: T.title, fontWeight: 700, fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 0.95, letterSpacing: "-0.025em", margin: "0 0 12px", maxWidth: 760 }}>The more who join, the better value exchange for all.</h2>
-        <p style={{ fontSize: 16, color: "rgba(26,26,26,0.65)", maxWidth: 560, margin: "0 0 40px", lineHeight: 1.6 }}>The host sets their revenue target. Add the flat Stretchy fee of <strong>NZD $20 + GST</strong>. Split it across everyone who holds a spot.</p>
+        <p style={{ fontSize: 16, color: "rgba(26,26,26,0.65)", maxWidth: 560, margin: "0 0 40px", lineHeight: 1.6 }}>The host sets their revenue target. Split it across everyone who holds a spot. The more who join, the less everyone pays.</p>
         <div style={{ background: "#fff", borderRadius: 28, padding: "36px 40px", boxShadow: "0 20px 60px rgba(26,26,26,0.06)", border: "1.5px solid rgba(26,26,26,0.08)" }}>
           <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", color: "rgba(26,26,26,0.35)", marginBottom: 24 }}>● INTERACTIVE — DRAG IT</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "start" }} className="mechanic-grid">
@@ -162,7 +162,7 @@ function PricingMechanic() {
               </div>
               <div style={{ fontFamily: T.display, fontSize: 72, color: T.yellow, lineHeight: 0.9, marginBottom: 8 }}>${perPerson}</div>
               <p style={{ fontFamily: T.mono, fontSize: 11, color: "rgba(26,26,26,0.4)", letterSpacing: "0.1em", marginBottom: 20 }}>PER PERSON + GST</p>
-              <p style={{ fontSize: 14, color: "rgba(26,26,26,0.6)", lineHeight: 1.6 }}>Starting price: <strong>${startPrice}</strong> at {minSpots} people. The host always earns ${target}. Stretchy always takes $23. Everyone benefits as more join.</p>
+              <p style={{ fontSize: 14, color: "rgba(26,26,26,0.6)", lineHeight: 1.6 }}>Starting price: <strong>${startPrice}</strong> at {minSpots} people. The host always earns their target. Everyone benefits as more join.</p>
             </div>
           </div>
         </div>
@@ -174,7 +174,7 @@ function PricingMechanic() {
 // ─── ABOUT ────────────────────────────────────────────────────
 function About() {
   return (
-    <div id="about" style={{ background: T.cream }}>
+    <div id="about" style={{ background: T.yellow }}>
       <div style={{ maxWidth: MAXW, margin: "0 auto", padding: "96px 24px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }} className="about-grid">
           <div>
@@ -359,12 +359,12 @@ function FinalCTA() {
 // ─── FOOTER ───────────────────────────────────────────────────
 function Footer() {
   return (
-    <div style={{ background: T.yellow, color: T.black }}>
+    <div style={{ background: "#4CAF82", color: T.black }}>
       <div style={{ maxWidth: MAXW, margin: "0 auto", padding: "56px 24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 32, alignItems: "flex-start" }}>
         <div style={{ maxWidth: 340 }}>
           <div style={{ marginBottom: 16 }}><SMark size={30} className="text-ink" /></div>
           <p style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.08em", lineHeight: 1.7, color: "rgba(26,26,26,0.6)", margin: "0 0 18px" }}>© 2026 STRETCHY · A SOCIAL MOVEMENT.<br />BUILT IN AOTEAROA WITH AROHA.</p>
-          <a href="mailto:kimberley@stretchyyoga.co.nz" style={{ fontFamily: T.mono, fontSize: 12, letterSpacing: "0.06em", color: T.black, textDecoration: "none", fontWeight: 600 }}>kimberley@stretchyyoga.co.nz ↗</a>
+          <a href="mailto:kimberley@stretchyyoga.co.nz" style={{ fontFamily: T.mono, fontSize: 12, letterSpacing: "0.06em", color: T.black, textDecoration: "none", fontWeight: 600, opacity: 0.8 }}>kimberley@stretchyyoga.co.nz ↗</a>
         </div>
         <div style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
