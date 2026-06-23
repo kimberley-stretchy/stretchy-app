@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -62,9 +63,13 @@ function CardForm({
     }
 
     // Save hold to Supabase
+    const { data: { session: authSession } } = await createClient().auth.getSession();
     const res = await fetch("/api/holds", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(authSession ? { "Authorization": `Bearer ${authSession.access_token}` } : {}),
+      },
       body: JSON.stringify({ sessionId, paymentIntentId, attendeeId }),
     });
 
@@ -158,13 +163,26 @@ export default function HoldModal({
 
   // Fetch PaymentIntent when modal mounts
   useState(() => {
-    fetch("/api/holds", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId }),
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push(`/login?next=/sessions/${sessionId}`);
+        return;
+      }
+      return fetch("/api/holds", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ sessionId }),
+      });
+    }).then((res) => {
+      if (!res) return;
+      return res.json();
     })
-      .then((r) => r.json())
       .then((data) => {
+        if (!data) return;
         if (data.error) {
           if (data.error === "Not logged in") {
             router.push(`/login?next=/sessions/${sessionId}`);

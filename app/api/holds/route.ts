@@ -24,7 +24,16 @@ export async function POST(request: NextRequest) {
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // Try server-side session first, fall back to Authorization header token
+  let { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    const authHeader = request.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    if (token) {
+      const { data } = await supabase.auth.getUser(token);
+      user = data.user;
+    }
+  }
   if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
 
   const { sessionId } = await request.json();

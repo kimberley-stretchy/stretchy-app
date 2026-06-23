@@ -292,6 +292,19 @@ export default function SessionDetailPage() {
         )}
       </div>
 
+      {/* Social stretch — shown right after Where */}
+      {s.social_stretch_venue && (
+        <div style={{ margin: "0 16px 20px", background: "#fff", borderRadius: 20, padding: "20px" }}>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.35)", letterSpacing: "0.18em", marginBottom: 10 }}>
+            SOCIAL STRETCH AFTER
+          </p>
+          <p style={{ fontSize: 15, fontWeight: 700, color: T.black, marginBottom: 6 }}>{s.social_stretch_venue}</p>
+          <p style={{ fontSize: 13, color: "rgba(26,26,26,0.6)", lineHeight: 1.5 }}>
+            Pay your own way — coffee & food after. Everyone welcome.
+          </p>
+        </div>
+      )}
+
       {/* What to bring */}
       {s.what_to_bring && s.what_to_bring.length > 0 && (
         <div style={{ margin: "0 16px 20px", background: "#fff", borderRadius: 20, padding: "20px" }}>
@@ -309,19 +322,6 @@ export default function SessionDetailPage() {
               </span>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Social stretch */}
-      {s.social_stretch_venue && (
-        <div style={{ margin: "0 16px 20px", background: T.purple, borderRadius: 20, padding: "20px" }}>
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.5)", letterSpacing: "0.18em", marginBottom: 8 }}>
-            SOCIAL STRETCH AFTER
-          </p>
-          <p style={{ fontSize: 15, fontWeight: 700, color: T.cream, marginBottom: 4 }}>{s.social_stretch_venue}</p>
-          {s.social_stretch_note && (
-            <p style={{ fontSize: 13, color: "rgba(245,237,227,0.75)" }}>{s.social_stretch_note}</p>
-          )}
         </div>
       )}
 
