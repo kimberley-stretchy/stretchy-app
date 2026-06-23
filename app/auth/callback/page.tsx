@@ -9,6 +9,7 @@ function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("Signing you in…");
+  const [errorDetail, setErrorDetail] = useState("");
 
   useEffect(() => {
     const supabase = createClient();
@@ -19,8 +20,8 @@ function CallbackHandler() {
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
         if (error) {
           console.error("Auth error:", error.message);
-          setStatus("Sign-in failed — redirecting…");
-          setTimeout(() => router.push("/login?error=auth_failed"), 1000);
+          setErrorDetail(error.message);
+          setStatus("Sign-in failed:");
         } else {
           setStatus("Signed in! Taking you there…");
           router.push(next);
@@ -51,6 +52,7 @@ function CallbackHandler() {
           animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
         }} />
         <p style={{ fontSize: 15, color: "rgba(26,26,26,0.6)" }}>{status}</p>
+        {errorDetail && <p style={{ fontSize: 13, color: "#E63946", marginTop: 8, maxWidth: 300 }}>{errorDetail}</p>}
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </main>
