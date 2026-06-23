@@ -352,7 +352,7 @@ function SuggestAStretchy() {
 // ─── FINAL CTA ────────────────────────────────────────────────
 function FinalCTA() {
   return (
-    <div style={{ background: T.olive, color: T.cream, textAlign: "center" }}>
+    <div style={{ background: "#4CAF82", color: T.cream, textAlign: "center" }}>
       <div style={{ maxWidth: MAXW, margin: "0 auto", padding: "96px 24px" }}>
         <SMark size={88} className="text-cream" />
         <h2 style={{ fontFamily: T.title, fontWeight: 700, fontSize: "clamp(40px, 6vw, 72px)", lineHeight: 0.95, letterSpacing: "-0.03em", margin: "28px auto 22px", maxWidth: 720 }}>Welcome to the highlight<br />of your week.</h2>
