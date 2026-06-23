@@ -53,6 +53,11 @@ function LoginContent() {
   const nextPath = role === "host" ? "/host/dashboard" : "/home";
 
   async function signInWithGoogle() {
+    // If on www, bounce to non-www first so the PKCE cookie is on the right domain
+    if (window.location.hostname === "www.stretchy.social") {
+      window.location.href = `https://stretchy.social/login?role=${role}`;
+      return;
+    }
     setLoading("google");
     setAuthError(null);
     const { error } = await supabase.auth.signInWithOAuth({
