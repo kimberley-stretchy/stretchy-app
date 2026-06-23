@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { loadStripe } from "@stripe/stripe-js";
@@ -162,7 +162,7 @@ export default function HoldModal({
   const router = useRouter();
 
   // Fetch PaymentIntent when modal mounts
-  useState(() => {
+  useEffect(() => {
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -202,7 +202,7 @@ export default function HoldModal({
         setErrorMsg("Could not connect. Please try again.");
         setStep("error");
       });
-  });
+  }, [sessionId, router]);
 
   return (
     <>
