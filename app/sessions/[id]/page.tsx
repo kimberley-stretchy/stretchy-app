@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
@@ -55,62 +55,91 @@ type Session = {
   what_to_bring: string[] | null;
 };
 
-// Price curve SVG — drops from ceiling to floor as spots fill
+// Interactive price curve — drag/hover to explore prices at any attendance
 function PriceCurveChart({ session: s }: { session: Session }) {
-  const W = 320; const H = 110;
-  const PAD = { left: 12, right: 12, top: 32, bottom: 32 };
+  const [hoverSpots, setHoverSpots] = useState<number | null>(null);
+  const svgRef = React.useRef<SVGSVGElement>(null);
+
+  const W = 320; const H = 140;
+  const PAD = { left: 16, right: 16, top: 16, bottom: 40 };
   const cW = W - PAD.left - PAD.right;
   const cH = H - PAD.top - PAD.bottom;
 
   const ceiling = calcPrice(s.host_target, s.min_attendees);
   const floor   = calcPrice(s.host_target, s.max_attendees);
   const holds   = s.current_holds || 0;
+  const range   = s.max_attendees - s.min_attendees;
   const priceRange = ceiling - floor;
 
-  const toX = (n: number) => PAD.left + ((n - s.min_attendees) / (s.max_attendees - s.min_attendees)) * cW;
+  const toX = (n: number) => PAD.left + ((n - s.min_attendees) / range) * cW;
   const toY = (p: number) => PAD.top + (1 - Math.max(0, (p - floor) / Math.max(priceRange, 1))) * cH;
 
-  // Generate curve points
   const points = [];
   for (let n = s.min_attendees; n <= s.max_attendees; n++) {
-    points.push({ x: toX(n), y: toY(calcPrice(s.host_target, n)) });
+    points.push({ x: toX(n), y: toY(calcPrice(s.host_target, n)), n });
   }
   const curvePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
 
-  // Current dot position
-  const dotSpots = Math.min(Math.max(holds, s.min_attendees), s.max_attendees);
-  const dotX = toX(dotSpots);
-  const dotY = toY(calcPrice(s.host_target, dotSpots));
+  const activeSpots = hoverSpots ?? Math.min(Math.max(holds, s.min_attendees), s.max_attendees);
+  const activePrice = calcPrice(s.host_target, activeSpots);
+  const activeX = toX(activeSpots);
+  const activeY = toY(activePrice);
 
-  // Labels
-  const ifFull = calcPrice(s.host_target, s.max_attendees);
+  function handlePointer(e: React.MouseEvent<SVGElement> | React.TouchEvent<SVGElement>) {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const clientX = "touches" in e ? e.touches[0]?.clientX : e.clientX;
+    if (clientX === undefined) return;
+    const x = clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, (x - PAD.left) / cW));
+    const spots = Math.round(s.min_attendees + ratio * range);
+    setHoverSpots(Math.min(Math.max(spots, s.min_attendees), s.max_attendees));
+  }
 
   return (
-    <div style={{ position: "relative", width: W }}>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-        {/* Grid line at ceiling */}
-        <line x1={PAD.left} y1={toY(ceiling)} x2={W - PAD.right} y2={toY(ceiling)} stroke="rgba(26,26,26,0.08)" strokeWidth={1} strokeDasharray="3,3" />
-        {/* Grid line at floor */}
-        <line x1={PAD.left} y1={toY(floor)} x2={W - PAD.right} y2={toY(floor)} stroke="rgba(26,26,26,0.08)" strokeWidth={1} strokeDasharray="3,3" />
-
+    <div style={{ position: "relative", width: "100%" }}>
+      {/* Hover tooltip */}
+      <div style={{
+        textAlign: "center", marginBottom: 8,
+        fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700,
+        color: hoverSpots ? T.yellow : "rgba(245,237,227,0.4)",
+        letterSpacing: "0.08em", transition: "color .15s",
+        minHeight: 18,
+      }}>
+        {hoverSpots
+          ? `IF ${hoverSpots} JOIN → $${activePrice} + GST`
+          : "← DRAG TO EXPLORE PRICES →"}
+      </div>
+      <svg
+        ref={svgRef}
+        width="100%" viewBox={`0 0 ${W} ${H}`}
+        style={{ cursor: "crosshair", touchAction: "none", display: "block" }}
+        onMouseMove={handlePointer}
+        onTouchMove={handlePointer}
+        onMouseLeave={() => setHoverSpots(null)}
+        onTouchEnd={() => setHoverSpots(null)}
+      >
         {/* Curve fill */}
-        <path
-          d={curvePath + ` L ${points[points.length-1].x},${PAD.top+cH} L ${points[0].x},${PAD.top+cH} Z`}
-          fill="rgba(255,209,102,0.10)"
-        />
+        <path d={curvePath + ` L ${points[points.length-1].x},${PAD.top+cH} L ${points[0].x},${PAD.top+cH} Z`} fill="rgba(255,209,102,0.10)" />
         {/* Curve line */}
-        <path d={curvePath} fill="none" stroke={T.yellow} strokeWidth={2} />
+        <path d={curvePath} fill="none" stroke={T.yellow} strokeWidth={2.5} strokeLinecap="round" />
 
-        {/* Live dot */}
-        <circle cx={dotX} cy={dotY} r={6} fill={T.yellow} />
-        <circle cx={dotX} cy={dotY} r={10} fill="rgba(255,209,102,0.25)" />
+        {/* Hover vertical line */}
+        {hoverSpots && (
+          <line x1={activeX} y1={PAD.top} x2={activeX} y2={PAD.top + cH} stroke="rgba(255,209,102,0.3)" strokeWidth={1} strokeDasharray="3,3" />
+        )}
 
-        {/* Price labels */}
-        <text x={PAD.left} y={toY(ceiling) - 6} fontSize={10} fontFamily="JetBrains Mono, monospace" fontWeight={700} fill={T.black} opacity={0.4}>
-          ${ceiling}
+        {/* Active dot */}
+        <circle cx={activeX} cy={activeY} r={hoverSpots ? 8 : 6} fill={T.yellow} style={{ transition: "r .1s" }} />
+        <circle cx={activeX} cy={activeY} r={hoverSpots ? 16 : 10} fill="rgba(255,209,102,0.2)" />
+
+        {/* Axis labels */}
+        <text x={PAD.left} y={H - 8} fontSize={9} fontFamily="JetBrains Mono, monospace" fontWeight={700} fill="rgba(245,237,227,0.3)">
+          {s.min_attendees} MIN · ${ceiling}
         </text>
-        <text x={W - PAD.right} y={toY(floor) + 14} fontSize={10} fontFamily="JetBrains Mono, monospace" fontWeight={700} fill={T.black} opacity={0.4} textAnchor="end">
-          ${ifFull} if full
+        <text x={W - PAD.right} y={H - 8} fontSize={9} fontFamily="JetBrains Mono, monospace" fontWeight={700} fill="rgba(245,237,227,0.3)" textAnchor="end">
+          {s.max_attendees} MAX · ${floor}
         </text>
       </svg>
     </div>
@@ -242,53 +271,59 @@ export default function SessionDetailPage() {
       </div>
 
       {/* Pricing engine */}
-      <div style={{ margin: "0 16px 20px", background: T.black, borderRadius: 20, padding: "20px 20px 24px", color: T.cream }}>
-        {/* Status */}
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", color: confirmed ? T.green : T.orange, marginBottom: 12 }}>
+      <div style={{ margin: "0 16px 20px", background: T.black, borderRadius: 20, padding: "24px 20px 28px", color: T.cream }}>
+
+        {/* Status — big and bold */}
+        <div style={{
+          fontFamily: "'Space Grotesk', system-ui, sans-serif", fontWeight: 800,
+          fontSize: confirmed ? 22 : 26,
+          letterSpacing: "-0.02em", lineHeight: 1.1,
+          color: confirmed ? T.green : T.orange, marginBottom: 16,
+        }}>
           {confirmed
-            ? `● GOING AHEAD · ${holds} HELD`
-            : `○ ${spotsToMin} MORE TO CONFIRM`}
+            ? `● Session going ahead · ${holds} holding`
+            : `○ ${spotsToMin} more ${spotsToMin === 1 ? "person" : "people"} to confirm session`}
         </div>
 
         {/* Holds pips */}
-        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
           {Array.from({ length: s.min_attendees }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: 10, height: 10, borderRadius: "50%",
-                background: i < holds ? typeColor : "rgba(245,237,227,0.15)",
-              }}
-            />
+            <div key={i} style={{
+              width: 14, height: 14, borderRadius: "50%",
+              background: i < holds ? typeColor : "rgba(245,237,227,0.12)",
+              transition: "background .3s",
+            }} />
           ))}
           {holds > s.min_attendees && (
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, color: typeColor }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: typeColor, alignSelf: "center" }}>
               +{holds - s.min_attendees}
             </span>
           )}
         </div>
 
-        {/* Big price */}
-        <div style={{ marginBottom: 16 }}>
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.16em", marginBottom: 4 }}>
+        {/* Price — very large */}
+        <div style={{ marginBottom: 6 }}>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.18em", marginBottom: 6 }}>
             {confirmed ? "PRICE NOW" : "MAX YOU'LL PAY"}
           </p>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-            <span style={{ fontFamily: "'Bagel Fat One', cursive", fontSize: 52, color: T.yellow, lineHeight: 1 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontFamily: "'Bagel Fat One', cursive", fontSize: 80, color: T.yellow, lineHeight: 0.9 }}>
               ${currentPrice}
             </span>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(245,237,227,0.5)", fontWeight: 700 }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: "rgba(245,237,227,0.5)", fontWeight: 700 }}>
               + GST
             </span>
           </div>
-          {!confirmed && (
-            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(245,237,227,0.4)", marginTop: 4 }}>
-              DROPS AS THE ROOM FILLS · FLOOR ${floorPrice} + GST
-            </p>
-          )}
         </div>
 
-        {/* Price curve */}
+        {/* Drop copy */}
+        {!confirmed && (
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: "rgba(245,237,227,0.35)", letterSpacing: "0.12em", marginBottom: 20 }}>
+            PRICE DROPS AS THE SESSION FILLS · FLOOR ${floorPrice} + GST
+          </p>
+        )}
+
+        {/* Interactive price curve */}
         <PriceCurveChart session={s} />
 
       </div>
