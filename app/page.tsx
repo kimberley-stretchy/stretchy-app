@@ -49,16 +49,16 @@ function Nav() {
         </div>
       </div>
       {/* Mobile nav */}
-      <div className="show-mobile" style={{ padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <Link href="/" aria-label="Stretchy home"><SMark size={26} className="text-olive" /></Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 0, flexWrap: "nowrap" }}>
-          <a href="#about" style={{ ...navLink, fontSize: 12, padding: "5px 6px" }}>About</a>
-          <span style={{ color: "rgba(26,26,26,0.25)", fontSize: 11 }}>|</span>
-          <a href="#host" style={{ ...navLink, fontSize: 12, padding: "5px 6px" }}>Host</a>
-          <span style={{ color: "rgba(26,26,26,0.25)", fontSize: 11 }}>|</span>
-          <a href="#suggest" style={{ ...navLink, fontSize: 12, padding: "5px 6px" }}>Suggest</a>
-          <span style={{ color: "rgba(26,26,26,0.25)", fontSize: 11 }}>|</span>
-          <a href="/sessions" style={{ ...navLink, fontSize: 12, padding: "5px 6px", fontWeight: 700, color: T.black }}>Book AKL</a>
+      <div className="show-mobile" style={{ padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "nowrap" }}>
+        <Link href="/" aria-label="Stretchy home" style={{ flexShrink: 0 }}><SMark size={26} className="text-olive" /></Link>
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", marginLeft: "auto" }}>
+          <a href="#about" style={{ ...navLink, fontSize: 11, padding: "4px 5px" }}>About</a>
+          <span style={{ color: "rgba(26,26,26,0.2)", fontSize: 10, lineHeight: 1 }}>|</span>
+          <a href="#host" style={{ ...navLink, fontSize: 11, padding: "4px 5px" }}>Host</a>
+          <span style={{ color: "rgba(26,26,26,0.2)", fontSize: 10, lineHeight: 1 }}>|</span>
+          <a href="#suggest" style={{ ...navLink, fontSize: 11, padding: "4px 5px" }}>Suggest</a>
+          <span style={{ color: "rgba(26,26,26,0.2)", fontSize: 10, lineHeight: 1 }}>|</span>
+          <a href="/sessions" style={{ ...navLink, fontSize: 11, padding: "4px 5px", fontWeight: 700 }}>Book AKL</a>
         </div>
       </div>
     </div>
