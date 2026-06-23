@@ -89,7 +89,7 @@ function LoginContent() {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+        emailRedirectTo: `https://stretchy.social/auth/callback?next=${encodeURIComponent(nextPath)}`,
       },
     });
     setLoading(null);
