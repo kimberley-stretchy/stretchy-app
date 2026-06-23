@@ -1,15 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
+// Only protect admin routes server-side — other routes handle auth client-side
 const PROTECTED_PREFIXES = [
   "/admin",
-  "/host",
-  "/profile",
-  "/onboarding",
-  "/hold",
-  "/rate",
-  "/social-stretch",
-  "/notifications",
 ];
 
 const ADMIN_PREFIXES = ["/admin"];
