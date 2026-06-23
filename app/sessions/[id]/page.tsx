@@ -293,28 +293,28 @@ export default function SessionDetailPage() {
 
       </div>
 
-      {/* Where */}
-      <div style={{ margin: "0 16px 20px", background: "#fff", borderRadius: 20, padding: "20px" }}>
-        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.35)", letterSpacing: "0.18em", marginBottom: 10 }}>
+      {/* Where — yellow */}
+      <div style={{ margin: "0 16px 20px", background: T.yellow, borderRadius: 20, padding: "20px" }}>
+        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.45)", letterSpacing: "0.18em", marginBottom: 10 }}>
           WHERE
         </p>
         <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{s.location_name}</p>
         {s.location_address && (
-          <p style={{ fontSize: 13, color: "rgba(26,26,26,0.55)", marginBottom: 8 }}>{s.location_address}</p>
+          <p style={{ fontSize: 13, color: "rgba(26,26,26,0.65)", marginBottom: 8 }}>{s.location_address}</p>
         )}
         {s.getting_there && (
           <p style={{ fontSize: 13, color: "rgba(26,26,26,0.65)", lineHeight: 1.5 }}>{s.getting_there}</p>
         )}
       </div>
 
-      {/* Social stretch — shown right after Where */}
+      {/* Social stretch — purple */}
       {s.social_stretch_venue && (
-        <div style={{ margin: "0 16px 20px", background: "#fff", borderRadius: 20, padding: "20px" }}>
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.35)", letterSpacing: "0.18em", marginBottom: 10 }}>
+        <div style={{ margin: "0 16px 20px", background: T.purple, borderRadius: 20, padding: "20px" }}>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.55)", letterSpacing: "0.18em", marginBottom: 10 }}>
             SOCIAL STRETCH AFTER
           </p>
-          <p style={{ fontSize: 15, fontWeight: 700, color: T.black, marginBottom: 6 }}>{s.social_stretch_venue}</p>
-          <p style={{ fontSize: 13, color: "rgba(26,26,26,0.6)", lineHeight: 1.5 }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: T.cream, marginBottom: 6 }}>{s.social_stretch_venue}</p>
+          <p style={{ fontSize: 13, color: "rgba(245,237,227,0.8)", lineHeight: 1.5 }}>
             Pay your own way — coffee & food after. Everyone welcome.
           </p>
         </div>
