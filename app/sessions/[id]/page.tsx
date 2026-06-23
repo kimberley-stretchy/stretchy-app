@@ -60,8 +60,8 @@ function PriceCurveChart({ session: s }: { session: Session }) {
   const [hoverSpots, setHoverSpots] = useState<number | null>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
 
-  const W = 320; const H = 140;
-  const PAD = { left: 16, right: 16, top: 16, bottom: 40 };
+  const W = 320; const H = 80;
+  const PAD = { left: 16, right: 16, top: 8, bottom: 28 };
   const cW = W - PAD.left - PAD.right;
   const cH = H - PAD.top - PAD.bottom;
 
@@ -123,7 +123,7 @@ function PriceCurveChart({ session: s }: { session: Session }) {
         {/* Curve fill */}
         <path d={curvePath + ` L ${points[points.length-1].x},${PAD.top+cH} L ${points[0].x},${PAD.top+cH} Z`} fill="rgba(255,209,102,0.10)" />
         {/* Curve line */}
-        <path d={curvePath} fill="none" stroke={T.yellow} strokeWidth={2.5} strokeLinecap="round" />
+        <path d={curvePath} fill="none" stroke={T.yellow} strokeWidth={1.5} strokeLinecap="round" />
 
         {/* Hover vertical line */}
         {hoverSpots && (
@@ -319,7 +319,7 @@ export default function SessionDetailPage() {
         {/* Drop copy */}
         {!confirmed && (
           <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: "rgba(245,237,227,0.35)", letterSpacing: "0.12em", marginBottom: 20 }}>
-            PRICE DROPS AS THE SESSION FILLS · FLOOR ${floorPrice} + GST
+            PRICE DROPS AS THE SESSION FILLS — LOWEST ${floorPrice} + GST
           </p>
         )}
 
