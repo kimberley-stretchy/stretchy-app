@@ -9,34 +9,40 @@ function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("Signing you in…");
-  const [errorDetail, setErrorDetail] = useState("");
 
   useEffect(() => {
-    const supabase = createClient();
-    const code = searchParams.get("code");
     const next = searchParams.get("next") ?? "/home";
+    const supabase = createClient();
 
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) {
-          console.error("Auth error:", error.message);
-          setErrorDetail(error.message);
-          setStatus("Sign-in failed:");
-        } else {
+    // Listen for the auth state to change — Supabase detects the
+    // code in the URL automatically via detectSessionInUrl
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN" && session) {
           setStatus("Signed in! Taking you there…");
           router.push(next);
         }
-      });
-    } else {
-      // No code — check if already signed in via session cookie
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          router.push(next);
-        } else {
-          router.push("/login?error=auth_failed");
-        }
-      });
-    }
+      }
+    );
+
+    // Also check if we already have a session (covers edge cases)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setStatus("Signed in! Taking you there…");
+        router.push(next);
+      }
+    });
+
+    // Timeout fallback — if nothing happened after 8 seconds, something went wrong
+    const timeout = setTimeout(() => {
+      setStatus("Something went wrong. Try again.");
+      setTimeout(() => router.push("/login?error=auth_failed"), 1500);
+    }, 8000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [router, searchParams]);
 
   return (
@@ -52,7 +58,6 @@ function CallbackHandler() {
           animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
         }} />
         <p style={{ fontSize: 15, color: "rgba(26,26,26,0.6)" }}>{status}</p>
-        {errorDetail && <p style={{ fontSize: 13, color: "#E63946", marginTop: 8, maxWidth: 300 }}>{errorDetail}</p>}
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </main>
