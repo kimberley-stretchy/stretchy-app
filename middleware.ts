@@ -32,18 +32,21 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!user) {
+  if (!session) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Admin-only routes
+  // Admin-only routes — check role in user metadata
   const needsAdmin = ADMIN_PREFIXES.some((p) => pathname.startsWith(p));
-  if (needsAdmin && user.user_metadata?.role !== "admin") {
-    return NextResponse.redirect(new URL("/home?error=not_authorised", request.url));
+  if (needsAdmin) {
+    const role = session.user?.user_metadata?.role ?? session.user?.app_metadata?.role;
+    if (role !== "admin") {
+      return NextResponse.redirect(new URL("/home?error=not_authorised", request.url));
+    }
   }
 
   return response;
