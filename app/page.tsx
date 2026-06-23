@@ -49,7 +49,7 @@ function Nav() {
         </div>
       </div>
       {/* Mobile nav */}
-      <div className="show-mobile" style={{ padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "nowrap" }}>
+      <div className="show-mobile" style={{ padding: "10px 16px", alignItems: "center", justifyContent: "space-between", flexWrap: "nowrap" }}>
         <Link href="/" aria-label="Stretchy home" style={{ flexShrink: 0 }}><SMark size={26} className="text-olive" /></Link>
         <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", marginLeft: "auto" }}>
           <a href="#about" style={{ ...navLink, fontSize: 11, padding: "4px 5px" }}>About</a>
