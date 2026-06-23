@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
-// ─── MENU ROW ─────────────────────────────────────────────────────────────────
+// ─── MENU ROW (link) ──────────────────────────────────────────────────────────
 export function MenuRow({
   href,
   label,
@@ -10,24 +13,34 @@ export function MenuRow({
   accent,
   accentText,
   destructive,
+  onClick,
 }: {
-  href: string;
+  href?: string;
   label: string;
   icon?: string;
   accent?: string;
   accentText?: string;
   destructive?: boolean;
+  onClick?: () => void;
 }) {
   const base =
-    "flex items-center justify-between w-full px-3 py-3 rounded-stretchy text-sm font-semibold transition-all duration-150 active:scale-[0.98]";
+    "flex items-center justify-between w-full px-3 py-3 rounded-stretchy text-sm font-semibold transition-all duration-150 active:scale-[0.98] text-left";
+
+  if (onClick) {
+    return (
+      <button onClick={onClick} className={`${base} ${destructive ? "text-red-500" : "text-ink hover:bg-sand-dark"}`}>
+        <div className="flex items-center gap-2.5">
+          {icon && <span className="text-base">{icon}</span>}
+          <span>{label}</span>
+        </div>
+        <span className="opacity-50">›</span>
+      </button>
+    );
+  }
 
   if (accent) {
     return (
-      <Link
-        href={href}
-        className={`${base} text-white`}
-        style={{ backgroundColor: accent, color: accentText ?? "#fff" }}
-      >
+      <Link href={href!} className={`${base} text-white`} style={{ backgroundColor: accent, color: accentText ?? "#fff" }}>
         <span>{label}</span>
         <span className="opacity-70">›</span>
       </Link>
@@ -36,7 +49,7 @@ export function MenuRow({
 
   if (destructive) {
     return (
-      <Link href={href} className={`${base} text-red`}>
+      <Link href={href!} className={`${base} text-red-500`}>
         <span>{label}</span>
         <span className="opacity-50">›</span>
       </Link>
@@ -44,7 +57,7 @@ export function MenuRow({
   }
 
   return (
-    <Link href={href} className={`${base} text-ink hover:bg-sand-dark`}>
+    <Link href={href!} className={`${base} text-ink hover:bg-sand-dark`}>
       <div className="flex items-center gap-2.5">
         {icon && <span className="text-base">{icon}</span>}
         <span>{label}</span>
@@ -56,17 +69,66 @@ export function MenuRow({
 
 // ─── MENU DRAWER ──────────────────────────────────────────────────────────────
 export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const [userName, setUserName] = useState("Stretchy Member");
+  const [userEmail, setUserEmail] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserName(session.user.user_metadata?.full_name ?? session.user.email?.split("@")[0] ?? "Member");
+        setUserEmail(session.user.email ?? "");
+        setIsAdmin(session.user.user_metadata?.role === "admin");
+      } else {
+        setUserName("Stretchy Member");
+        setUserEmail("");
+        setIsAdmin(false);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    onClose();
+    router.push("/");
+  }
+
+  async function handleDeleteAccount() {
+    if (!showDeleteConfirm) {
+      setShowDeleteConfirm(true);
+      return;
+    }
+    setDeleting(true);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch("/api/account/delete", {
+        method: "DELETE",
+        headers: session ? { "Authorization": `Bearer ${session.access_token}` } : {},
+      });
+      await supabase.auth.signOut();
+      onClose();
+      router.push("/?deleted=1");
+    } catch {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  }
+
+  const initial = userName.charAt(0).toUpperCase();
+
   return (
     <>
-      {/* Backdrop */}
       {open && (
-        <div
-          className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-sm"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
       )}
 
-      {/* Drawer */}
       <div
         className="fixed top-0 right-0 bottom-0 z-50 w-80 bg-cream shadow-2xl flex flex-col transition-transform duration-300 ease-out"
         style={{ transform: open ? "translateX(0)" : "translateX(100%)" }}
@@ -75,94 +137,75 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         <div className="px-5 pt-8 pb-5 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-full bg-olive flex items-center justify-center text-cream font-bold text-lg flex-shrink-0">
-              M
+              {initial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-bold text-ink leading-tight">Marlee Fisher</p>
-              <p className="text-xs text-muted">Grey Lynn · attendee</p>
+              <p className="font-bold text-ink leading-tight truncate">{userName}</p>
+              <p className="text-xs text-muted truncate">{userEmail}</p>
             </div>
-            <span
-              className="font-mono text-xs font-bold px-2 py-1 rounded-pill flex-shrink-0"
-              style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}
-            >
-              27 SESN
-            </span>
+            {isAdmin && (
+              <span className="font-mono text-xs font-bold px-2 py-1 rounded-pill flex-shrink-0" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3" }}>
+                ADMIN
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Nav sections */}
+        {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
 
-          {/* YOU */}
           <div>
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">You</p>
-            <MenuRow href="/profile" label="Profile & account" />
-            <MenuRow
-              href="/host/dashboard"
-              label="Switch to Host view"
-              accent="#A535C7"
-              accentText="#fff"
-            />
+            <MenuRow href="/profile" label="Profile & account" icon="👤" />
           </div>
 
-          {/* DO STUFF */}
           <div>
-            <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">Do stuff</p>
+            <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">Sessions</p>
             <MenuRow href="/sessions" label="Pick your stretch" icon="🧘" />
-            <MenuRow href="/suggest" label="Float a Stretchy" icon="💡" />
-            <MenuRow href="/login?role=host" label="Apply to be a host" icon="✦" />
+            <MenuRow href="/suggest" label="Suggest a Stretchy" icon="💡" />
           </div>
 
-          {/* STRETCHY HQ */}
           <div>
-            <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">Stretchy HQ</p>
+            <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">Help</p>
             <MenuRow href="/contact" label="Contact Stretchy" icon="✉" />
-            <MenuRow href="/home" label="Sign out" destructive />
           </div>
 
-          {/* TESTING — ATTENDEE */}
-          <div>
-            <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">🧪 Testing · Attendee</p>
-            <MenuRow href="/hold/1"                    label="04 · Place Held"          icon="📍" />
-            <MenuRow href="/notifications/going-ahead" label="A4 · Going Ahead"         icon="✅" />
-            <MenuRow href="/notifications/cancelled"   label="A4b · Not This Time"      icon="❌" />
-            <MenuRow href="/social-stretch/1"          label="05 · Social Stretch"      icon="🤙" />
-            <MenuRow href="/rate/1"                    label="A6 · Rate It"             icon="⭐" />
-            <MenuRow href="/notifications"             label="A7 · Inbox"               icon="📬" />
-            <MenuRow href="/suggest"                   label="A8 · Suggest"             icon="💡" />
-            <MenuRow href="/profile"                   label="A9 · Profile"             icon="👤" />
-            <MenuRow href="/profile/notifications"     label="A9a · Notifications"      icon="🔔" />
-            <MenuRow href="/profile/payment"           label="A9b · Payment method"     icon="💳" />
-            <MenuRow href="/profile/invite"            label="A9c · Invite a mate"      icon="👥" />
-            <MenuRow href="/profile/help"              label="A9d · Help & contact"     icon="💬" />
-          </div>
+          {isAdmin && (
+            <div>
+              <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">Stretchy HQ</p>
+              <MenuRow href="/admin" label="Admin dashboard" icon="🏢" />
+              <MenuRow href="/admin/sessions" label="Sessions" icon="🧘" />
+            </div>
+          )}
 
-          {/* ADMIN */}
           <div>
-            <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">🏢 Stretchy HQ · Admin</p>
-            <MenuRow href="/admin"              label="HQ Home"                  icon="🏢" />
-            <MenuRow href="/admin/vetting"      label="ADM-01 · Vetting"         icon="👥" />
-            <MenuRow href="/admin/live"         label="ADM-02 · Live Platform"   icon="🔴" />
-            <MenuRow href="/admin/suggestions"  label="ADM-03 · Suggestions"     icon="💡" />
-            <MenuRow href="/admin/finance"      label="ADM-04 · Finance"         icon="💰" />
-            <MenuRow href="/admin/attendees"    label="ADM-05 · Attendee CRM"    icon="🧑‍🤝‍🧑" />
-            <MenuRow href="/admin/hosts"        label="ADM-06 · Host CRM"        icon="🎙️" />
-            <MenuRow href="/admin/waitlist"     label="ADM-07 · Host Waitlist"   icon="⏳" />
-            <MenuRow href="/admin/moderation"   label="ADM-08 · Moderation"      icon="🎬" />
-            <MenuRow href="/admin/analytics"    label="ADM-09 · Analytics"       icon="📊" />
-          </div>
+            <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">Account</p>
+            <MenuRow label="Sign out" icon="→" onClick={handleSignOut} />
 
-          {/* TESTING — HOST */}
-          <div>
-            <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted px-2 mb-2">🧪 Testing · Host</p>
-            <MenuRow href="/host/apply"       label="06 · Host Apply"       icon="🎙️" />
-            <MenuRow href="/host/waitlist"    label="06b · Host Waitlist"   icon="⏳" />
-            <MenuRow href="/host/new-session" label="07 · Add a Session"    icon="➕" />
-            <MenuRow href="/host/floor-not-met" label="08 · Floor Not Met"  icon="⚠️" />
-            <MenuRow href="/host/dashboard"   label="09 · Host Dashboard"   icon="📊" />
-            <MenuRow href="/host/session/1"   label="H1 · Manage Session"   icon="👥" />
-            <MenuRow href="/host/payout"      label="H2 · Monthly Payout"   icon="💰" />
-            <MenuRow href="/host/inbox"       label="H3 · Host Inbox"       icon="📬" />
+            {!showDeleteConfirm ? (
+              <MenuRow label="Delete my account" icon="✕" onClick={handleDeleteAccount} destructive />
+            ) : (
+              <div className="px-3 py-3 rounded-stretchy bg-red-50 border border-red-200">
+                <p className="text-xs text-red-700 font-semibold mb-2">
+                  Are you sure? This permanently deletes your account and all your data.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 py-2 rounded-pill text-xs font-bold border border-border text-ink"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    className="flex-1 py-2 rounded-pill text-xs font-bold bg-red-500 text-white"
+                  >
+                    {deleting ? "Deleting…" : "Yes, delete"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
         </nav>
