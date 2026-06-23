@@ -140,6 +140,7 @@ export default function HoldModal({
   accessToken: string;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [step, setStep] = useState<"loading" | "card" | "error">("loading");
   const [clientSecret, setClientSecret] = useState("");
   const [paymentIntentId, setPaymentIntentId] = useState("");
@@ -160,6 +161,10 @@ export default function HoldModal({
       .then((r) => r.json())
       .then((data) => {
         if (data.error) {
+          if (data.error === "Not logged in") {
+            router.push(`/login?next=/sessions/${sessionId}`);
+            return;
+          }
           setErrorMsg(data.error);
           setStep("error");
           return;

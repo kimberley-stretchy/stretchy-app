@@ -362,6 +362,19 @@ export default function SessionDetailPage() {
             {confirmed ? `${holds} HELD · GOING AHEAD` : `${spotsToMin} MORE TO CONFIRM`}
           </span>
         </div>
+        {!accessToken ? (
+          <Link
+            href={`/login?next=/sessions/${params.id}`}
+            style={{
+              display: "block", width: "100%", padding: "18px 24px", borderRadius: 999,
+              background: T.black, color: T.cream, textDecoration: "none",
+              fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 16, fontWeight: 700,
+              letterSpacing: "-0.01em", textAlign: "center",
+            }}
+          >
+            Log in to hold your place
+          </Link>
+        ) : (
         <button
           onClick={handleHold}
           disabled={holding || held}
@@ -375,6 +388,7 @@ export default function SessionDetailPage() {
         >
           {holding ? "Saving your spot…" : held ? "✓ Held!" : "Hold my place — no charge yet"}
         </button>
+        )}
         <p style={{ textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,26,0.4)", fontWeight: 700 }}>
           NO CHARGE YET · CANCEL ANY TIME UP TO 36H OUT
         </p>
