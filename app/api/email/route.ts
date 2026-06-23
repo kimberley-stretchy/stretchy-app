@@ -42,7 +42,7 @@ function emailFooter() {
         <a href="https://www.instagram.com/stretchy.social/" style="color: #888; text-decoration: none; margin: 0 6px;">@stretchy.social</a>
       </p>
       <p style="font-size: 11px; color: #AAA; text-align: center; margin: 0 0 12px;">
-        Follow the build → <a href="https://www.instagram.com/caike.club/" style="color: #AAA; text-decoration: none;">@caike.club</a>
+        Made with Love by <a href="https://studiodawn.org" style="color: #AAA; text-decoration: underline;">Studio Dawn</a>
       </p>
       <p style="font-size: 12px; color: #888; text-align: center; margin: 0 0 12px;">
         <a href="https://stretchy.social" style="color: #888; text-decoration: none;">stretchy.social</a>
@@ -85,11 +85,11 @@ function holdConfirmedEmail(
       </div>
 
       <div style="background: #EDE5D8; border-radius: 14px; padding: 18px; margin-bottom: 20px;">
-        <p style="font-size: 13px; color: #444; line-height: 1.6; margin: 0 0 12px;">Need to cancel? No worries — you can cancel <strong>up to 24 hours before the session</strong> and nothing will be charged.</p>
+        <p style="font-size: 13px; color: #444; line-height: 1.6; margin: 0 0 12px;">Need to cancel? You can cancel <strong>up to 36 hours before the session</strong> and nothing will be charged. After the 36hr mark, your place is locked in — no cancellations.</p>
         <a href="${cancelUrl}" style="display: inline-block; background: #1A1A1A; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: 8px; letter-spacing: 0.02em;">Cancel my hold</a>
       </div>
 
-      <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0;">After the 24hr mark, your place is locked in and payment will be taken. The more people who join, the lower the final price — so share it around.</p>
+      <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0;">Your card is charged at the final price <strong>2 hours before the session</strong>. The more people who join, the lower the final price — so share it around.</p>
 
       ${emailFooter()}
     </div>
@@ -122,7 +122,7 @@ function sessionGoingAheadEmail(
       <div style="background: white; border-radius: 14px; padding: 18px; margin-bottom: 20px;">
         <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: #999; margin: 0 0 4px;">Final price</p>
         <p style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 4px; letter-spacing: -0.02em;">${finalPrice}</p>
-        <p style="font-size: 12px; color: #999; margin: 0;">Charged to your card 2 hours before the session. No surprises.</p>
+        <p style="font-size: 12px; color: #999; margin: 0;">Charged to your card 2 hours before the session at this final price. No surprises.</p>
       </div>
 
       <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0;">Stick around after for the Social Stretch — coffee, matcha, booch, beers and actual conversation. That's the whole point.</p>
