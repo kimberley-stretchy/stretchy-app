@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Use the service-role key so admin operations bypass Row Level Security
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Create inside each request handler so env vars are always available at runtime
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 const KIMBERLEY_EMAIL = "kimberley@stretchyyoga.co.nz";
 const KIMBERLEY_NAME  = "Kimberley Torrie";
 
 // Get or create Kimberley's host record so sessions can reference it
 async function getOrCreateHostId(): Promise<string> {
+  const supabase = getSupabase();
+
   const { data: existing } = await supabase
     .from("hosts")
     .select("id")
@@ -38,10 +42,11 @@ async function getOrCreateHostId(): Promise<string> {
 
 // GET /api/admin/sessions — list all sessions, or a single session by ?id=
 export async function GET(request: NextRequest) {
+  const supabase = getSupabase();
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
 
-  const query = supabase
+  let query = supabase
     .from("sessions")
     .select(`
       id, title, description, movement_type, starts_at, ends_at, duration_mins,
@@ -51,7 +56,7 @@ export async function GET(request: NextRequest) {
     `)
     .order("starts_at", { ascending: true });
 
-  if (id) query.eq("id", id);
+  if (id) query = query.eq("id", id);
 
   const { data, error } = await query;
 
@@ -61,7 +66,7 @@ export async function GET(request: NextRequest) {
 
   // Count active holds for each session
   const sessionIds = (data || []).map((s) => s.id);
-  let holdCounts: Record<string, number> = {};
+  const holdCounts: Record<string, number> = {};
   if (sessionIds.length > 0) {
     const { data: holds } = await supabase
       .from("holds")
@@ -84,6 +89,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/sessions — create a new session
 export async function POST(request: NextRequest) {
+  const supabase = getSupabase();
   const body = await request.json();
 
   const {
@@ -103,14 +109,12 @@ export async function POST(request: NextRequest) {
     what_to_bring,
   } = body;
 
-  // Validate required fields
   if (!title || !starts_at || !location_name || !host_target || !min_attendees || !max_attendees) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   const host_id = await getOrCreateHostId();
 
-  // Calculate ends_at from starts_at + duration
   const startsDate = new Date(starts_at);
   const endsDate = new Date(startsDate.getTime() + (duration_mins || 60) * 60 * 1000);
 
@@ -148,6 +152,7 @@ export async function POST(request: NextRequest) {
 
 // PATCH /api/admin/sessions — update session state or details
 export async function PATCH(request: NextRequest) {
+  const supabase = getSupabase();
   const body = await request.json();
   const { id, ...updates } = body;
 
@@ -165,6 +170,7 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/admin/sessions — cancel/delete a session
 export async function DELETE(request: NextRequest) {
+  const supabase = getSupabase();
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
 
