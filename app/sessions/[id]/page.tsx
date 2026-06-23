@@ -6,6 +6,7 @@ import Link from "next/link";
 import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
 import HoldModal from "@/components/HoldModal";
+import { createClient } from "@/lib/supabase/client";
 
 const T = {
   black:  "#1A1A1A",
@@ -124,6 +125,16 @@ export default function SessionDetailPage() {
   const [holding, setHolding] = useState(false);
   const [held, setHeld]       = useState(false);
   const [showHoldModal, setShowHoldModal] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  // Detect auth state — fires immediately if session exists in storage
+  useEffect(() => {
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!params.id) return;
@@ -138,6 +149,10 @@ export default function SessionDetailPage() {
   }, [params.id]);
 
   function handleHold() {
+    if (!accessToken) {
+      router.push(`/login?next=/sessions/${params.id}`);
+      return;
+    }
     setShowHoldModal(true);
   }
 
@@ -365,10 +380,11 @@ export default function SessionDetailPage() {
         </p>
       </div>
 
-      {showHoldModal && session && (
+      {showHoldModal && session && accessToken && (
         <HoldModal
           sessionId={session.id}
           sessionTitle={session.title}
+          accessToken={accessToken}
           onClose={() => setShowHoldModal(false)}
         />
       )}
