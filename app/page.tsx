@@ -49,18 +49,17 @@ function Nav() {
         </div>
       </div>
       {/* Mobile nav */}
-      <div className="show-mobile" style={{ padding: "12px 20px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <Link href="/" aria-label="Stretchy home"><SMark size={28} className="text-olive" /></Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-            <a href="#about" style={{ ...navLink, fontSize: 13, padding: "6px 8px" }}>About</a>
-            <a href="#host" style={{ ...navLink, fontSize: 13, padding: "6px 8px" }}>Host</a>
-            <a href="#suggest" style={{ ...navLink, fontSize: 13, padding: "6px 8px" }}>Suggest</a>
-          </div>
+      <div className="show-mobile" style={{ padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <Link href="/" aria-label="Stretchy home"><SMark size={26} className="text-olive" /></Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 0, flexWrap: "nowrap" }}>
+          <a href="#about" style={{ ...navLink, fontSize: 12, padding: "5px 6px" }}>About</a>
+          <span style={{ color: "rgba(26,26,26,0.25)", fontSize: 11 }}>|</span>
+          <a href="#host" style={{ ...navLink, fontSize: 12, padding: "5px 6px" }}>Host</a>
+          <span style={{ color: "rgba(26,26,26,0.25)", fontSize: 11 }}>|</span>
+          <a href="#suggest" style={{ ...navLink, fontSize: 12, padding: "5px 6px" }}>Suggest</a>
+          <span style={{ color: "rgba(26,26,26,0.25)", fontSize: 11 }}>|</span>
+          <a href="/sessions" style={{ ...navLink, fontSize: 12, padding: "5px 6px", fontWeight: 700, color: T.black }}>Book AKL</a>
         </div>
-        <a href="/sessions" style={{ display: "block", textAlign: "center", padding: "12px", borderRadius: 999, background: T.black, color: T.cream, fontFamily: T.title, fontSize: 15, fontWeight: 700, textDecoration: "none" }}>
-          Book Auckland →
-        </a>
       </div>
     </div>
   );
