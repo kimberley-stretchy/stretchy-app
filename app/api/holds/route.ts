@@ -1,91 +1,176 @@
-/**
- * POST /api/holds
- *
- * Creates a hold for an attendee on a session.
- * - Saves Stripe payment method (no charge yet)
- * - Inserts hold row in Supabase
- * - Triggers update_session_holds() via the DB trigger
- *
- * The actual charge happens at lock-in (2hrs before) via /api/stripe/charge-all
- */
-
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import Stripe from "stripe";
+import { cookies } from "next/headers";
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { sessionId, attendeeId, paymentMethodId, notesForHost } = body;
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-04-10" });
+}
+function getAdmin() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
-    if (!sessionId || !attendeeId || !paymentMethodId) {
-      return NextResponse.json(
-        { error: "Missing required fields: sessionId, attendeeId, paymentMethodId" },
-        { status: 400 }
-      );
-    }
+// POST /api/holds — step 1: create Stripe PaymentIntent, return clientSecret
+// Body: { sessionId }
+export async function POST(request: NextRequest) {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
 
-    // 1. Import Supabase server client
-    //    (uncomment when Supabase is connected)
-    // const { createServerClient } = await import("@supabase/ssr")
-    // const supabase = createServerClient(...)
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
 
-    // 2. Fetch the session to get current pricing
-    // const { data: session } = await supabase
-    //   .from("sessions")
-    //   .select("*")
-    //   .eq("id", sessionId)
-    //   .single()
+  const { sessionId } = await request.json();
+  if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
 
-    // 3. Calculate current price
-    // const { calculatePrice } = await import("@/lib/pricing")
-    // const priceAtHold = calculatePrice(
-    //   session.host_target,
-    //   Math.max(session.current_holds + 1, session.minimum_spots)
-    // )
+  const admin = getAdmin();
+  const stripe = getStripe();
 
-    // 4. Create Stripe PaymentIntent (authorize only — capture later at lock-in)
-    // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-    // const intent = await stripe.paymentIntents.create({
-    //   amount: Math.round(priceAtHold * 100), // Stripe uses cents
-    //   currency: "nzd",
-    //   payment_method: paymentMethodId,
-    //   capture_method: "manual", // ← authorize now, capture at lock-in
-    //   confirm: true,
-    //   return_url: `${process.env.NEXT_PUBLIC_APP_URL}/sessions/${sessionId}`,
-    //   metadata: { sessionId, attendeeId }
-    // })
+  // Get session to calculate price
+  const { data: session, error: sErr } = await admin
+    .from("sessions")
+    .select("id, title, host_target, min_attendees, max_attendees, starts_at, state")
+    .eq("id", sessionId)
+    .single();
 
-    // 5. Insert hold
-    // const { data: hold, error } = await supabase
-    //   .from("holds")
-    //   .insert({
-    //     session_id: sessionId,
-    //     attendee_id: attendeeId,
-    //     price_at_hold: priceAtHold,
-    //     notes_for_host: notesForHost,
-    //     stripe_payment_intent_id: intent.id,
-    //     status: "held"
-    //   })
-    //   .select()
-    //   .single()
+  if (sErr || !session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  if (session.state === "cancelled") return NextResponse.json({ error: "Session is cancelled" }, { status: 400 });
 
-    // ── MOCK RESPONSE (remove when Supabase + Stripe are connected) ──────────
-    const mockPriceAtHold = 24.5;
-    return NextResponse.json({
-      success: true,
-      hold: {
-        id: "mock-hold-id",
-        sessionId,
-        attendeeId,
-        priceAtHold: mockPriceAtHold,
-        status: "held",
-      },
-    });
+  // Count current holds to calculate price
+  const { count: holdCount } = await admin
+    .from("holds")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", sessionId)
+    .eq("state", "active");
 
-  } catch (err) {
-    console.error("Hold creation error:", err);
-    return NextResponse.json(
-      { error: "Failed to create hold. Please try again." },
-      { status: 500 }
-    );
+  const STRETCHY_FEE = 23;
+  const currentHolds = (holdCount ?? 0) + 1; // +1 because this hold will be added
+  const effectiveSpots = Math.max(currentHolds, session.min_attendees);
+  const priceNZD = Math.round((session.host_target + STRETCHY_FEE) / effectiveSpots);
+  // Add 15% GST
+  const priceWithGST = Math.round(priceNZD * 1.15 * 100) / 100;
+  const amountCents = Math.round(priceWithGST * 100);
+
+  // Get or create attendee record
+  let { data: attendee } = await admin
+    .from("attendees")
+    .select("id, stripe_customer_id, name, email")
+    .eq("auth_user_id", user.id)
+    .single();
+
+  if (!attendee) {
+    const { data: newAttendee } = await admin
+      .from("attendees")
+      .insert({
+        auth_user_id: user.id,
+        name: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Stretchy Member",
+        email: user.email!,
+        avatar_url: user.user_metadata?.avatar_url ?? null,
+      })
+      .select("id, stripe_customer_id, name, email")
+      .single();
+    attendee = newAttendee;
   }
+
+  // Get or create Stripe customer
+  let stripeCustomerId = attendee?.stripe_customer_id;
+  if (!stripeCustomerId) {
+    const customer = await stripe.customers.create({
+      email: user.email!,
+      name: attendee?.name ?? undefined,
+      metadata: { supabase_user_id: user.id, attendee_id: attendee?.id ?? "" },
+    });
+    stripeCustomerId = customer.id;
+    await admin
+      .from("attendees")
+      .update({ stripe_customer_id: stripeCustomerId })
+      .eq("id", attendee!.id);
+  }
+
+  // Create PaymentIntent — manual capture (authorize only, charge at lock-in)
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amountCents,
+    currency: "nzd",
+    customer: stripeCustomerId,
+    capture_method: "manual",
+    setup_future_usage: "off_session",
+    metadata: {
+      session_id: sessionId,
+      attendee_id: attendee?.id ?? "",
+      session_title: session.title,
+    },
+    description: `Hold: ${session.title}`,
+  });
+
+  return NextResponse.json({
+    clientSecret: paymentIntent.client_secret,
+    paymentIntentId: paymentIntent.id,
+    priceNZD,
+    priceWithGST,
+    sessionTitle: session.title,
+    attendeeId: attendee?.id,
+  });
+}
+
+// PATCH /api/holds — step 2: after Stripe confirms, save hold to Supabase
+// Body: { sessionId, paymentIntentId, attendeeId }
+export async function PATCH(request: NextRequest) {
+  const admin = getAdmin();
+  const stripe = getStripe();
+
+  const { sessionId, paymentIntentId, attendeeId } = await request.json();
+  if (!sessionId || !paymentIntentId || !attendeeId) {
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+
+  // Verify PaymentIntent is in the right state
+  const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+  if (!["requires_capture", "succeeded"].includes(pi.status)) {
+    return NextResponse.json({ error: `Payment not confirmed (status: ${pi.status})` }, { status: 400 });
+  }
+
+  // Save payment method to attendee
+  if (pi.payment_method) {
+    await admin
+      .from("attendees")
+      .update({ stripe_pm_id: pi.payment_method as string })
+      .eq("id", attendeeId);
+  }
+
+  // Check if hold already exists (prevent duplicates)
+  const { data: existing } = await admin
+    .from("holds")
+    .select("id")
+    .eq("session_id", sessionId)
+    .eq("user_id", attendeeId)
+    .eq("state", "active")
+    .single();
+
+  if (existing) return NextResponse.json({ holdId: existing.id });
+
+  // Create hold
+  const { data: hold, error } = await admin
+    .from("holds")
+    .insert({
+      session_id: sessionId,
+      user_id: attendeeId,
+      stripe_pi_id: paymentIntentId,
+      state: "active",
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("Hold insert error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ holdId: hold.id });
 }

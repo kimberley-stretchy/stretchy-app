@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
+import HoldModal from "@/components/HoldModal";
 
 const T = {
   black:  "#1A1A1A",
@@ -122,6 +123,7 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [holding, setHolding] = useState(false);
   const [held, setHeld]       = useState(false);
+  const [showHoldModal, setShowHoldModal] = useState(false);
 
   useEffect(() => {
     if (!params.id) return;
@@ -135,13 +137,8 @@ export default function SessionDetailPage() {
       .catch(() => setLoading(false));
   }, [params.id]);
 
-  async function handleHold() {
-    setHolding(true);
-    // For now, show confirmation — real Stripe hold coming next
-    await new Promise((r) => setTimeout(r, 800));
-    setHeld(true);
-    setHolding(false);
-    router.push(`/hold/${params.id}`);
+  function handleHold() {
+    setShowHoldModal(true);
   }
 
   if (loading) {
@@ -376,6 +373,14 @@ export default function SessionDetailPage() {
           FREE TO HOLD · ONLY CHARGED IF SESSION GOES AHEAD
         </p>
       </div>
+
+      {showHoldModal && session && (
+        <HoldModal
+          sessionId={session.id}
+          sessionTitle={session.title}
+          onClose={() => setShowHoldModal(false)}
+        />
+      )}
     </main>
   );
 }
