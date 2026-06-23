@@ -22,6 +22,7 @@ const T = {
 function CardForm({
   sessionId,
   attendeeId,
+  authUserId,
   paymentIntentId,
   priceNZD,
   accessToken,
@@ -29,6 +30,7 @@ function CardForm({
 }: {
   sessionId: string;
   attendeeId: string;
+  authUserId: string;
   paymentIntentId: string;
   priceNZD: number;
   accessToken: string;
@@ -66,7 +68,7 @@ function CardForm({
         "Content-Type": "application/json",
         "Authorization": `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({ sessionId, paymentIntentId, attendeeId }),
+      body: JSON.stringify({ sessionId, paymentIntentId, attendeeId, authUserId }),
     });
 
     const data = await res.json();
@@ -142,6 +144,7 @@ export default function HoldModal({
   const [clientSecret, setClientSecret] = useState("");
   const [paymentIntentId, setPaymentIntentId] = useState("");
   const [attendeeId, setAttendeeId] = useState("");
+  const [authUserId, setAuthUserId] = useState("");
   const [priceNZD, setPriceNZD] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -164,6 +167,7 @@ export default function HoldModal({
         setClientSecret(data.clientSecret);
         setPaymentIntentId(data.paymentIntentId);
         setAttendeeId(data.attendeeId);
+        setAuthUserId(data.authUserId);
         setPriceNZD(data.priceNZD);
         setStep("card");
       })
@@ -235,6 +239,7 @@ export default function HoldModal({
             <CardForm
               sessionId={sessionId}
               attendeeId={attendeeId}
+              authUserId={authUserId}
               paymentIntentId={paymentIntentId}
               priceNZD={priceNZD}
               accessToken={accessToken}

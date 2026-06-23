@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
+    authUserId: user.id,
     priceNZD,
     priceWithGST,
     sessionTitle: session.title,
@@ -134,8 +135,8 @@ export async function PATCH(request: NextRequest) {
   const admin = getAdmin();
   const stripe = getStripe();
 
-  const { sessionId, paymentIntentId, attendeeId } = await request.json();
-  if (!sessionId || !paymentIntentId || !attendeeId) {
+  const { sessionId, paymentIntentId, attendeeId, authUserId } = await request.json();
+  if (!sessionId || !paymentIntentId) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
@@ -153,12 +154,20 @@ export async function PATCH(request: NextRequest) {
       .eq("id", attendeeId);
   }
 
+  // user_id in holds references auth.users.id — use authUserId if provided, else look up from attendee
+  let holdUserId = authUserId;
+  if (!holdUserId && attendeeId) {
+    const { data: att } = await admin.from("attendees").select("auth_user_id").eq("id", attendeeId).single();
+    holdUserId = att?.auth_user_id;
+  }
+  if (!holdUserId) return NextResponse.json({ error: "Could not identify user" }, { status: 400 });
+
   // Check if hold already exists (prevent duplicates)
   const { data: existing } = await admin
     .from("holds")
     .select("id")
     .eq("session_id", sessionId)
-    .eq("user_id", attendeeId)
+    .eq("user_id", holdUserId)
     .eq("state", "active")
     .single();
 
@@ -169,7 +178,7 @@ export async function PATCH(request: NextRequest) {
     .from("holds")
     .insert({
       session_id: sessionId,
-      user_id: attendeeId,
+      user_id: holdUserId,
       stripe_pi_id: paymentIntentId,
       state: "active",
     })
