@@ -49,6 +49,9 @@ function CardForm({
     const { error: stripeError } = await stripe.confirmPayment({
       elements,
       redirect: "if_required",
+      confirmParams: {
+        return_url: `${window.location.origin}/hold/${sessionId}`,
+      },
     });
 
     if (stripeError) {
