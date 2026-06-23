@@ -36,7 +36,20 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen bg-cream antialiased">{children}</body>
+      <body className="min-h-screen bg-cream antialiased flex flex-col">
+        <main className="flex-1">{children}</main>
+        <footer className="py-4 text-center text-xs text-gray-400">
+          Made with love{" "}
+          <a
+            href="https://www.studiodawn.org/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-600 transition-colors"
+          >
+            Studio Dawn
+          </a>
+        </footer>
+      </body>
     </html>
   );
 }
