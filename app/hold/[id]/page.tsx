@@ -113,7 +113,7 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
             style={{ backgroundColor: "#E8F3FF" }}
           >
             <p className="text-sm leading-snug" style={{ color: "#1A4A80" }}>
-              No charge yet — you can cancel any time.
+              No charge yet — you can cancel any time up to 36 hrs out when the session is confirmed. The price can still get cheaper as more people join up to 2 hrs out. Your card is charged at that point, at that price.
             </p>
             <div className="flex items-center gap-1.5 flex-shrink-0 ml-3">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#4CAF82" }} />

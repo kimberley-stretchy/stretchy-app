@@ -376,7 +376,7 @@ export default function SessionDetailPage() {
           {holding ? "Saving your spot…" : held ? "✓ Held!" : "Hold my place — no charge yet"}
         </button>
         <p style={{ textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,26,0.4)", fontWeight: 700 }}>
-          FREE TO HOLD · ONLY CHARGED IF SESSION GOES AHEAD
+          NO CHARGE YET · CANCEL ANY TIME UP TO 36H OUT
         </p>
       </div>
 

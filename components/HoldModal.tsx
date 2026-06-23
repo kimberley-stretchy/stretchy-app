@@ -123,7 +123,7 @@ function CardForm({
         fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
         color: "rgba(26,26,26,0.35)", letterSpacing: "0.1em",
       }}>
-        AUTHORISED NOW · ONLY CHARGED IF SESSION GOES AHEAD AT 2H OUT
+        NO CHARGE YET · CANCEL ANY TIME UP TO 36H OUT
       </p>
     </form>
   );
