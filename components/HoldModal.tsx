@@ -192,13 +192,13 @@ export default function HoldModal({
         setErrorMsg("Could not connect. Please try again.");
         setStep("error");
       });
-  }, [sessionId, accessToken]);
+  }, [sessionId, accessToken, quantity]);
 
   return (
     <>
       <div onClick={onClose} style={{
         position: "fixed", inset: 0, background: "rgba(26,26,26,0.5)",
-        zIndex: 40, backdropFilter: "blur(4px)",
+        zIndex: 40, backdropFilter: "blur(4px)", cursor: "pointer",
       }} />
       <div className="hold-modal-sheet" style={{
         position: "fixed", zIndex: 50,
@@ -221,7 +221,7 @@ export default function HoldModal({
               <button
                 key={n}
                 type="button"
-                onClick={() => { setQuantity(n); setStep("loading"); }}
+                onClick={() => { if (n !== quantity) { setQuantity(n); setStep("loading"); } }}
                 style={{
                   width: 36, height: 36, borderRadius: 999, border: "none", cursor: "pointer",
                   fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700,
