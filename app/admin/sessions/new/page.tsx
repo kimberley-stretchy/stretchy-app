@@ -361,12 +361,6 @@ export default function AdminCreateSessionPage() {
                   </p>
                 </div>
               </div>
-              <div style={{
-                marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(245,237,227,0.08)",
-                fontFamily: T.mono, fontSize: 10, color: "rgba(245,237,227,0.4)", letterSpacing: "0.08em",
-              }}>
-                Formula: (${hostTarget} target + $23 Stretchy fee) ÷ people
-              </div>
             </div>
           </div>
         </Section>

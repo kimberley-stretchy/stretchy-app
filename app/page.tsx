@@ -201,6 +201,15 @@ function About() {
   );
 }
 
+// ─── SOCIAL STRETCH IMAGE BAND ────────────────────────────────
+function SocialStretchImage() {
+  return (
+    <div style={{ height: 460, overflow: "hidden", background: T.cream, position: "relative" }}>
+      <Image src="/social-stretch.png" alt="Social Stretch — coffee after class" fill style={{ objectFit: "cover", objectPosition: "center center" }} />
+    </div>
+  );
+}
+
 // ─── HOST A STRETCHY ──────────────────────────────────────────
 function HostAStretchy() {
   const [form, setForm] = useState({ name: "", email: "", where: "", what: "", how: "", rate: "" });
@@ -396,6 +405,7 @@ export default function LandingPage() {
       <HowItWorks />
       <PricingMechanic />
       <About />
+      <SocialStretchImage />
       <HostAStretchy />
       <SuggestAStretchy />
       <FinalCTA />
