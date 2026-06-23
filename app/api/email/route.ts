@@ -3,7 +3,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM = "Stretchy <kimberley@stretchyyoga.co.nz>";
+const FROM = "Stretchy <hello@stretchy.social>";
 
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 
