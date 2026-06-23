@@ -276,15 +276,6 @@ export default function SessionDetailPage() {
         {/* Price curve */}
         <PriceCurveChart session={s} />
 
-        {/* Formula */}
-        <div style={{
-          marginTop: 12, padding: "10px 14px", borderRadius: 10,
-          background: "rgba(245,237,227,0.06)", border: "1px solid rgba(245,237,227,0.08)",
-          fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
-          color: "rgba(245,237,227,0.4)", letterSpacing: "0.06em",
-        }}>
-          ${s.host_target} TARGET + $23 STRETCHY FEE ÷ {holds || s.min_attendees} PEOPLE = ${currentPrice} + GST
-        </div>
       </div>
 
       {/* Where */}
