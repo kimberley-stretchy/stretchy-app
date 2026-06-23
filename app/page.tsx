@@ -44,7 +44,7 @@ function Nav() {
           <a href="#about" style={navLink}>About</a>
           <a href="#host" style={navLink}>Host a Stretchy</a>
           <a href="#suggest" style={navLink}>Suggest a Stretchy</a>
-          <a href="#suggest" style={{ marginLeft: 8, padding: "10px 20px", borderRadius: 999, background: T.black, color: T.cream, fontFamily: T.title, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>Join Auckland →</a>
+          <a href="/sessions" style={{ marginLeft: 8, padding: "10px 20px", borderRadius: 999, background: T.black, color: T.cream, fontFamily: T.title, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>Book Auckland →</a>
         </div>
       </div>
     </div>
@@ -71,7 +71,7 @@ function Hero() {
           <p style={{ margin: 0, fontSize: 16, lineHeight: 1.6, opacity: 0.8 }}>Stretchy is now back — new and improved. Made for fairer movement together. <strong style={{ color: T.yellow }}>The more people who join a Stretchy session, the less everyone pays.</strong></p>
         </div>
         <div style={{ display: "flex", gap: 12, marginTop: 36, flexWrap: "wrap" }}>
-          <a href="#suggest" style={{ padding: "16px 28px", borderRadius: 999, background: T.cream, color: T.black, fontFamily: T.title, fontSize: 16, fontWeight: 700, textDecoration: "none" }}>Join Auckland →</a>
+          <a href="/sessions" style={{ padding: "16px 28px", borderRadius: 999, background: T.cream, color: T.black, fontFamily: T.title, fontSize: 16, fontWeight: 700, textDecoration: "none" }}>Book Auckland →</a>
           <a href="#how" style={{ padding: "16px 28px", borderRadius: 999, border: "2px solid rgba(245,237,227,0.4)", color: T.cream, fontFamily: T.title, fontSize: 16, fontWeight: 700, textDecoration: "none" }}>How it works</a>
         </div>
       </div>
@@ -357,7 +357,7 @@ function FinalCTA() {
         <SMark size={88} className="text-cream" />
         <h2 style={{ fontFamily: T.title, fontWeight: 700, fontSize: "clamp(40px, 6vw, 72px)", lineHeight: 0.95, letterSpacing: "-0.03em", margin: "28px auto 22px", maxWidth: 720 }}>Welcome to the highlight<br />of your week.</h2>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, marginTop: 36 }}>
-          <a href="#suggest" style={{ padding: "18px 32px", borderRadius: 999, background: T.cream, color: T.black, fontFamily: T.title, fontSize: 16, fontWeight: 700, textDecoration: "none" }}>Join us in Auckland →</a>
+          <a href="/sessions" style={{ padding: "18px 32px", borderRadius: 999, background: T.cream, color: T.black, fontFamily: T.title, fontSize: 16, fontWeight: 700, textDecoration: "none" }}>Book Auckland →</a>
           <a href="#host" style={{ padding: "14px 28px", borderRadius: 999, border: "2px solid rgba(245,237,227,0.4)", color: T.cream, fontFamily: T.title, fontSize: 15, fontWeight: 700, textDecoration: "none" }}>Host a Stretchy →</a>
         </div>
       </div>
@@ -378,7 +378,7 @@ function Footer() {
         <div style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", opacity: 0.5, margin: "0 0 2px" }}>STRETCHY</p>
-            {[["#about", "About"], ["#host", "Host a Stretchy"], ["#suggest", "Suggest a Stretchy"], ["#suggest", "Join Auckland"]].map(([href, label]) => (
+            {[["#about", "About"], ["#host", "Host a Stretchy"], ["#suggest", "Suggest a Stretchy"], ["/sessions", "Book Auckland"]].map(([href, label]) => (
               <a key={label} href={href} style={{ color: T.black, opacity: 0.75, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>{label}</a>
             ))}
           </div>
