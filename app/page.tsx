@@ -38,14 +38,29 @@ function Nav() {
   }, []);
   return (
     <div style={{ position: "sticky", top: 0, zIndex: 50, background: scrolled ? "rgba(245,237,227,0.95)" : "transparent", backdropFilter: scrolled ? "blur(12px)" : "none", borderBottom: scrolled ? "1px solid rgba(26,26,26,0.08)" : "1px solid transparent", transition: "all .25s ease" }}>
-      <div style={{ maxWidth: MAXW, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      {/* Desktop nav */}
+      <div className="hidden-mobile" style={{ maxWidth: MAXW, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Link href="/" aria-label="Stretchy home"><SMark size={32} className="text-olive" /></Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <a href="#about" style={navLink}>About</a>
           <a href="#host" style={navLink}>Host a Stretchy</a>
           <a href="#suggest" style={navLink}>Suggest a Stretchy</a>
           <a href="/sessions" style={{ marginLeft: 8, padding: "10px 20px", borderRadius: 999, background: T.black, color: T.cream, fontFamily: T.title, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>Book Auckland →</a>
         </div>
+      </div>
+      {/* Mobile nav */}
+      <div className="show-mobile" style={{ padding: "12px 20px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <Link href="/" aria-label="Stretchy home"><SMark size={28} className="text-olive" /></Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            <a href="#about" style={{ ...navLink, fontSize: 13, padding: "6px 8px" }}>About</a>
+            <a href="#host" style={{ ...navLink, fontSize: 13, padding: "6px 8px" }}>Host</a>
+            <a href="#suggest" style={{ ...navLink, fontSize: 13, padding: "6px 8px" }}>Suggest</a>
+          </div>
+        </div>
+        <a href="/sessions" style={{ display: "block", textAlign: "center", padding: "12px", borderRadius: 999, background: T.black, color: T.cream, fontFamily: T.title, fontSize: 15, fontWeight: 700, textDecoration: "none" }}>
+          Book Auckland →
+        </a>
       </div>
     </div>
   );
@@ -354,8 +369,7 @@ function FinalCTA() {
   return (
     <div style={{ background: T.olive, color: T.cream, textAlign: "center" }}>
       <div style={{ maxWidth: MAXW, margin: "0 auto", padding: "96px 24px" }}>
-        <SMark size={88} className="text-cream" />
-        <h2 style={{ fontFamily: T.title, fontWeight: 700, fontSize: "clamp(40px, 6vw, 72px)", lineHeight: 0.95, letterSpacing: "-0.03em", margin: "28px auto 22px", maxWidth: 720 }}>Welcome to the highlight<br />of your week.</h2>
+        <h2 style={{ fontFamily: T.title, fontWeight: 700, fontSize: "clamp(40px, 6vw, 72px)", lineHeight: 0.95, letterSpacing: "-0.03em", margin: "0 auto 22px", maxWidth: 720 }}>Welcome to the highlight<br />of your week.</h2>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, marginTop: 36 }}>
           <a href="/sessions" style={{ padding: "18px 32px", borderRadius: 999, background: T.cream, color: T.black, fontFamily: T.title, fontSize: 16, fontWeight: 700, textDecoration: "none" }}>Book Auckland →</a>
           <a href="#host" style={{ padding: "14px 28px", borderRadius: 999, border: "2px solid rgba(245,237,227,0.4)", color: T.cream, fontFamily: T.title, fontSize: 15, fontWeight: 700, textDecoration: "none" }}>Host a Stretchy →</a>

@@ -135,6 +135,24 @@
 
 .price-flash { animation: priceFlash 0.4s ease-out; }
 
+/* ─── LANDING PAGE RESPONSIVE ───────────────────────────── */
+.hidden-mobile { display: flex; }
+.show-mobile   { display: none; }
+
+@media (max-width: 768px) {
+  .hidden-mobile { display: none !important; }
+  .show-mobile   { display: block !important; }
+
+  .hero-grid,
+  .mechanic-grid,
+  .about-grid,
+  .host-grid,
+  .suggest-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+}
+
 /* ─── SCROLLBAR ─────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
