@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
+import { Resend } from "resend";
 import { cookies } from "next/headers";
 
 function getStripe() {
@@ -214,22 +215,38 @@ export async function PATCH(request: NextRequest) {
       const priceNZD = Math.round((pi.amount / 100) * (1 / 1.15)); // reverse GST from captured amount
       const priceDisplay = `$${Math.round(pi.amount / 100)} incl. GST`;
 
+      const resend = new Resend(process.env.RESEND_API_KEY);
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchy.social";
-      fetch(`${appUrl}/api/email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "hold_confirmed",
-          to: attendeeData.email,
-          name: attendeeData.name?.split(" ")[0] ?? "there",
-          sessionTitle: sessionData.title,
-          date: dateStr,
-          price: priceDisplay,
-          venue: sessionData.location_name,
-          socialStretchVenue: sessionData.social_stretch_venue ?? "nearby",
-          cancelUrl: `${appUrl}/hold/${sessionId}`,
-        }),
-      }).catch(console.error);
+      await resend.emails.send({
+        from: "Stretchy <hello@stretchy.social>",
+        to: attendeeData.email,
+        reply_to: "kimberley@stretchyyoga.co.nz",
+        subject: `You're in — ${sessionData.title}`,
+        html: `
+          <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; background: #F5EDE3; padding: 32px; border-radius: 16px;">
+            <h1 style="font-size: 28px; font-weight: 900; color: #1A1A1A; margin: 0 0 8px;">You're in. 🙌</h1>
+            <p style="color: #555; font-size: 15px; margin: 0 0 24px;">Hey ${attendeeData.name?.split(" ")[0] ?? "there"} — your spot is held!</p>
+            <div style="background: #1A1A1A; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
+              <p style="color: #FFD166; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Your Stretchy</p>
+              <p style="color: #F5EDE3; font-size: 20px; font-weight: 800; margin: 0 0 8px;">${sessionData.title}</p>
+              <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">🗓 ${dateStr}</p>
+              <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">📍 ${sessionData.location_name}</p>
+              ${sessionData.social_stretch_venue ? `<p style="color: rgba(245,237,227,0.6); font-size: 13px; margin: 8px 0 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">🥂 Social Stretch after at ${sessionData.social_stretch_venue}</p>` : ""}
+            </div>
+            <div style="background: white; border-radius: 14px; padding: 18px; margin-bottom: 16px;">
+              <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: #999; margin: 0 0 4px;">Current price</p>
+              <p style="font-size: 28px; font-weight: 900; color: #1A1A1A; margin: 0 0 4px;">${priceDisplay}</p>
+              <p style="font-size: 12px; color: #999; margin: 0;">Price drops as more people join. Your card is charged 2 hours before the session.</p>
+            </div>
+            <div style="background: #EDE5D8; border-radius: 14px; padding: 18px; margin-bottom: 16px;">
+              <p style="font-size: 13px; color: #444; line-height: 1.6; margin: 0 0 12px;">Need to cancel? You can cancel <strong>up to 36 hours before the session</strong> and nothing will be charged. After the 36hr mark, no cancellations.</p>
+              <a href="${appUrl}/hold/${sessionId}" style="display: inline-block; background: #1A1A1A; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: 8px;">View / cancel my hold</a>
+            </div>
+            <p style="font-size: 12px; color: #888; text-align: center; margin: 20px 0 0;">Questions? <a href="mailto:kimberley@stretchyyoga.co.nz" style="color: #1A1A1A; font-weight: 600; text-decoration: none;">kimberley@stretchyyoga.co.nz</a></p>
+            <p style="font-size: 11px; color: #AAA; text-align: center; margin: 8px 0 0;">Made with Love by <a href="https://studiodawn.org" style="color: #AAA;">Studio Dawn</a></p>
+          </div>
+        `,
+      }).catch((e: unknown) => console.error("Hold email error:", e));
     }
   } catch (emailErr) {
     console.error("Email send error (non-blocking):", emailErr);
