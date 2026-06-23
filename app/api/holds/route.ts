@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
     amount: amountCents,
     currency: "nzd",
     customer: stripeCustomerId,
+    payment_method_types: ["card"],
     capture_method: "manual",
     setup_future_usage: "off_session",
     metadata: {
