@@ -222,7 +222,7 @@ export default function SessionDetailPage() {
     : `${s.duration_mins} min`;
 
   return (
-    <main style={{ background: T.cream, minHeight: "100vh", fontFamily: "'Space Grotesk', system-ui, sans-serif", paddingBottom: 120 }}>
+    <main style={{ background: T.cream, minHeight: "100vh", fontFamily: "'Space Grotesk', system-ui, sans-serif", paddingBottom: 120, maxWidth: 480, margin: "0 auto" }}>
       {/* Top bar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px" }}>
         <Link href="/sessions">
