@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
+import { createClient } from "@/lib/supabase/client";
 
 const ADMIN_SCREENS = [
   { href: "/admin/sessions",    label: "Sessions",                    icon: "🧘", desc: "Create & manage sessions" },
@@ -17,6 +20,22 @@ const ADMIN_SCREENS = [
 ];
 
 export default function AdminHomePage() {
+  const router = useRouter();
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const role = session?.user?.user_metadata?.role;
+      if (!session) { router.replace("/login?next=/admin"); return; }
+      if (role !== "admin") { router.replace("/home?error=not_authorised"); return; }
+      setChecked(true);
+    });
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  if (!checked) return null;
+
   return (
     <main className="min-h-screen bg-cream pb-20">
       <nav className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">

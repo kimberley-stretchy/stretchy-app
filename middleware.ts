@@ -1,10 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
-// Only protect admin routes server-side — other routes handle auth client-side
-const PROTECTED_PREFIXES = [
-  "/admin",
-];
+// Middleware is in pass-through mode — auth handled client-side per-page
+const PROTECTED_PREFIXES: string[] = [];
 
 const ADMIN_PREFIXES = ["/admin"];
 
