@@ -4,6 +4,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM = "Stretchy <hello@stretchy.social>";
+const REPLY_TO = "kimberley@stretchyyoga.co.nz";
 
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 
@@ -204,6 +205,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await resend.emails.send({
       from: FROM,
       to,
+      replyTo: REPLY_TO,
       subject,
       html,
     });
