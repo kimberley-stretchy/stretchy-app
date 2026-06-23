@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await resend.emails.send({
       from: FROM,
       to,
-      replyTo: REPLY_TO,
+      reply_to: REPLY_TO,
       subject,
       html,
     });
