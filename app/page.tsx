@@ -368,26 +368,26 @@ function FinalCTA() {
 // ─── FOOTER ───────────────────────────────────────────────────
 function Footer() {
   return (
-    <div style={{ background: "#4CAF82", color: T.black }}>
+    <div style={{ background: T.olive, color: T.cream }}>
       <div style={{ maxWidth: MAXW, margin: "0 auto", padding: "56px 24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 32, alignItems: "flex-start" }}>
         <div style={{ maxWidth: 340 }}>
-          <div style={{ marginBottom: 16 }}><SMark size={30} className="text-ink" /></div>
-          <p style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.08em", lineHeight: 1.7, color: "rgba(26,26,26,0.6)", margin: "0 0 18px" }}>© 2026 STRETCHY · A SOCIAL MOVEMENT.<br />BUILT IN AOTEAROA WITH AROHA.</p>
-          <a href="mailto:kimberley@stretchyyoga.co.nz" style={{ fontFamily: T.mono, fontSize: 12, letterSpacing: "0.06em", color: T.black, textDecoration: "none", fontWeight: 600, opacity: 0.8 }}>kimberley@stretchyyoga.co.nz ↗</a>
+          <div style={{ marginBottom: 16 }}><SMark size={30} className="text-cream" /></div>
+          <p style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.08em", lineHeight: 1.7, color: "rgba(245,237,227,0.6)", margin: "0 0 18px" }}>© 2026 STRETCHY · A SOCIAL MOVEMENT.<br />BUILT IN AOTEAROA WITH AROHA.</p>
+          <a href="mailto:kimberley@stretchyyoga.co.nz" style={{ fontFamily: T.mono, fontSize: 12, letterSpacing: "0.06em", color: T.cream, textDecoration: "none", fontWeight: 600, opacity: 0.8 }}>kimberley@stretchyyoga.co.nz ↗</a>
         </div>
         <div style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", opacity: 0.5, margin: "0 0 2px" }}>STRETCHY</p>
             {[["#about", "About"], ["#host", "Host a Stretchy"], ["#suggest", "Suggest a Stretchy"], ["/sessions", "Book Auckland"]].map(([href, label]) => (
-              <a key={label} href={href} style={{ color: T.black, opacity: 0.75, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>{label}</a>
+              <a key={label} href={href} style={{ color: T.cream, opacity: 0.8, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>{label}</a>
             ))}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", opacity: 0.5, margin: "0 0 2px" }}>FOLLOW</p>
-            <a href="https://instagram.com/stretchy.yoga" target="_blank" rel="noopener noreferrer" style={{ color: T.black, opacity: 0.75, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>@stretchy.yoga ↗</a>
-            <a href="https://instagram.com/stretchysocial" target="_blank" rel="noopener noreferrer" style={{ color: T.black, opacity: 0.75, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>@stretchysocial ↗</a>
-            <a href="https://www.stretchyyoga.co.nz" target="_blank" rel="noopener noreferrer" style={{ color: T.black, opacity: 0.75, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>Stretchy 1.0 ↗</a>
-            <Link href="/login" style={{ color: T.black, opacity: 0.75, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>Sign in →</Link>
+            <a href="https://instagram.com/stretchy.yoga" target="_blank" rel="noopener noreferrer" style={{ color: T.cream, opacity: 0.8, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>@stretchy.yoga ↗</a>
+            <a href="https://instagram.com/stretchysocial" target="_blank" rel="noopener noreferrer" style={{ color: T.cream, opacity: 0.8, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>@stretchysocial ↗</a>
+            <a href="https://www.stretchyyoga.co.nz" target="_blank" rel="noopener noreferrer" style={{ color: T.cream, opacity: 0.8, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>Stretchy 1.0 ↗</a>
+            <Link href="/login" style={{ color: T.cream, opacity: 0.8, textDecoration: "none", fontFamily: T.title, fontWeight: 600, fontSize: 14 }}>Sign in →</Link>
           </div>
         </div>
       </div>
