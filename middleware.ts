@@ -40,6 +40,14 @@ const ADMIN_PREFIXES = ["/admin"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // ── Redirect www → non-www so auth cookies always share the same domain ──
+  const host = request.headers.get("host") ?? "";
+  if (host.startsWith("www.")) {
+    const url = request.nextUrl.clone();
+    url.host = host.replace(/^www\./, "");
+    return NextResponse.redirect(url, 301);
+  }
+
   // ── DEMO MODE: let everyone through for testing ───────────────────────────
   // Remove this line when auth is ready for real users.
   return NextResponse.next();
