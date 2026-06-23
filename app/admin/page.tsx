@@ -4,6 +4,7 @@ import Link from "next/link";
 import SMark from "@/components/SMark";
 
 const ADMIN_SCREENS = [
+  { href: "/admin/sessions",    label: "Sessions",                    icon: "🧘", desc: "Create & manage sessions" },
   { href: "/admin/vetting",     label: "ADM-01 · Vetting queue",     icon: "👥", desc: "6 in queue" },
   { href: "/admin/live",        label: "ADM-02 · Live Platform",      icon: "🔴", desc: "47 live · 2 need help" },
   { href: "/admin/suggestions", label: "ADM-03 · Suggestions",        icon: "💡", desc: "5 live · 140 votes" },

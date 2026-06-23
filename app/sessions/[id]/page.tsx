@@ -1,588 +1,381 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
-import { getPricingState, getPriceCurve, formatPrice } from "@/lib/pricing";
 import HowToStretchy from "@/components/HowToStretchy";
-import { useFavourites } from "@/hooks/useFavourites";
-import { googleCalendarUrl, downloadIcs } from "@/lib/calendar";
 
-// ─── MOCK SESSION ─────────────────────────────────────────────────────────────
-const MOCK_SESSION = {
-  id: "1",
-  title: "Sunday Slow Flow",
-  description:
-    "A grounding vinyasa flow for all levels. We'll move through sun salutations, standing sequences and end with a long savasana. Come as you are.",
-  host: {
-    name: "Tāne Ratima",
-    bio: "Yoga teacher and community builder. Based in Grey Lynn. 14 sessions hosted.",
-    sessionsHosted: 14,
-    ratingAverage: 5,
-    ratingCount: 89,
-    instagram: "taneratima",
-    vetted: true,
-  },
-  neighbourhood: "Grey Lynn",
-  day: "SUN",
-  time: "9:00 AM",
-  duration: "60 MIN",
-  sessionType: "yoga",
-  typeColor: "#A535C7",
-  typeLabel: "YOGA",
-  venueName: "Grey Lynn Community Centre",
-  venueAddress: "510 Richmond Road, Grey Lynn, Auckland",
-  venueNotes: "Enter via the side gate on Surrey Crescent. Mats provided. BYO water.",
-  startISO: "2026-06-08T09:00:00+12:00",
-  endISO:   "2026-06-08T10:00:00+12:00",
-  hostTarget: 200,
-  minimumSpots: 8,
-  maxCapacity: 20,
-  currentHolds: 5,
-  phase: "HOLD_BELOW_MIN" as const,
-  hasSocialStretch: true,
-  socialStretchVenue: "Tāne is heading to Little Bird next door after. ☕",
-  isLive: true,
-  isCharity: false,
-  charity: null as null | { name: string; website?: string; instagram?: string; note?: string },
+const T = {
+  black:  "#1A1A1A",
+  cream:  "#F5EDE3",
+  yellow: "#FFD166",
+  olive:  "#7A8330",
+  blue:   "#2C8FE0",
+  purple: "#A535C7",
+  green:  "#4CAF82",
+  orange: "#FF6B35",
+  hold:   "#A8D5E2",
 };
 
-// ─── PRICE CURVE SVG ─────────────────────────────────────────────────────────
-// Layout:
-//   Solid black  : left edge → NOW dot (at startingPrice level — flat hold line)
-//   Dashed grey  : NOW → MIN  (still flat — price is held until minimum met)
-//   Dashed grey  : MIN → FULL (drops as room fills)
-//   Vertical dash: at MIN (the "hold line")
-function PriceCurveChart({
-  hostTarget,
-  minimumSpots,
-  maxCapacity,
-  currentSpots,
-}: {
-  hostTarget: number;
-  minimumSpots: number;
-  maxCapacity: number;
-  currentSpots: number;
-}) {
-  const W = 320; const H = 120;
-  const PAD = { left: 16, right: 16, top: 36, bottom: 40 };
-  const chartW = W - PAD.left - PAD.right;
-  const chartH = H - PAD.top - PAD.bottom;
+const TYPE_COLORS: Record<string, string> = {
+  yoga: "#A535C7", pilates: "#2A3FE0", breath: "#7A8330",
+  sound: "#4FB8E0", flow: "#FF6B35", run: "#E63946", hiit: "#2C8FE0",
+};
+const TYPE_LABELS: Record<string, string> = {
+  yoga: "YOGA", pilates: "PILATES", breath: "BREATH",
+  sound: "SOUND", flow: "FLOW", run: "RUN", hiit: "HIIT",
+};
 
-  // Prices
-  const startingPrice = Math.round((hostTarget + 23) / minimumSpots); // held price ($28)
-  const floorPrice    = Math.round((hostTarget + 23) / maxCapacity);  // floor ($14)
-  const nowPrice      = startingPrice; // while below min, price is held at startingPrice
-
-  // X: 1 → maxCapacity (so NOW dot sits in the left-middle area, not at edge)
-  const toX = (s: number) => PAD.left + ((s - 1) / (maxCapacity - 1)) * chartW;
-  // Y: startingPrice (top) → floorPrice (bottom)
-  const toY = (p: number) =>
-    PAD.top + ((startingPrice - p) / (startingPrice - floorPrice)) * chartH;
-
-  const flatY  = toY(startingPrice); // y-level for the flat hold line
-  const cx     = toX(Math.min(currentSpots, minimumSpots)); // NOW dot x (capped at min)
-  const minX   = toX(minimumSpots);
-  const midX   = toX(Math.round((minimumSpots + maxCapacity) / 2));
-  const maxX   = toX(maxCapacity);
-
-  // Dashed drop curve: MIN → FULL
-  const dropPoints: { x: number; y: number }[] = [];
-  for (let n = minimumSpots; n <= maxCapacity; n++) {
-    dropPoints.push({ x: toX(n), y: toY((hostTarget + 23) / n) });
-  }
-  const dropPath = dropPoints
-    .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-    .join(" ");
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
-
-      {/* "$28 MAX" label — top left, just above flat line */}
-      <text x={PAD.left} y={flatY - 8} fontSize="9" fill="#6B6B6B" fontFamily="monospace" fontWeight="bold">
-        ${startingPrice} MAX
-      </text>
-
-      {/* Solid black line: left edge → NOW dot */}
-      <line
-        x1={PAD.left} y1={flatY}
-        x2={cx}       y2={flatY}
-        stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round"
-      />
-
-      {/* Dashed grey line: NOW → MIN (flat hold — price not dropping yet) */}
-      <line
-        x1={cx}   y1={flatY}
-        x2={minX} y2={flatY}
-        stroke="#C8B8A4" strokeWidth="2.5" strokeDasharray="5 3" strokeLinecap="round"
-      />
-
-      {/* Vertical hold line at MIN — dashed */}
-      <line
-        x1={minX} y1={PAD.top - 6}
-        x2={minX} y2={H - PAD.bottom + 2}
-        stroke="#C8B8A4" strokeWidth="1.5" strokeDasharray="4 3"
-      />
-
-      {/* Dashed drop curve: MIN → FULL */}
-      <path
-        d={dropPath}
-        fill="none"
-        stroke="#C8B8A4"
-        strokeWidth="2.5"
-        strokeDasharray="5 3"
-        strokeLinecap="round"
-      />
-
-      {/* Horizontal baseline */}
-      <line
-        x1={PAD.left} y1={H - PAD.bottom}
-        x2={maxX}     y2={H - PAD.bottom}
-        stroke="#E8D9C8" strokeWidth="1"
-      />
-
-      {/* "$14 FLOOR" — bottom right, above baseline */}
-      <text x={maxX - 4} y={H - PAD.bottom - 6} fontSize="9" fill="#6B6B6B" fontFamily="monospace" textAnchor="end" fontWeight="bold">
-        ${floorPrice} FLOOR
-      </text>
-
-      {/* X-axis: MIN / 12 / FULL */}
-      <text x={minX} y={H - PAD.bottom + 12} fontSize="9"   fill="#6B6B6B" fontFamily="monospace" textAnchor="middle">{minimumSpots}</text>
-      <text x={minX} y={H - PAD.bottom + 22} fontSize="7.5" fill="#AAAAAA" fontFamily="monospace" textAnchor="middle">MIN</text>
-      <text x={midX} y={H - PAD.bottom + 12} fontSize="9"   fill="#6B6B6B" fontFamily="monospace" textAnchor="middle">
-        {Math.round((minimumSpots + maxCapacity) / 2)}
-      </text>
-      <text x={maxX} y={H - PAD.bottom + 12} fontSize="9"   fill="#6B6B6B" fontFamily="monospace" textAnchor="middle">FULL</text>
-
-      {/* NOW dot */}
-      <circle cx={cx} cy={flatY} r="7"  fill="#FF6B35" />
-      <circle cx={cx} cy={flatY} r="12" fill="#FF6B35" fillOpacity="0.18" />
-
-      {/* "NOW · $28" label — orange, above/right of dot */}
-      <text x={cx + 16} y={flatY - 6} fontSize="9" fill="#FF6B35" fontFamily="monospace" fontWeight="bold">
-        NOW · ${nowPrice}
-      </text>
-
-    </svg>
-  );
+const STRETCHY_FEE = 23;
+function calcPrice(target: number, spots: number) {
+  return Math.round((target + STRETCHY_FEE) / Math.max(spots, 1));
 }
 
-// ─── IF X JOIN CHIPS ─────────────────────────────────────────────────────────
-function JoinChips({
-  hostTarget,
-  minimumSpots,
-  maxCapacity,
-}: {
-  hostTarget: number;
-  minimumSpots: number;
-  maxCapacity: number;
-}) {
-  const mid    = Math.round((minimumSpots + maxCapacity) / 2);
-  const spots  = [minimumSpots, mid, maxCapacity];
-  const prices = spots.map((n) => Math.round((hostTarget + 23) / n));
-  const floor  = Math.min(...prices);
+type Session = {
+  id: string;
+  title: string;
+  description: string | null;
+  movement_type: string;
+  starts_at: string;
+  ends_at: string;
+  duration_mins: number;
+  location_name: string;
+  location_address: string;
+  getting_there: string | null;
+  host_target: number;
+  min_attendees: number;
+  max_attendees: number;
+  current_holds: number;
+  state: string;
+  social_stretch_venue: string | null;
+  social_stretch_note: string | null;
+  what_to_bring: string[] | null;
+};
+
+// Price curve SVG — drops from ceiling to floor as spots fill
+function PriceCurveChart({ session: s }: { session: Session }) {
+  const W = 320; const H = 110;
+  const PAD = { left: 12, right: 12, top: 32, bottom: 32 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+
+  const ceiling = calcPrice(s.host_target, s.min_attendees);
+  const floor   = calcPrice(s.host_target, s.max_attendees);
+  const holds   = s.current_holds || 0;
+  const priceRange = ceiling - floor;
+
+  const toX = (n: number) => PAD.left + ((n - s.min_attendees) / (s.max_attendees - s.min_attendees)) * cW;
+  const toY = (p: number) => PAD.top + (1 - Math.max(0, (p - floor) / Math.max(priceRange, 1))) * cH;
+
+  // Generate curve points
+  const points = [];
+  for (let n = s.min_attendees; n <= s.max_attendees; n++) {
+    points.push({ x: toX(n), y: toY(calcPrice(s.host_target, n)) });
+  }
+  const curvePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+
+  // Current dot position
+  const dotSpots = Math.min(Math.max(holds, s.min_attendees), s.max_attendees);
+  const dotX = toX(dotSpots);
+  const dotY = toY(calcPrice(s.host_target, dotSpots));
+
+  // Labels
+  const ifFull = calcPrice(s.host_target, s.max_attendees);
 
   return (
-    <div className="flex gap-2 pt-4 border-t border-border">
-      {spots.map((n, i) => {
-        const price   = prices[i];
-        const isFloor = price === floor;
-        return (
-          <div key={n} className="flex-1 text-center">
-            <p className="font-mono text-xs font-bold uppercase tracking-wide text-muted mb-2.5">
-              If {n} join
-            </p>
-            <span
-              className="font-mono font-bold inline-flex items-baseline gap-0.5 px-4 py-2 rounded-pill"
-              style={{
-                backgroundColor: isFloor ? "#FFD166" : "#1A1A1A",
-                color: isFloor ? "#1A1A1A" : "#F5EDE3",
-                fontSize: "18px",
-              }}
-            >
-              <span style={{ fontSize: "12px" }}>$</span>
-              <span>{price}</span>
-            </span>
-          </div>
-        );
-      })}
+    <div style={{ position: "relative", width: W }}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        {/* Grid line at ceiling */}
+        <line x1={PAD.left} y1={toY(ceiling)} x2={W - PAD.right} y2={toY(ceiling)} stroke="rgba(26,26,26,0.08)" strokeWidth={1} strokeDasharray="3,3" />
+        {/* Grid line at floor */}
+        <line x1={PAD.left} y1={toY(floor)} x2={W - PAD.right} y2={toY(floor)} stroke="rgba(26,26,26,0.08)" strokeWidth={1} strokeDasharray="3,3" />
+
+        {/* Curve fill */}
+        <path
+          d={curvePath + ` L ${points[points.length-1].x},${PAD.top+cH} L ${points[0].x},${PAD.top+cH} Z`}
+          fill="rgba(255,209,102,0.10)"
+        />
+        {/* Curve line */}
+        <path d={curvePath} fill="none" stroke={T.yellow} strokeWidth={2} />
+
+        {/* Live dot */}
+        <circle cx={dotX} cy={dotY} r={6} fill={T.yellow} />
+        <circle cx={dotX} cy={dotY} r={10} fill="rgba(255,209,102,0.25)" />
+
+        {/* Price labels */}
+        <text x={PAD.left} y={toY(ceiling) - 6} fontSize={10} fontFamily="JetBrains Mono, monospace" fontWeight={700} fill={T.black} opacity={0.4}>
+          ${ceiling}
+        </text>
+        <text x={W - PAD.right} y={toY(floor) + 14} fontSize={10} fontFamily="JetBrains Mono, monospace" fontWeight={700} fill={T.black} opacity={0.4} textAnchor="end">
+          ${ifFull} if full
+        </text>
+      </svg>
     </div>
   );
 }
 
-// ─── PAGE ─────────────────────────────────────────────────────────────────────
-export default function SessionDetailPage({ params }: { params: { id: string } }) {
+export default function SessionDetailPage() {
+  const params  = useParams<{ id: string }>();
   const router  = useRouter();
-  const session = MOCK_SESSION;
-  const [held, setHeld] = useState(false);
-  const { toggle, isFaved } = useFavourites();
-  const saved = isFaved(session.id);
-  const favData = {
-    id: session.id, title: session.title,
-    day: session.day, time: session.time,
-    sessionType: session.sessionType, typeColor: session.typeColor,
-    typeLabel: session.typeLabel, initial: session.typeLabel[0],
-    neighbourhood: session.neighbourhood,
-    hostName: session.host.name,
-    priceLabel: String(Math.round((session.hostTarget + 23) / session.minimumSpots)),
-  };
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [holding, setHolding] = useState(false);
+  const [held, setHeld]       = useState(false);
 
-  const pricing = getPricingState(
-    session.hostTarget,
-    session.minimumSpots,
-    session.maxCapacity,
-    session.currentHolds,
-    session.phase
-  );
+  useEffect(() => {
+    if (!params.id) return;
+    fetch(`/api/admin/sessions?id=${params.id}`)
+      .then((r) => r.json())
+      .then((data: Session[]) => {
+        const found = Array.isArray(data) ? data.find((s) => s.id === params.id) : null;
+        setSession(found || null);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [params.id]);
 
-  const spotsToConfirm = session.minimumSpots - session.currentHolds;
-  const belowMin       = session.currentHolds < session.minimumSpots;
+  async function handleHold() {
+    setHolding(true);
+    // For now, show confirmation — real Stripe hold coming next
+    await new Promise((r) => setTimeout(r, 800));
+    setHeld(true);
+    setHolding(false);
+    router.push(`/hold/${params.id}`);
+  }
+
+  if (loading) {
+    return (
+      <main style={{ background: T.cream, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(26,26,26,0.35)" }}>LOADING…</p>
+      </main>
+    );
+  }
+
+  if (!session) {
+    return (
+      <main style={{ background: T.cream, minHeight: "100vh", padding: 24 }}>
+        <Link href="/sessions" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, color: "rgba(26,26,26,0.45)", letterSpacing: "0.12em" }}>
+          ← BACK
+        </Link>
+        <p style={{ marginTop: 40, textAlign: "center", color: "rgba(26,26,26,0.5)" }}>Session not found.</p>
+      </main>
+    );
+  }
+
+  const s = session;
+  const typeColor   = TYPE_COLORS[s.movement_type] ?? "#888";
+  const typeLabel   = TYPE_LABELS[s.movement_type] ?? s.movement_type.toUpperCase();
+  const holds       = s.current_holds || 0;
+  const confirmed   = holds >= s.min_attendees;
+  const startingPrice = calcPrice(s.host_target, s.min_attendees);
+  const currentPrice  = confirmed ? calcPrice(s.host_target, holds) : startingPrice;
+  const floorPrice    = calcPrice(s.host_target, s.max_attendees);
+  const spotsToMin    = Math.max(0, s.min_attendees - holds);
+
+  const startDate = new Date(s.starts_at);
+  const dayStr    = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" });
+  const timeStr   = startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
+  const durationLabel = s.duration_mins >= 60
+    ? `${s.duration_mins / 60}hr`
+    : `${s.duration_mins} min`;
 
   return (
-    <main className="min-h-screen bg-cream pb-32">
-
-      {/* ── NAV ── */}
-      <nav className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
-        <div className="flex items-center gap-3">
-          <Link href="/home" className="text-ink"><SMark size={28} /></Link>
-          <Link href="/sessions" className="text-muted hover:text-ink text-lg transition-colors" aria-label="Back">←</Link>
+    <main style={{ background: T.cream, minHeight: "100vh", fontFamily: "'Space Grotesk', system-ui, sans-serif", paddingBottom: 120 }}>
+      {/* Top bar */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px" }}>
+        <Link href="/sessions">
+          <SMark size={28} className="text-ink" />
+        </Link>
+        {/* Vetted badge */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6, padding: "6px 12px",
+          borderRadius: 999, background: "#E6F5EC", color: "#2E7A52",
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+        }}>
+          ✓ VETTED HOST
         </div>
-        {session.isCharity ? (
-          <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-pill flex items-center gap-1" style={{ backgroundColor: "#FFF4E6", color: "#FF6B35", border: "1px solid #F8DFC5" }}>
-            🎗️ FUNDRAISER
-          </span>
-        ) : session.host.vetted ? (
-          <span className="font-mono text-xs font-bold tracking-wide" style={{ color: "#4FB8E0" }}>
-            ✓ VETTED HOST
-          </span>
-        ) : null}
-        <button
-          onClick={() => toggle(favData)}
-          className="text-2xl transition-transform active:scale-90"
-          style={{ color: saved ? "#E63946" : "#C4BEB7" }}
-        >
-          {saved ? "♥" : "♡"}
+        <button style={{
+          width: 40, height: 40, borderRadius: "50%", border: "none",
+          background: "rgba(26,26,26,0.06)", color: T.black, fontSize: 16, cursor: "pointer",
+        }}>
+          ♡
         </button>
-      </nav>
+      </div>
 
-      <div className="px-4 max-w-lg mx-auto space-y-4">
-
-        {/* ── DATE / DURATION / TYPE PILLS ── */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3" }}>
-            {session.day} · {session.time}
+      {/* Title block */}
+      <div style={{ padding: "8px 22px 18px" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          <span style={{ background: "#E8D9C8", color: T.black, padding: "5px 11px", borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em" }}>
+            {startDate.toLocaleDateString("en-NZ", { weekday: "short" }).toUpperCase()} · {timeStr}
           </span>
-          <span className="font-mono text-xs font-semibold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#E8D9C8", color: "#6B6B6B" }}>
-            {session.duration}
+          <span style={{ background: "rgba(26,26,26,0.06)", color: T.black, padding: "5px 11px", borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em" }}>
+            {durationLabel}
           </span>
-          <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill text-white" style={{ backgroundColor: session.typeColor }}>
-            {session.typeLabel}
+          <span style={{ background: typeColor + "22", color: typeColor, padding: "5px 11px", borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em" }}>
+            {typeLabel}
           </span>
         </div>
-
-        {/* ── HEADLINE + HOST AVATAR ── */}
-        <div>
-          <div className="flex items-start justify-between gap-3">
-            <h1
-              className="font-display font-bold text-ink flex-1"
-              style={{ fontSize: "clamp(32px,9vw,44px)", letterSpacing: "-0.03em", lineHeight: "1.05" }}
-            >
-              {session.title}
-            </h1>
-            <div
-              className="w-14 h-14 rounded-card flex items-center justify-center font-bold text-2xl text-white flex-shrink-0 mt-1"
-              style={{ backgroundColor: session.typeColor }}
-            >
-              {session.host.name[0]}
-            </div>
-          </div>
-          <p className="text-sm text-muted mt-1">
-            with {session.host.name} · {session.neighbourhood}
+        <h1 style={{ fontSize: "clamp(28px,8vw,38px)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 0.95, marginBottom: 8 }}>
+          {s.title}
+        </h1>
+        <p style={{ fontSize: 14, color: "rgba(26,26,26,0.55)", marginBottom: 12 }}>
+          {s.location_name}
+        </p>
+        {s.description && (
+          <p style={{ fontSize: 15, lineHeight: 1.55, color: "rgba(26,26,26,0.75)" }}>
+            {s.description}
           </p>
-          {/* Simple dot pips for rating — no S-mark here, S-marks are in the confirm card */}
-          <div className="flex items-center gap-1 mt-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: i < session.host.ratingAverage ? "#7A8330" : "#DDD0C0" }}
-              />
+        )}
+      </div>
+
+      {/* Pricing engine */}
+      <div style={{ margin: "0 16px 20px", background: T.black, borderRadius: 20, padding: "20px 20px 24px", color: T.cream }}>
+        {/* Status */}
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", color: confirmed ? T.green : T.orange, marginBottom: 12 }}>
+          {confirmed
+            ? `● GOING AHEAD · ${holds} HELD`
+            : `○ ${spotsToMin} MORE TO CONFIRM`}
+        </div>
+
+        {/* Holds pips */}
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 16 }}>
+          {Array.from({ length: s.min_attendees }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: 10, height: 10, borderRadius: "50%",
+                background: i < holds ? typeColor : "rgba(245,237,227,0.15)",
+              }}
+            />
+          ))}
+          {holds > s.min_attendees && (
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, color: typeColor }}>
+              +{holds - s.min_attendees}
+            </span>
+          )}
+        </div>
+
+        {/* Big price */}
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.16em", marginBottom: 4 }}>
+            {confirmed ? "PRICE NOW" : "MAX YOU'LL PAY"}
+          </p>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+            <span style={{ fontFamily: "'Bagel Fat One', cursive", fontSize: 52, color: T.yellow, lineHeight: 1 }}>
+              ${currentPrice}
+            </span>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(245,237,227,0.5)", fontWeight: 700 }}>
+              + GST
+            </span>
+          </div>
+          {!confirmed && (
+            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(245,237,227,0.4)", marginTop: 4 }}>
+              DROPS AS THE ROOM FILLS · FLOOR ${floorPrice} + GST
+            </p>
+          )}
+        </div>
+
+        {/* Price curve */}
+        <PriceCurveChart session={s} />
+
+        {/* Formula */}
+        <div style={{
+          marginTop: 12, padding: "10px 14px", borderRadius: 10,
+          background: "rgba(245,237,227,0.06)", border: "1px solid rgba(245,237,227,0.08)",
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
+          color: "rgba(245,237,227,0.4)", letterSpacing: "0.06em",
+        }}>
+          ${s.host_target} TARGET + $23 STRETCHY FEE ÷ {holds || s.min_attendees} PEOPLE = ${currentPrice} + GST
+        </div>
+      </div>
+
+      {/* Where */}
+      <div style={{ margin: "0 16px 20px", background: "#fff", borderRadius: 20, padding: "20px" }}>
+        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.35)", letterSpacing: "0.18em", marginBottom: 10 }}>
+          WHERE
+        </p>
+        <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{s.location_name}</p>
+        {s.location_address && (
+          <p style={{ fontSize: 13, color: "rgba(26,26,26,0.55)", marginBottom: 8 }}>{s.location_address}</p>
+        )}
+        {s.getting_there && (
+          <p style={{ fontSize: 13, color: "rgba(26,26,26,0.65)", lineHeight: 1.5 }}>{s.getting_there}</p>
+        )}
+      </div>
+
+      {/* What to bring */}
+      {s.what_to_bring && s.what_to_bring.length > 0 && (
+        <div style={{ margin: "0 16px 20px", background: "#fff", borderRadius: 20, padding: "20px" }}>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.35)", letterSpacing: "0.18em", marginBottom: 10 }}>
+            BRING
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {s.what_to_bring.map((item) => (
+              <span key={item} style={{
+                padding: "6px 12px", borderRadius: 999,
+                background: "rgba(26,26,26,0.05)", color: T.black,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700,
+              }}>
+                {item}
+              </span>
             ))}
           </div>
         </div>
+      )}
 
-        {/* ── CONFIRM CARD — contains S-mark pips + yellow price sub-card ── */}
-        <div className="card space-y-4">
-
-          {/* S-mark pips (minimumSpots total) + LIVE badge */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              {Array.from({ length: session.minimumSpots }).map((_, i) => (
-                <span
-                  key={i}
-                  style={{ opacity: i < session.currentHolds ? 1 : 0.20 }}
-                  className="text-olive"
-                >
-                  <SMark size={18} />
-                </span>
-              ))}
-            </div>
-            {session.isLive && (
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className="w-2 h-2 rounded-full bg-red animate-pulse" />
-                <span className="font-mono text-xs font-bold text-red uppercase tracking-wide">LIVE</span>
-              </div>
-            )}
-          </div>
-
-          {/* Confirm message */}
-          {belowMin && (
-            <p className="font-bold text-base text-ink uppercase tracking-wide leading-tight">
-              {spotsToConfirm} more attendee{spotsToConfirm !== 1 ? "s" : ""} to confirm session
-            </p>
-          )}
-
-          {/* ── Yellow price sub-card (nested inside white card) ── */}
-          <div className="rounded-card p-5" style={{ backgroundColor: "#FFD166" }}>
-            <div className="flex items-start justify-between">
-              {/* Big price */}
-              <div className="flex items-start">
-                <span
-                  className="font-mono font-black text-ink"
-                  style={{ fontSize: "28px", lineHeight: "1", marginTop: "12px", marginRight: "1px" }}
-                >
-                  $
-                </span>
-                <span
-                  className="font-mono font-black text-ink"
-                  style={{ fontSize: "clamp(80px,22vw,108px)", lineHeight: "1", letterSpacing: "-0.04em" }}
-                >
-                  {Math.round(pricing.currentPrice)}
-                </span>
-              </div>
-              {/* Label */}
-              <div className="text-right flex-shrink-0 pt-3">
-                <p
-                  className="font-mono font-bold uppercase text-ink"
-                  style={{ fontSize: "10px", opacity: 0.55, letterSpacing: "0.12em", lineHeight: "1.5" }}
-                >
-                  Starting<br />price
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Price subtext (inside card, below yellow sub-card) */}
-          <p className="text-sm text-ink leading-snug">
-            The most you'll pay is <strong>{formatPrice(pricing.startingPrice)}</strong>.
-            The more who join, the less <em>everyone</em> pays.
+      {/* Social stretch */}
+      {s.social_stretch_venue && (
+        <div style={{ margin: "0 16px 20px", background: T.purple, borderRadius: 20, padding: "20px" }}>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.5)", letterSpacing: "0.18em", marginBottom: 8 }}>
+            SOCIAL STRETCH AFTER
           </p>
-        </div>
-
-        {/* ── LIVE PRICE CURVE CARD ── */}
-        <div className="card">
-          <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-muted mb-1">
-            Live price — drops as the room fills
-          </p>
-          <PriceCurveChart
-            hostTarget={session.hostTarget}
-            minimumSpots={session.minimumSpots}
-            maxCapacity={session.maxCapacity}
-            currentSpots={session.currentHolds}
-          />
-          <JoinChips
-            hostTarget={session.hostTarget}
-            minimumSpots={session.minimumSpots}
-            maxCapacity={session.maxCapacity}
-          />
-        </div>
-
-        {/* ── WHAT TO EXPECT ── */}
-        <div className="card">
-          <h2 className="font-mono text-xs font-bold uppercase tracking-[0.15em] text-muted mb-3">What to expect</h2>
-          <p className="text-sm text-ink leading-relaxed">{session.description}</p>
-        </div>
-
-        {/* ── HOST CARD ── */}
-        <div className="card">
-          <div className="flex items-start gap-3">
-            <div
-              className="w-12 h-12 rounded-card flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
-              style={{ backgroundColor: session.typeColor }}
-            >
-              {session.host.name[0]}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-bold text-ink">{session.host.name}</p>
-                {session.host.vetted && (
-                  <span className="font-mono text-xs font-bold" style={{ color: "#4FB8E0" }}>✓</span>
-                )}
-              </div>
-              <p className="text-xs text-muted mt-0.5">
-                {session.host.ratingAverage}★ · {session.host.ratingCount} ratings · {session.host.sessionsHosted} sessions
-              </p>
-              <p className="text-sm text-muted mt-1 leading-snug">{session.host.bio}</p>
-              {session.host.instagram && (
-                <a
-                  href={`https://instagram.com/${session.host.instagram}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-olive hover:text-olive-dark mt-1 inline-block"
-                >
-                  @{session.host.instagram}
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── WHERE ── */}
-        <div className="card">
-          <h2 className="font-mono text-xs font-bold uppercase tracking-[0.15em] text-muted mb-3">Where</h2>
-          <p className="font-semibold text-ink">{session.venueName}</p>
-          <p className="text-sm text-muted mb-3">{session.venueAddress}</p>
-          {session.venueNotes && (
-            <p className="text-sm text-muted bg-sand-dark rounded-card px-3 py-2 mb-3">{session.venueNotes}</p>
+          <p style={{ fontSize: 15, fontWeight: 700, color: T.cream, marginBottom: 4 }}>{s.social_stretch_venue}</p>
+          {s.social_stretch_note && (
+            <p style={{ fontSize: 13, color: "rgba(245,237,227,0.75)" }}>{s.social_stretch_note}</p>
           )}
-          <div className="flex gap-2 flex-wrap">
-            <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(session.venueAddress)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-ghost text-sm px-4 py-2 inline-flex"
-            >
-              📍 Directions
-            </a>
-            <a
-              href={googleCalendarUrl({
-                title: `Stretchy — ${session.title}`,
-                startISO: session.startISO,
-                endISO: session.endISO,
-                location: session.venueAddress,
-                description: `Session with ${session.host.name} in ${session.neighbourhood}.`,
-              })}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-ghost text-sm px-4 py-2 inline-flex"
-            >
-              + Google Cal
-            </a>
-            <button
-              onClick={() => downloadIcs({
-                title: `Stretchy — ${session.title}`,
-                startISO: session.startISO,
-                endISO: session.endISO,
-                location: session.venueAddress,
-                description: `Session with ${session.host.name} in ${session.neighbourhood}.`,
-              })}
-              className="btn-ghost text-sm px-4 py-2"
-            >
-              + Apple Cal
-            </button>
-          </div>
         </div>
+      )}
 
-        {/* ── SOCIAL STRETCH ── */}
-        {session.hasSocialStretch && (
-          <div className="rounded-card p-4" style={{ backgroundColor: "#FFD166" }}>
-            <p className="font-bold text-ink text-sm mb-1">🤙 Social Stretch</p>
-            <p className="text-sm text-ink" style={{ opacity: 0.80 }}>{session.socialStretchVenue}</p>
-            <p className="text-xs text-ink mt-1" style={{ opacity: 0.55 }}>Details confirmed on session day.</p>
-          </div>
-        )}
-
-        {/* ── CHARITY / FUNDRAISER ── */}
-        {session.isCharity && session.charity && (
-          <div className="rounded-card overflow-hidden" style={{ border: "1.5px solid #F8DFC5" }}>
-            {/* Header */}
-            <div className="px-4 py-3 flex items-center gap-2" style={{ backgroundColor: "#FF6B35" }}>
-              <span className="text-base">🎗️</span>
-              <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-white">
-                Fundraiser Event
-              </p>
-            </div>
-            {/* Body */}
-            <div className="px-4 py-4 space-y-3" style={{ backgroundColor: "#FFF4E6" }}>
-              <p className="font-bold text-ink">{session.charity.name}</p>
-
-              {session.charity.note && (
-                <p className="text-sm leading-relaxed" style={{ color: "#7A4020" }}>
-                  {session.charity.note}
-                </p>
-              )}
-
-              <div className="flex gap-2 flex-wrap">
-                {session.charity.website && (
-                  <a
-                    href={session.charity.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill transition-all hover:brightness-110"
-                    style={{ backgroundColor: "#FF6B35", color: "#fff" }}
-                  >
-                    Website ↗
-                  </a>
-                )}
-                {session.charity.instagram && (
-                  <a
-                    href={`https://instagram.com/${session.charity.instagram}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill"
-                    style={{ backgroundColor: "#F5EDE3", color: "#1A1A1A", border: "1px solid #E0D9D0" }}
-                  >
-                    @{session.charity.instagram}
-                  </a>
-                )}
-              </div>
-
-              <p className="font-mono text-xs text-muted leading-snug">
-                Stretchy has reduced the platform fee for this event to support the cause.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* ── HOW TO STRETCHY ── */}
+      {/* How to Stretchy */}
+      <div style={{ margin: "0 16px 24px" }}>
         <HowToStretchy />
-
       </div>
 
-      {/* ── STICKY HOLD BAR ── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur border-t border-border px-4 py-4">
-        <div className="max-w-lg mx-auto flex items-center gap-4">
-          <div className="flex-shrink-0">
-            <p className="text-xs text-muted">From</p>
-            <div className="flex items-baseline gap-0.5">
-              <span className="font-mono text-sm font-bold text-ink">$</span>
-              <span className="font-mono text-2xl font-bold text-ink">{Math.round(pricing.currentPrice)}</span>
-            </div>
+      {/* Hold CTA — sticky bottom */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        background: "rgba(245,237,227,0.95)", backdropFilter: "blur(12px)",
+        borderTop: "1px solid rgba(26,26,26,0.08)",
+        padding: "16px 20px 24px",
+        display: "flex", flexDirection: "column", gap: 8,
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <div>
+            <span style={{ fontFamily: "'Bagel Fat One', cursive", fontSize: 28, color: T.yellow }}>${currentPrice}</span>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,26,0.45)", marginLeft: 6 }}>+ GST</span>
           </div>
-          <button
-            onClick={() => {
-              setHeld(true);
-              setTimeout(() => router.push(`/hold/${session.id}`), 300);
-            }}
-            className="flex-1 flex items-center justify-center font-semibold rounded-pill transition-all active:scale-[0.98]"
-            style={{
-              backgroundColor: held ? "#4CAF82" : "#2C8FE0",
-              color: "#fff",
-              height: "56px",
-              fontSize: "16px",
-            }}
-          >
-            {held ? "✓ Place held" : "Hold my place →"}
-          </button>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: confirmed ? "#4CAF82" : T.orange }}>
+            {confirmed ? `${holds} HELD · GOING AHEAD` : `${spotsToMin} MORE TO CONFIRM`}
+          </span>
         </div>
-        {!held && (
-          <p className="text-center text-xs text-muted mt-2 max-w-lg mx-auto">
-            No charge yet. Price locks 2 hrs before — that's when you pay.
-          </p>
-        )}
+        <button
+          onClick={handleHold}
+          disabled={holding || held}
+          style={{
+            width: "100%", padding: "18px 24px", borderRadius: 999,
+            background: holding ? "rgba(26,26,26,0.4)" : T.black,
+            color: T.cream, border: "none", cursor: holding ? "not-allowed" : "pointer",
+            fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 16, fontWeight: 700,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {holding ? "Saving your spot…" : held ? "✓ Held!" : "Hold my place — no charge yet"}
+        </button>
+        <p style={{ textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,26,0.4)", fontWeight: 700 }}>
+          FREE TO HOLD · ONLY CHARGED IF SESSION GOES AHEAD
+        </p>
       </div>
-
     </main>
   );
 }
