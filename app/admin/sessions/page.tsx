@@ -50,27 +50,31 @@ export default function AdminSessionsPage() {
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [testEmailSending, setTestEmailSending] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState<string | null>(null);
+  const [testEmailAddress, setTestEmailAddress] = useState("kimberleytorrie@gmail.com");
 
   async function sendTestEmail() {
     setTestEmailSending(true);
     setTestEmailResult(null);
+    // Use real session ID if available
+    const allSessions = sessions;
+    const firstSession = allSessions.find(s => s.state === "open") ?? allSessions[0];
     const res = await fetch("/api/email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "hold_confirmed",
-        to: "kimberleytorrie@gmail.com",
-        name: "Kimberley",
-        sessionTitle: "Sunday Slow Flow",
-        date: "Sunday 6 July at 9:00 AM",
-        price: "$32 incl. GST",
-        venue: "Grey Lynn Community Centre",
-        socialStretchVenue: "Little Bird Café next door",
-        cancelUrl: "https://stretchy.social/hold/test",
+        to: testEmailAddress,
+        name: testEmailAddress.split("@")[0],
+        sessionTitle: firstSession?.title ?? "Sunday Slow Flow",
+        date: firstSession ? new Date(firstSession.starts_at).toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) + " at 9:00 AM" : "Sunday 6 July at 9:00 AM",
+        price: "$28 incl. GST",
+        venue: firstSession?.location_name ?? "Grey Lynn Community Centre",
+        socialStretchVenue: "nearby",
+        cancelUrl: `https://stretchy.social/hold/${firstSession?.id ?? ""}`,
       }),
     });
     const data = await res.json();
-    setTestEmailResult(res.ok ? "✓ Test email sent! Check kimberleytorrie@gmail.com" : `Error: ${data.error}`);
+    setTestEmailResult(res.ok ? `✓ Sent to ${testEmailAddress}` : `Error: ${data.error}`);
     setTestEmailSending(false);
   }
 
@@ -145,15 +149,20 @@ export default function AdminSessionsPage() {
 
         {/* Test email button */}
         <div style={{ marginBottom: 24, padding: "16px 20px", borderRadius: 14, background: "rgba(245,237,227,0.06)", border: "1px solid rgba(245,237,227,0.10)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-          <div>
-            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.14em", marginBottom: 4 }}>EMAIL TESTING</p>
-            <p style={{ fontSize: 13, color: "rgba(245,237,227,0.6)" }}>Send a test hold confirmation to kimberleytorrie@gmail.com</p>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {testEmailResult && <span style={{ fontSize: 12, color: testEmailResult.startsWith("✓") ? "#4CAF82" : "#E63946" }}>{testEmailResult}</span>}
-            <button onClick={sendTestEmail} disabled={testEmailSending} style={{ padding: "10px 18px", borderRadius: 999, background: "rgba(245,237,227,0.15)", color: "#F5EDE3", border: "1px solid rgba(245,237,227,0.2)", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em" }}>
-              {testEmailSending ? "SENDING…" : "SEND TEST EMAIL"}
-            </button>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.14em", marginBottom: 8 }}>TEST EMAIL — HOLD CONFIRMATION</p>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <input
+                value={testEmailAddress}
+                onChange={e => setTestEmailAddress(e.target.value)}
+                placeholder="email@example.com"
+                style={{ padding: "8px 14px", borderRadius: 8, background: "rgba(245,237,227,0.08)", border: "1px solid rgba(245,237,227,0.15)", color: "#F5EDE3", fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, outline: "none", minWidth: 220 }}
+              />
+              <button onClick={sendTestEmail} disabled={testEmailSending} style={{ padding: "9px 18px", borderRadius: 999, background: "rgba(245,237,227,0.15)", color: "#F5EDE3", border: "1px solid rgba(245,237,227,0.2)", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", flexShrink: 0 }}>
+                {testEmailSending ? "SENDING…" : "SEND TEST"}
+              </button>
+              {testEmailResult && <span style={{ fontSize: 12, color: testEmailResult.startsWith("✓") ? "#4CAF82" : "#E63946" }}>{testEmailResult}</span>}
+            </div>
           </div>
         </div>
 
