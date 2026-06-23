@@ -25,6 +25,7 @@ function CardForm({
   authUserId,
   paymentIntentId,
   priceNZD,
+  quantity,
   accessToken,
   onClose,
 }: {
@@ -33,6 +34,7 @@ function CardForm({
   authUserId: string;
   paymentIntentId: string;
   priceNZD: number;
+  quantity: number;
   accessToken: string;
   onClose: () => void;
 }) {
@@ -68,7 +70,7 @@ function CardForm({
         "Content-Type": "application/json",
         "Authorization": `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({ sessionId, paymentIntentId, attendeeId, authUserId }),
+      body: JSON.stringify({ sessionId, paymentIntentId, attendeeId, authUserId, quantity }),
     });
 
     const data = await res.json();
@@ -85,12 +87,21 @@ function CardForm({
     <form onSubmit={handleSubmit}>
       <div style={{
         background: "rgba(255,209,102,0.12)", borderRadius: 12, padding: "12px 16px",
-        marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center",
+        marginBottom: 20,
       }}>
-        <span style={{ fontSize: 13, color: "rgba(26,26,26,0.6)" }}>Max you&apos;ll pay</span>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: "#FFD166" }}>
-          ${priceNZD} <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>+ GST</span>
-        </span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 13, color: "rgba(26,26,26,0.6)" }}>
+            {quantity > 1 ? `${quantity} spots × $${priceNZD}` : "Max you'll pay"}
+          </span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: "#FFD166" }}>
+            ${priceNZD * quantity} <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>+ GST</span>
+          </span>
+        </div>
+        {quantity > 1 && (
+          <p style={{ fontSize: 11, color: "rgba(26,26,26,0.45)", marginTop: 4 }}>
+            ${priceNZD} per person — may drop as more people join
+          </p>
+        )}
       </div>
 
       <PaymentElement options={{ layout: "tabs" }} />
@@ -141,6 +152,7 @@ export default function HoldModal({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const [quantity, setQuantity] = useState(1);
   const [step, setStep] = useState<"loading" | "card" | "error">("loading");
   const [clientSecret, setClientSecret] = useState("");
   const [paymentIntentId, setPaymentIntentId] = useState("");
@@ -156,7 +168,7 @@ export default function HoldModal({
         "Content-Type": "application/json",
         "Authorization": `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({ sessionId }),
+      body: JSON.stringify({ sessionId, quantity }),
     })
       .then((r) => r.json())
       .then((data) => {
@@ -200,7 +212,31 @@ export default function HoldModal({
         <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: T.black, marginBottom: 4 }}>
           Hold your spot
         </h2>
-        <p style={{ fontSize: 13, color: "rgba(26,26,26,0.55)", marginBottom: 20 }}>{sessionTitle}</p>
+        <p style={{ fontSize: 13, color: "rgba(26,26,26,0.55)", marginBottom: 16 }}>{sessionTitle}</p>
+
+        {/* Quantity selector */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: T.black }}>Spots</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 0, background: "rgba(26,26,26,0.06)", borderRadius: 999, padding: "4px" }}>
+            {[1, 2, 3, 4, 5, 6].map(n => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => { setQuantity(n); setStep("loading"); }}
+                style={{
+                  width: 36, height: 36, borderRadius: 999, border: "none", cursor: "pointer",
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700,
+                  background: quantity === n ? T.black : "transparent",
+                  color: quantity === n ? T.cream : "rgba(26,26,26,0.5)",
+                  transition: "all .15s",
+                }}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          {quantity > 1 && <span style={{ fontSize: 12, color: "rgba(26,26,26,0.5)" }}>spots for you & your mates</span>}
+        </div>
 
         {step === "loading" && (
           <div style={{ textAlign: "center", padding: "40px 0" }}>
@@ -247,6 +283,7 @@ export default function HoldModal({
               authUserId={authUserId}
               paymentIntentId={paymentIntentId}
               priceNZD={priceNZD}
+              quantity={quantity}
               accessToken={accessToken}
               onClose={onClose}
             />

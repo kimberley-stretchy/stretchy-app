@@ -36,7 +36,9 @@ export async function POST(request: NextRequest) {
   }
   if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
 
-  const { sessionId } = await request.json();
+  const body = await request.json();
+  const sessionId = body.sessionId;
+  const quantity = Math.min(Math.max(Number(body.quantity) || 1, 1), 6); // 1–6 spots
   if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
 
   const admin = getAdmin();
@@ -60,12 +62,12 @@ export async function POST(request: NextRequest) {
     .eq("state", "active");
 
   const STRETCHY_FEE = 23;
-  const currentHolds = (holdCount ?? 0) + 1; // +1 because this hold will be added
+  const currentHolds = (holdCount ?? 0) + quantity; // +quantity spots will be added
   const effectiveSpots = Math.max(currentHolds, session.min_attendees);
   const priceNZD = Math.round((session.host_target + STRETCHY_FEE) / effectiveSpots);
   // Add 15% GST
   const priceWithGST = Math.round(priceNZD * 1.15 * 100) / 100;
-  const amountCents = Math.round(priceWithGST * 100);
+  const amountCents = Math.round(priceWithGST * 100) * quantity; // total for all spots
 
   // Get or create attendee record
   let { data: attendee } = await admin
@@ -114,14 +116,16 @@ export async function POST(request: NextRequest) {
       session_id: sessionId,
       attendee_id: attendee?.id ?? "",
       session_title: session.title,
+      quantity: String(quantity),
     },
-    description: `Hold: ${session.title}`,
+    description: `Hold x${quantity}: ${session.title}`,
   });
 
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
     authUserId: user.id,
+    quantity,
     priceNZD,
     priceWithGST,
     sessionTitle: session.title,
@@ -135,7 +139,8 @@ export async function PATCH(request: NextRequest) {
   const admin = getAdmin();
   const stripe = getStripe();
 
-  const { sessionId, paymentIntentId, attendeeId, authUserId } = await request.json();
+  const { sessionId, paymentIntentId, attendeeId, authUserId, quantity: rawQty } = await request.json();
+  const quantity = Math.min(Math.max(Number(rawQty) || 1, 1), 6);
   if (!sessionId || !paymentIntentId) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
@@ -173,22 +178,24 @@ export async function PATCH(request: NextRequest) {
 
   if (existing) return NextResponse.json({ holdId: existing.id });
 
-  // Create hold
-  const { data: hold, error } = await admin
+  // Create one hold record per spot
+  const holdRows = Array.from({ length: quantity }, () => ({
+    session_id: sessionId,
+    user_id: holdUserId,
+    stripe_pi_id: paymentIntentId,
+    state: "active",
+  }));
+
+  const { data: holds, error } = await admin
     .from("holds")
-    .insert({
-      session_id: sessionId,
-      user_id: holdUserId,
-      stripe_pi_id: paymentIntentId,
-      state: "active",
-    })
-    .select("id")
-    .single();
+    .insert(holdRows)
+    .select("id");
 
   if (error) {
     console.error("Hold insert error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  const hold = holds?.[0];
 
   // Send hold confirmation email (fire and forget — don't block the response)
   try {
