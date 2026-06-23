@@ -190,5 +190,42 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Send hold confirmation email (fire and forget — don't block the response)
+  try {
+    const [{ data: sessionData }, { data: attendeeData }] = await Promise.all([
+      admin.from("sessions").select("title, starts_at, location_name, social_stretch_venue").eq("id", sessionId).single(),
+      admin.from("attendees").select("name, email").eq("auth_user_id", holdUserId).single(),
+    ]);
+
+    if (sessionData && attendeeData?.email) {
+      const startDate = new Date(sessionData.starts_at);
+      const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
+        " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
+
+      const STRETCHY_FEE = 23;
+      const priceNZD = Math.round((pi.amount / 100) * (1 / 1.15)); // reverse GST from captured amount
+      const priceDisplay = `$${Math.round(pi.amount / 100)} incl. GST`;
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchy.social";
+      fetch(`${appUrl}/api/email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "hold_confirmed",
+          to: attendeeData.email,
+          name: attendeeData.name?.split(" ")[0] ?? "there",
+          sessionTitle: sessionData.title,
+          date: dateStr,
+          price: priceDisplay,
+          venue: sessionData.location_name,
+          socialStretchVenue: sessionData.social_stretch_venue ?? "nearby",
+          cancelUrl: `${appUrl}/hold/${sessionId}`,
+        }),
+      }).catch(console.error);
+    }
+  } catch (emailErr) {
+    console.error("Email send error (non-blocking):", emailErr);
+  }
+
   return NextResponse.json({ holdId: hold.id });
 }
