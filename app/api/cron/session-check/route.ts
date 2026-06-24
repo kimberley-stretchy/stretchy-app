@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
             price: finalPrice,
             venue: session.location_name,
             socialStretchVenue: session.social_stretch_venue ?? "nearby",
+            sessionId: session.id,
           });
         }
       }
@@ -127,6 +128,7 @@ export async function GET(request: NextRequest) {
             name: attendee.name?.split(" ")[0] ?? "there",
             sessionTitle: session.title,
             date: dateStr,
+            sessionId: session.id,
           });
         }
       }

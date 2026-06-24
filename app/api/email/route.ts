@@ -96,13 +96,33 @@ function holdConfirmedEmail(
   `;
 }
 
+function priceLocketEmail(name: string, sessionTitle: string, date: string, finalPrice: string, venue: string) {
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #FFD166; padding: 32px; border-radius: 16px;">
+      ${emailHeader("#1A1A1A")}
+      <h1 style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 6px; letter-spacing: -0.02em;">Price locked. You're in. ✅</h1>
+      <p style="color: #1A1A1A; font-size: 15px; margin: 0 0 24px; line-height: 1.5; opacity: 0.75;">Hey ${name} — the room is set. Your card has been charged at the final price.</p>
+      <div style="background: #1A1A1A; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
+        <p style="color: #FFD166; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Final price · charged now</p>
+        <p style="color: white; font-size: 36px; font-weight: 900; margin: 0 0 8px; letter-spacing: -0.02em;">${finalPrice}</p>
+        <p style="color: #F5EDE3; font-size: 18px; font-weight: 800; margin: 0 0 6px;">${sessionTitle}</p>
+        <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">🗓 ${date}</p>
+        <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0;">📍 ${venue}</p>
+      </div>
+      <p style="font-size: 13px; color: rgba(26,26,26,0.7); line-height: 1.6; margin: 0 0 16px;">Doors close in 2 hours. See you on the mat. 🧘</p>
+      ${emailFooter()}
+    </div>
+  `;
+}
+
 function sessionGoingAheadEmail(
   name: string,
   sessionTitle: string,
   date: string,
   finalPrice: string,
   venue: string,
-  socialStretchVenue: string
+  socialStretchVenue: string,
+  notificationUrl?: string
 ) {
   return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F5EDE3; padding: 32px; border-radius: 16px;">
@@ -125,14 +145,15 @@ function sessionGoingAheadEmail(
         <p style="font-size: 12px; color: #999; margin: 0;">Charged to your card 2 hours before the session at this final price. No surprises.</p>
       </div>
 
-      <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0;">Stick around after for the Social Stretch — coffee, matcha, booch, beers and actual conversation. That's the whole point.</p>
+      <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0 0 16px;">Stick around after for the Social Stretch — coffee, matcha, booch, beers and actual conversation. That's the whole point.</p>
+      ${notificationUrl ? `<a href="${notificationUrl}" style="display: inline-block; background: #7A8330; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px;">View your session →</a>` : ""}
 
       ${emailFooter()}
     </div>
   `;
 }
 
-function sessionCancelledEmail(name: string, sessionTitle: string, date: string) {
+function sessionCancelledEmail(name: string, sessionTitle: string, date: string, notificationUrl?: string) {
   return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F5EDE3; padding: 32px; border-radius: 16px;">
       ${emailHeader("#1A1A1A")}
@@ -153,7 +174,7 @@ function sessionCancelledEmail(name: string, sessionTitle: string, date: string)
 
       <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0 0 8px;">The more people who join, the better the price gets for everyone — and the more sessions go ahead. Keep an eye out for what's next.</p>
 
-      <a href="https://stretchy.social" style="display: inline-block; background: #1A1A1A; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px; margin-top: 12px; letter-spacing: 0.02em;">See upcoming sessions →</a>
+      <a href="${notificationUrl ?? "https://stretchy.social/sessions"}" style="display: inline-block; background: #1A1A1A; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px; margin-top: 12px; letter-spacing: 0.02em;">See upcoming sessions →</a>
 
       ${emailFooter()}
     </div>
@@ -193,8 +214,9 @@ export async function POST(request: NextRequest) {
   try {
     const {
       type, to, name, sessionTitle, date, price, venue,
-      socialStretchVenue, cancelUrl
+      socialStretchVenue, cancelUrl, sessionId
     } = await request.json();
+    const appUrl = "https://stretchy.social";
 
     if (!type || !to) {
       return NextResponse.json({ error: "Missing type or to" }, { status: 400 });
@@ -218,12 +240,19 @@ export async function POST(request: NextRequest) {
         html = sessionGoingAheadEmail(
           name, sessionTitle, date, price,
           venue || "TBC",
-          socialStretchVenue || "nearby"
+          socialStretchVenue || "nearby",
+          sessionId ? `${appUrl}/notifications/going-ahead?session=${sessionId}` : `${appUrl}/sessions`
         );
         break;
       case "session_cancelled":
         subject = `Not this time — ${sessionTitle}`;
-        html = sessionCancelledEmail(name, sessionTitle, date);
+        html = sessionCancelledEmail(name, sessionTitle, date,
+          sessionId ? `${appUrl}/notifications/cancelled?session=${sessionId}` : `${appUrl}/sessions`
+        );
+        break;
+      case "price_locked":
+        subject = `Price locked — you're in for ${sessionTitle}`;
+        html = priceLocketEmail(name, sessionTitle, date, price, venue || "TBC");
         break;
       case "hold_cancelled":
         subject = `Hold cancelled — ${sessionTitle}`;
