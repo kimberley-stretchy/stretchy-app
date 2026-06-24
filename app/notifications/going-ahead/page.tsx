@@ -1,134 +1,117 @@
 "use client";
 
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 
-// ─── MOCK DATA ────────────────────────────────────────────────────────────────
-const MOCK = {
-  sessionTitle: "Sunday Slow Flow",
-  host: "Tāne Ratima",
-  hostFirst: "Tāne",
-  neighbourhood: "Grey Lynn",
-  day: "SUN",
-  time: "9:00 AM",
-  wasPrice: 28,
-  currentPrice: 23,
-  socialVenue: "Little Bird Café next door",
+const STRETCHY_FEE = 23;
+function calcPrice(target: number, spots: number) {
+  return Math.round((target + STRETCHY_FEE) / Math.max(spots, 1));
+}
+
+type Session = {
+  id: string;
+  title: string;
+  starts_at: string;
+  location_name: string;
+  location_address: string;
+  getting_there: string | null;
+  host_target: number;
+  min_attendees: number;
+  max_attendees: number;
+  current_holds: number;
+  social_stretch_venue: string | null;
+  social_stretch_note: string | null;
 };
 
-// ─── PAGE ─────────────────────────────────────────────────────────────────────
-export default function GoingAheadPage() {
-  const saving = MOCK.wasPrice - MOCK.currentPrice;
+function GoingAheadContent() {
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get("session");
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    fetch(`/api/admin/sessions?id=${sessionId}`)
+      .then(r => r.json())
+      .then((data: Session[]) => {
+        const found = Array.isArray(data) ? data.find(s => s.id === sessionId) : null;
+        setSession(found ?? null);
+      });
+  }, [sessionId]);
+
+  const title = session?.title ?? "Your session";
+  const holds = session?.current_holds ?? 0;
+  const currentPrice = session ? calcPrice(session.host_target, Math.max(holds, session.min_attendees)) : 0;
+  const startDate = session ? new Date(session.starts_at) : null;
+  const dateStr = startDate
+    ? startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" })
+    : "";
+  const timeStr = startDate
+    ? startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()
+    : "";
 
   return (
     <main className="min-h-screen pb-20" style={{ backgroundColor: "#2C8FE0" }}>
-
-      {/* ── NAV ── */}
       <nav className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
-        <Link href="/home" className="text-white opacity-90">
-          <SMark size={28} />
-        </Link>
-        <p className="font-mono text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.65)" }}>
-          Notification · 24H Before
+        <Link href="/sessions"><SMark size={28} className="text-white" /></Link>
+        <p className="font-mono text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
+          Notification · 36H Confirmed
         </p>
-        <button
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xl font-light transition-all hover:bg-white/20"
-          style={{ color: "rgba(255,255,255,0.75)", backgroundColor: "rgba(255,255,255,0.15)" }}
-          aria-label="Dismiss"
-        >
-          ×
-        </button>
+        <Link href="/sessions" className="text-2xl font-light leading-none" style={{ color: "rgba(255,255,255,0.7)" }} aria-label="Dismiss">×</Link>
       </nav>
 
-      <div className="px-4 max-w-lg mx-auto space-y-4">
+      <div className="px-4 max-w-lg mx-auto">
+        <p className="font-mono text-xs font-bold uppercase tracking-[0.20em] mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
+          It&apos;s happening
+        </p>
 
-        {/* ── BIG HEADLINE ── */}
-        <h1
-          className="font-display font-bold text-white"
-          style={{ fontSize: "clamp(62px, 18vw, 84px)", letterSpacing: "-0.04em", lineHeight: "0.90" }}
-        >
+        <h1 className="font-display font-bold mb-5 text-white" style={{ fontSize: "clamp(60px, 16vw, 76px)", letterSpacing: "-0.04em", lineHeight: "0.88" }}>
           Going<br />ahead.
         </h1>
 
-        <p className="text-white leading-snug" style={{ fontSize: "18px", opacity: 0.85 }}>
-          Minimum hit. Your session's happening.
+        <p className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.85)" }}>
+          <strong className="text-white">{title}</strong> is confirmed. The price can still drop as more people join — right up to 2 hours before. Your card is charged at that final price.
         </p>
 
-        {/* ── SESSION CARD ── */}
-        <div className="bg-white rounded-card p-4 space-y-4">
-
-          {/* Confirmed row */}
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#4CAF82" }} />
-            <span className="font-mono text-xs font-bold text-muted uppercase tracking-wide">
-              Confirmed · {MOCK.day} {MOCK.time}
-            </span>
+        {/* Price card */}
+        <div className="bg-white rounded-card p-5 mb-4">
+          <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-1">Current price</p>
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="font-display font-bold text-ink" style={{ fontSize: "52px", letterSpacing: "-0.03em" }}>${currentPrice}</span>
+            <span className="font-mono text-sm font-bold text-muted">+ GST</span>
           </div>
+          <p className="text-xs text-muted">May still drop before 2h lock-in · {holds} people holding</p>
+        </div>
 
-          {/* Session title + S-mark */}
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="font-display font-bold text-ink leading-tight" style={{ fontSize: "26px" }}>
-                {MOCK.sessionTitle}
-              </h2>
-              <p className="text-sm text-muted mt-0.5">{MOCK.host} · {MOCK.neighbourhood}</p>
-            </div>
-            <div className="text-olive flex-shrink-0"><SMark size={44} /></div>
-          </div>
+        {/* Session details */}
+        <div className="bg-white rounded-card p-5 mb-4 space-y-2">
+          <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-3">Your session</p>
+          <p className="font-bold text-ink">{title}</p>
+          {dateStr && <p className="text-sm text-muted">{dateStr} · {timeStr}</p>}
+          {session?.location_name && <p className="text-sm text-muted">{session.location_name}</p>}
+          {session?.getting_there && <p className="text-xs text-muted mt-1">{session.getting_there}</p>}
+        </div>
 
-          {/* Yellow price sub-card */}
-          <div className="rounded-card p-4" style={{ backgroundColor: "#FFD166" }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-xs font-bold uppercase tracking-wider" style={{ color: "rgba(26,26,26,0.55)" }}>
-                Current Price
-              </span>
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#2D6A4A" }} />
-                <span className="font-mono text-xs font-bold uppercase tracking-wider" style={{ color: "#2D6A4A" }}>
-                  May still fall
-                </span>
-              </div>
-            </div>
-            <div className="flex items-start">
-              <span className="font-mono font-black text-ink" style={{ fontSize: "26px", lineHeight: "1", marginTop: "10px", marginRight: "2px" }}>$</span>
-              <span className="font-mono font-black text-ink" style={{ fontSize: "76px", lineHeight: "1", letterSpacing: "-0.04em" }}>
-                {MOCK.currentPrice}
-              </span>
-            </div>
-            <p className="text-sm text-ink mt-1" style={{ opacity: 0.60 }}>
-              Was ${MOCK.wasPrice} · You&apos;re saving ${saving} so far.
+        {/* Social stretch */}
+        {session?.social_stretch_venue && (
+          <div className="rounded-card p-5 mb-4" style={{ backgroundColor: "#A535C7" }}>
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] mb-2" style={{ color: "rgba(245,237,227,0.6)" }}>
+              Social Stretch after 🤙
             </p>
+            <p className="font-bold text-white">{session.social_stretch_venue}</p>
+            {session.social_stretch_note && <p className="text-sm mt-1" style={{ color: "rgba(245,237,227,0.8)" }}>{session.social_stretch_note}</p>}
           </div>
+        )}
 
-          {/* Body copy */}
-          <p className="text-sm text-muted leading-relaxed">
-            People can still join up to <strong className="text-ink">2 hours before</strong>, so your price may keep dropping. Price locks 2 hours before — that&apos;s when you&apos;re charged.
-          </p>
-        </div>
-
-        {/* ── BRING A MATE BUTTON ── */}
-        <button
-          className="w-full font-semibold rounded-pill transition-all active:scale-[0.98] hover:bg-white/10"
-          style={{
-            border: "1.5px solid rgba(255,255,255,0.55)",
-            color: "#fff",
-            height: "52px",
-            fontSize: "15px",
-            backgroundColor: "transparent",
-          }}
-        >
-          + Bring a mate — drop the price again
-        </button>
-
-        {/* ── SOCIAL STRETCH TEASER ── */}
-        <div className="bg-white rounded-card p-4 flex items-center gap-3">
-          <span className="text-2xl flex-shrink-0">🤙</span>
-          <p className="text-sm text-ink leading-snug">
-            <strong>{MOCK.hostFirst}</strong> is heading to {MOCK.socialVenue} after. Come along.
-          </p>
-        </div>
-
+        <Link href={`/sessions/${sessionId}`} className="block text-center font-semibold rounded-pill py-4 transition-all" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3", fontSize: "15px" }}>
+          View my booking →
+        </Link>
       </div>
     </main>
   );
+}
+
+export default function GoingAheadPage() {
+  return <Suspense><GoingAheadContent /></Suspense>;
 }
