@@ -11,7 +11,7 @@ function CallbackHandler() {
   const [status, setStatus] = useState("Signing you in…");
 
   useEffect(() => {
-    const next = searchParams.get("next") ?? "/home";
+    const next = searchParams.get("next") ?? "/sessions";
     const supabase = createClient();
 
     // Listen for the auth state to change — Supabase detects the

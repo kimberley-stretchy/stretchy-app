@@ -50,7 +50,7 @@ function LoginContent() {
   const supabase = createClient();
 
   // Redirect destination based on which tab they signed in from
-  const nextPath = role === "host" ? "/host/dashboard" : "/home";
+  const nextPath = role === "host" ? "/host/dashboard" : "/sessions";
 
   async function signInWithGoogle() {
     // If on www, bounce to non-www first so the PKCE cookie is on the right domain
@@ -250,19 +250,6 @@ function LoginContent() {
                 />
               </div>
 
-              {/* Mobile */}
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted pl-1">
-                  Or mobile
-                </label>
-                <input
-                  type="tel"
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                  placeholder="+64 ..."
-                  className="w-full px-5 py-4 rounded-pill border-2 border-border bg-white text-ink placeholder-muted focus:outline-none focus:border-hot-blue transition-colors text-base"
-                />
-              </div>
 
               {/* Magic link — black */}
               <button
