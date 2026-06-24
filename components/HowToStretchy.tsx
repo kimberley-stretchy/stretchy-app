@@ -16,7 +16,7 @@ const STEPS = [
   },
   {
     n: 3,
-    title: "24 hours out — go or no go.",
+    title: "36 hours out — go or no go.",
     body: "Minimum met? Session confirmed. The more people who join from here, the lower everyone's price. No cancellations from this point.",
     blue: false,
   },

@@ -10,7 +10,7 @@ const MOCK = {
   sessionTitle: "Sat Sunrise",
   youNeed: 8,
   youveGot: 5,
-  locksInSeconds: 3600, // 1 hour — alerted at 25hrs out, lock-in at 24hrs
+  locksInSeconds: 3600, // 1 hour — alerted at 37hrs out, lock-in at 36hrs
   currentStartPrice: 28,
   newMinimum: 5,
   newStartPrice: 44,

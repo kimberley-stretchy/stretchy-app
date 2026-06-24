@@ -1,0 +1,18 @@
+{
+  "name": "Stretchy — A Social Movement",
+  "short_name": "Stretchy",
+  "description": "Community movement classes. Price drops as more people join.",
+  "start_url": "/sessions",
+  "display": "standalone",
+  "background_color": "#FFD166",
+  "theme_color": "#FFD166",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

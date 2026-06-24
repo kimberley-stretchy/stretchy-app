@@ -2,22 +2,28 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Stretchy — Social Movement Club",
+  title: "Stretchy — A Social Movement",
   description:
-    "A social movement. The more we move together, the better for all. Community-led sessions across Auckland — yoga, pilates, run clubs, breathwork and more. The price drops as the room fills.",
+    "Community movement classes where the price drops as more people join. Yoga, pilates, breathwork and more across Auckland.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://stretchy.social"),
   openGraph: {
-    title: "Stretchy — Social Movement Club",
+    title: "Stretchy — A Social Movement",
     description: "Move together. Pay less together.",
-    images: ["/og-image.png"],
     siteName: "Stretchy",
   },
   twitter: {
     card: "summary_large_image",
     site: "@stretchysocial",
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Stretchy",
+  },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icon.svg",
+    apple: "/apple-icon.svg",
   },
 };
 
