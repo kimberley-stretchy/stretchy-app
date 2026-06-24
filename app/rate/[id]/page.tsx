@@ -6,25 +6,31 @@ import Link from "next/link";
 import SMark from "@/components/SMark";
 import { createClient } from "@/lib/supabase/client";
 
-const VIBE_TAGS = ["Strong flow", "Welcoming", "Good cues", "Punctual", "Felt the connection", "Loved the Social Stretch", "Other"];
+const VIBE_TAGS = [
+  "Strong flow", "Welcoming", "Good cues", "Punctual",
+  "Felt the connection", "Loved the Social Stretch", "Great music", "Other",
+];
 
 type Session = {
   id: string;
   title: string;
   starts_at: string;
   location_name: string;
+  hosts?: { name: string; bio?: string; instagram?: string } | null;
 };
 
 export default function RateItPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
-  const [rating, setRating] = useState(0);
+  const [rating, setRating]   = useState(0);
   const [hovered, setHovered] = useState(0);
-  const [tags, setTags] = useState<string[]>([]);
-  const [note, setNote] = useState("");
+  const [tags, setTags]       = useState<string[]>([]);
+  const [note, setNote]       = useState("");
+  const [suggestion, setSuggestion] = useState("");
+  const [anonymous, setAnonymous]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted]   = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/sessions?id=${params.id}`)
@@ -53,6 +59,8 @@ export default function RateItPage() {
             rating,
             tags,
             note,
+            suggestion,
+            anonymous,
           }),
         }).catch(console.error);
       }
@@ -62,7 +70,8 @@ export default function RateItPage() {
     setTimeout(() => router.push("/sessions"), 2000);
   }
 
-  const title = session?.title ?? "Your session";
+  const title       = session?.title ?? "Your session";
+  const hostName    = (session?.hosts as { name?: string } | null)?.name ?? null;
   const displayRating = hovered || rating;
 
   if (submitted) {
@@ -85,12 +94,20 @@ export default function RateItPage() {
 
       <div className="px-4 max-w-lg mx-auto space-y-5">
         <div>
-          <p className="font-mono text-xs font-bold uppercase tracking-[0.20em] text-muted mb-2">
-            {session ? new Date(session.starts_at).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase() + " · " + session.location_name : ""}
-          </p>
+          {session && (
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.20em] text-muted mb-2">
+              {new Date(session.starts_at).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase()} · {session.location_name}
+            </p>
+          )}
           <h1 className="font-display font-bold text-ink" style={{ fontSize: "clamp(36px, 10vw, 48px)", letterSpacing: "-0.03em", lineHeight: "1.0" }}>
             How was<br />{title}?
           </h1>
+          {/* Host name */}
+          {hostName && (
+            <p className="text-sm text-muted mt-2">
+              with <span className="font-semibold text-ink">{hostName}</span>
+            </p>
+          )}
         </div>
 
         {/* Star rating */}
@@ -119,9 +136,9 @@ export default function RateItPage() {
           </div>
         </div>
 
-        {/* Vibe tags */}
         {rating > 0 && (
           <>
+            {/* Vibe tags */}
             <div className="bg-white rounded-card shadow-card p-5">
               <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-3">What was the vibe?</p>
               <div className="flex flex-wrap gap-2">
@@ -141,13 +158,44 @@ export default function RateItPage() {
               </div>
             </div>
 
-            {/* Note */}
+            {/* Note for host */}
             <div className="bg-white rounded-card shadow-card p-5">
-              <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-3">A note for the host (optional)</p>
+              <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-1">
+                A note for {hostName ?? "the host"} (optional)
+              </p>
+              <p className="text-xs text-muted mb-3">Private — only shared with the teacher.</p>
               <textarea
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 placeholder="Loved the music. Felt safe trying the headstand for the first time."
+                rows={3}
+                className="w-full text-sm text-ink placeholder-muted resize-none outline-none leading-relaxed"
+                style={{ borderBottom: "1px solid #E8D9C8", paddingBottom: "12px" }}
+              />
+
+              {/* Anonymous toggle */}
+              <div className="flex items-center gap-3 mt-4 pt-3" style={{ borderTop: "1px solid #E8D9C8" }}>
+                <button
+                  onClick={() => setAnonymous(!anonymous)}
+                  className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all"
+                  style={{ backgroundColor: anonymous ? "#1A1A1A" : "transparent", border: "2px solid #1A1A1A" }}
+                >
+                  {anonymous && <span className="text-white text-xs font-bold">✓</span>}
+                </button>
+                <label className="text-sm text-muted cursor-pointer" onClick={() => setAnonymous(!anonymous)}>
+                  Keep me anonymous — the host won&apos;t see my name
+                </label>
+              </div>
+            </div>
+
+            {/* Open-ended suggestion for Stretchy */}
+            <div className="bg-white rounded-card shadow-card p-5">
+              <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-1">Suggestions for Stretchy (optional)</p>
+              <p className="text-xs text-muted mb-3">What could we do better? Goes straight to Kimberley.</p>
+              <textarea
+                value={suggestion}
+                onChange={e => setSuggestion(e.target.value)}
+                placeholder="Would love more early morning sessions in Ponsonby..."
                 rows={3}
                 className="w-full text-sm text-ink placeholder-muted resize-none outline-none leading-relaxed"
               />

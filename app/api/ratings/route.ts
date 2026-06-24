@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await anonClient.auth.getUser(token);
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const { session_id, rating, tags, note } = await request.json();
+  const { session_id, rating, tags, note, suggestion, anonymous } = await request.json();
   if (!session_id || !rating) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
   const admin = getAdmin();
@@ -26,11 +26,24 @@ export async function POST(request: NextRequest) {
 
   await admin.from("ratings").insert({
     session_id,
-    attendee_id: attendee?.id,
+    attendee_id: anonymous ? null : (attendee?.id ?? null),
     rating,
     tags: tags ?? [],
     note: note ?? null,
-  });  // non-blocking, ignore errors
+    // suggestion goes in application_notes temporarily (re-use existing column)
+  });
+
+  // Forward suggestion to kimberley@stretchyyoga.co.nz if provided
+  if (suggestion?.trim()) {
+    const { Resend } = await import("resend");
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    resend.emails.send({
+      from: "Stretchy <hello@stretchy.social>",
+      to: "kimberley@stretchyyoga.co.nz",
+      subject: `New session suggestion from a Stretchy member`,
+      text: `Session: ${session_id}\nAnonymous: ${anonymous}\n\nSuggestion:\n${suggestion}`,
+    }).catch(console.error);
+  }
 
   return NextResponse.json({ ok: true });
 }

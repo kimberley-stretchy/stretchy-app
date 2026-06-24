@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
       id, title, description, movement_type, starts_at, ends_at, duration_mins,
       location_name, location_address, getting_there,
       host_target, min_attendees, max_attendees, state, created_at,
-      social_stretch_venue, social_stretch_note, what_to_bring
+      social_stretch_venue, social_stretch_note, what_to_bring,
+      hosts ( name, bio, instagram )
     `)
     .order("starts_at", { ascending: true });
 

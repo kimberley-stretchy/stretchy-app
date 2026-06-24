@@ -132,10 +132,6 @@ export default function OnboardingPage() {
             What should we<br />call you?
           </h1>
           <div className="flex flex-col gap-3">
-            <button type="button" className="w-full flex items-center justify-center gap-2.5 font-semibold rounded-pill transition-all hover:brightness-125 active:scale-[0.98]" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3", height: "56px", fontSize: "15px" }}>
-              <svg width="15" height="18" viewBox="0 0 814 1000" fill="currentColor" aria-hidden><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.8-150.3-103.8c-52.4-71.6-96.5-185-96.5-291.6 0-167.5 109.1-256 215.7-256 81.8 0 149.3 53.3 199.8 53.3 48 0 124.1-56.5 215.9-56.5zm-181.7-152c37.4-44.5 64.7-106.1 64.7-167.8 0-8.4-.6-16.7-2-24.5-61.6 2.3-135.8 41.2-180.9 91.9-34.5 38.5-67.1 100.5-67.1 162.8 0 9.4 1.6 18.8 2.3 21.8 3.9.6 10.4 1.6 16.7 1.6 55.3 0 125.3-37.1 166.3-85.8z"/></svg>
-              Continue with Apple
-            </button>
             <Link href="/login" className="w-full flex items-center justify-center gap-2.5 font-semibold text-ink rounded-pill border border-border bg-white transition-all hover:bg-sand-dark active:scale-[0.98]" style={{ height: "56px", fontSize: "15px" }}>
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
               Continue with Google
