@@ -51,14 +51,17 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
     const { data: { session: authSession } } = await supabase.auth.getSession();
     if (!authSession) return;
 
-    await fetch("/api/holds", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${authSession.access_token}`,
-      },
-      body: JSON.stringify({ sessionId: params.id, action: "cancel" }),
+    const res = await fetch(`/api/holds?sessionId=${params.id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${authSession.access_token}` },
     });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error ?? "Could not cancel. Please contact kimberley@stretchyyoga.co.nz");
+      setCancelState("idle");
+      return;
+    }
     setCancelState("cancelled");
   }
 

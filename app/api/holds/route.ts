@@ -135,6 +135,78 @@ export async function POST(request: NextRequest) {
   });
 }
 
+// DELETE /api/holds — cancel a hold (only allowed >36h before session)
+export async function DELETE(request: NextRequest) {
+  const admin = getAdmin();
+  const stripe = getStripe();
+
+  // Verify auth
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: async () => (await cookies()).getAll(), setAll: () => {} } }
+  );
+  let { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    const token = request.headers.get("Authorization")?.replace("Bearer ", "");
+    if (token) { const { data } = await supabase.auth.getUser(token); user = data.user; }
+  }
+  if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const sessionId = searchParams.get("sessionId");
+  if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+
+  // Check session exists and get start time
+  const { data: session } = await admin
+    .from("sessions")
+    .select("id, starts_at, title")
+    .eq("id", sessionId)
+    .single();
+
+  if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+
+  // Enforce 36h rule server-side
+  const hoursUntil = (new Date(session.starts_at).getTime() - Date.now()) / (1000 * 60 * 60);
+  if (hoursUntil <= 36) {
+    return NextResponse.json({
+      error: "Cancellation window has closed. You are locked in and will be charged 2 hours before the session."
+    }, { status: 400 });
+  }
+
+  // Find all active holds for this user + session
+  const { data: holds } = await admin
+    .from("holds")
+    .select("id, stripe_pi_id")
+    .eq("session_id", sessionId)
+    .eq("user_id", user.id)
+    .eq("state", "active");
+
+  if (!holds || holds.length === 0) {
+    return NextResponse.json({ error: "No active hold found" }, { status: 404 });
+  }
+
+  // Cancel each Stripe PaymentIntent and release the holds
+  const piIds = Array.from(new Set(holds.map(h => h.stripe_pi_id).filter(Boolean)));
+  for (const piId of piIds) {
+    try {
+      await stripe.paymentIntents.cancel(piId);
+    } catch (e) {
+      console.error(`Failed to cancel PI ${piId}:`, e);
+    }
+  }
+
+  // Mark all holds as released
+  await admin
+    .from("holds")
+    .update({ state: "released" })
+    .eq("session_id", sessionId)
+    .eq("user_id", user.id)
+    .eq("state", "active");
+
+  return NextResponse.json({ ok: true, cancelled: holds.length });
+}
+
 // PATCH /api/holds — step 2: after Stripe confirms, save hold to Supabase
 // Body: { sessionId, paymentIntentId, attendeeId }
 export async function PATCH(request: NextRequest) {
