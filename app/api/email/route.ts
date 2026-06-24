@@ -202,12 +202,26 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Unknown email type" }, { status: 400 });
     }
 
+    // Strip HTML tags for plain text fallback
+    const text = html
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s{2,}/g, "\n")
+      .trim();
+
     const { data, error } = await resend.emails.send({
       from: FROM,
       to,
       reply_to: REPLY_TO,
       subject,
       html,
+      text,
+      headers: {
+        "X-Priority": "1",
+        "X-MSMail-Priority": "High",
+        "Importance": "High",
+        "Precedence": "bulk",
+      },
     });
 
     if (error) {
