@@ -45,13 +45,16 @@ function Nav() {
           <a href="#about" style={navLink}>About</a>
           <a href="#host" style={navLink}>Host a Stretchy</a>
           <a href="#suggest" style={navLink}>Suggest a Stretchy</a>
-          <a href="/sessions" style={{ marginLeft: 8, padding: "10px 20px", borderRadius: 999, background: T.black, color: T.cream, fontFamily: T.title, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>Book Auckland →</a>
+          <Link href="/login" style={navLink}>Log in</Link>
+          <a href="/sessions" style={{ marginLeft: 4, padding: "10px 20px", borderRadius: 999, background: T.black, color: T.cream, fontFamily: T.title, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>Book Auckland →</a>
         </div>
       </div>
       {/* Mobile nav */}
       <div className="show-mobile" style={{ padding: "10px 16px", alignItems: "center", justifyContent: "space-between", flexWrap: "nowrap" }}>
         <Link href="/" aria-label="Stretchy home" style={{ flexShrink: 0 }}><SMark size={26} className="text-olive" /></Link>
         <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", marginLeft: "auto" }}>
+          <Link href="/login" style={{ ...navLink, fontSize: 11, padding: "4px 5px", fontWeight: 700 }}>Log in</Link>
+          <span style={{ color: "rgba(26,26,26,0.2)", fontSize: 10 }}>|</span>
           <a href="#about" style={{ ...navLink, fontSize: 11, padding: "4px 5px" }}>About</a>
           <span style={{ color: "rgba(26,26,26,0.2)", fontSize: 10, lineHeight: 1 }}>|</span>
           <a href="#host" style={{ ...navLink, fontSize: 11, padding: "4px 5px" }}>Host</a>
