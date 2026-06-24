@@ -204,6 +204,26 @@ export async function DELETE(request: NextRequest) {
     .eq("user_id", user.id)
     .eq("state", "active");
 
+  // Send cancellation confirmation email
+  try {
+    const { data: attendeeData } = await admin.from("attendees").select("name, email").eq("auth_user_id", user.id).single();
+    if (attendeeData?.email) {
+      const startDate = new Date(session.starts_at);
+      const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
+        " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      resend.emails.send({
+        from: "Stretchy <hello@stretchy.social>",
+        to: attendeeData.email,
+        reply_to: "kimberley@stretchyyoga.co.nz",
+        subject: `Hold cancelled — ${session.title}`,
+        headers: { "X-Priority": "1", "Importance": "High" },
+        text: `Hi ${attendeeData.name?.split(" ")[0] ?? "there"},\n\nYour hold for ${session.title} (${dateStr}) has been cancelled. Nothing was charged — your card authorisation has been released.\n\nBrowse sessions: https://stretchy.social/sessions\n\nStretchy`,
+        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#F5EDE3;padding:32px;border-radius:16px;"><h1 style="font-size:26px;font-weight:900;color:#1A1A1A;margin:0 0 8px;">Hold cancelled. 👋</h1><p style="color:#555;font-size:15px;margin:0 0 20px;">Hi ${attendeeData.name?.split(" ")[0] ?? "there"} — your hold for <strong>${session.title}</strong> (${dateStr}) has been cancelled.</p><div style="background:white;border-radius:12px;padding:18px;margin-bottom:16px;"><p style="font-size:14px;font-weight:700;color:#1A1A1A;margin:0 0 4px;">Nothing was charged. ✓</p><p style="font-size:13px;color:#888;margin:0;">Your card authorisation has been fully released.</p></div><a href="https://stretchy.social/sessions" style="display:inline-block;background:#1A1A1A;color:#F5EDE3;text-decoration:none;font-size:13px;font-weight:700;padding:12px 22px;border-radius:8px;">Browse sessions →</a><p style="font-size:11px;color:#AAA;text-align:center;margin:24px 0 0;">Made with Love by <a href="https://studiodawn.org" style="color:#AAA;">Studio Dawn</a></p></div>`,
+      }).catch(console.error);
+    }
+  } catch (e) { console.error("Cancel email error:", e); }
+
   return NextResponse.json({ ok: true, cancelled: holds.length });
 }
 

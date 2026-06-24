@@ -78,7 +78,7 @@ export default function FloorNotMetPage() {
           </h1>
 
           <p className="text-sm text-white mb-5" style={{ opacity: 0.75 }}>
-            You have <strong>1 hour</strong> to make your call. At 24 hours out it locks — holds convert to charges and the session&apos;s confirmed.
+            You have <strong>1 hour</strong> to make your call. At 36 hours out it locks — holds convert to charges and the session&apos;s confirmed.
           </p>
 
           {/* YOU NEED / YOU'VE GOT */}

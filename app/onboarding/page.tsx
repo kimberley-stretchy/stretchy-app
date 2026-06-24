@@ -409,7 +409,7 @@ export default function OnboardingPage() {
             <ul className="space-y-2">
               {[
                 "Holding a place is free. You only pay if the session goes ahead.",
-                "From 24 hours out, holds become locked-in bookings. No cancellations. BUT the overall price may keep dropping for you. Yeehaw!",
+                "From 36 hours out, holds become locked-in bookings. No cancellations. BUT the overall price may keep dropping for you. Yeehaw!",
                 "Price locks 2 hours before — that's when your card is charged.",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-xs text-ink leading-snug">

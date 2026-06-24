@@ -45,11 +45,11 @@ const FAQS = [
   },
   {
     q: "How does the price drop?",
-    a: "Sessions start at a max price. The more people who hold a spot, the lower the price drops for everyone. Once the minimum is met (24 hours out), the session is confirmed and the price keeps dropping as more people join — right up until two hours before.",
+    a: "Sessions start at a max price. The more people who hold a spot, the lower the price drops for everyone. Once the minimum is met (36 hours out), the session is confirmed and the price keeps dropping as more people join — right up until two hours before.",
   },
   {
     q: "What happens if the minimum isn't met?",
-    a: "If not enough people hold by the 24-hour mark, the session doesn't go ahead. Your hold is released and nothing is charged. Simple.",
+    a: "If not enough people hold by the 36-hour mark, the session doesn't go ahead. Your hold is released and nothing is charged. Simple.",
   },
   {
     q: "Can I cancel my hold?",
@@ -57,7 +57,7 @@ const FAQS = [
   },
   {
     q: "Can I cancel once the session is confirmed?",
-    a: "Once confirmed (24 hours out), cancellations close. The session is going ahead and the price is live. No cancellations from this point.",
+    a: "Once confirmed (36 hours out), cancellations close. The session is going ahead and the price is live. No cancellations from this point.",
   },
   {
     q: "What is a Social Stretch?",

@@ -68,7 +68,7 @@ function holdConfirmedEmail(
       ${emailHeader("#1A1A1A")}
 
       <h1 style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 6px; letter-spacing: -0.02em;">You're in. 🙌</h1>
-      <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — your spot is held. Get excited.</p>
+      <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — your spot is held. Get excited! 🧘</p>
 
       <div style="background: #1A1A1A; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
         <p style="color: #FFD166; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Your Stretchy</p>
@@ -109,7 +109,7 @@ function sessionGoingAheadEmail(
       ${emailHeader("#7A8330")}
 
       <h1 style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 6px; letter-spacing: -0.02em;">It's happening. ✅</h1>
-      <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — this one's going ahead. See you on the mat.</p>
+      <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — this one's going ahead. See you on the mat! 🤙</p>
 
       <div style="background: #7A8330; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
         <p style="color: rgba(255,255,255,0.65); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Confirmed</p>
@@ -138,7 +138,7 @@ function sessionCancelledEmail(name: string, sessionTitle: string, date: string)
       ${emailHeader("#1A1A1A")}
 
       <h1 style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 6px; letter-spacing: -0.02em;">Not this time. 💙</h1>
-      <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — unfortunately this one didn't get enough holds to go ahead.</p>
+      <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — unfortunately this one didn't get enough holds to go ahead. Nothing was charged. 💛</p>
 
       <div style="background: #1A1A1A; border-radius: 14px; padding: 22px; margin-bottom: 20px;">
         <p style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Cancelled</p>
@@ -154,6 +154,33 @@ function sessionCancelledEmail(name: string, sessionTitle: string, date: string)
       <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0 0 8px;">The more people who join, the better the price gets for everyone — and the more sessions go ahead. Keep an eye out for what's next.</p>
 
       <a href="https://stretchy.social" style="display: inline-block; background: #1A1A1A; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px; margin-top: 12px; letter-spacing: 0.02em;">See upcoming sessions →</a>
+
+      ${emailFooter()}
+    </div>
+  `;
+}
+
+function holdCancelledEmail(name: string, sessionTitle: string, date: string) {
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F5EDE3; padding: 32px; border-radius: 16px;">
+      ${emailHeader("#1A1A1A")}
+
+      <h1 style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 6px; letter-spacing: -0.02em;">Hold cancelled. 👋</h1>
+      <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — your hold has been cancelled as requested.</p>
+
+      <div style="background: #1A1A1A; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
+        <p style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Cancelled</p>
+        <p style="color: #F5EDE3; font-size: 20px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em;">${sessionTitle}</p>
+        <p style="color: rgba(245,237,227,0.5); font-size: 14px; margin: 0;">🗓 ${date}</p>
+      </div>
+
+      <div style="background: white; border-radius: 14px; padding: 18px; margin-bottom: 20px;">
+        <p style="font-size: 14px; font-weight: 700; color: #1A1A1A; margin: 0 0 4px;">Nothing was charged. ✓</p>
+        <p style="font-size: 13px; color: #888; margin: 0; line-height: 1.5;">Your card authorisation has been fully released. Your spot has been freed back to the group.</p>
+      </div>
+
+      <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0 0 12px;">Changed your mind? There's still time to grab another spot if the session hasn't hit the 36-hour mark. 🧘</p>
+      <a href="https://stretchy.social/sessions" style="display: inline-block; background: #1A1A1A; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px; margin-top: 4px;">Browse sessions →</a>
 
       ${emailFooter()}
     </div>
@@ -197,6 +224,10 @@ export async function POST(request: NextRequest) {
       case "session_cancelled":
         subject = `Not this time — ${sessionTitle}`;
         html = sessionCancelledEmail(name, sessionTitle, date);
+        break;
+      case "hold_cancelled":
+        subject = `Hold cancelled — ${sessionTitle}`;
+        html = holdCancelledEmail(name, sessionTitle, date);
         break;
       default:
         return NextResponse.json({ error: "Unknown email type" }, { status: 400 });

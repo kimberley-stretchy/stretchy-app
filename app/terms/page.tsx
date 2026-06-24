@@ -28,12 +28,12 @@ export default function TermsPage() {
 
           <div>
             <h2 className="font-bold mb-2">Holds &amp; payments</h2>
-            <p className="text-muted">Placing a hold authorises a payment — your card isn't charged until 2 hours before the session (lock-in). If the session cancels before the 24hr check, your hold is released and you pay nothing. Refunds are processed within 5–10 business days depending on your bank.</p>
+            <p className="text-muted">Placing a hold authorises a payment — your card isn't charged until 2 hours before the session (lock-in). If the session cancels before the 36hr check, your hold is released and you pay nothing. Refunds are processed within 5–10 business days depending on your bank.</p>
           </div>
 
           <div>
             <h2 className="font-bold mb-2">Cancellations</h2>
-            <p className="text-muted">You can cancel your hold up to 24 hours before a session for a full release. Within 24 hours, cancellations are at the host's discretion. If Stretchy cancels a session for any reason, you receive a full refund.</p>
+            <p className="text-muted">You can cancel your hold up to 36 hours before a session for a full release. Within 36 hours, cancellations are at the host's discretion. If Stretchy cancels a session for any reason, you receive a full refund.</p>
           </div>
 
           <div>
