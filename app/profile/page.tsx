@@ -220,16 +220,37 @@ function PushButton({ accessToken }: { accessToken: string | null }) {
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
 
   async function enable() {
-    if (!accessToken) return;
+    if (!accessToken) { setStatus("error"); setMsg("Not logged in — please log in first"); return; }
     setStatus("loading");
-    const { requestPushPermission } = await import("@/lib/push");
-    const ok = await requestPushPermission(accessToken);
-    if (ok) {
+    setMsg("Registering…");
+    try {
+      const { registerServiceWorker } = await import("@/lib/push");
+      const reg = await registerServiceWorker();
+      if (!reg) { setStatus("error"); setMsg("Service worker not supported on this browser"); return; }
+
+      setMsg("Requesting permission…");
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") { setStatus("error"); setMsg(`Permission ${perm} — check your phone Settings`); return; }
+
+      setMsg("Subscribing…");
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
+      const b64 = (s: string) => { const p = "=".repeat((4 - s.length % 4) % 4); return atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); };
+      const key = Uint8Array.from(Array.from(b64(vapidKey)).map(c => c.charCodeAt(0)));
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+
+      setMsg("Saving…");
+      const res = await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+        body: JSON.stringify({ subscription: sub.toJSON() }),
+      });
+      if (!res.ok) { const d = await res.json(); setStatus("error"); setMsg(`Save failed: ${d.error}`); return; }
+
       setStatus("done");
-      setMsg("Notifications enabled ✓");
-    } else {
+      setMsg("Notifications enabled ✓ You're all set!");
+    } catch (err: unknown) {
       setStatus("error");
-      setMsg(Notification.permission === "denied" ? "Blocked in browser settings — reset in Settings → Safari → stretchy.social" : "Could not enable. Try again.");
+      setMsg(`Error: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -262,10 +283,15 @@ function PushButton({ accessToken }: { accessToken: string | null }) {
   }
 
   return (
-    <button onClick={enable} disabled={status === "loading" || !accessToken}
-      className="w-full font-semibold rounded-pill py-4 transition-all hover:brightness-110 disabled:opacity-50"
-      style={{ backgroundColor: "#7A8330", color: "#F5EDE3", fontSize: "15px" }}>
-      {status === "loading" ? "Enabling…" : "🔔 Enable push notifications"}
-    </button>
+    <div>
+      <button onClick={enable} disabled={status === "loading" || !accessToken}
+        className="w-full font-semibold rounded-pill py-4 transition-all hover:brightness-110 disabled:opacity-50"
+        style={{ backgroundColor: "#7A8330", color: "#F5EDE3", fontSize: "15px" }}>
+        {status === "loading" ? `⏳ ${msg || "Enabling…"}` : "🔔 Enable push notifications"}
+      </button>
+      {status === "error" && (
+        <p className="text-center text-xs mt-2 font-semibold" style={{ color: "#E63946" }}>{msg}</p>
+      )}
+    </div>
   );
 }
