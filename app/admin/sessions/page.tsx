@@ -51,6 +51,25 @@ export default function AdminSessionsPage() {
   const [testEmailSending, setTestEmailSending] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState<string | null>(null);
   const [testEmailAddress, setTestEmailAddress] = useState("kimberleytorrie@gmail.com");
+  const [testPushSending, setTestPushSending] = useState(false);
+  const [testPushResult, setTestPushResult] = useState<string | null>(null);
+
+  async function sendTestPush() {
+    setTestPushSending(true);
+    setTestPushResult(null);
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setTestPushResult("Not logged in"); setTestPushSending(false); return; }
+      const res = await fetch("/api/push/test", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${session.access_token}` },
+      });
+      setTestPushResult(res.ok ? "✓ Push sent! Check your notifications" : "Error — are notifications enabled?");
+    } catch { setTestPushResult("Error sending push"); }
+    setTestPushSending(false);
+  }
 
   async function sendTestEmail() {
     setTestEmailSending(true);
@@ -145,6 +164,20 @@ export default function AdminSessionsPage() {
           >
             + New session
           </Link>
+        </div>
+
+        {/* Test push notification */}
+        <div style={{ marginBottom: 16, padding: "16px 20px", borderRadius: 14, background: "rgba(245,237,227,0.06)", border: "1px solid rgba(245,237,227,0.10)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+          <div>
+            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.14em", marginBottom: 4 }}>PUSH NOTIFICATION TEST</p>
+            <p style={{ fontSize: 13, color: "rgba(245,237,227,0.6)" }}>Send a test push to yourself (must have notifications enabled on your device)</p>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {testPushResult && <span style={{ fontSize: 12, color: testPushResult.startsWith("✓") ? "#4CAF82" : "#E63946" }}>{testPushResult}</span>}
+            <button onClick={sendTestPush} disabled={testPushSending} style={{ padding: "10px 18px", borderRadius: 999, background: "rgba(245,237,227,0.15)", color: "#F5EDE3", border: "1px solid rgba(245,237,227,0.2)", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em" }}>
+              {testPushSending ? "SENDING…" : "SEND TEST PUSH"}
+            </button>
+          </div>
         </div>
 
         {/* Test email button */}
