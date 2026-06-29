@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 import { createClient } from "@/lib/supabase/client";
+import { requestPushPermission } from "@/lib/push";
 
 const SETTINGS = [
   { label: "Notifications", icon: "🔔", href: "/profile/notifications" },
@@ -196,6 +197,21 @@ export default function ProfilePage() {
             ))}
           </div>
         </div>
+
+        {/* Enable push notifications */}
+        {"Notification" in window && Notification.permission !== "granted" && (
+          <button
+            onClick={async () => {
+              if (!accessToken) return;
+              const ok = await requestPushPermission(accessToken);
+              if (ok) alert("Notifications enabled! You'll get push alerts at 36h and 2h before sessions.");
+            }}
+            className="w-full font-semibold rounded-pill py-4 transition-all hover:brightness-110"
+            style={{ backgroundColor: "#7A8330", color: "#F5EDE3", fontSize: "15px" }}
+          >
+            🔔 Enable push notifications
+          </button>
+        )}
 
         {/* Email */}
         {user?.email && (
