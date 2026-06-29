@@ -198,19 +198,9 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Enable push notifications */}
-        {"Notification" in window && Notification.permission !== "granted" && (
-          <button
-            onClick={async () => {
-              if (!accessToken) return;
-              const ok = await requestPushPermission(accessToken);
-              if (ok) alert("Notifications enabled! You'll get push alerts at 36h and 2h before sessions.");
-            }}
-            className="w-full font-semibold rounded-pill py-4 transition-all hover:brightness-110"
-            style={{ backgroundColor: "#7A8330", color: "#F5EDE3", fontSize: "15px" }}
-          >
-            🔔 Enable push notifications
-          </button>
+        {/* Push notifications */}
+        {"Notification" in window && (
+          <PushButton accessToken={accessToken} />
         )}
 
         {/* Email */}
@@ -219,5 +209,63 @@ export default function ProfilePage() {
         )}
       </div>
     </main>
+  );
+}
+
+function PushButton({ accessToken }: { accessToken: string | null }) {
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [msg, setMsg] = useState("");
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+
+  async function enable() {
+    if (!accessToken) return;
+    setStatus("loading");
+    const { requestPushPermission } = await import("@/lib/push");
+    const ok = await requestPushPermission(accessToken);
+    if (ok) {
+      setStatus("done");
+      setMsg("Notifications enabled ✓");
+    } else {
+      setStatus("error");
+      setMsg(Notification.permission === "denied" ? "Blocked in browser settings — reset in Settings → Safari → stretchy.social" : "Could not enable. Try again.");
+    }
+  }
+
+  if (isIOS && !isStandalone) {
+    return (
+      <div className="bg-white rounded-card shadow-card p-4 text-center">
+        <p className="font-bold text-ink text-sm mb-2">📲 Add to Home Screen for notifications</p>
+        <p className="text-xs text-muted leading-relaxed">
+          On iPhone, push notifications require the app to be installed. Tap <strong>Share → Add to Home Screen</strong> in Safari, then open Stretchy from your home screen and enable notifications.
+        </p>
+      </div>
+    );
+  }
+
+  if (status === "done" || Notification.permission === "granted") {
+    return (
+      <div className="bg-white rounded-card shadow-card p-4 flex items-center justify-between">
+        <div>
+          <p className="font-semibold text-sm text-ink">Push notifications</p>
+          <p className="text-xs text-muted mt-0.5">{msg || "You'll get alerts at 36h and 2h before sessions"}</p>
+        </div>
+        {status !== "done" && Notification.permission === "granted" && (
+          <button onClick={enable} disabled={status === "loading"} className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill" style={{ background: "rgba(26,26,26,0.06)", color: "#1A1A1A" }}>
+            {status === "loading" ? "…" : "RE-ENABLE"}
+          </button>
+        )}
+        {status === "done" && <span style={{ color: "#4CAF82" }}>✓</span>}
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={enable} disabled={status === "loading" || !accessToken}
+      className="w-full font-semibold rounded-pill py-4 transition-all hover:brightness-110 disabled:opacity-50"
+      style={{ backgroundColor: "#7A8330", color: "#F5EDE3", fontSize: "15px" }}>
+      {status === "loading" ? "Enabling…" : "🔔 Enable push notifications"}
+    </button>
   );
 }
