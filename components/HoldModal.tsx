@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { loadStripe } from "@stripe/stripe-js";
+import { requestPushPermission } from "@/lib/push";
 import {
   Elements,
   PaymentElement,
@@ -79,6 +80,9 @@ function CardForm({
       setLoading(false);
       return;
     }
+
+    // Ask for push notifications after successful hold (non-blocking)
+    requestPushPermission(accessToken).catch(console.error);
 
     router.push(`/hold/${sessionId}`);
   }

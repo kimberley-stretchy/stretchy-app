@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sendPushToUsers } from "@/lib/push-server";
 
 /**
  * GET /api/cron/session-check
@@ -101,6 +102,15 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Send push notifications to all holders
+      const holderUserIds = (holdData ?? []).map(h => h.user_id);
+      sendPushToUsers(holderUserIds, {
+        title: "It's happening! ✅",
+        body: `${session.title} is confirmed. Price may still drop — see you there!`,
+        url: `/notifications/going-ahead?session=${session.id}`,
+        requireInteraction: true,
+      }).catch(console.error);
+
       results.push({ session: session.title, action: "confirmed", holders: holds });
     } else {
       // Not enough holds — cancel it
@@ -132,6 +142,14 @@ export async function GET(request: NextRequest) {
           });
         }
       }
+
+      // Send push notifications
+      const cancelledUserIds = (holdData ?? []).map(h => h.user_id);
+      sendPushToUsers(cancelledUserIds, {
+        title: "Not this time 💙",
+        body: `${session.title} didn't reach the minimum. Nothing was charged.`,
+        url: `/notifications/cancelled?session=${session.id}`,
+      }).catch(console.error);
 
       results.push({ session: session.title, action: "cancelled", holders: holds, needed: session.min_attendees });
     }

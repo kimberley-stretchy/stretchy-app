@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { Resend } from "resend";
+import { sendPushToUsers } from "@/lib/push-server";
 
 /**
  * GET /api/cron/lock-in
@@ -159,6 +160,15 @@ export async function GET(request: NextRequest) {
         console.error("Email error:", emailErr);
       }
     }
+
+    // Send push notifications to all holders
+    const holderUserIds = holds.map(h => h.user_id);
+    sendPushToUsers(holderUserIds, {
+      title: "Price locked 🔒",
+      body: `${session.title} — $${finalPriceNZD} + GST charged. See you in 2 hours!`,
+      url: `/sessions/${session.id}`,
+      requireInteraction: true,
+    }).catch(console.error);
 
     results.push({
       session: session.title,
