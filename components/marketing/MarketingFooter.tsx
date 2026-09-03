@@ -39,9 +39,9 @@ export default function MarketingFooter() {
           <div className="flex flex-wrap items-center gap-2.5 mt-1">
             <a href="mailto:kimberley@stretchyyoga.co.nz" className="text-xs lg:text-[13px] font-bold text-ink underline">kimberley@stretchyyoga.co.nz</a>
             <span className="w-[1.5px] h-3 bg-ink/40" />
-            <a href="https://www.instagram.com/stretchy.yoga/" className="text-xs lg:text-[13px] font-bold text-ink underline">Instagram</a>
+            <a href="https://www.instagram.com/stretchy.yoga/" target="_blank" rel="noopener noreferrer" className="text-xs lg:text-[13px] font-bold text-ink underline">Instagram</a>
             <span className="w-[1.5px] h-3 bg-ink/40" />
-            <a href="https://www.tiktok.com/@stretchy.yoga" className="text-xs lg:text-[13px] font-bold text-ink underline">TikTok</a>
+            <a href="https://www.tiktok.com/@stretchy.yoga" target="_blank" rel="noopener noreferrer" className="text-xs lg:text-[13px] font-bold text-ink underline">TikTok</a>
           </div>
         </div>
 
@@ -51,7 +51,7 @@ export default function MarketingFooter() {
             <a href="#whats-on">What&rsquo;s on</a>
             <a href="#how-it-works">How it works</a>
             <a href="#suggest">Suggest a Stretchy</a>
-            <span>Stretchy Store</span>
+            <a href="/store">Stretchy Store</a>
           </div>
           <div className="flex flex-col gap-[7px] lg:gap-[9px]">
             <span className="font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.12em] lg:tracking-[0.13em]">OPPORTUNITIES</span>
