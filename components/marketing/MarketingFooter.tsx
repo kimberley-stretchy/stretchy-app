@@ -62,7 +62,7 @@ export default function MarketingFooter() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-[7px] lg:gap-[9px] text-xs lg:text-[13px] col-span-2 lg:col-span-1">
+        <div className="flex flex-col gap-[7px] lg:gap-[9px] text-xs lg:text-[13px]">
           <span className="font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.12em] lg:tracking-[0.13em]">THE FINE PRINT</span>
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy policy</a>

@@ -22,13 +22,19 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
 
+  /* Defensive: any element even slightly wider than the viewport (a stray
+     implicit grid column, an unwrapped long word, etc.) makes the whole page
+     horizontally scrollable, and iOS's elastic overscroll in both directions
+     at once is exactly what reads as the page "moving/scrambling" on scroll. */
   body {
     background-color: #F7F0E8;
     color: #14110F;
     font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
     cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><text y='26' font-size='26'>🧘</text></svg>") 16 16, auto;
+    overflow-x: hidden;
   }
 
   a, button, [role="button"], input, select, textarea, label[for], summary {
