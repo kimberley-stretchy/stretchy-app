@@ -35,8 +35,12 @@ export default function HQShell({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       const role = session?.user?.user_metadata?.role;
+      const email = session?.user?.email ?? "";
       if (!session) { router.replace(`/login?next=${pathname}`); return; }
-      if (role !== "admin") { router.replace("/home?error=not_authorised"); return; }
+      if (role !== "admin" || !email.toLowerCase().endsWith("@stretchyyoga.co.nz")) {
+        router.replace("/home?error=not_authorised");
+        return;
+      }
       setChecked(true);
     });
     return () => subscription.unsubscribe();

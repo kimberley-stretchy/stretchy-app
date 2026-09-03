@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 
 function getAdmin() {
   return createClient(
@@ -52,4 +53,39 @@ export async function GET() {
   }));
 
   return NextResponse.json({ teachers, gems, venues: venueRows });
+}
+
+// PATCH /api/admin/people — approve or decline a teacher/GEM's application.
+export async function PATCH(request: NextRequest) {
+  const { hostId, vettingStatus } = await request.json();
+  if (!hostId || !["approved", "declined", "pending", "more_info"].includes(vettingStatus)) {
+    return NextResponse.json({ error: "Missing hostId or invalid status" }, { status: 400 });
+  }
+
+  const admin = getAdmin();
+  const { data: host, error } = await admin
+    .from("hosts")
+    .update({ vetting_status: vettingStatus })
+    .eq("id", hostId)
+    .select("id, name, email, roles")
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (vettingStatus === "approved" && host?.email && process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.stretchyyoga.co.nz";
+    const firstName = host.name?.split(" ")[0] ?? "there";
+    resend.emails
+      .send({
+        from: "Stretchy HQ <hello@stretchy.social>",
+        to: host.email,
+        subject: "You're approved to host with Stretchy",
+        text: `Hi ${firstName},\n\nYou're approved — you can now see your sessions and get to work. Head to your dashboard: ${appUrl}/host/home\n\nStretchy HQ`,
+        html: `<div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;background:#F7F0E8;padding:32px;border-radius:16px;"><h1 style="font-size:26px;font-weight:900;color:#14110F;margin:0 0 12px;">You&rsquo;re approved. 🙌</h1><p style="color:rgba(20,17,15,.7);font-size:15px;margin:0 0 20px;">Hi ${firstName} — you&rsquo;re approved to host with Stretchy. You can now see your sessions and get to work.</p><a href="${appUrl}/host/home" style="display:inline-block;background:#14110F;color:#F7F0E8;text-decoration:none;font-size:14px;font-weight:700;padding:14px 26px;border-radius:999px;">Go to your dashboard →</a></div>`,
+      })
+      .catch((e) => console.error("Host approval email error:", e));
+  }
+
+  return NextResponse.json({ ok: true });
 }

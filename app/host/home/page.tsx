@@ -67,6 +67,24 @@ export default function HostHomePage() {
     return <main className="min-h-screen flex items-center justify-center bg-cream text-ink text-sm">Loading…</main>;
   }
 
+  if (host.vetting_status !== "approved") {
+    return (
+      <main className="min-h-screen bg-cream text-ink flex flex-col items-center justify-center px-6 text-center gap-3">
+        <div className="text-purple mb-2"><SMark size={32} /></div>
+        <p className="text-3xl">👀</p>
+        <h1 className="font-display text-[28px] leading-none">
+          {host.vetting_status === "declined" ? "Not this time." : "We&rsquo;re reviewing your application."}
+        </h1>
+        <p className="text-sm text-ink/65 max-w-xs">
+          {host.vetting_status === "declined"
+            ? "Get in touch if you think this isn't right — kimberley@stretchyyoga.co.nz."
+            : "Stretchy HQ checks every teacher and GEM before they can see sessions. We'll email you the second you're approved."}
+        </p>
+        <button onClick={handleSignOut} className="text-xs underline text-ink/55 mt-3">Sign out</button>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-cream text-ink pb-16">
       <div className="max-w-lg mx-auto px-6 pt-5 flex flex-col gap-5">
@@ -78,7 +96,6 @@ export default function HostHomePage() {
         <div>
           <div className="font-mono text-[10px] font-extrabold tracking-[0.13em] text-ink/45">
             {host.roles.map((r) => ROLE_LABELS[r] ?? r).join(" & ").toUpperCase()}
-            {host.vetting_status === "pending" && " · VETTING PENDING"}
           </div>
           <h1 className="font-display text-[32px] leading-none mt-2">Kia ora, {host.name.split(" ")[0]}.</h1>
         </div>

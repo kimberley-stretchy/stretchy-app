@@ -28,10 +28,23 @@ function initials(name: string) {
 export default function AdminPeoplePage() {
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  useEffect(() => {
+  function load() {
     fetch("/api/admin/people").then((r) => r.json()).then((d) => { setData(d); setLoading(false); }).catch(() => setLoading(false));
-  }, []);
+  }
+  useEffect(load, []);
+
+  async function decide(hostId: string, vettingStatus: "approved" | "declined") {
+    setBusyId(hostId);
+    await fetch("/api/admin/people", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hostId, vettingStatus }),
+    });
+    setBusyId(null);
+    load();
+  }
 
   return (
     <HQShell>
@@ -48,8 +61,8 @@ export default function AdminPeoplePage() {
             <p style={{ fontFamily: T.mono, fontSize: 12, color: "rgba(20,17,15,.4)" }}>LOADING…</p>
           ) : (
             <>
-              <PeopleSection title="TEACHERS" people={data.teachers} applyHref="/host/apply" applyLabel="Add a teacher" />
-              <PeopleSection title="GEMS" people={data.gems} applyHref="/gem/apply" applyLabel="Add a GEM" />
+              <PeopleSection title="TEACHERS" people={data.teachers} applyHref="/host/apply" applyLabel="Add a teacher" onDecide={decide} busyId={busyId} />
+              <PeopleSection title="GEMS" people={data.gems} applyHref="/gem/apply" applyLabel="Add a GEM" onDecide={decide} busyId={busyId} />
               <PeopleSection title="VENUES & SOCIAL SPOTS" people={data.venues} applyHref="/venue/offer" applyLabel="Add a venue" />
             </>
           )}
@@ -59,7 +72,10 @@ export default function AdminPeoplePage() {
   );
 }
 
-function PeopleSection({ title, people, applyHref, applyLabel }: { title: string; people: Person[]; applyHref: string; applyLabel: string }) {
+function PeopleSection({ title, people, applyHref, applyLabel, onDecide, busyId }: {
+  title: string; people: Person[]; applyHref: string; applyLabel: string;
+  onDecide?: (hostId: string, status: "approved" | "declined") => void; busyId?: string | null;
+}) {
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -77,18 +93,40 @@ function PeopleSection({ title, people, applyHref, applyLabel }: { title: string
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
           {people.map((p) => {
             const c = STATUS_COLORS[p.status] ?? STATUS_COLORS.PENDING;
+            const isPending = p.status === "PENDING" && !!onDecide;
+            const busy = busyId === p.id;
             return (
-              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 14, padding: "10px 14px" }}>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#EFDEDB", color: T.ink, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
-                  {initials(p.name)}
+              <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 10, background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 14, padding: "10px 14px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#EFDEDB", color: T.ink, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                    {initials(p.name)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontWeight: 700, fontSize: 14, color: T.ink, margin: 0 }}>{p.name}</p>
+                    {p.meta && <p style={{ fontSize: 12, color: "rgba(20,17,15,.55)", margin: "1px 0 0" }}>{p.meta}</p>}
+                  </div>
+                  <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", padding: "4px 9px", borderRadius: 999, background: c.bg, color: c.fg, flexShrink: 0 }}>
+                    {p.status}
+                  </span>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 700, fontSize: 14, color: T.ink, margin: 0 }}>{p.name}</p>
-                  {p.meta && <p style={{ fontSize: 12, color: "rgba(20,17,15,.55)", margin: "1px 0 0" }}>{p.meta}</p>}
-                </div>
-                <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", padding: "4px 9px", borderRadius: 999, background: c.bg, color: c.fg, flexShrink: 0 }}>
-                  {p.status}
-                </span>
+                {isPending && (
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => onDecide!(p.id, "approved")}
+                      disabled={busy}
+                      style={{ flex: 1, height: 34, borderRadius: 999, border: "none", cursor: "pointer", background: "#716F39", color: "#F7F0E8", fontSize: 12, fontWeight: 700, opacity: busy ? 0.6 : 1 }}
+                    >
+                      {busy ? "…" : "Approve"}
+                    </button>
+                    <button
+                      onClick={() => onDecide!(p.id, "declined")}
+                      disabled={busy}
+                      style={{ flex: 1, height: 34, borderRadius: 999, border: `1.5px solid ${T.ink}`, cursor: "pointer", background: "transparent", color: T.ink, fontSize: 12, fontWeight: 700, opacity: busy ? 0.6 : 1 }}
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}

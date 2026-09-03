@@ -172,9 +172,9 @@ function LoginContent() {
               <div className="rounded-card p-5 space-y-3" style={{ backgroundColor: "#F7F0E8", border: "2px solid #14110F" }}>
                 <input value={wlName} onChange={(e) => setWlName(e.target.value)} placeholder="Your name" className="w-full px-4 py-3.5 rounded-pill border-2 border-ink bg-white text-ink outline-none text-sm" />
                 <input value={wlEmail} onChange={(e) => setWlEmail(e.target.value)} placeholder="your@email.com" className="w-full px-4 py-3.5 rounded-pill border-2 border-ink bg-white text-ink outline-none text-sm" />
-                <div className="flex gap-2">
-                  <input value={wlCity} onChange={(e) => setWlCity(e.target.value)} placeholder="City" className="flex-1 px-4 py-3.5 rounded-pill border-2 border-ink bg-white text-ink outline-none text-sm" />
-                  <input value={wlCountry} onChange={(e) => setWlCountry(e.target.value)} placeholder="Country" className="flex-1 px-4 py-3.5 rounded-pill border-2 border-ink bg-white text-ink outline-none text-sm" />
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input value={wlCity} onChange={(e) => setWlCity(e.target.value)} placeholder="City" className="w-full sm:flex-1 sm:min-w-0 px-4 py-3.5 rounded-pill border-2 border-ink bg-white text-ink outline-none text-sm" />
+                  <input value={wlCountry} onChange={(e) => setWlCountry(e.target.value)} placeholder="Country" className="w-full sm:flex-1 sm:min-w-0 px-4 py-3.5 rounded-pill border-2 border-ink bg-white text-ink outline-none text-sm" />
                 </div>
                 <div className="flex gap-2">
                   {(["mover", "host", "both"] as WaitlistRole[]).map((r) => (
