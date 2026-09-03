@@ -38,9 +38,9 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
   const photo = CARD_PHOTOS[index % CARD_PHOTOS.length];
   const start = new Date(s.starts_at);
   const end = s.duration_mins ? new Date(start.getTime() + s.duration_mins * 60 * 1000) : null;
-  const dayShort = start.toLocaleDateString("en-NZ", { weekday: "short" }).toUpperCase();
-  const dayNum = start.toLocaleDateString("en-NZ", { day: "2-digit" });
-  const monthShort = start.toLocaleDateString("en-NZ", { month: "short" }).toUpperCase();
+  const dayShort = s.isPlaceholder ? "" : start.toLocaleDateString("en-NZ", { weekday: "short" }).toUpperCase();
+  const dayNum = s.isPlaceholder ? "XX" : start.toLocaleDateString("en-NZ", { day: "2-digit" });
+  const monthShort = s.isPlaceholder ? "AUG" : start.toLocaleDateString("en-NZ", { month: "short" }).toUpperCase();
   const timeRange = end
     ? `${start.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" })}–${end.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" })}`
     : start.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" });

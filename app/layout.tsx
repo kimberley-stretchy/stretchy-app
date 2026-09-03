@@ -39,7 +39,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen bg-cream antialiased flex flex-col">
+      <body className="min-h-dvh bg-cream antialiased flex flex-col">
         <main className="flex-1">{children}</main>
         <footer className="py-4 text-center text-xs text-gray-400">
           Made with love{" "}

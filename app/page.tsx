@@ -14,6 +14,7 @@ import SocialStretchBand from "@/components/marketing/SocialStretchBand";
 import StretchyFundBand from "@/components/marketing/StretchyFundBand";
 import OpportunitiesBand from "@/components/marketing/OpportunitiesBand";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
+import TestingPopup from "@/components/marketing/TestingPopup";
 
 function getAdmin() {
   return createClient(
@@ -190,6 +191,7 @@ export default async function HomePage() {
       <OpportunitiesBand />
       <StretchyFundBand total={fundTotal} />
       <MarketingFooter />
+      <TestingPopup />
     </main>
   );
 }
