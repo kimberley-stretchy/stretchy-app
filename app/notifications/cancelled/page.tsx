@@ -19,12 +19,9 @@ function CancelledContent() {
 
   useEffect(() => {
     if (!sessionId) return;
-    fetch(`/api/admin/sessions?id=${sessionId}`)
-      .then(r => r.json())
-      .then((data: Session[]) => {
-        const found = Array.isArray(data) ? data.find(s => s.id === sessionId) : null;
-        setSession(found ?? null);
-      });
+    fetch(`/api/sessions/${sessionId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: Session | null) => setSession(data));
   }, [sessionId]);
 
   const title = session?.title ?? "Your session";

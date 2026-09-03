@@ -225,22 +225,51 @@ export async function DELETE(request: NextRequest) {
 }
 
 // PATCH /api/holds — step 2: after Stripe confirms, save hold to Supabase
-// Body: { sessionId, paymentIntentId, attendeeId }
+// Body: { sessionId, paymentIntentId, quantity }
 export async function PATCH(request: NextRequest) {
   const admin = getAdmin();
   const stripe = getStripe();
 
-  const { sessionId, paymentIntentId, attendeeId, authUserId, quantity: rawQty } = await request.json();
+  // Identity comes from the caller's own session only — never trust a client-supplied
+  // attendeeId/authUserId here, or anyone could attribute a hold (and overwrite the
+  // saved card) to a different person's account.
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  let { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    const token = request.headers.get("Authorization")?.replace("Bearer ", "");
+    if (token) {
+      const { data } = await supabase.auth.getUser(token);
+      user = data.user;
+    }
+  }
+  if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+
+  const { sessionId, paymentIntentId, quantity: rawQty } = await request.json();
   const quantity = Math.min(Math.max(Number(rawQty) || 1, 1), 6);
   if (!sessionId || !paymentIntentId) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  // Verify PaymentIntent is in the right state
+  // Verify PaymentIntent is in the right state, and that it actually belongs to this caller
   const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
   if (!["requires_capture", "succeeded"].includes(pi.status)) {
     return NextResponse.json({ error: `Payment not confirmed (status: ${pi.status})` }, { status: 400 });
   }
+  if (pi.metadata?.attendee_id) {
+    const { data: piOwner } = await admin.from("attendees").select("auth_user_id").eq("id", pi.metadata.attendee_id).single();
+    if (piOwner && piOwner.auth_user_id !== user.id) {
+      return NextResponse.json({ error: "This payment doesn't belong to you" }, { status: 403 });
+    }
+  }
+
+  const { data: myAttendee } = await admin.from("attendees").select("id").eq("auth_user_id", user.id).single();
+  const attendeeId = myAttendee?.id;
+  if (!attendeeId) return NextResponse.json({ error: "No attendee profile found" }, { status: 400 });
 
   // Save payment method to attendee
   if (pi.payment_method) {
@@ -250,13 +279,7 @@ export async function PATCH(request: NextRequest) {
       .eq("id", attendeeId);
   }
 
-  // user_id in holds references auth.users.id — use authUserId if provided, else look up from attendee
-  let holdUserId = authUserId;
-  if (!holdUserId && attendeeId) {
-    const { data: att } = await admin.from("attendees").select("auth_user_id").eq("id", attendeeId).single();
-    holdUserId = att?.auth_user_id;
-  }
-  if (!holdUserId) return NextResponse.json({ error: "Could not identify user" }, { status: 400 });
+  const holdUserId = user.id;
 
   // Check if hold already exists (prevent duplicates)
   const { data: existing } = await admin

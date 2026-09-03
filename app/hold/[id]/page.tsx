@@ -32,11 +32,10 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
   const [cancelState, setCancelState] = useState<"idle" | "confirm" | "cancelled">("idle");
 
   useEffect(() => {
-    fetch(`/api/admin/sessions?id=${params.id}`)
-      .then(r => r.json())
-      .then((data: Session[]) => {
-        const found = Array.isArray(data) ? data.find(s => s.id === params.id) : null;
-        setSession(found ?? null);
+    fetch(`/api/sessions/${params.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: Session | null) => {
+        setSession(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));

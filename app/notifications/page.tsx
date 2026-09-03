@@ -71,14 +71,15 @@ export default function NotificationsPage() {
     if (!holds.length) return;
     const sessionIds = holds.map(h => h.sessions?.id).filter(Boolean) as string[];
     if (!sessionIds.length) return;
-    fetch(`/api/admin/sessions`)
-      .then(r => r.json())
-      .then((sessions: Array<{ id: string; current_holds: number }>) => {
-        const counts: Record<string, number> = {};
-        sessions.forEach(s => { counts[s.id] = s.current_holds; });
-        setHoldCounts(counts);
-      })
-      .catch(console.error);
+    Promise.all(
+      sessionIds.map((id) =>
+        fetch(`/api/sessions/${id}`).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      )
+    ).then((sessions) => {
+      const counts: Record<string, number> = {};
+      sessions.forEach((s) => { if (s) counts[s.id] = s.current_holds; });
+      setHoldCounts(counts);
+    });
   }, [holds]);
 
   const upcoming = holds.filter(h => h.sessions && new Date(h.sessions.starts_at) > new Date() && h.state === "active");

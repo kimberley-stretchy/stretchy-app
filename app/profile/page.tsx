@@ -58,8 +58,6 @@ export default function ProfilePage() {
       const name = u.user_metadata?.full_name ?? u.email?.split("@")[0] ?? "Member";
       setUser({ name, email: u.email ?? "", initial: name.charAt(0).toUpperCase() });
 
-      // Fetch attendee record
-      const res = await fetch("/api/admin/sessions"); // reuse same auth
       // Get attendee + holds via Supabase
       const { data: att } = await supabase
         .from("attendees")
