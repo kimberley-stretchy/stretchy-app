@@ -50,14 +50,15 @@ const FAQS = [
   },
   {
     q: "Who designed and built Stretchy?",
-    a: "Stretchy — the brand, the design, the UX, the copy, the whole idea — was imagined and built by Kimberley Torrie, trading as Studio Dawn. Get in touch at kimberley@stretchyyoga.co.nz, or find Studio Dawn at studiodawn.org.",
+    a: "Stretchy — the brand, the design, the UX, the copy, the whole idea — was imagined and built by Kimberley Torrie, trading as Studio Dawn. Get in touch at kimberley@stretchyyoga.co.nz, find Studio Dawn at studiodawn.org, or follow along on Instagram @studiodawn_nz.",
     jsx: (
       <>
         Stretchy — the brand, the design, the UX, the copy, the whole idea — was imagined and built by{" "}
         <strong className="text-ink">Kimberley Torrie</strong>, trading as{" "}
         <a href="https://www.studiodawn.org/" target="_blank" rel="noopener noreferrer" className="text-ink font-bold underline">Studio Dawn</a>.
         Get in touch at{" "}
-        <a href="mailto:kimberley@stretchyyoga.co.nz" className="text-ink font-bold underline">kimberley@stretchyyoga.co.nz</a>.
+        <a href="mailto:kimberley@stretchyyoga.co.nz" className="text-ink font-bold underline">kimberley@stretchyyoga.co.nz</a>, or find Studio Dawn on{" "}
+        <a href="https://www.instagram.com/studiodawn_nz" target="_blank" rel="noopener noreferrer" className="text-ink font-bold underline">Instagram</a>.
       </>
     ),
   },
