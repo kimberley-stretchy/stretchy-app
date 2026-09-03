@@ -37,8 +37,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
 
   const admin = getAdmin();
-  const { data: me } = await admin.from("hosts").select("id, name, roles").eq("auth_user_id", user.id).single();
+  const { data: me } = await admin.from("hosts").select("id, name, roles, vetting_status").eq("auth_user_id", user.id).single();
   if (!me) return NextResponse.json({ error: "No host profile found" }, { status: 400 });
+  if (me.vetting_status !== "approved") {
+    return NextResponse.json({ error: "Your application isn't approved yet" }, { status: 403 });
+  }
 
   const { data: req } = await admin.from("substitute_requests").select("id, session_id, role, status").eq("id", id).single();
   if (!req) return NextResponse.json({ error: "Request not found" }, { status: 404 });

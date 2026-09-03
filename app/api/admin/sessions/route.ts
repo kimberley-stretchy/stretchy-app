@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/adminAuth";
 
 // Create inside each request handler so env vars are always available at runtime
 function getSupabase() {
@@ -42,6 +43,9 @@ async function getOrCreateHostId(): Promise<string> {
 
 // GET /api/admin/sessions — list all sessions, or a single session by ?id=
 export async function GET(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   const supabase = getSupabase();
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
@@ -90,6 +94,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/sessions — create a new session
 export async function POST(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   const supabase = getSupabase();
   const body = await request.json();
 
@@ -171,6 +178,9 @@ export async function POST(request: NextRequest) {
 
 // PATCH /api/admin/sessions — update session state or details
 export async function PATCH(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   const supabase = getSupabase();
   const body = await request.json();
   const { id, ...updates } = body;
@@ -189,6 +199,9 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/admin/sessions — cancel/delete a session
 export async function DELETE(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   const supabase = getSupabase();
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");

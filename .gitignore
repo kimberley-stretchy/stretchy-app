@@ -50,4 +50,5 @@ coverage/
 # ─── Design reference material — not app code, kept out of the repo ────────
 /STETCHY 2.0 SEP_DESIGN HANDOVER/
 /design_handoff_stretchy_social*/
+/STRETYCHY_IP*/
 *.docx

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { requireAdmin } from "@/lib/adminAuth";
 
 function getAdmin() {
   return createClient(
@@ -12,6 +13,9 @@ function getAdmin() {
 // POST /api/admin/substitute-requests — HQ marks a session as needing cover for a role,
 // and broadcasts it by email to every eligible teacher/GEM. First to claim gets it.
 export async function POST(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   const { sessionId, role, note } = await request.json();
   if (!sessionId || !["teacher", "gem"].includes(role)) {
     return NextResponse.json({ error: "Missing sessionId or invalid role" }, { status: 400 });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/adminAuth";
 
 function getAdmin() {
   return createClient(
@@ -10,6 +11,9 @@ function getAdmin() {
 
 // GET /api/admin/sessions/[id]/money — settlement breakdown for one session.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   const { id } = await params;
   const admin = getAdmin();
 
@@ -64,6 +68,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 // POST /api/admin/sessions/[id]/money — mark payouts released for this session.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   const { id } = await params;
   const admin = getAdmin();
 

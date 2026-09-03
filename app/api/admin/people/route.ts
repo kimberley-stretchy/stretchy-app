@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { requireAdmin } from "@/lib/adminAuth";
 
 function getAdmin() {
   return createClient(
@@ -10,7 +11,10 @@ function getAdmin() {
 }
 
 // GET /api/admin/people — everyone HQ can book: teachers, GEMs, venues & social spots.
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   const admin = getAdmin();
 
   const [{ data: hosts }, { data: venues }] = await Promise.all([
@@ -57,6 +61,9 @@ export async function GET() {
 
 // PATCH /api/admin/people — approve or decline a teacher/GEM's application.
 export async function PATCH(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   const { hostId, vettingStatus } = await request.json();
   if (!hostId || !["approved", "declined", "pending", "more_info"].includes(vettingStatus)) {
     return NextResponse.json({ error: "Missing hostId or invalid status" }, { status: 400 });

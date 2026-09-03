@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/adminAuth";
 
 function getAdmin() {
   return createClient(
@@ -9,7 +10,10 @@ function getAdmin() {
 }
 
 // GET /api/admin/newsletter — everyone who's signed up for Stretchy Updates, newest first.
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   const admin = getAdmin();
   const { data, error } = await admin
     .from("newsletter_signups")

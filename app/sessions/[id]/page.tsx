@@ -164,11 +164,10 @@ export default function SessionDetailPage() {
 
   useEffect(() => {
     if (!params.id) return;
-    fetch(`/api/admin/sessions?id=${params.id}`)
-      .then((r) => r.json())
-      .then((data: Session[]) => {
-        const found = Array.isArray(data) ? data.find((s) => s.id === params.id) : null;
-        setSession(found || null);
+    fetch(`/api/sessions/${params.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: Session | null) => {
+        setSession(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));

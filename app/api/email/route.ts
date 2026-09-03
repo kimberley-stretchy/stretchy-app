@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { requireAdmin } from "@/lib/adminAuth";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -211,6 +212,9 @@ function holdCancelledEmail(name: string, sessionTitle: string, date: string) {
 // ─── API HANDLER ──────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
   try {
     const {
       type, to, name, sessionTitle, date, price, venue,
