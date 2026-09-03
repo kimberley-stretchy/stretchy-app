@@ -67,6 +67,7 @@ export default function MarketingFooter() {
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy policy</a>
           <a href="/faq">FAQ</a>
+          <a href="/sitemap.xml">Sitemap</a>
           <a href="#how-it-works" className="hidden lg:inline">How pricing works</a>
         </div>
       </div>

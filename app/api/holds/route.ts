@@ -210,7 +210,7 @@ export async function DELETE(request: NextRequest) {
         " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
       const resend = new Resend(process.env.RESEND_API_KEY);
       resend.emails.send({
-        from: "Stretchy <hello@stretchyyoga.co.nz>",
+        from: "Stretchy <hello@stretchy.social>",
         to: attendeeData.email,
         reply_to: "kimberley@stretchyyoga.co.nz",
         subject: `Hold cancelled — ${session.title}`,
@@ -306,7 +306,7 @@ export async function PATCH(request: NextRequest) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchyyoga.co.nz";
       const firstName = attendeeData.name?.split(" ")[0] ?? "there";
       await resend.emails.send({
-        from: "Stretchy <hello@stretchyyoga.co.nz>",
+        from: "Stretchy <hello@stretchy.social>",
         to: attendeeData.email,
         reply_to: "kimberley@stretchyyoga.co.nz",
         subject: `Booking confirmation — ${sessionData.title}`,

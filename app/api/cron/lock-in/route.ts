@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
 
         if (attendee?.email) {
           await resend.emails.send({
-            from: "Stretchy <hello@stretchyyoga.co.nz>",
+            from: "Stretchy <hello@stretchy.social>",
             to: attendee.email,
             reply_to: "kimberley@stretchyyoga.co.nz",
             subject: `Price locked — see you at ${session.title} 🧘`,

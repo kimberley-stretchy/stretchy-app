@@ -61,7 +61,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails
       .send({
-        from: "Stretchy <hello@stretchyyoga.co.nz>",
+        from: "Stretchy <hello@stretchy.social>",
         to: "kimberley@stretchyyoga.co.nz",
         subject: `Run sheet — ${session.title}`,
         text: `${me.name} sent the run sheet for ${session.title} (${session.location_name}).\n\nChecked in: ${checkedIn} of ${total}.`,
