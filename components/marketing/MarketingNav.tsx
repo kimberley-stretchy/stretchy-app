@@ -17,7 +17,10 @@ export default function MarketingNav() {
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex items-center justify-between gap-5 px-[18px] py-[14px] lg:px-[34px] lg:py-4 bg-cream text-ink border-b-2 border-ink">
+      <div
+        className="sticky top-0 z-30 flex items-center justify-between gap-5 px-[18px] py-[14px] lg:px-[34px] lg:py-4 bg-cream text-ink border-b-2 border-ink"
+        style={{ transform: "translateZ(0)", WebkitTransform: "translateZ(0)", willChange: "transform" }}
+      >
         <div className="flex items-center gap-[9px] lg:gap-3">
           <div className="text-purple">
             <SMark size={32} />

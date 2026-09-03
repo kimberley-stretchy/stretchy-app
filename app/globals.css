@@ -35,6 +35,15 @@
     cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><text y='26' font-size='26'>☀️</text></svg>") 16 16, pointer;
   }
 
+  /* iOS Safari jumps/flickers a sticky element the instant it starts sticking,
+     especially one with nothing above it (top: 0 from the first scroll pixel).
+     Forcing its own compositing layer up front avoids that transition glitch. */
+  .sticky {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+  }
+
   * { box-sizing: border-box; }
 }
 
