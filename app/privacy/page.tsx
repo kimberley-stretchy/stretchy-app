@@ -27,7 +27,7 @@ export default function PrivacyPage() {
               <li>Name, email, mobile number</li>
               <li>Neighbourhood and movement preferences</li>
               <li>Payment method (held securely by Stripe — we never see or store your card number)</li>
-              <li>Session holds, ratings, and photos/videos you choose to share</li>
+              <li>Session holds and ratings</li>
               <li>Anything you tell us under &ldquo;moving with care&rdquo; — an optional note about an injury, pregnancy, surgery, or anything else you&rsquo;d like your teacher and GEM to know</li>
               <li>Usage data (which sessions you view, when you log in)</li>
               <li>If you teach or GEM for us: your qualifications, First Aid training status, availability, and banking details for payouts</li>
@@ -62,11 +62,6 @@ export default function PrivacyPage() {
           <div>
             <h2 className="font-bold mb-2">Care &amp; health notes</h2>
             <p className="text-muted">Anything you share with us under &ldquo;moving with care&rdquo; is treated as sensitive. It&rsquo;s visible to your teacher and the GEM running your session, and Stretchy HQ can also see it at our discretion — for example, to help resolve a safety concern. It&rsquo;s protected by database-level access controls, and you can edit or remove it at any time. We are not a medical service, and this note isn&rsquo;t medical advice. It&rsquo;s ultimately up to you to move within your own limits, and to seek professional medical, health or wellness advice where you need it.</p>
-          </div>
-
-          <div>
-            <h2 className="font-bold mb-2">Photos &amp; videos</h2>
-            <p className="text-muted">If you upload a photo or video after a session, you choose whether we can use it publicly. We review everything before it&rsquo;s posted. You can ask us to take something down at any time. If your photo or video includes other people, please make sure you have their express permission before sharing it.</p>
           </div>
 
           <div>

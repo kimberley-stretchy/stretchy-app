@@ -9,8 +9,11 @@ const ADMIN_PREFIXES = ["/admin"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Let public routes through immediately
-  const needsAuth = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+  // Let public routes through immediately. /admin also needs the auth+role
+  // check below — it was previously unreachable because PROTECTED_PREFIXES
+  // was empty, silently disabling the admin redirect this file appears to do.
+  const needsAdminCheck = ADMIN_PREFIXES.some((p) => pathname.startsWith(p));
+  const needsAuth = needsAdminCheck || PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
   if (!needsAuth) return NextResponse.next();
 
   let response = NextResponse.next({ request: { headers: request.headers } });
