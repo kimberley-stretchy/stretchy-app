@@ -37,7 +37,7 @@ export default function HostWaitlistPage() {
         <Link
           href="/home"
           className="font-semibold text-cream rounded-pill px-8 py-4 transition-all hover:brightness-110 active:scale-[0.98]"
-          style={{ backgroundColor: "#1A1A1A", fontSize: "15px" }}
+          style={{ backgroundColor: "#14110F", fontSize: "15px" }}
         >
           Back to home
         </Link>
@@ -76,7 +76,7 @@ export default function HostWaitlistPage() {
         </div>
 
         {/* INFO CARD */}
-        <div className="rounded-card p-4" style={{ backgroundColor: "#E8F3FF" }}>
+        <div className="rounded-card p-4" style={{ backgroundColor: "#E8F3FF", border: "2px solid #14110F" }}>
           <p className="text-sm leading-snug" style={{ color: "#1A4A80" }}>
             Stretchy is expanding city by city. Tell us about your practice and where you&apos;d host — we&apos;ll be in touch when we&apos;re ready for you.
           </p>
@@ -116,8 +116,8 @@ export default function HostWaitlistPage() {
                 onClick={() => setTeachType(t === teachType ? "" : t)}
                 className="px-3 py-1.5 rounded-pill text-sm font-semibold transition-all active:scale-[0.97]"
                 style={{
-                  backgroundColor: teachType === t ? "#A535C7" : "#F5EDE3",
-                  color: teachType === t ? "#fff" : "#1A1A1A",
+                  backgroundColor: teachType === t ? "#902F8A" : "#F7F0E8",
+                  color: teachType === t ? "#fff" : "#14110F",
                 }}
               >
                 {t}
@@ -146,8 +146,8 @@ export default function HostWaitlistPage() {
                 onClick={() => setExperience(y === experience ? "" : y)}
                 className="px-4 py-1.5 rounded-pill text-sm font-semibold transition-all active:scale-[0.97]"
                 style={{
-                  backgroundColor: experience === y ? "#1A1A1A" : "#F5EDE3",
-                  color: experience === y ? "#fff" : "#1A1A1A",
+                  backgroundColor: experience === y ? "#14110F" : "#F7F0E8",
+                  color: experience === y ? "#fff" : "#14110F",
                 }}
               >
                 {y}
@@ -166,8 +166,8 @@ export default function HostWaitlistPage() {
                 onClick={() => toggle(neighbourhoods, n, setNeighbourhoods)}
                 className="px-3 py-1.5 rounded-pill text-sm font-semibold transition-all active:scale-[0.97]"
                 style={{
-                  backgroundColor: neighbourhoods.includes(n) ? "#7A8330" : "#F5EDE3",
-                  color: neighbourhoods.includes(n) ? "#fff" : "#1A1A1A",
+                  backgroundColor: neighbourhoods.includes(n) ? "#716F39" : "#F7F0E8",
+                  color: neighbourhoods.includes(n) ? "#fff" : "#14110F",
                 }}
               >
                 {n}
@@ -196,8 +196,8 @@ export default function HostWaitlistPage() {
                 onClick={() => setFrequency(f === frequency ? "" : f)}
                 className="px-3 py-1.5 rounded-pill text-sm font-semibold transition-all active:scale-[0.97]"
                 style={{
-                  backgroundColor: frequency === f ? "#2C8FE0" : "#F5EDE3",
-                  color: frequency === f ? "#fff" : "#1A1A1A",
+                  backgroundColor: frequency === f ? "#0000FF" : "#F7F0E8",
+                  color: frequency === f ? "#fff" : "#14110F",
                 }}
               >
                 {f}
@@ -212,7 +212,7 @@ export default function HostWaitlistPage() {
             Anything else? <span className="normal-case font-normal">(optional)</span>
           </p>
           <textarea
-            className="w-full bg-white rounded-card px-4 py-3 text-sm text-ink leading-relaxed resize-none outline-none focus:ring-2 focus:ring-hot-blue/30 shadow-card"
+            className="w-full bg-white rounded-card px-4 py-3 text-sm text-ink leading-relaxed resize-none outline-none focus:ring-2 focus:ring-hot-blue/30 border-2 border-ink"
             rows={3}
             placeholder="Tell us about your practice, your vibe, what you'd bring..."
             value={note}
@@ -223,13 +223,13 @@ export default function HostWaitlistPage() {
       </div>
 
       {/* STICKY CTA */}
-      <div className="fixed bottom-0 left-0 right-0 px-4 pb-8 pt-4" style={{ backgroundColor: "#F5EDE3" }}>
+      <div className="fixed bottom-0 left-0 right-0 px-4 pb-8 pt-4" style={{ backgroundColor: "#F7F0E8" }}>
         <div className="max-w-lg mx-auto">
           <button
             onClick={() => { if (name.trim() && email.trim()) setSubmitted(true); }}
             className="w-full font-semibold rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
             style={{
-              backgroundColor: name && email ? "#A535C7" : "#D4CFC9",
+              backgroundColor: name && email ? "#902F8A" : "#D4CFC9",
               color: "#fff",
               height: "56px",
               fontSize: "16px",

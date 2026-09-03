@@ -9,28 +9,28 @@ const LINKS = [
     handle: "@stretchy.yoga",
     href: "https://www.instagram.com/stretchy.yoga/",
     icon: "📸",
-    color: "#E63946",
+    color: "#C6362E",
   },
   {
     label: "TikTok",
     handle: "@stretchy.yoga",
     href: "https://www.tiktok.com/@stretchy.yoga",
     icon: "🎵",
-    color: "#1A1A1A",
+    color: "#14110F",
   },
   {
     label: "Substack",
     handle: "@stretchyyoga",
     href: "https://substack.com/@stretchyyoga",
     icon: "✍️",
-    color: "#FF6B35",
+    color: "#E96709",
   },
   {
     label: "Email",
     handle: "kimberley@stretchyyoga.co.nz",
     href: "mailto:kimberley@stretchyyoga.co.nz",
     icon: "✉️",
-    color: "#2C8FE0",
+    color: "#0000FF",
   },
 ];
 
@@ -60,7 +60,7 @@ export default function ContactPage() {
               href={l.href}
               target={l.href.startsWith("mailto") ? undefined : "_blank"}
               rel="noopener noreferrer"
-              className="flex items-center gap-4 bg-white rounded-card shadow-card p-4 hover:shadow-card-hover transition-shadow duration-200"
+              className="flex items-center gap-4 bg-white rounded-card border-2 border-ink p-4"
             >
               <div
                 className="w-11 h-11 rounded-card flex items-center justify-center text-xl flex-shrink-0"
@@ -77,7 +77,7 @@ export default function ContactPage() {
           ))}
         </div>
 
-        <div className="bg-white rounded-card shadow-card p-5 text-center">
+        <div className="bg-white rounded-card border-2 border-ink p-5 text-center">
           <p className="text-sm text-muted leading-relaxed">
             Want to host a session?{" "}
             <Link href="/host/apply" className="font-bold text-ink hover:underline">

@@ -7,10 +7,10 @@ import SMark from "@/components/SMark";
 type WaitlistStatus = "NEW" | "CONTACTED" | "APPROVED" | "NOT NOW";
 
 const STATUS_STYLE: Record<WaitlistStatus, { bg: string; text: string }> = {
-  "NEW":       { bg: "#FFD166", text: "#1A1A1A" },
-  "CONTACTED": { bg: "#E8F3FF", text: "#2C8FE0" },
+  "NEW":       { bg: "#FCBB16", text: "#14110F" },
+  "CONTACTED": { bg: "#E8F3FF", text: "#0000FF" },
   "APPROVED":  { bg: "#E8F5F0", text: "#2D6A4A" },
-  "NOT NOW":   { bg: "#F5EDE3", text: "#9A9590" },
+  "NOT NOW":   { bg: "#F7F0E8", text: "#9A9590" },
 };
 
 const WAITLIST = [
@@ -38,7 +38,7 @@ export default function AdminWaitlistPage() {
           <Link href="/home" className="text-ink"><SMark size={28} /></Link>
           <Link href="/admin" className="text-muted hover:text-ink text-lg">←</Link>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#1A1A1A" }}>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#14110F" }}>
           <span className="w-1.5 h-1.5 rounded-full bg-hot-blue flex-shrink-0" />
           <p className="font-mono text-xs font-bold text-white uppercase tracking-widest">Stretchy HQ · Waitlist</p>
         </div>
@@ -64,8 +64,8 @@ export default function AdminWaitlistPage() {
               onClick={() => setFilter(f)}
               className="font-mono text-xs font-bold px-4 py-2 rounded-pill whitespace-nowrap flex-shrink-0 transition-all"
               style={{
-                backgroundColor: filter === f ? "#1A1A1A" : "#F5EDE3",
-                color: filter === f ? "#fff" : "#1A1A1A",
+                backgroundColor: filter === f ? "#14110F" : "#F7F0E8",
+                color: filter === f ? "#fff" : "#14110F",
                 border: filter === f ? "none" : "1px solid #E0D9D0",
               }}
             >
@@ -79,7 +79,7 @@ export default function AdminWaitlistPage() {
           {filtered.map((w) => {
             const ss = STATUS_STYLE[w.status];
             return (
-              <div key={w.id} className="bg-white rounded-card shadow-card p-4">
+              <div key={w.id} className="bg-white rounded-card border-2 border-ink p-4">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div>
                     <p className="font-bold text-ink text-sm">{w.name}</p>
@@ -96,11 +96,11 @@ export default function AdminWaitlistPage() {
                 {/* Where + frequency */}
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {w.where.map((n) => (
-                    <span key={n} className="font-mono text-xs px-2.5 py-1 rounded-pill" style={{ backgroundColor: "#F5EDE3", color: "#1A1A1A" }}>
+                    <span key={n} className="font-mono text-xs px-2.5 py-1 rounded-pill" style={{ backgroundColor: "#F7F0E8", color: "#14110F" }}>
                       {n}
                     </span>
                   ))}
-                  <span className="font-mono text-xs px-2.5 py-1 rounded-pill" style={{ backgroundColor: "#EFF6FF", color: "#2C8FE0" }}>
+                  <span className="font-mono text-xs px-2.5 py-1 rounded-pill" style={{ backgroundColor: "#EFF6FF", color: "#0000FF" }}>
                     {w.frequency}
                   </span>
                 </div>
@@ -116,7 +116,7 @@ export default function AdminWaitlistPage() {
                     </button>
                     <button
                       className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill text-white transition-all hover:brightness-110"
-                      style={{ backgroundColor: "#A535C7" }}
+                      style={{ backgroundColor: "#902F8A" }}
                     >
                       Contact →
                     </button>

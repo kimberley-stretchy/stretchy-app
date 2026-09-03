@@ -7,23 +7,23 @@ import SMark from "@/components/SMark";
 type HostStatus = "STAR" | "STEADY" | "AT RISK";
 
 const HOSTS = [
-  { id: "h1", initial: "T", color: "#2C8FE0", name: "Tāne Ratima",  type: "Vinyasa", sessions: 47, earned: 5840, health: 96, status: "STAR" as HostStatus },
-  { id: "h2", initial: "M", color: "#A535C7", name: "Marlee Fisher", type: "Sunrise", sessions: 21, earned: 3920, health: 88, status: "STAR" as HostStatus },
-  { id: "h3", initial: "A", color: "#FF6B35", name: "Alex Kim",      type: "Breath",  sessions: 24, earned: 2960, health: 78, status: "STEADY" as HostStatus },
-  { id: "h4", initial: "R", color: "#7A8330", name: "Rua Ohia",      type: "Sound",   sessions: 18, earned: 2200, health: 72, status: "STEADY" as HostStatus },
-  { id: "h5", initial: "P", color: "#FF4D9E", name: "Pip Carter",    type: "Run + Stretch", sessions: 6, earned: 720, health: 42, status: "AT RISK" as HostStatus },
+  { id: "h1", initial: "T", color: "#0000FF", name: "Tāne Ratima",  type: "Vinyasa", sessions: 47, earned: 5840, health: 96, status: "STAR" as HostStatus },
+  { id: "h2", initial: "M", color: "#902F8A", name: "Marlee Fisher", type: "Sunrise", sessions: 21, earned: 3920, health: 88, status: "STAR" as HostStatus },
+  { id: "h3", initial: "A", color: "#E96709", name: "Alex Kim",      type: "Breath",  sessions: 24, earned: 2960, health: 78, status: "STEADY" as HostStatus },
+  { id: "h4", initial: "R", color: "#716F39", name: "Rua Ohia",      type: "Sound",   sessions: 18, earned: 2200, health: 72, status: "STEADY" as HostStatus },
+  { id: "h5", initial: "P", color: "#902F8A", name: "Pip Carter",    type: "Run + Stretch", sessions: 6, earned: 720, health: 42, status: "AT RISK" as HostStatus },
 ];
 
 const STATUS_STYLE: Record<HostStatus, { bg: string; text: string }> = {
-  "STAR":    { bg: "#FFD166", text: "#1A1A1A" },
-  "STEADY":  { bg: "#E8F3FF", text: "#2C8FE0" },
-  "AT RISK": { bg: "#E63946", text: "#fff" },
+  "STAR":    { bg: "#FCBB16", text: "#14110F" },
+  "STEADY":  { bg: "#E8F3FF", text: "#0000FF" },
+  "AT RISK": { bg: "#C6362E", text: "#fff" },
 };
 
 const healthColor = (h: number) => {
-  if (h >= 80) return "#4CAF82";
-  if (h >= 60) return "#FFD166";
-  return "#E63946";
+  if (h >= 80) return "#716F39";
+  if (h >= 60) return "#FCBB16";
+  return "#C6362E";
 };
 
 type Filter = "ALL" | "STARS" | "STEADY" | "AT RISK";
@@ -47,7 +47,7 @@ export default function HostCRMPage() {
           <Link href="/home" className="text-ink"><SMark size={28} /></Link>
           <Link href="/admin" className="text-muted hover:text-ink text-lg">←</Link>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#1A1A1A" }}>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#14110F" }}>
           <span className="w-1.5 h-1.5 rounded-full bg-hot-blue flex-shrink-0" />
           <p className="font-mono text-xs font-bold text-white uppercase tracking-widest">Stretchy HQ · Hosts</p>
         </div>
@@ -67,7 +67,7 @@ export default function HostCRMPage() {
           {FILTERS.map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className="font-mono text-xs font-bold px-4 py-2 rounded-pill whitespace-nowrap flex-shrink-0 transition-all"
-              style={{ backgroundColor: filter === f ? "#1A1A1A" : "#F5EDE3", color: filter === f ? "#fff" : "#1A1A1A", border: filter === f ? "none" : "1px solid #E0D9D0" }}>
+              style={{ backgroundColor: filter === f ? "#14110F" : "#F7F0E8", color: filter === f ? "#fff" : "#14110F", border: filter === f ? "none" : "1px solid #E0D9D0" }}>
               {f === "ALL" ? "ALL · 42" : f === "STARS" ? "STARS · 11" : f === "STEADY" ? "STEADY · 22" : "AT RISK"}
             </button>
           ))}
@@ -79,8 +79,8 @@ export default function HostCRMPage() {
             const ss = STATUS_STYLE[h.status];
             const isAtRisk = h.status === "AT RISK";
             return (
-              <div key={h.id} className="bg-white rounded-card shadow-card p-4"
-                style={isAtRisk ? { border: "1.5px solid #E63946" } : undefined}>
+              <div key={h.id} className="bg-white rounded-card border-2 border-ink p-4"
+                style={isAtRisk ? { border: "1.5px solid #C6362E" } : undefined}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0" style={{ backgroundColor: h.color }}>
                     {h.initial}
@@ -100,7 +100,7 @@ export default function HostCRMPage() {
                     <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">Health</p>
                     <p className="font-mono text-xs font-bold" style={{ color: healthColor(h.health) }}>{h.health}</p>
                   </div>
-                  <div className="w-full h-2 rounded-full" style={{ backgroundColor: "#F5EDE3" }}>
+                  <div className="w-full h-2 rounded-full" style={{ backgroundColor: "#F7F0E8" }}>
                     <div className="h-2 rounded-full transition-all" style={{ width: `${h.health}%`, backgroundColor: healthColor(h.health) }} />
                   </div>
                 </div>

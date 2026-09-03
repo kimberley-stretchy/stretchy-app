@@ -4,11 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
-
-const STRETCHY_FEE = 23;
-function calcPrice(target: number, spots: number) {
-  return Math.round((target + STRETCHY_FEE) / Math.max(spots, 1));
-}
+import { calculatePrice } from "@/lib/pricing";
 
 type Session = {
   id: string;
@@ -17,7 +13,8 @@ type Session = {
   location_name: string;
   location_address: string;
   getting_there: string | null;
-  host_target: number;
+  cost_base: number;
+  revenue_target: number;
   min_attendees: number;
   max_attendees: number;
   current_holds: number;
@@ -42,7 +39,7 @@ function GoingAheadContent() {
 
   const title = session?.title ?? "Your session";
   const holds = session?.current_holds ?? 0;
-  const currentPrice = session ? calcPrice(session.host_target, Math.max(holds, session.min_attendees)) : 0;
+  const currentPrice = session ? calculatePrice(session.cost_base, session.revenue_target, Math.max(holds, session.min_attendees)) : 0;
   const startDate = session ? new Date(session.starts_at) : null;
   const dateStr = startDate
     ? startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" })
@@ -52,7 +49,7 @@ function GoingAheadContent() {
     : "";
 
   return (
-    <main className="min-h-screen pb-20" style={{ backgroundColor: "#2C8FE0" }}>
+    <main className="min-h-screen pb-20" style={{ backgroundColor: "#0000FF" }}>
       <nav className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
         <Link href="/sessions"><SMark size={28} className="text-white" /></Link>
         <p className="font-mono text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
@@ -75,17 +72,17 @@ function GoingAheadContent() {
         </p>
 
         {/* Price card */}
-        <div className="bg-white rounded-card p-5 mb-4">
+        <div className="bg-white rounded-card border-2 border-ink p-5 mb-4">
           <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-1">Current price</p>
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="font-display font-bold text-ink" style={{ fontSize: "52px", letterSpacing: "-0.03em" }}>${currentPrice}</span>
-            <span className="font-mono text-sm font-bold text-muted">+ GST</span>
+            <span className="font-display font-bold text-ink" style={{ fontSize: "52px", letterSpacing: "-0.03em" }}>${currentPrice.toFixed(2)}</span>
+            <span className="font-mono text-sm font-bold text-muted">incl. GST</span>
           </div>
           <p className="text-xs text-muted">May still drop before 2h lock-in · {holds} people holding</p>
         </div>
 
         {/* Session details */}
-        <div className="bg-white rounded-card p-5 mb-4 space-y-2">
+        <div className="bg-white rounded-card border-2 border-ink p-5 mb-4 space-y-2">
           <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-3">Your session</p>
           <p className="font-bold text-ink">{title}</p>
           {dateStr && <p className="text-sm text-muted">{dateStr} · {timeStr}</p>}
@@ -95,7 +92,7 @@ function GoingAheadContent() {
 
         {/* Social stretch */}
         {session?.social_stretch_venue && (
-          <div className="rounded-card p-5 mb-4" style={{ backgroundColor: "#A535C7" }}>
+          <div className="rounded-card p-5 mb-4" style={{ backgroundColor: "#902F8A", border: "2px solid #14110F" }}>
             <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] mb-2" style={{ color: "rgba(245,237,227,0.6)" }}>
               Social Stretch after 🤙
             </p>
@@ -104,7 +101,7 @@ function GoingAheadContent() {
           </div>
         )}
 
-        <Link href={`/sessions/${sessionId}`} className="block text-center font-semibold rounded-pill py-4 transition-all" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3", fontSize: "15px" }}>
+        <Link href={`/sessions/${sessionId}`} className="block text-center font-semibold rounded-pill py-4 transition-all" style={{ backgroundColor: "#14110F", color: "#F7F0E8", fontSize: "15px" }}>
           View my booking →
         </Link>
       </div>

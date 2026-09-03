@@ -7,32 +7,28 @@ import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
 import HoldModal from "@/components/HoldModal";
 import { createClient } from "@/lib/supabase/client";
+import { calculatePrice } from "@/lib/pricing";
 
 const T = {
-  black:  "#1A1A1A",
-  cream:  "#F5EDE3",
-  yellow: "#FFD166",
-  olive:  "#7A8330",
-  blue:   "#2C8FE0",
-  purple: "#A535C7",
-  green:  "#4CAF82",
-  orange: "#FF6B35",
-  hold:   "#A8D5E2",
+  black:  "#14110F",
+  cream:  "#F7F0E8",
+  yellow: "#FCBB16",
+  olive:  "#716F39",
+  blue:   "#0000FF",
+  purple: "#902F8A",
+  green:  "#716F39",
+  orange: "#E96709",
+  hold:   "#BFE3F0",
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  yoga: "#A535C7", pilates: "#2A3FE0", breath: "#7A8330",
-  sound: "#4FB8E0", flow: "#FF6B35", run: "#E63946", hiit: "#2C8FE0",
+  yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
+  sound: "#716F39", flow: "#FCBB16", run: "#E96709", hiit: "#902F8A",
 };
 const TYPE_LABELS: Record<string, string> = {
   yoga: "YOGA", pilates: "PILATES", breath: "BREATH",
   sound: "SOUND", flow: "FLOW", run: "RUN", hiit: "HIIT",
 };
-
-const STRETCHY_FEE = 23;
-function calcPrice(target: number, spots: number) {
-  return Math.round((target + STRETCHY_FEE) / Math.max(spots, 1));
-}
 
 type Session = {
   id: string;
@@ -45,7 +41,8 @@ type Session = {
   location_name: string;
   location_address: string;
   getting_there: string | null;
-  host_target: number;
+  cost_base: number;
+  revenue_target: number;
   min_attendees: number;
   max_attendees: number;
   current_holds: number;
@@ -65,8 +62,8 @@ function PriceCurveChart({ session: s }: { session: Session }) {
   const cW = W - PAD.left - PAD.right;
   const cH = H - PAD.top - PAD.bottom;
 
-  const ceiling = calcPrice(s.host_target, s.min_attendees);
-  const floor   = calcPrice(s.host_target, s.max_attendees);
+  const ceiling = calculatePrice(s.cost_base, s.revenue_target, s.min_attendees);
+  const floor   = calculatePrice(s.cost_base, s.revenue_target, s.max_attendees);
   const holds   = s.current_holds || 0;
   const range   = s.max_attendees - s.min_attendees;
   const priceRange = ceiling - floor;
@@ -76,12 +73,12 @@ function PriceCurveChart({ session: s }: { session: Session }) {
 
   const points = [];
   for (let n = s.min_attendees; n <= s.max_attendees; n++) {
-    points.push({ x: toX(n), y: toY(calcPrice(s.host_target, n)), n });
+    points.push({ x: toX(n), y: toY(calculatePrice(s.cost_base, s.revenue_target, n)), n });
   }
   const curvePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
 
   const activeSpots = hoverSpots ?? Math.min(Math.max(holds, s.min_attendees), s.max_attendees);
-  const activePrice = calcPrice(s.host_target, activeSpots);
+  const activePrice = calculatePrice(s.cost_base, s.revenue_target, activeSpots);
   const activeX = toX(activeSpots);
   const activeY = toY(activePrice);
 
@@ -108,7 +105,7 @@ function PriceCurveChart({ session: s }: { session: Session }) {
         minHeight: 18,
       }}>
         {hoverSpots
-          ? `IF ${hoverSpots} JOIN → $${activePrice} + GST`
+          ? `IF ${hoverSpots} JOIN → $${activePrice.toFixed(2)}`
           : "← DRAG TO EXPLORE PRICES →"}
       </div>
       <svg
@@ -136,10 +133,10 @@ function PriceCurveChart({ session: s }: { session: Session }) {
 
         {/* Axis labels */}
         <text x={PAD.left} y={H - 8} fontSize={9} fontFamily="JetBrains Mono, monospace" fontWeight={700} fill="rgba(245,237,227,0.3)">
-          {s.min_attendees} MIN · ${ceiling}
+          {s.min_attendees} MIN · ${ceiling.toFixed(2)}
         </text>
         <text x={W - PAD.right} y={H - 8} fontSize={9} fontFamily="JetBrains Mono, monospace" fontWeight={700} fill="rgba(245,237,227,0.3)" textAnchor="end">
-          {s.max_attendees} MAX · ${floor}
+          {s.max_attendees} MAX · ${floor.toFixed(2)}
         </text>
       </svg>
     </div>
@@ -209,9 +206,9 @@ export default function SessionDetailPage() {
   const typeLabel   = TYPE_LABELS[s.movement_type] ?? s.movement_type.toUpperCase();
   const holds       = s.current_holds || 0;
   const confirmed   = holds >= s.min_attendees;
-  const startingPrice = calcPrice(s.host_target, s.min_attendees);
-  const currentPrice  = confirmed ? calcPrice(s.host_target, holds) : startingPrice;
-  const floorPrice    = calcPrice(s.host_target, s.max_attendees);
+  const startingPrice = calculatePrice(s.cost_base, s.revenue_target, s.min_attendees);
+  const currentPrice  = confirmed ? calculatePrice(s.cost_base, s.revenue_target, holds) : startingPrice;
+  const floorPrice    = calculatePrice(s.cost_base, s.revenue_target, s.max_attendees);
   const spotsToMin    = Math.max(0, s.min_attendees - holds);
 
   const startDate = new Date(s.starts_at);
@@ -247,7 +244,7 @@ export default function SessionDetailPage() {
       {/* Title block */}
       <div style={{ padding: "8px 22px 18px" }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-          <span style={{ background: "#E8D9C8", color: T.black, padding: "5px 11px", borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em" }}>
+          <span style={{ background: "#E1D5C6", color: T.black, padding: "5px 11px", borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em" }}>
             {startDate.toLocaleDateString("en-NZ", { weekday: "short" }).toUpperCase()} · {timeStr}
           </span>
           <span style={{ background: "rgba(26,26,26,0.06)", color: T.black, padding: "5px 11px", borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em" }}>
@@ -307,11 +304,11 @@ export default function SessionDetailPage() {
             {confirmed ? "PRICE NOW" : "MAX YOU'LL PAY"}
           </p>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontFamily: "'Bagel Fat One', cursive", fontSize: 80, color: T.yellow, lineHeight: 0.9 }}>
-              ${currentPrice}
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 80, color: T.yellow, lineHeight: 0.9 }}>
+              ${currentPrice.toFixed(2)}
             </span>
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: "rgba(245,237,227,0.5)", fontWeight: 700 }}>
-              + GST
+              incl. GST
             </span>
           </div>
         </div>
@@ -319,7 +316,7 @@ export default function SessionDetailPage() {
         {/* Drop copy */}
         {!confirmed && (
           <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: "rgba(245,237,227,0.35)", letterSpacing: "0.12em", marginBottom: 20 }}>
-            PRICE DROPS AS THE SESSION FILLS — LOWEST ${floorPrice} + GST
+            PRICE DROPS AS THE SESSION FILLS — LOWEST ${floorPrice.toFixed(2)}
           </p>
         )}
 
@@ -375,6 +372,19 @@ export default function SessionDetailPage() {
         </div>
       )}
 
+      {/* Cancellation policy — yellow */}
+      <div style={{ margin: "0 16px 20px", background: T.yellow, border: "2px solid #14110F", borderRadius: 20, padding: "20px" }}>
+        <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.5, color: T.black, marginBottom: 10 }}>
+          HOW YOU&rsquo;LL PAY — Add a card, nothing charged yet. Your Stretchy locks in 36 hours out — that&rsquo;s the most you&rsquo;ll ever pay. Two hours out, we charge the final price. Often lower, never higher.
+        </p>
+        <p style={{ fontSize: 13, lineHeight: 1.5, color: T.black, marginBottom: 10 }}>
+          Can&rsquo;t make it? Cancel free before the 36-hour mark. After that, the price stands — that&rsquo;s our cancellation policy, and it&rsquo;s what keeps the system fair for everyone who shows up. Can&rsquo;t make it happen on our end? You&rsquo;re refunded in full. Every time. Genuinely can&rsquo;t help it? Flick us a message.
+        </p>
+        <p style={{ fontSize: 13, lineHeight: 1.5, color: T.black }}>
+          <strong>Social Stretch after</strong> — make mates off the mat. Pay your own way.
+        </p>
+      </div>
+
       {/* How to Stretchy */}
       <div style={{ margin: "0 16px 24px" }}>
         <HowToStretchy />
@@ -390,10 +400,10 @@ export default function SessionDetailPage() {
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
           <div>
-            <span style={{ fontFamily: "'Bagel Fat One', cursive", fontSize: 28, color: T.yellow }}>${currentPrice}</span>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,26,0.45)", marginLeft: 6 }}>+ GST</span>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, color: T.yellow }}>${currentPrice.toFixed(2)}</span>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,26,0.45)", marginLeft: 6 }}>incl. GST</span>
           </div>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: confirmed ? "#4CAF82" : T.orange }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: confirmed ? "#716F39" : T.orange }}>
             {confirmed ? `${holds} HELD · GOING AHEAD` : `${spotsToMin} MORE TO CONFIRM`}
           </span>
         </div>

@@ -46,7 +46,7 @@ export default function InvitePage() {
         {/* Mechanic card */}
         <div
           className="rounded-card px-5 py-5"
-          style={{ backgroundColor: "#FFD166" }}
+          style={{ backgroundColor: "#FCBB16", border: "2px solid #14110F" }}
         >
           <p className="font-mono text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "rgba(26,26,26,0.55)" }}>
             How it works
@@ -66,13 +66,13 @@ export default function InvitePage() {
         </div>
 
         {/* Link card */}
-        <div className="bg-white rounded-card shadow-card p-4 space-y-3">
+        <div className="bg-white rounded-card border-2 border-ink p-4 space-y-3">
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">Your link</p>
 
           {/* URL display */}
           <div
             className="flex items-center gap-2 px-4 py-3.5 rounded-pill"
-            style={{ backgroundColor: "#F5EDE3" }}
+            style={{ backgroundColor: "#F7F0E8" }}
           >
             <p className="flex-1 font-mono text-xs text-ink truncate min-w-0">{INVITE_URL}</p>
           </div>
@@ -82,8 +82,8 @@ export default function InvitePage() {
             onClick={copyLink}
             className="w-full font-semibold rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
             style={{
-              backgroundColor: copied ? "#4CAF82" : "#1A1A1A",
-              color: "#F5EDE3",
+              backgroundColor: copied ? "#716F39" : "#14110F",
+              color: "#F7F0E8",
               height: "54px",
               fontSize: "15px",
             }}
@@ -100,12 +100,12 @@ export default function InvitePage() {
               { label: "Messages",   icon: "💬", bg: "#E8F5F0", color: "#2D6A4A" },
               { label: "Instagram",  icon: "📸", bg: "#F3E8FF", color: "#7C3AED" },
               { label: "WhatsApp",   icon: "📱", bg: "#E8F5F0", color: "#16A34A" },
-              { label: "More",       icon: "⬆",  bg: "#F5EDE3", color: "#1A1A1A" },
+              { label: "More",       icon: "⬆",  bg: "#F7F0E8", color: "#14110F" },
             ].map((opt) => (
               <button
                 key={opt.label}
                 className="flex items-center gap-2.5 px-4 py-3.5 rounded-card font-semibold text-sm transition-all hover:brightness-95 active:scale-[0.98]"
-                style={{ backgroundColor: opt.bg, color: opt.color }}
+                style={{ backgroundColor: opt.bg, color: opt.color, border: "2px solid #14110F" }}
               >
                 <span className="text-xl">{opt.icon}</span>
                 <span>{opt.label}</span>
@@ -115,7 +115,7 @@ export default function InvitePage() {
         </div>
 
         {/* Stats */}
-        <div className="bg-white rounded-card shadow-card p-4">
+        <div className="bg-white rounded-card border-2 border-ink p-4">
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-3">Your impact</p>
           <div className="flex gap-4">
             <div className="text-center flex-1">

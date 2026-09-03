@@ -57,7 +57,7 @@ export default function MonthlyPayoutPage() {
         </h1>
 
         {/* ── BIG YELLOW EARNED CARD ── */}
-        <div className="rounded-card p-5" style={{ backgroundColor: "#FFD166" }}>
+        <div className="rounded-card p-5" style={{ backgroundColor: "#FCBB16", border: "2px solid #14110F" }}>
           <p className="font-mono text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "rgba(26,26,26,0.55)" }}>
             Net to you
           </p>
@@ -100,7 +100,7 @@ export default function MonthlyPayoutPage() {
             Breakdown
           </h2>
 
-          <div className="bg-white rounded-card shadow-card divide-y divide-border">
+          <div className="bg-white rounded-card border-2 border-ink divide-y divide-border">
             {BREAKDOWN.map((s, i) => (
               <div key={i} className="px-4 py-3.5">
                 <div className="flex items-start justify-between gap-3">
@@ -139,7 +139,7 @@ export default function MonthlyPayoutPage() {
           </button>
           <button
             className="flex-1 font-mono text-xs font-bold text-white rounded-pill py-3.5 transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-1.5"
-            style={{ backgroundColor: "#1A1A1A" }}
+            style={{ backgroundColor: "#14110F" }}
           >
             ↓ Download statement
           </button>

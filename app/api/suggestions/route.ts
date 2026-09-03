@@ -24,7 +24,8 @@ export async function GET() {
 // POST — create a new suggestion
 export async function POST(request: NextRequest) {
   const admin = getAdmin();
-  const { session_type, neighbourhood, preferred_time, notes, user_email } = await request.json();
+  const body = await request.json();
+  const { session_type, neighbourhood, preferred_time, notes, details } = body;
 
   if (!session_type) return NextResponse.json({ error: "Missing session_type" }, { status: 400 });
 
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
       preferred_neighbourhood: neighbourhood || null,
       preferred_time: preferred_time || null,
       notes: notes || null,
+      details: details || {},
       vote_count: 1,
     })
     .select("id")

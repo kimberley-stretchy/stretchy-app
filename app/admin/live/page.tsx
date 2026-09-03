@@ -22,19 +22,19 @@ const SESSIONS: LiveSession[] = [
 ];
 
 const STATS = [
-  { label: "HOLDING",   count: 14, border: "#D4CFC9", text: "#1A1A1A" },
-  { label: "FILLING",   count: 12, border: "#FF6B35", text: "#FF6B35" },
-  { label: "CONFIRMED", count: 8,  border: "#4CAF82", text: "#4CAF82" },
-  { label: "SHORT",     count: 2,  border: "#E63946", text: "#E63946" },
+  { label: "HOLDING",   count: 14, border: "#D4CFC9", text: "#14110F" },
+  { label: "FILLING",   count: 12, border: "#E96709", text: "#E96709" },
+  { label: "CONFIRMED", count: 8,  border: "#716F39", text: "#716F39" },
+  { label: "SHORT",     count: 2,  border: "#C6362E", text: "#C6362E" },
 ];
 
 const STATUS_STYLE: Record<SessionStatus, { bg: string; text: string; border?: string }> = {
-  "CONFIRMED":   { bg: "#4CAF82", text: "#fff" },
-  "ALMOST FULL": { bg: "transparent", text: "#2C8FE0", border: "#2C8FE0" },
-  "FILLING":     { bg: "#FF6B35", text: "#fff" },
+  "CONFIRMED":   { bg: "#716F39", text: "#fff" },
+  "ALMOST FULL": { bg: "transparent", text: "#0000FF", border: "#0000FF" },
+  "FILLING":     { bg: "#E96709", text: "#fff" },
   "HOLDING":     { bg: "#D4CFC9", text: "#6A6560" },
-  "LOCKED":      { bg: "#1A1A1A", text: "#fff" },
-  "SHORT":       { bg: "#E63946", text: "#fff" },
+  "LOCKED":      { bg: "#14110F", text: "#fff" },
+  "SHORT":       { bg: "#C6362E", text: "#fff" },
 };
 
 const FILTERS: Filter[] = ["ALL", "AUCKLAND", "NEEDS HELP", "CONFIRMED"];
@@ -56,11 +56,11 @@ export default function LivePlatformPage() {
           <Link href="/home" className="text-ink"><SMark size={28} /></Link>
           <Link href="/admin" className="text-muted hover:text-ink text-lg">←</Link>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#1A1A1A" }}>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#14110F" }}>
           <span className="w-1.5 h-1.5 rounded-full bg-hot-blue flex-shrink-0" />
           <p className="font-mono text-xs font-bold text-white uppercase tracking-widest">Stretchy HQ · Oversight</p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#E63946" }}>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#C6362E" }}>
           <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />
           <p className="font-mono text-xs font-bold text-white uppercase tracking-widest">Live</p>
         </div>
@@ -90,7 +90,7 @@ export default function LivePlatformPage() {
           {FILTERS.map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className="font-mono text-xs font-bold px-4 py-2 rounded-pill whitespace-nowrap flex-shrink-0 transition-all"
-              style={{ backgroundColor: filter === f ? "#1A1A1A" : "#F5EDE3", color: filter === f ? "#fff" : "#1A1A1A", border: filter === f ? "none" : "1px solid #E0D9D0" }}>
+              style={{ backgroundColor: filter === f ? "#14110F" : "#F7F0E8", color: filter === f ? "#fff" : "#14110F", border: filter === f ? "none" : "1px solid #E0D9D0" }}>
               {f === "ALL" ? `ALL · 47` : f}
             </button>
           ))}
@@ -102,8 +102,8 @@ export default function LivePlatformPage() {
             const st = STATUS_STYLE[s.status];
             const isAlmostFull = s.status === "ALMOST FULL";
             return (
-              <div key={s.id} className="bg-white rounded-card shadow-card p-4 flex items-center gap-3"
-                style={isAlmostFull ? { border: "1.5px solid #2C8FE0" } : undefined}>
+              <div key={s.id} className="bg-white rounded-card border-2 border-ink p-4 flex items-center gap-3"
+                style={isAlmostFull ? { border: "1.5px solid #0000FF" } : undefined}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-pill"

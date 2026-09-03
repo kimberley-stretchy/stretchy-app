@@ -111,11 +111,11 @@ export default function RateItPage() {
         </div>
 
         {/* Star rating */}
-        <div className="bg-white rounded-card shadow-card p-5">
+        <div className="bg-white rounded-card border-2 border-ink p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted">Tap to rate</p>
             {displayRating > 0 && (
-              <p className="font-mono text-xs font-bold" style={{ color: "#2C8FE0" }}>
+              <p className="font-mono text-xs font-bold" style={{ color: "#0000FF" }}>
                 {["", "Could be better", "It was ok", "Pretty good", "Loved it", "SSSS — best ever"][displayRating]}
               </p>
             )}
@@ -139,7 +139,7 @@ export default function RateItPage() {
         {rating > 0 && (
           <>
             {/* Vibe tags */}
-            <div className="bg-white rounded-card shadow-card p-5">
+            <div className="bg-white rounded-card border-2 border-ink p-5">
               <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-3">What was the vibe?</p>
               <div className="flex flex-wrap gap-2">
                 {VIBE_TAGS.map(tag => {
@@ -149,7 +149,7 @@ export default function RateItPage() {
                       key={tag}
                       onClick={() => setTags(prev => selected ? prev.filter(t => t !== tag) : [...prev, tag])}
                       className="px-4 py-2 rounded-pill text-sm font-semibold transition-all"
-                      style={{ background: selected ? "#2C8FE0" : "rgba(26,26,26,0.06)", color: selected ? "#fff" : "#1A1A1A" }}
+                      style={{ background: selected ? "#0000FF" : "rgba(26,26,26,0.06)", color: selected ? "#fff" : "#14110F" }}
                     >
                       {tag}
                     </button>
@@ -159,7 +159,7 @@ export default function RateItPage() {
             </div>
 
             {/* Note for host */}
-            <div className="bg-white rounded-card shadow-card p-5">
+            <div className="bg-white rounded-card border-2 border-ink p-5">
               <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-1">
                 A note for {hostName ?? "the host"} (optional)
               </p>
@@ -170,15 +170,15 @@ export default function RateItPage() {
                 placeholder="Loved the music. Felt safe trying the headstand for the first time."
                 rows={3}
                 className="w-full text-sm text-ink placeholder-muted resize-none outline-none leading-relaxed"
-                style={{ borderBottom: "1px solid #E8D9C8", paddingBottom: "12px" }}
+                style={{ borderBottom: "1px solid #E1D5C6", paddingBottom: "12px" }}
               />
 
               {/* Anonymous toggle */}
-              <div className="flex items-center gap-3 mt-4 pt-3" style={{ borderTop: "1px solid #E8D9C8" }}>
+              <div className="flex items-center gap-3 mt-4 pt-3" style={{ borderTop: "1px solid #E1D5C6" }}>
                 <button
                   onClick={() => setAnonymous(!anonymous)}
                   className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all"
-                  style={{ backgroundColor: anonymous ? "#1A1A1A" : "transparent", border: "2px solid #1A1A1A" }}
+                  style={{ backgroundColor: anonymous ? "#14110F" : "transparent", border: "2px solid #14110F" }}
                 >
                   {anonymous && <span className="text-white text-xs font-bold">✓</span>}
                 </button>
@@ -189,7 +189,7 @@ export default function RateItPage() {
             </div>
 
             {/* Open-ended suggestion for Stretchy */}
-            <div className="bg-white rounded-card shadow-card p-5">
+            <div className="bg-white rounded-card border-2 border-ink p-5">
               <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-1">Suggestions for Stretchy (optional)</p>
               <p className="text-xs text-muted mb-3">What could we do better? Goes straight to Kimberley.</p>
               <textarea
@@ -205,7 +205,7 @@ export default function RateItPage() {
               onClick={handleSubmit}
               disabled={submitting}
               className="w-full font-semibold rounded-pill py-4 transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
-              style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3", fontSize: "16px" }}
+              style={{ backgroundColor: "#14110F", color: "#F7F0E8", fontSize: "16px" }}
             >
               {submitting ? "Sending…" : "Submit rating →"}
             </button>

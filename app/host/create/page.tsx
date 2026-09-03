@@ -10,22 +10,20 @@ import {
   floorPrice,
   getHostPricingPrompt,
   getPriceCurve,
-  STRETCHY_FEE,
   formatPrice,
 } from "@/lib/pricing";
-import type { SessionType } from "@/types";
+import type { MovementType } from "@/types";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
-const SESSION_TYPES: { value: SessionType; label: string; emoji: string }[] = [
-  { value: "yoga",       label: "Yoga",        emoji: "🧘" },
-  { value: "pilates",    label: "Pilates",      emoji: "🏋️" },
-  { value: "run_club",   label: "Run club",     emoji: "🏃" },
-  { value: "breathwork", label: "Breathwork",   emoji: "💨" },
-  { value: "sound_bath", label: "Sound bath",   emoji: "🔔" },
-  { value: "dance",      label: "Dance",        emoji: "💃" },
-  { value: "hiit",       label: "HIIT",         emoji: "⚡" },
-  { value: "other",      label: "Other",        emoji: "✨" },
+const SESSION_TYPES: { value: MovementType; label: string; emoji: string }[] = [
+  { value: "yoga",    label: "Yoga",       emoji: "🧘" },
+  { value: "pilates", label: "Pilates",    emoji: "🏋️" },
+  { value: "flow",    label: "Flow",       emoji: "🌊" },
+  { value: "breath",  label: "Breathwork", emoji: "💨" },
+  { value: "sound",   label: "Sound bath", emoji: "🔔" },
+  { value: "run",     label: "Run club",   emoji: "🏃" },
+  { value: "hiit",    label: "HIIT",       emoji: "⚡" },
 ];
 
 const DURATIONS = [
@@ -47,7 +45,7 @@ const STEP_LABELS = ["The session", "When & where", "Pricing", "Review"];
 // ─── FORM STATE ───────────────────────────────────────────────────────────────
 
 interface FormState {
-  sessionType: SessionType | null;
+  sessionType: MovementType | null;
   title: string;
   description: string;
   durationMinutes: number;
@@ -57,7 +55,8 @@ interface FormState {
   venueName: string;
   venueNotes: string;
   hasSocialStretch: boolean;
-  hostTarget: string;
+  costBase: string;
+  revenueTarget: string;
   minimumSpots: string;
   maxCapacity: string;
   // Charity / fundraiser
@@ -79,7 +78,8 @@ const INITIAL_STATE: FormState = {
   venueName: "",
   venueNotes: "",
   hasSocialStretch: false,
-  hostTarget: "",
+  costBase: "",
+  revenueTarget: "",
   minimumSpots: "",
   maxCapacity: "",
   isCharity: false,
@@ -92,19 +92,21 @@ const INITIAL_STATE: FormState = {
 // ─── PRICE CURVE SVG ──────────────────────────────────────────────────────────
 
 function PriceCurve({
-  hostTarget,
+  costBase,
+  revenueTarget,
   minimumSpots,
   maxCapacity,
   simulatedSpots,
 }: {
-  hostTarget: number;
+  costBase: number;
+  revenueTarget: number;
   minimumSpots: number;
   maxCapacity: number;
   simulatedSpots: number;
 }) {
   const points = useMemo(
-    () => getPriceCurve(hostTarget, minimumSpots, maxCapacity, simulatedSpots),
-    [hostTarget, minimumSpots, maxCapacity, simulatedSpots]
+    () => getPriceCurve(costBase, revenueTarget, minimumSpots, maxCapacity, simulatedSpots),
+    [costBase, revenueTarget, minimumSpots, maxCapacity, simulatedSpots]
   );
 
   if (points.length < 2) return null;
@@ -135,7 +137,7 @@ function PriceCurve({
 
   // Current simulated spot marker
   const simX = toX(Math.min(Math.max(simulatedSpots, minimumSpots), maxCapacity));
-  const simPrice = calculatePrice(hostTarget, Math.min(Math.max(simulatedSpots, minimumSpots), maxCapacity));
+  const simPrice = calculatePrice(costBase, revenueTarget, Math.min(Math.max(simulatedSpots, minimumSpots), maxCapacity));
   const simY = toY(simPrice);
 
   return (
@@ -143,9 +145,9 @@ function PriceCurve({
       {/* Fill */}
       <path d={fillD} fill="rgba(122,131,48,0.08)" />
       {/* Line */}
-      <path d={pathD} fill="none" stroke="#7A8330" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={pathD} fill="none" stroke="#716F39" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       {/* Simulated position dot */}
-      <circle cx={simX} cy={simY} r="5" fill="#2C8FE0" stroke="white" strokeWidth="2" />
+      <circle cx={simX} cy={simY} r="5" fill="#0000FF" stroke="white" strokeWidth="2" />
     </svg>
   );
 }
@@ -341,10 +343,10 @@ function StepSchedule({ form, update }: { form: FormState; update: (p: Partial<F
           </div>
           <div
             className="w-11 h-6 rounded-full flex-shrink-0 transition-colors relative"
-            style={{ backgroundColor: form.isCharity ? "#FF6B35" : "#D4CFC9" }}
+            style={{ backgroundColor: form.isCharity ? "#E96709" : "#D4CFC9" }}
           >
             <div
-              className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform"
+              className="absolute top-0.5 w-5 h-5 rounded-full bg-white border-2 border-ink transition-transform"
               style={{ transform: form.isCharity ? "translateX(22px)" : "translateX(2px)" }}
             />
           </div>
@@ -355,7 +357,7 @@ function StepSchedule({ form, update }: { form: FormState; update: (p: Partial<F
           <div className="px-4 pb-5 space-y-3" style={{ backgroundColor: "#FFF4E6", borderTop: "1px solid #F8DFC5" }}>
 
             {/* Fee discount callout */}
-            <div className="rounded-card px-4 py-3 flex items-start gap-2" style={{ backgroundColor: "#FF6B35" }}>
+            <div className="rounded-card px-4 py-3 flex items-start gap-2" style={{ backgroundColor: "#E96709", border: "2px solid #14110F" }}>
               <span className="text-sm flex-shrink-0 mt-0.5">✓</span>
               <p className="text-sm font-semibold text-white leading-snug">
                 Stretchy reduces the platform fee for charity events. We&apos;ll confirm the discount amount when you submit.
@@ -433,25 +435,23 @@ function StepSchedule({ form, update }: { form: FormState; update: (p: Partial<F
 function StepPricing({ form, update }: { form: FormState; update: (p: Partial<FormState>) => void }) {
   const [simulatedSpots, setSimulatedSpots] = useState<number | null>(null);
 
-  const target = parseFloat(form.hostTarget) || 0;
+  const costBase = parseFloat(form.costBase) || 0;
+  const target = parseFloat(form.revenueTarget) || 0;
   const minSpots = parseInt(form.minimumSpots) || 0;
   const maxCap = parseInt(form.maxCapacity) || 0;
 
   const hasValidInputs = target > 0 && minSpots >= 2 && maxCap >= minSpots;
 
-  const ceiling = hasValidInputs ? startingPrice(target, minSpots) : null;
-  const floor = hasValidInputs ? floorPrice(target, maxCap) : null;
+  const ceiling = hasValidInputs ? startingPrice(costBase, target, minSpots) : null;
+  const floor = hasValidInputs ? floorPrice(costBase, target, maxCap) : null;
 
   const effectiveSimulated = simulatedSpots ?? minSpots;
-  const simPrice = hasValidInputs ? calculatePrice(target, Math.min(Math.max(effectiveSimulated, minSpots), maxCap)) : null;
+  const simPrice = hasValidInputs ? calculatePrice(costBase, target, Math.min(Math.max(effectiveSimulated, minSpots), maxCap)) : null;
 
   const marketPrompt = useMemo(() => {
     if (!hasValidInputs || !form.sessionType) return null;
-    return getHostPricingPrompt(form.sessionType, form.durationMinutes, target, minSpots);
-  }, [hasValidInputs, form.sessionType, form.durationMinutes, target, minSpots]);
-
-  const hostEarnings = target; // host always gets their target regardless
-  const stretchyFeeLabel = formatPrice(STRETCHY_FEE);
+    return getHostPricingPrompt(form.sessionType, form.durationMinutes, costBase, target, minSpots);
+  }, [hasValidInputs, form.sessionType, form.durationMinutes, costBase, target, minSpots]);
 
   return (
     <div className="space-y-6">
@@ -459,21 +459,46 @@ function StepPricing({ form, update }: { form: FormState; update: (p: Partial<Fo
       {/* ── Inputs ── */}
       <div className="space-y-4">
 
-        {/* Host target */}
+        {/* Cost base */}
         <div>
           <label className="block text-sm font-semibold text-ink mb-1">
-            What do you need to earn?
+            What does this session cost to run?
           </label>
           <p className="text-xs text-muted mb-2">
-            Your take-home from this session, in NZD.
+            Teacher, venue, GEM, charity contribution — whatever it takes to put it on.
           </p>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink font-semibold text-lg">$</span>
             <input
               type="number"
-              value={form.hostTarget}
+              value={form.costBase}
               onChange={(e) => {
-                update({ hostTarget: e.target.value });
+                update({ costBase: e.target.value });
+                setSimulatedSpots(null);
+              }}
+              placeholder="200"
+              min="0"
+              step="10"
+              className="w-full pl-9 pr-4 py-3.5 rounded-card border-2 border-border bg-white text-ink placeholder-muted focus:outline-none focus:border-olive transition-colors text-lg font-semibold"
+            />
+          </div>
+        </div>
+
+        {/* Revenue target */}
+        <div>
+          <label className="block text-sm font-semibold text-ink mb-1">
+            What's the target on top?
+          </label>
+          <p className="text-xs text-muted mb-2">
+            What this session aims to net for Stretchy, beyond covering its costs.
+          </p>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink font-semibold text-lg">$</span>
+            <input
+              type="number"
+              value={form.revenueTarget}
+              onChange={(e) => {
+                update({ revenueTarget: e.target.value });
                 setSimulatedSpots(null);
               }}
               placeholder="200"
@@ -488,7 +513,7 @@ function StepPricing({ form, update }: { form: FormState; update: (p: Partial<Fo
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-semibold text-ink mb-1">
-              Minimum spots
+              Minimum mats
             </label>
             <p className="text-xs text-muted mb-2">Needed to go ahead</p>
             <input
@@ -506,7 +531,7 @@ function StepPricing({ form, update }: { form: FormState; update: (p: Partial<Fo
           </div>
           <div>
             <label className="block text-sm font-semibold text-ink mb-1">
-              Max capacity
+              Maximum mats
             </label>
             <p className="text-xs text-muted mb-2">Venue limit</p>
             <input
@@ -530,12 +555,12 @@ function StepPricing({ form, update }: { form: FormState; update: (p: Partial<Fo
         <div className="space-y-4 animate-fade-in">
 
           {/* Price breakdown card */}
-          <div className="bg-white rounded-card border-2 border-olive/20 shadow-card overflow-hidden">
+          <div className="bg-white rounded-card border-2 border-olive/20 overflow-hidden">
 
             {/* Formula banner */}
             <div className="bg-sand-light px-4 py-2.5 border-b border-border">
               <p className="text-xs text-muted font-medium text-center">
-                (${target} target + {stretchyFeeLabel} fee) ÷ spots = price per person
+                (${costBase} costs + ${target} target) ÷ mats = price per person
               </p>
             </div>
 
@@ -561,7 +586,8 @@ function StepPricing({ form, update }: { form: FormState; update: (p: Partial<Fo
               {/* Price curve */}
               <div className="mt-3 mb-1">
                 <PriceCurve
-                  hostTarget={target}
+                  costBase={costBase}
+                  revenueTarget={target}
                   minimumSpots={minSpots}
                   maxCapacity={maxCap}
                   simulatedSpots={effectiveSimulated}
@@ -607,13 +633,13 @@ function StepPricing({ form, update }: { form: FormState; update: (p: Partial<Fo
             )}
           </div>
 
-          {/* Host earnings callout */}
-          <div className="flex items-center gap-3 bg-olive/10 rounded-card px-4 py-3">
+          {/* Cost + target callout */}
+          <div className="flex items-center gap-3 bg-olive/10 rounded-card border-2 border-ink px-4 py-3">
             <div className="w-8 h-8 bg-olive rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm">✓</div>
             <p className="text-sm text-ink">
-              You always earn{" "}
-              <span className="font-bold">{formatPrice(hostEarnings)}</span>
-              {" "}— no matter how many or few join. Stretchy's {stretchyFeeLabel} fee is added on top.
+              Costs of <span className="font-bold">{formatPrice(costBase)}</span> are covered and the{" "}
+              <span className="font-bold">{formatPrice(target)}</span> target is hit at the minimum —
+              every extra mat past that just drops the price.
             </p>
           </div>
 
@@ -655,12 +681,13 @@ function StepPricing({ form, update }: { form: FormState; update: (p: Partial<Fo
 // ─── STEP 4 — REVIEW ──────────────────────────────────────────────────────────
 
 function StepReview({ form }: { form: FormState }) {
-  const target = parseFloat(form.hostTarget) || 0;
+  const costBase = parseFloat(form.costBase) || 0;
+  const target = parseFloat(form.revenueTarget) || 0;
   const minSpots = parseInt(form.minimumSpots) || 0;
   const maxCap = parseInt(form.maxCapacity) || 0;
 
-  const ceiling = target > 0 && minSpots > 0 ? startingPrice(target, minSpots) : null;
-  const floor = target > 0 && maxCap > 0 ? floorPrice(target, maxCap) : null;
+  const ceiling = target > 0 && minSpots > 0 ? startingPrice(costBase, target, minSpots) : null;
+  const floor = target > 0 && maxCap > 0 ? floorPrice(costBase, target, maxCap) : null;
 
   const typeConfig = SESSION_TYPES.find((t) => t.value === form.sessionType);
 
@@ -678,7 +705,7 @@ function StepReview({ form }: { form: FormState }) {
         <div className="flex items-start gap-3">
           <span className="text-2xl">{typeConfig?.emoji ?? "✨"}</span>
           <div>
-            <h3 className="font-bold text-lg text-ink leading-tight">{form.title || "Untitled session"}</h3>
+            <h2 className="font-bold text-lg text-ink leading-tight">{form.title || "Untitled session"}</h2>
             <p className="text-sm text-muted">{form.durationMinutes} min</p>
           </div>
         </div>
@@ -719,7 +746,7 @@ function StepReview({ form }: { form: FormState }) {
               </div>
             </div>
             <div className="flex justify-between text-xs text-muted">
-              <span>Min {minSpots} spots to go ahead</span>
+              <span>Min {minSpots} mats to go ahead</span>
               <span>Up to {maxCap} people</span>
             </div>
             <div className="progress-track mt-2">
@@ -746,10 +773,11 @@ function canAdvance(step: Step, form: FormState): boolean {
   if (step === 0) return !!form.sessionType && form.title.trim().length > 0;
   if (step === 1) return !!form.date && !!form.neighbourhood && !!form.venueName;
   if (step === 2) {
-    const target = parseFloat(form.hostTarget);
+    const costBase = parseFloat(form.costBase);
+    const target = parseFloat(form.revenueTarget);
     const min = parseInt(form.minimumSpots);
     const max = parseInt(form.maxCapacity);
-    return target > 0 && min >= 2 && max >= min;
+    return costBase >= 0 && target > 0 && min >= 2 && max >= min;
   }
   return true;
 }
@@ -825,7 +853,8 @@ export default function CreateSessionPage() {
       venueName: form.venueName,
       venueNotes: form.venueNotes,
       hasSocialStretch: form.hasSocialStretch,
-      hostTarget: parseFloat(form.hostTarget),
+      costBase: parseFloat(form.costBase) || 0,
+      revenueTarget: parseFloat(form.revenueTarget),
       minimumSpots: parseInt(form.minimumSpots),
       maxCapacity: parseInt(form.maxCapacity),
       isCharity: form.isCharity,

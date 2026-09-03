@@ -14,8 +14,8 @@ const BRAND_LABEL: Record<CardBrand, string> = {
 
 const BRAND_COLOR: Record<CardBrand, string> = {
   visa: "#1A1A2E",
-  mastercard: "#E63946",
-  amex: "#2C8FE0",
+  mastercard: "#C6362E",
+  amex: "#0000FF",
 };
 
 const SAVED_CARDS = [
@@ -82,8 +82,8 @@ export default function PaymentPage() {
             {SAVED_CARDS.map((card) => (
               <div
                 key={card.id}
-                className="bg-white rounded-card shadow-card p-4 flex items-center gap-3"
-                style={defaultCard === card.id ? { border: "1.5px solid #2C8FE0" } : undefined}
+                className="bg-white rounded-card border-2 border-ink p-4 flex items-center gap-3"
+                style={defaultCard === card.id ? { border: "1.5px solid #0000FF" } : undefined}
               >
                 {/* Brand chip */}
                 <span
@@ -102,7 +102,7 @@ export default function PaymentPage() {
                   {defaultCard === card.id ? (
                     <span
                       className="font-mono text-[10px] font-bold px-2 py-1 rounded-pill"
-                      style={{ backgroundColor: "#EFF6FF", color: "#2C8FE0" }}
+                      style={{ backgroundColor: "#EFF6FF", color: "#0000FF" }}
                     >
                       DEFAULT
                     </span>
@@ -131,7 +131,7 @@ export default function PaymentPage() {
             <span className="text-muted">›</span>
           </button>
         ) : (
-          <div className="bg-white rounded-card shadow-card p-4 space-y-3">
+          <div className="bg-white rounded-card border-2 border-ink p-4 space-y-3">
             <h2 className="font-bold text-ink text-sm">New card</h2>
 
             <div className="flex flex-col gap-1">
@@ -193,7 +193,7 @@ export default function PaymentPage() {
               <button
                 onClick={() => setAdding(false)}
                 className="flex-1 font-mono text-xs font-bold text-white rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
-                style={{ backgroundColor: "#1A1A1A", height: "48px" }}
+                style={{ backgroundColor: "#14110F", height: "48px" }}
               >
                 Save card
               </button>
@@ -208,7 +208,7 @@ export default function PaymentPage() {
         {/* Recent transactions */}
         <div>
           <h2 className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-2">Recent</h2>
-          <div className="bg-white rounded-card shadow-card divide-y divide-border">
+          <div className="bg-white rounded-card border-2 border-ink divide-y divide-border">
             {RECENT.map((t) => (
               <div key={t.id} className="flex items-center justify-between px-4 py-3.5">
                 <div>

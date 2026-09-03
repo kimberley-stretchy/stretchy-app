@@ -1,8 +1,16 @@
 // Server component — fetches sessions at request time, no loading state
+import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import SessionsClient from "./SessionsClient";
 
-const STRETCHY_FEE = 23;
+export const metadata: Metadata = {
+  title: "What's on — Stretchy",
+  description: "Community yoga, pilates and movement sessions across Auckland. Hold your place, and the price drops as more people join.",
+  openGraph: {
+    title: "What's on — Stretchy",
+    description: "Community yoga, pilates and movement sessions across Auckland. Hold your place, and the price drops as more people join.",
+  },
+};
 
 type DBSession = {
   id: string;
@@ -12,7 +20,8 @@ type DBSession = {
   duration_mins: number;
   location_name: string;
   location_address: string;
-  host_target: number;
+  cost_base: number;
+  revenue_target: number;
   min_attendees: number;
   max_attendees: number;
   current_holds: number;
@@ -29,8 +38,9 @@ async function getSessions(): Promise<DBSession[]> {
 
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, title, movement_type, starts_at, duration_mins, location_name, location_address, host_target, min_attendees, max_attendees, state, social_stretch_venue, description")
+    .select("id, title, movement_type, starts_at, duration_mins, location_name, location_address, cost_base, revenue_target, min_attendees, max_attendees, state, social_stretch_venue, description")
     .in("state", ["open", "confirmed"])
+    .eq("is_draft", false)
     .gt("starts_at", new Date().toISOString())
     .order("starts_at", { ascending: true });
 

@@ -27,10 +27,9 @@ export async function POST(request: NextRequest) {
   await admin.from("ratings").insert({
     session_id,
     attendee_id: anonymous ? null : (attendee?.id ?? null),
-    rating,
-    tags: tags ?? [],
-    note: note ?? null,
-    // suggestion goes in application_notes temporarily (re-use existing column)
+    stars: rating,
+    vibe_chips: tags ?? [],
+    note_to_host: note ?? null,
   });
 
   // Forward suggestion to kimberley@stretchyyoga.co.nz if provided
@@ -38,7 +37,7 @@ export async function POST(request: NextRequest) {
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
     resend.emails.send({
-      from: "Stretchy <hello@stretchy.social>",
+      from: "Stretchy <hello@stretchyyoga.co.nz>",
       to: "kimberley@stretchyyoga.co.nz",
       subject: `New session suggestion from a Stretchy member`,
       text: `Session: ${session_id}\nAnonymous: ${anonymous}\n\nSuggestion:\n${suggestion}`,

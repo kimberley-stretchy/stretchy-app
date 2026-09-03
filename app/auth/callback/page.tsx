@@ -48,13 +48,13 @@ function CallbackHandler() {
   return (
     <main style={{
       minHeight: "100vh", display: "flex", alignItems: "center",
-      justifyContent: "center", background: "#F5EDE3",
+      justifyContent: "center", background: "#F7F0E8",
       fontFamily: "'Space Grotesk', system-ui, sans-serif",
     }}>
       <div style={{ textAlign: "center" }}>
         <div style={{
           width: 40, height: 40, borderRadius: "50%",
-          border: "3px solid #1A1A1A", borderTopColor: "transparent",
+          border: "3px solid #14110F", borderTopColor: "transparent",
           animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
         }} />
         <p style={{ fontSize: 15, color: "rgba(26,26,26,0.6)" }}>{status}</p>

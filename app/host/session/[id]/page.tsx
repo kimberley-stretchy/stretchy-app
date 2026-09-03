@@ -37,14 +37,14 @@ interface Attendee {
 }
 
 const ATTENDEES: Attendee[] = [
-  { id: "a1", initial: "M", color: "#A535C7", name: "Marlee F.", tag: "NEW THIS MONTH", sessions: 27, checkedIn: true },
-  { id: "a2", initial: "K", color: "#2A3FE0", name: "Kit P.", tag: "REGULAR · 6 IN A ROW", sessions: 18, checkedIn: true },
-  { id: "a3", initial: "S", color: "#7A8330", name: "Sam W.", tag: "pregnancy · modifications", tagColor: "#E63946", sessions: 4, checkedIn: false, flagged: true, note: "pregnancy · modifications" },
-  { id: "a4", initial: "J", color: "#2C8FE0", name: "Jess M.", tag: "FIRST STRETCHY 🎉", sessions: 1, checkedIn: false },
-  { id: "a5", initial: "A", color: "#FF6B35", name: "Ari T.", tag: "REGULAR", sessions: 12, checkedIn: false },
-  { id: "a6", initial: "L", color: "#E63946", name: "Lena B.", tag: "REGULAR", sessions: 9, checkedIn: false },
-  { id: "a7", initial: "T", color: "#4FB8E0", name: "Theo R.", tag: "NEW MATE", sessions: 2, checkedIn: false },
-  { id: "a8", initial: "P", color: "#FF4D9E", name: "Pip C.", tag: "knee · gentle", tagColor: "#E63946", sessions: 5, checkedIn: false, flagged: true, note: "knee · gentle" },
+  { id: "a1", initial: "M", color: "#902F8A", name: "Marlee F.", tag: "NEW THIS MONTH", sessions: 27, checkedIn: true },
+  { id: "a2", initial: "K", color: "#0000FF", name: "Kit P.", tag: "REGULAR · 6 IN A ROW", sessions: 18, checkedIn: true },
+  { id: "a3", initial: "S", color: "#716F39", name: "Sam W.", tag: "pregnancy · modifications", tagColor: "#C6362E", sessions: 4, checkedIn: false, flagged: true, note: "pregnancy · modifications" },
+  { id: "a4", initial: "J", color: "#0000FF", name: "Jess M.", tag: "FIRST STRETCHY 🎉", sessions: 1, checkedIn: false },
+  { id: "a5", initial: "A", color: "#E96709", name: "Ari T.", tag: "REGULAR", sessions: 12, checkedIn: false },
+  { id: "a6", initial: "L", color: "#C6362E", name: "Lena B.", tag: "REGULAR", sessions: 9, checkedIn: false },
+  { id: "a7", initial: "T", color: "#29ABE2", name: "Theo R.", tag: "NEW MATE", sessions: 2, checkedIn: false },
+  { id: "a8", initial: "P", color: "#902F8A", name: "Pip C.", tag: "knee · gentle", tagColor: "#C6362E", sessions: 5, checkedIn: false, flagged: true, note: "knee · gentle" },
   { id: "a9", initial: "O", color: "#9A9590", name: "Olive K.", tag: "NEW MATE", sessions: 1, checkedIn: false },
 ];
 
@@ -70,7 +70,7 @@ export default function ManageSessionPage({ params }: { params: { id: string } }
           <Link href="/host/dashboard" className="text-muted hover:text-ink text-lg transition-colors" aria-label="Back">←</Link>
         </div>
         <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">Manage</p>
-        <Link href="/host/inbox" className="flex items-center px-3 py-1.5 rounded-pill relative" style={{ backgroundColor: "#F5EDE3", border: "1px solid #D4CFC9" }} aria-label="Notifications">
+        <Link href="/host/inbox" className="flex items-center px-3 py-1.5 rounded-pill relative" style={{ backgroundColor: "#F7F0E8", border: "1px solid #D4CFC9" }} aria-label="Notifications">
           <span className="text-base">🔔</span>
           <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-hot-blue border-2 border-cream block" />
         </Link>
@@ -81,8 +81,8 @@ export default function ManageSessionPage({ params }: { params: { id: string } }
         {/* ── STATUS + HEADLINE ── */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#4CAF82" }} />
-            <p className="font-mono text-xs font-bold uppercase tracking-widest" style={{ color: "#4CAF82" }}>
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#716F39" }} />
+            <p className="font-mono text-xs font-bold uppercase tracking-widest" style={{ color: "#716F39" }}>
               {MOCK.status} · {MOCK.day} · {MOCK.time}
             </p>
           </div>
@@ -95,7 +95,7 @@ export default function ManageSessionPage({ params }: { params: { id: string } }
         </div>
 
         {/* ── ROSTER SUMMARY CARD ── */}
-        <div className="bg-white rounded-card shadow-card p-4">
+        <div className="bg-white rounded-card border-2 border-ink p-4">
           <div className="flex items-center gap-4 mb-4">
             <div className="flex-1">
               <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-1">Roster</p>
@@ -113,7 +113,7 @@ export default function ManageSessionPage({ params }: { params: { id: string } }
           <div className="flex gap-3">
             <button
               className="flex-1 font-mono text-xs font-bold rounded-pill text-white transition-all hover:brightness-110 active:scale-[0.98]"
-              style={{ backgroundColor: "#1A1A1A", height: "44px" }}
+              style={{ backgroundColor: "#14110F", height: "44px" }}
             >
               ≡ Message all
             </button>
@@ -127,7 +127,7 @@ export default function ManageSessionPage({ params }: { params: { id: string } }
         </div>
 
         {/* ── RUN OF SHOW (yellow) ── */}
-        <div className="rounded-card p-4" style={{ backgroundColor: "#FFD166" }}>
+        <div className="rounded-card p-4" style={{ backgroundColor: "#FCBB16", border: "2px solid #14110F" }}>
           <p className="font-mono text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "rgba(26,26,26,0.55)" }}>
             Run of Show
           </p>
@@ -156,8 +156,8 @@ export default function ManageSessionPage({ params }: { params: { id: string } }
             {attendees.map((a) => (
               <div
                 key={a.id}
-                className="bg-white rounded-card shadow-card p-3 flex items-center gap-3"
-                style={a.flagged ? { border: "1.5px solid #E63946" } : undefined}
+                className="bg-white rounded-card border-2 border-ink p-3 flex items-center gap-3"
+                style={a.flagged ? { border: "1.5px solid #C6362E" } : undefined}
               >
                 {/* Avatar */}
                 <div
@@ -186,7 +186,7 @@ export default function ManageSessionPage({ params }: { params: { id: string } }
                   onClick={() => toggleCheckIn(a.id)}
                   className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
                   style={{
-                    backgroundColor: a.checkedIn ? "#4CAF82" : "transparent",
+                    backgroundColor: a.checkedIn ? "#716F39" : "transparent",
                     border: a.checkedIn ? "none" : "1.5px solid #D4CFC9",
                   }}
                   aria-label={a.checkedIn ? "Mark absent" : "Mark checked in"}
@@ -204,7 +204,7 @@ export default function ManageSessionPage({ params }: { params: { id: string } }
 
         {/* ── FLOOR NOT MET LINK ── */}
         <Link href="/host/floor-not-met">
-          <div className="rounded-card p-4 flex items-center justify-between" style={{ backgroundColor: "#FF6B35" }}>
+          <div className="rounded-card p-4 flex items-center justify-between" style={{ backgroundColor: "#E96709", border: "2px solid #14110F" }}>
             <div>
               <p className="font-mono text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.65)" }}>
                 Heads up

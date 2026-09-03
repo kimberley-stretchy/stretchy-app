@@ -73,12 +73,12 @@ const CARDS: InboxCard[] = [
 
 // ─── CARD CONFIG ──────────────────────────────────────────────────────────────
 const cardStyle: Record<CardType, { bg: string; labelColor: string; label: string; labelEmoji?: string; titleColor: string; bodyColor: string }> = {
-  ACTION:    { bg: "#2C8FE0", labelColor: "rgba(255,255,255,0.65)", label: "ACTION", titleColor: "#fff", bodyColor: "rgba(255,255,255,0.80)" },
-  CONFIRMED: { bg: "#E8F3FF", labelColor: "#7A8330",                 label: "CONFIRMED", titleColor: "#1A4A80", bodyColor: "#4A6A90" },
-  PAYOUT:    { bg: "#FFD166", labelColor: "rgba(26,26,26,0.55)",    label: "$ PAYOUT", titleColor: "#1A1A1A", bodyColor: "rgba(26,26,26,0.65)" },
-  SOCIAL:    { bg: "#E8F5F0", labelColor: "#2D6A4A",                 label: "SOCIAL", labelEmoji: "🤙", titleColor: "#1A1A1A", bodyColor: "#4A6A50" },
-  UPDATE:    { bg: "#ffffff", labelColor: "#9A9590",                  label: "UPDATE", titleColor: "#1A1A1A", bodyColor: "#9A9590" },
-  RENEWAL:   { bg: "#E8F3FF", labelColor: "#4CAF82",                 label: "CONFIRMED", titleColor: "#1A4A80", bodyColor: "#4A6A90" },
+  ACTION:    { bg: "#0000FF", labelColor: "rgba(255,255,255,0.65)", label: "ACTION", titleColor: "#fff", bodyColor: "rgba(255,255,255,0.80)" },
+  CONFIRMED: { bg: "#E8F3FF", labelColor: "#716F39",                 label: "CONFIRMED", titleColor: "#1A4A80", bodyColor: "#4A6A90" },
+  PAYOUT:    { bg: "#FCBB16", labelColor: "rgba(26,26,26,0.55)",    label: "$ PAYOUT", titleColor: "#14110F", bodyColor: "rgba(26,26,26,0.65)" },
+  SOCIAL:    { bg: "#E8F5F0", labelColor: "#2D6A4A",                 label: "SOCIAL", labelEmoji: "🤙", titleColor: "#14110F", bodyColor: "#4A6A50" },
+  UPDATE:    { bg: "#ffffff", labelColor: "#9A9590",                  label: "UPDATE", titleColor: "#14110F", bodyColor: "#9A9590" },
+  RENEWAL:   { bg: "#E8F3FF", labelColor: "#716F39",                 label: "CONFIRMED", titleColor: "#1A4A80", bodyColor: "#4A6A90" },
 };
 
 const filterMatch: Record<Filter, (c: InboxCard) => boolean> = {
@@ -106,7 +106,7 @@ export default function HostInboxPage() {
           <Link href="/host/dashboard" className="text-muted hover:text-ink text-lg transition-colors">←</Link>
         </div>
         <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
-          Host Inbox · <span style={{ color: "#2C8FE0" }}>{newCount} new</span>
+          Host Inbox · <span style={{ color: "#0000FF" }}>{newCount} new</span>
         </p>
         <Link href="/host/inbox" className="relative">
           <span className="text-2xl">🔔</span>
@@ -132,8 +132,8 @@ export default function HostInboxPage() {
               onClick={() => setFilter(f)}
               className="font-mono text-xs font-bold px-4 py-2 rounded-pill whitespace-nowrap transition-all flex-shrink-0"
               style={{
-                backgroundColor: filter === f ? "#1A1A1A" : "#F5EDE3",
-                color: filter === f ? "#fff" : "#1A1A1A",
+                backgroundColor: filter === f ? "#14110F" : "#F7F0E8",
+                color: filter === f ? "#fff" : "#14110F",
                 border: filter === f ? "none" : "1px solid #E0D9D0",
               }}
             >
@@ -154,21 +154,21 @@ export default function HostInboxPage() {
                 className="rounded-card p-4 relative"
                 style={{
                   backgroundColor: style.bg,
-                  boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                  border: isLight ? "2px solid #14110F" : "none",
                 }}
               >
                 {/* Unread dot */}
                 {card.unread && (
                   <span
                     className="absolute top-4 right-4 w-2 h-2 rounded-full"
-                    style={{ backgroundColor: isLight ? "#2C8FE0" : "rgba(255,255,255,0.80)" }}
+                    style={{ backgroundColor: isLight ? "#0000FF" : "rgba(255,255,255,0.80)" }}
                   />
                 )}
 
                 {/* Label row */}
                 <div className="flex items-center gap-1.5 mb-1.5">
                   {card.type === "CONFIRMED" || card.type === "RENEWAL" ? (
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#4CAF82" }} />
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#716F39" }} />
                   ) : null}
                   <p className="font-mono text-xs font-bold uppercase tracking-[0.16em]" style={{ color: style.labelColor }}>
                     {style.labelEmoji ? `${style.labelEmoji} ` : ""}{style.label}
@@ -176,12 +176,12 @@ export default function HostInboxPage() {
                 </div>
 
                 {/* Title */}
-                <h3
+                <h2
                   className="font-display font-bold leading-tight mb-1"
                   style={{ fontSize: "18px", color: style.titleColor }}
                 >
                   {card.title}
-                </h3>
+                </h2>
 
                 {/* Body */}
                 {card.body && (
@@ -200,7 +200,7 @@ export default function HostInboxPage() {
                         className="flex items-center justify-center font-semibold rounded-pill transition-all active:scale-[0.98]"
                         style={{
                           backgroundColor: a.primary ? "#fff" : "rgba(255,255,255,0.20)",
-                          color: a.primary ? "#1A1A1A" : "#fff",
+                          color: a.primary ? "#14110F" : "#fff",
                           height: "40px",
                           paddingLeft: "20px",
                           paddingRight: "20px",

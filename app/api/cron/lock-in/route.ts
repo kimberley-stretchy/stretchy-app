@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { sendPushToUsers } from "@/lib/push-server";
+import { calculatePrice } from "@/lib/pricing";
 
 /**
  * GET /api/cron/lock-in
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
   const admin = getAdmin();
   const stripe = getStripe();
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchy.social";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchyyoga.co.nz";
 
   const now = new Date();
   const windowStart = new Date(now.getTime() + 110 * 60 * 1000); // 1h50m
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
   // Find confirmed sessions starting in the 2h window
   const { data: sessions } = await admin
     .from("sessions")
-    .select("id, title, starts_at, location_name, host_target, min_attendees, max_attendees, social_stretch_venue, state")
+    .select("id, title, starts_at, location_name, cost_base, revenue_target, min_attendees, max_attendees, social_stretch_venue, state")
     .eq("state", "confirmed")
     .gte("starts_at", windowStart.toISOString())
     .lte("starts_at", windowEnd.toISOString());
@@ -53,7 +54,6 @@ export async function GET(request: NextRequest) {
   }
 
   const results = [];
-  const STRETCHY_FEE = 23;
 
   for (const session of sessions) {
     // Get all active holds
@@ -66,9 +66,9 @@ export async function GET(request: NextRequest) {
     if (!holds || holds.length === 0) continue;
 
     const totalHolds = holds.length;
-    const finalPriceNZD = Math.round((session.host_target + STRETCHY_FEE) / totalHolds);
-    const finalPriceWithGST = Math.round(finalPriceNZD * 1.15 * 100) / 100;
-    const finalAmountCents = Math.round(finalPriceWithGST * 100);
+    // Final price never rises above the opening price at min_attendees — floor it at the minimum
+    const finalPrice = calculatePrice(session.cost_base, session.revenue_target, Math.max(totalHolds, session.min_attendees));
+    const finalAmountCents = Math.round(finalPrice * 100);
 
     const startDate = new Date(session.starts_at);
     const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
@@ -127,30 +127,30 @@ export async function GET(request: NextRequest) {
 
         if (attendee?.email) {
           await resend.emails.send({
-            from: "Stretchy <hello@stretchy.social>",
+            from: "Stretchy <hello@stretchyyoga.co.nz>",
             to: attendee.email,
             reply_to: "kimberley@stretchyyoga.co.nz",
             subject: `Price locked — see you at ${session.title} 🧘`,
             headers: { "X-Priority": "1", "Importance": "High" },
-            text: `Hi ${attendee.name?.split(" ")[0] ?? "there"},\n\nThe price is locked for ${session.title} (${dateStr}).\n\nFinal price: $${finalPriceNZD} + GST\n\nYour card has been charged $${finalPriceWithGST.toFixed(2)} incl. GST. See you in 2 hours!\n\nStretchy\nstretchy.social`,
+            text: `Hi ${attendee.name?.split(" ")[0] ?? "there"},\n\nThe price is locked for ${session.title} (${dateStr}).\n\nFinal price: $${finalPrice.toFixed(2)} incl. GST\n\nYour card has been charged $${finalPrice.toFixed(2)}. See you in 2 hours!\n\nStretchy\nstretchyyoga.co.nz`,
             html: `
-              <div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;background:#FFD166;padding:32px;border-radius:16px;">
+              <div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;background:#FCBB16;padding:32px;border-radius:16px;">
                 <div style="display:flex;align-items:center;margin-bottom:28px;gap:10px;">
-                  <span style="font-size:22px;font-weight:900;color:#1A1A1A;letter-spacing:-0.02em;">Stretchy</span>
+                  <span style="font-size:22px;font-weight:900;color:#14110F;letter-spacing:-0.02em;">Stretchy</span>
                 </div>
-                <h1 style="font-size:28px;font-weight:900;color:#1A1A1A;margin:0 0 8px;">Price locked. See you soon. 🙌</h1>
+                <h1 style="font-size:28px;font-weight:900;color:#14110F;margin:0 0 8px;">Price locked. See you soon. 🙌</h1>
                 <p style="color:rgba(26,26,26,0.7);font-size:15px;margin:0 0 24px;">Hi ${attendee.name?.split(" ")[0] ?? "there"} — the room is set. Your card has been charged at the final price.</p>
-                <div style="background:#1A1A1A;border-radius:14px;padding:22px;margin-bottom:16px;">
-                  <p style="color:#FFD166;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;margin:0 0 6px;">Final price · charged now</p>
-                  <p style="color:white;font-size:36px;font-weight:900;margin:0 0 8px;letter-spacing:-0.02em;">$${finalPriceWithGST.toFixed(2)}</p>
-                  <p style="color:#F5EDE3;font-size:18px;font-weight:800;margin:0 0 6px;">${session.title}</p>
+                <div style="background:#14110F;border-radius:14px;padding:22px;margin-bottom:16px;">
+                  <p style="color:#FCBB16;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;margin:0 0 6px;">Final price · charged now</p>
+                  <p style="color:white;font-size:36px;font-weight:900;margin:0 0 8px;letter-spacing:-0.02em;">$${finalPrice.toFixed(2)}</p>
+                  <p style="color:#F7F0E8;font-size:18px;font-weight:800;margin:0 0 6px;">${session.title}</p>
                   <p style="color:rgba(245,237,227,0.7);font-size:14px;margin:0 0 4px;">🗓 ${dateStr}</p>
                   <p style="color:rgba(245,237,227,0.7);font-size:14px;margin:0;">📍 ${session.location_name}</p>
                 </div>
-                ${session.social_stretch_venue ? `<div style="background:#A535C7;border-radius:14px;padding:18px;margin-bottom:16px;"><p style="color:rgba(255,255,255,0.6);font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;margin:0 0 6px;">Social Stretch after 🥂</p><p style="color:white;font-size:15px;font-weight:700;margin:0;">${session.social_stretch_venue}</p></div>` : ""}
+                ${session.social_stretch_venue ? `<div style="background:#902F8A;border-radius:14px;padding:18px;margin-bottom:16px;"><p style="color:rgba(255,255,255,0.6);font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;margin:0 0 6px;">Social Stretch after 🥂</p><p style="color:white;font-size:15px;font-weight:700;margin:0;">${session.social_stretch_venue}</p></div>` : ""}
                 <p style="font-size:13px;color:rgba(26,26,26,0.7);line-height:1.6;margin:0 0 16px;">See you on the mat in 2 hours. 🧘</p>
-                <a href="${appUrl}/sessions/${session.id}" style="display:inline-block;background:#1A1A1A;color:#F5EDE3;text-decoration:none;font-size:13px;font-weight:700;padding:12px 22px;border-radius:8px;">View session →</a>
-                <p style="font-size:12px;color:rgba(26,26,26,0.6);text-align:center;margin:24px 0 0;">Questions? <a href="mailto:kimberley@stretchyyoga.co.nz" style="color:#1A1A1A;font-weight:600;text-decoration:none;">kimberley@stretchyyoga.co.nz</a></p>
+                <a href="${appUrl}/sessions/${session.id}" style="display:inline-block;background:#14110F;color:#F7F0E8;text-decoration:none;font-size:13px;font-weight:700;padding:12px 22px;border-radius:8px;">View session →</a>
+                <p style="font-size:12px;color:rgba(26,26,26,0.6);text-align:center;margin:24px 0 0;">Questions? <a href="mailto:kimberley@stretchyyoga.co.nz" style="color:#14110F;font-weight:600;text-decoration:none;">kimberley@stretchyyoga.co.nz</a></p>
                 <p style="font-size:11px;color:rgba(26,26,26,0.4);text-align:center;margin:8px 0 0;">Made with Love by <a href="https://studiodawn.org" style="color:rgba(26,26,26,0.4);">Studio Dawn</a></p>
               </div>
             `,
@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
     const holderUserIds = holds.map(h => h.user_id);
     sendPushToUsers(holderUserIds, {
       title: "Price locked 🔒",
-      body: `${session.title} — $${finalPriceNZD} + GST charged. See you in 2 hours!`,
+      body: `${session.title} — $${finalPrice.toFixed(2)} charged. See you in 2 hours!`,
       url: `/sessions/${session.id}`,
       requireInteraction: true,
     }).catch(console.error);
@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
       totalHolds,
       charged,
       failed,
-      finalPriceNZD,
+      finalPrice,
     });
   }
 

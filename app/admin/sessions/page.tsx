@@ -2,30 +2,32 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import SMark from "@/components/SMark";
+import HQShell from "@/components/hq/HQShell";
+import { calculatePrice } from "@/lib/pricing";
 
 const T = {
-  black:  "#1A1A1A",
-  cream:  "#F5EDE3",
-  yellow: "#FFD166",
-  blue:   "#2C8FE0",
-  green:  "#4CAF82",
-  orange: "#FF6B35",
-  red:    "#E63946",
-  olive:  "#7A8330",
-  purple: "#A535C7",
+  black:  "#14110F",
+  cream:  "#F7F0E8",
+  yellow: "#FCBB16",
+  blue:   "#0000FF",
+  green:  "#716F39",
+  orange: "#E96709",
+  red:    "#C6362E",
+  olive:  "#716F39",
+  purple: "#902F8A",
   mono:   "'JetBrains Mono', monospace",
   body:   "'Space Grotesk', system-ui, sans-serif",
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  yoga: "#A535C7", pilates: "#2A3FE0", breath: "#7A8330",
-  sound: "#4FB8E0", flow: "#FF6B35", run: "#E63946", hiit: "#2C8FE0",
+  yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
+  sound: "#716F39", flow: "#FCBB16", run: "#E96709", hiit: "#902F8A",
 };
 
 const STATE_COLORS: Record<string, { bg: string; fg: string; label: string }> = {
   open:      { bg: "rgba(255,209,102,0.15)", fg: T.yellow,  label: "OPEN" },
   confirmed: { bg: "rgba(76,175,130,0.15)",  fg: T.green,   label: "CONFIRMED" },
+  locked:    { bg: "rgba(44,143,224,0.15)",  fg: T.blue,    label: "LOCKED" },
   cancelled: { bg: "rgba(26,26,26,0.3)",     fg: "#888",    label: "CANCELLED" },
   completed: { bg: "rgba(76,175,130,0.10)",  fg: "#888",    label: "DONE" },
 };
@@ -37,7 +39,8 @@ type Session = {
   starts_at: string;
   duration_mins: number;
   location_name: string;
-  host_target: number;
+  cost_base: number;
+  revenue_target: number;
   min_attendees: number;
   max_attendees: number;
   current_holds: number;
@@ -89,7 +92,7 @@ export default function AdminSessionsPage() {
         price: "$28 incl. GST",
         venue: firstSession?.location_name ?? "Grey Lynn Community Centre",
         socialStretchVenue: "nearby",
-        cancelUrl: `https://stretchy.social/hold/${firstSession?.id ?? ""}`,
+        cancelUrl: `https://stretchyyoga.co.nz/hold/${firstSession?.id ?? ""}`,
       }),
     });
     const data = await res.json();
@@ -97,11 +100,17 @@ export default function AdminSessionsPage() {
     setTestEmailSending(false);
   }
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     fetch("/api/admin/sessions")
       .then((r) => r.json())
-      .then((data) => { setSessions(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then((data) => {
+        if (Array.isArray(data)) setSessions(data);
+        else setLoadError(data?.error ?? "Could not load sessions.");
+        setLoading(false);
+      })
+      .catch(() => { setLoadError("Could not load sessions."); setLoading(false); });
   }, []);
 
   async function cancelSession(id: string, title: string) {
@@ -114,34 +123,34 @@ export default function AdminSessionsPage() {
     setCancelling(null);
   }
 
+  const [requestingSub, setRequestingSub] = useState<string | null>(null);
+
+  async function requestSub(id: string, title: string) {
+    const roleInput = prompt(`Who's needed for "${title}"? Type "teacher" or "gem":`, "teacher");
+    if (!roleInput) return;
+    const role = roleInput.trim().toLowerCase();
+    if (role !== "teacher" && role !== "gem") { alert('Type exactly "teacher" or "gem".'); return; }
+    const note = prompt("Anything to add for whoever picks this up? (optional)") || "";
+
+    setRequestingSub(id);
+    const res = await fetch("/api/admin/substitute-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: id, role, note }),
+    });
+    const data = await res.json();
+    setRequestingSub(null);
+    if (res.ok) alert(`Sent to ${data.notified} eligible ${role}${data.notified === 1 ? "" : "s"}.`);
+    else alert(data.error ?? "Could not send the request.");
+  }
+
   const upcoming = sessions.filter((s) => s.state !== "cancelled" && s.state !== "completed");
   const past     = sessions.filter((s) => s.state === "completed" || s.state === "cancelled");
 
   return (
+    <HQShell>
     <main style={{ background: T.black, minHeight: "100vh", color: T.cream, fontFamily: T.body }}>
-      {/* Nav */}
-      <nav style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "16px 20px", maxWidth: 720, margin: "0 auto",
-      }}>
-        <Link href="/admin">
-          <SMark size={28} className="text-cream" />
-        </Link>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 6, padding: "6px 12px",
-          borderRadius: 999, background: T.cream,
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.blue }} />
-          <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: T.black, letterSpacing: "0.18em" }}>
-            STRETCHY HQ
-          </span>
-        </div>
-        <Link href="/admin" style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 700, color: "rgba(245,237,227,0.5)", letterSpacing: "0.12em", textDecoration: "none" }}>
-          ← BACK
-        </Link>
-      </nav>
-
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 20px 60px" }}>
+      <div style={{ maxWidth: 760, padding: "32px 32px 60px" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 28 }}>
           <div>
@@ -173,8 +182,8 @@ export default function AdminSessionsPage() {
             <p style={{ fontSize: 13, color: "rgba(245,237,227,0.6)" }}>Send a test push to yourself (must have notifications enabled on your device)</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {testPushResult && <span style={{ fontSize: 12, color: testPushResult.startsWith("✓") ? "#4CAF82" : "#E63946" }}>{testPushResult}</span>}
-            <button onClick={sendTestPush} disabled={testPushSending} style={{ padding: "10px 18px", borderRadius: 999, background: "rgba(245,237,227,0.15)", color: "#F5EDE3", border: "1px solid rgba(245,237,227,0.2)", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em" }}>
+            {testPushResult && <span style={{ fontSize: 12, color: testPushResult.startsWith("✓") ? "#716F39" : "#C6362E" }}>{testPushResult}</span>}
+            <button onClick={sendTestPush} disabled={testPushSending} style={{ padding: "10px 18px", borderRadius: 999, background: "rgba(245,237,227,0.15)", color: "#F7F0E8", border: "1px solid rgba(245,237,227,0.2)", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em" }}>
               {testPushSending ? "SENDING…" : "SEND TEST PUSH"}
             </button>
           </div>
@@ -189,15 +198,21 @@ export default function AdminSessionsPage() {
                 value={testEmailAddress}
                 onChange={e => setTestEmailAddress(e.target.value)}
                 placeholder="email@example.com"
-                style={{ padding: "8px 14px", borderRadius: 8, background: "rgba(245,237,227,0.08)", border: "1px solid rgba(245,237,227,0.15)", color: "#F5EDE3", fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, outline: "none", minWidth: 220 }}
+                style={{ padding: "8px 14px", borderRadius: 8, background: "rgba(245,237,227,0.08)", border: "1px solid rgba(245,237,227,0.15)", color: "#F7F0E8", fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, outline: "none", minWidth: 220 }}
               />
-              <button onClick={sendTestEmail} disabled={testEmailSending} style={{ padding: "9px 18px", borderRadius: 999, background: "rgba(245,237,227,0.15)", color: "#F5EDE3", border: "1px solid rgba(245,237,227,0.2)", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", flexShrink: 0 }}>
+              <button onClick={sendTestEmail} disabled={testEmailSending} style={{ padding: "9px 18px", borderRadius: 999, background: "rgba(245,237,227,0.15)", color: "#F7F0E8", border: "1px solid rgba(245,237,227,0.2)", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", flexShrink: 0 }}>
                 {testEmailSending ? "SENDING…" : "SEND TEST"}
               </button>
-              {testEmailResult && <span style={{ fontSize: 12, color: testEmailResult.startsWith("✓") ? "#4CAF82" : "#E63946" }}>{testEmailResult}</span>}
+              {testEmailResult && <span style={{ fontSize: 12, color: testEmailResult.startsWith("✓") ? "#716F39" : "#C6362E" }}>{testEmailResult}</span>}
             </div>
           </div>
         </div>
+
+        {loadError && (
+          <div style={{ marginBottom: 20, padding: "14px 18px", borderRadius: 12, background: "rgba(230,57,70,0.15)", border: "1px solid rgba(230,57,70,0.3)", color: "#C6362E", fontSize: 13, fontWeight: 600 }}>
+            {loadError}
+          </div>
+        )}
 
         {/* Loading */}
         {loading && (
@@ -246,6 +261,8 @@ export default function AdminSessionsPage() {
                   session={s}
                   onCancel={cancelSession}
                   cancelling={cancelling === s.id}
+                  onRequestSub={requestSub}
+                  requestingSub={requestingSub === s.id}
                 />
               ))}
             </div>
@@ -265,6 +282,8 @@ export default function AdminSessionsPage() {
                   session={s}
                   onCancel={cancelSession}
                   cancelling={cancelling === s.id}
+                  onRequestSub={requestSub}
+                  requestingSub={requestingSub === s.id}
                 />
               ))}
             </div>
@@ -272,6 +291,7 @@ export default function AdminSessionsPage() {
         )}
       </div>
     </main>
+    </HQShell>
   );
 }
 
@@ -279,19 +299,19 @@ function SessionCard({
   session: s,
   onCancel,
   cancelling,
+  onRequestSub,
+  requestingSub,
 }: {
   session: Session;
   onCancel: (id: string, title: string) => void;
   cancelling: boolean;
+  onRequestSub: (id: string, title: string) => void;
+  requestingSub: boolean;
 }) {
   const typeColor = TYPE_COLORS[s.movement_type] || "#888";
   const stateInfo = STATE_COLORS[s.state] || STATE_COLORS.open;
   const startDate = new Date(s.starts_at);
-  const STRETCHY_FEE = 23;
-  const startingPrice = Math.round((s.host_target + STRETCHY_FEE) / s.min_attendees);
-  const currentPrice  = s.current_holds >= s.min_attendees
-    ? Math.round((s.host_target + STRETCHY_FEE) / s.current_holds)
-    : startingPrice;
+  const currentPrice = calculatePrice(s.cost_base, s.revenue_target, Math.max(s.current_holds, s.min_attendees));
 
   const needsMore = s.min_attendees - s.current_holds;
   const isConfirmed = s.current_holds >= s.min_attendees;
@@ -342,9 +362,9 @@ function SessionCard({
         background: "rgba(0,0,0,0.2)",
       }}>
         <Stat label="HOLDS" value={`${s.current_holds} / ${s.max_attendees}`} />
-        <Stat label="PRICE NOW" value={`$${currentPrice}`} color={T.yellow} />
-        <Stat label="HOST EARNS" value={`$${s.host_target}`} />
-        <Stat label="MIN" value={`${s.min_attendees} needed`} color={isConfirmed ? T.green : needsMore > 0 ? "#FF6B35" : T.green} />
+        <Stat label="PRICE NOW" value={`$${currentPrice.toFixed(2)}`} color={T.yellow} />
+        <Stat label="COSTS + TARGET" value={`$${s.cost_base} + $${s.revenue_target}`} />
+        <Stat label="MIN" value={`${s.min_attendees} needed`} color={isConfirmed ? T.green : needsMore > 0 ? "#E96709" : T.green} />
 
         {/* Actions */}
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
@@ -358,13 +378,48 @@ function SessionCard({
           >
             VIEW
           </Link>
+          <Link
+            href={`/admin/sessions/new?duplicate=${s.id}`}
+            style={{
+              padding: "7px 14px", borderRadius: 999, textDecoration: "none",
+              background: "rgba(245,237,227,0.10)", color: T.cream,
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+            }}
+          >
+            DUPLICATE
+          </Link>
+          {(s.state === "locked" || s.state === "completed") && (
+            <Link
+              href={`/admin/sessions/${s.id}/money`}
+              style={{
+                padding: "7px 14px", borderRadius: 999, textDecoration: "none",
+                background: "rgba(252,187,22,0.18)", color: T.yellow,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+              }}
+            >
+              MONEY
+            </Link>
+          )}
+          {(s.state === "open" || s.state === "confirmed") && (
+            <button
+              onClick={() => onRequestSub(s.id, s.title)}
+              disabled={requestingSub}
+              style={{
+                padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
+                background: "rgba(252,187,22,0.18)", color: T.yellow,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+              }}
+            >
+              {requestingSub ? "SENDING…" : "NEED SUB"}
+            </button>
+          )}
           {s.state === "open" && (
             <button
               onClick={() => onCancel(s.id, s.title)}
               disabled={cancelling}
               style={{
                 padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
-                background: "rgba(230,57,70,0.15)", color: "#E63946",
+                background: "rgba(230,57,70,0.15)", color: "#C6362E",
                 fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
               }}
             >
@@ -383,7 +438,7 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
       <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700, color: "rgba(245,237,227,0.35)", letterSpacing: "0.14em", marginBottom: 2 }}>
         {label}
       </p>
-      <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: color || "#F5EDE3" }}>
+      <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: color || "#F7F0E8" }}>
         {value}
       </p>
     </div>

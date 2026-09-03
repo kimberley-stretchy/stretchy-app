@@ -36,7 +36,7 @@ const STEPS = [
 
 export default function HowToStretchy() {
   return (
-    <div className="rounded-card p-5" style={{ backgroundColor: "#FFD166" }}>
+    <div className="rounded-card p-5" style={{ backgroundColor: "#FCBB16", border: "2px solid #14110F" }}>
 
       {/* Label */}
       <p
@@ -60,7 +60,7 @@ export default function HowToStretchy() {
           <div key={n} className="flex items-start gap-3">
             <span
               className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 mt-0.5"
-              style={{ backgroundColor: blue ? "#2C8FE0" : "#1A1A1A" }}
+              style={{ backgroundColor: blue ? "#0000FF" : "#14110F" }}
             >
               {n}
             </span>

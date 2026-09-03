@@ -58,34 +58,34 @@ function CancelledContent() {
         </p>
 
         {/* Receipt */}
-        <div className="bg-white rounded-card shadow-card mb-4 overflow-hidden">
+        <div className="bg-white rounded-card border-2 border-ink mb-4 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
             <span className="text-sm text-ink">{title}{dateStr ? ` · ${dateStr}` : ""}</span>
             <span className="font-mono text-xs font-bold text-muted tracking-wide">HOLD</span>
           </div>
           <div className="flex items-center justify-between px-4 py-3.5">
             <span className="text-sm text-muted">Charged to card</span>
-            <span className="font-mono font-bold text-base" style={{ color: "#4CAF82" }}>$0.00</span>
+            <span className="font-mono font-bold text-base" style={{ color: "#716F39" }}>$0.00</span>
           </div>
         </div>
 
         {/* Suggest */}
-        <div className="rounded-card p-5 mb-4" style={{ backgroundColor: "#A535C7" }}>
+        <div className="rounded-card p-5 mb-4" style={{ backgroundColor: "#902F8A", border: "2px solid #14110F" }}>
           <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] mb-2" style={{ color: "rgba(245,237,227,0.6)" }}>
             Want it to happen?
           </p>
-          <h2 className="font-display font-bold mb-2" style={{ fontSize: "28px", letterSpacing: "-0.03em", color: "#F5EDE3" }}>
+          <h2 className="font-display font-bold mb-2" style={{ fontSize: "28px", letterSpacing: "-0.03em", color: "#F7F0E8" }}>
             Float it to the community.
           </h2>
           <p className="text-sm mb-4" style={{ color: "rgba(245,237,227,0.8)" }}>
             Add it to the suggestion list — if enough people vote, it gets picked up.
           </p>
-          <Link href="/suggest" className="block text-center font-semibold rounded-pill py-3.5 transition-all hover:brightness-110 active:scale-[0.98]" style={{ backgroundColor: "#F5EDE3", color: "#1A1A1A", fontSize: "15px" }}>
+          <Link href="/suggest" className="block text-center font-semibold rounded-pill py-3.5 transition-all hover:brightness-110 active:scale-[0.98]" style={{ backgroundColor: "#F7F0E8", color: "#14110F", fontSize: "15px" }}>
             + Add to suggestions
           </Link>
         </div>
 
-        <Link href="/sessions" className="block text-center font-semibold rounded-pill py-4 transition-all" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3", fontSize: "15px" }}>
+        <Link href="/sessions" className="block text-center font-semibold rounded-pill py-4 transition-all" style={{ backgroundColor: "#14110F", color: "#F7F0E8", fontSize: "15px" }}>
           Browse what&apos;s still on →
         </Link>
       </div>

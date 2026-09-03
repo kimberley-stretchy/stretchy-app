@@ -14,10 +14,10 @@ import {
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 const T = {
-  black: "#1A1A1A",
-  cream: "#F5EDE3",
-  yellow: "#FFD166",
-  red: "#E63946",
+  black: "#14110F",
+  cream: "#F7F0E8",
+  yellow: "#FCBB16",
+  red: "#C6362E",
 };
 
 function CardForm({
@@ -95,15 +95,15 @@ function CardForm({
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 13, color: "rgba(26,26,26,0.6)" }}>
-            {quantity > 1 ? `${quantity} spots × $${priceNZD}` : "Max you'll pay"}
+            {quantity > 1 ? `${quantity} spots × $${priceNZD.toFixed(2)}` : "Max you'll pay"}
           </span>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: "#FFD166" }}>
-            ${priceNZD * quantity} <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>+ GST</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: "#FCBB16" }}>
+            ${(priceNZD * quantity).toFixed(2)} <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>incl. GST</span>
           </span>
         </div>
         {quantity > 1 && (
           <p style={{ fontSize: 11, color: "rgba(26,26,26,0.45)", marginTop: 4 }}>
-            ${priceNZD} per person — may drop as more people join
+            ${priceNZD.toFixed(2)} per person — may drop as more people join
           </p>
         )}
       </div>
@@ -245,7 +245,7 @@ export default function HoldModal({
           <div style={{ textAlign: "center", padding: "40px 0" }}>
             <div style={{
               width: 32, height: 32, borderRadius: "50%",
-              border: "2.5px solid #1A1A1A", borderTopColor: "transparent",
+              border: "2.5px solid #14110F", borderTopColor: "transparent",
               animation: "spin 0.8s linear infinite", margin: "0 auto",
             }} />
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

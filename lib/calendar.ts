@@ -31,7 +31,7 @@ export function googleCalendarUrl(event: CalendarEvent): string {
 
 /** Generate .ics file content for Apple Calendar / Outlook */
 export function buildIcsContent(event: CalendarEvent): string {
-  const uid = `${Date.now()}@stretchy.social`;
+  const uid = `${Date.now()}@stretchyyoga.co.nz`;
   const now = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
   const start = toGCalDate(event.startISO);
   const end   = toGCalDate(event.endISO);

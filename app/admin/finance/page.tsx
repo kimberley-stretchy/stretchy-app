@@ -185,11 +185,11 @@ const TRANSACTIONS: Transaction[] = [
 ];
 
 const TX_STYLE: Record<TxType, { bg: string; text: string }> = {
-  "SESSION FEE": { bg: "#E8F3FF", text: "#2C8FE0" },
+  "SESSION FEE": { bg: "#E8F3FF", text: "#0000FF" },
   "PAYOUT":      { bg: "#E8F5F0", text: "#2D6A4A" },
-  "REFUND":      { bg: "#FEE8E8", text: "#E63946" },
+  "REFUND":      { bg: "#FEE8E8", text: "#C6362E" },
   "TIP":         { bg: "#FFF8E1", text: "#B8860B" },
-  "CHARGEBACK":  { bg: "#F5E8FF", text: "#A535C7" },
+  "CHARGEBACK":  { bg: "#F5E8FF", text: "#902F8A" },
 };
 
 const FILTERS: TxFilter[] = ["ALL", "SESSION FEE", "PAYOUT", "REFUND", "TIP"];
@@ -218,7 +218,7 @@ export default function FinancePage() {
           <Link href="/home" className="text-ink"><SMark size={28} /></Link>
           <Link href="/admin" className="text-muted hover:text-ink text-lg">←</Link>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#1A1A1A" }}>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#14110F" }}>
           <span className="w-1.5 h-1.5 rounded-full bg-hot-blue flex-shrink-0" />
           <p className="font-mono text-xs font-bold text-white uppercase tracking-widest">Stretchy HQ · Finance</p>
         </div>
@@ -236,7 +236,7 @@ export default function FinancePage() {
         </div>
 
         {/* ── FEES COLLECTED (yellow) ── */}
-        <div className="rounded-card p-5" style={{ backgroundColor: "#FFD166" }}>
+        <div className="rounded-card p-5" style={{ backgroundColor: "#FCBB16", border: "2px solid #14110F" }}>
           <p className="font-mono text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(26,26,26,0.55)" }}>
             Stretchy Fees Collected
           </p>
@@ -249,27 +249,27 @@ export default function FinancePage() {
 
         {/* ── STATS GRID ── */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white rounded-card shadow-card p-4 col-span-2">
+          <div className="bg-white rounded-card border-2 border-ink p-4 col-span-2">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-1">Host Payouts</p>
             <p className="font-mono font-black text-ink" style={{ fontSize: "32px", lineHeight: "1", letterSpacing: "-0.04em" }}>$38,420</p>
             <p className="font-mono text-xs text-muted mt-1">processed Mon · Stripe ACH</p>
           </div>
-          <div className="bg-white rounded-card shadow-card p-4">
+          <div className="bg-white rounded-card border-2 border-ink p-4">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-1">Avg / Spot</p>
             <p className="font-mono font-black text-ink" style={{ fontSize: "24px", lineHeight: "1", letterSpacing: "-0.03em" }}>$22.40</p>
             <p className="font-mono text-xs text-muted mt-1">9.4 avg room</p>
           </div>
-          <div className="bg-white rounded-card shadow-card p-4">
+          <div className="bg-white rounded-card border-2 border-ink p-4">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-1">Tips</p>
             <p className="font-mono font-black text-ink" style={{ fontSize: "24px", lineHeight: "1", letterSpacing: "-0.03em" }}>$612</p>
             <p className="font-mono text-xs text-muted mt-1">83 tips · 44% sessions</p>
           </div>
-          <div className="bg-white rounded-card shadow-card p-4">
+          <div className="bg-white rounded-card border-2 border-ink p-4">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-1">Refunds</p>
-            <p className="font-mono font-black" style={{ fontSize: "24px", lineHeight: "1", letterSpacing: "-0.03em", color: "#E63946" }}>$184</p>
+            <p className="font-mono font-black" style={{ fontSize: "24px", lineHeight: "1", letterSpacing: "-0.03em", color: "#C6362E" }}>$184</p>
             <p className="font-mono text-xs text-muted mt-1">6 events · 0 disputes</p>
           </div>
-          <div className="bg-white rounded-card shadow-card p-4">
+          <div className="bg-white rounded-card border-2 border-ink p-4">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-1">Sessions</p>
             <p className="font-mono font-black text-ink" style={{ fontSize: "24px", lineHeight: "1", letterSpacing: "-0.03em" }}>187</p>
             <p className="font-mono text-xs text-muted mt-1">this month</p>
@@ -277,7 +277,7 @@ export default function FinancePage() {
         </div>
 
         {/* ── DOWNLOAD STATEMENTS ── */}
-        <div className="bg-white rounded-card shadow-card p-4">
+        <div className="bg-white rounded-card border-2 border-ink p-4">
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-3">Download Statements</p>
           <div className="flex gap-2 flex-wrap">
             {["May 2026", "Apr 2026", "Mar 2026", "Q1 2026"].map((label) => (
@@ -285,7 +285,7 @@ export default function FinancePage() {
                 key={label}
                 onClick={handleDownload}
                 className="font-mono text-xs font-bold px-3 py-2 rounded-pill transition-all hover:brightness-110 active:scale-[0.97] flex items-center gap-1.5"
-                style={{ backgroundColor: downloading && label === "May 2026" ? "#4CAF82" : "#1A1A1A", color: "#fff" }}
+                style={{ backgroundColor: downloading && label === "May 2026" ? "#716F39" : "#14110F", color: "#fff" }}
               >
                 {downloading && label === "May 2026" ? "✓ Downloading" : `↓ ${label}`}
               </button>
@@ -309,8 +309,8 @@ export default function FinancePage() {
                 onClick={() => setFilter(f)}
                 className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill whitespace-nowrap flex-shrink-0 transition-all"
                 style={{
-                  backgroundColor: filter === f ? "#1A1A1A" : "#F5EDE3",
-                  color: filter === f ? "#fff" : "#1A1A1A",
+                  backgroundColor: filter === f ? "#14110F" : "#F7F0E8",
+                  color: filter === f ? "#fff" : "#14110F",
                   border: filter === f ? "none" : "1px solid #E0D9D0",
                 }}
               >
@@ -325,7 +325,7 @@ export default function FinancePage() {
               const ts = TX_STYLE[tx.type];
               const isOpen = expanded === tx.id;
               return (
-                <div key={tx.id} className="bg-white rounded-card shadow-card overflow-hidden">
+                <div key={tx.id} className="bg-white rounded-card border-2 border-ink overflow-hidden">
 
                   {/* Row summary */}
                   <button
@@ -346,7 +346,7 @@ export default function FinancePage() {
                     </div>
 
                     <div className="flex-shrink-0 text-right">
-                      <p className="font-mono text-sm font-bold" style={{ color: tx.positive ? "#2D6A4A" : "#E63946" }}>
+                      <p className="font-mono text-sm font-bold" style={{ color: tx.positive ? "#2D6A4A" : "#C6362E" }}>
                         {tx.positive ? "+" : ""}${Math.abs(tx.net)}
                       </p>
                       <p className="font-mono text-[10px] text-muted mt-0.5">{isOpen ? "▲" : "▼"}</p>
@@ -396,7 +396,7 @@ export default function FinancePage() {
                       </div>
                       <div className="flex items-center justify-between border-t border-border pt-2">
                         <p className="font-mono text-xs font-bold text-muted">Stretchy Net</p>
-                        <p className="font-mono text-xs font-bold" style={{ color: tx.positive ? "#2D6A4A" : "#E63946" }}>
+                        <p className="font-mono text-xs font-bold" style={{ color: tx.positive ? "#2D6A4A" : "#C6362E" }}>
                           {tx.positive ? "+" : ""}${Math.abs(tx.net)}
                         </p>
                       </div>

@@ -10,44 +10,45 @@ const config: Config = {
     extend: {
       colors: {
         // ── Backgrounds & text ──────────────────────────────
-        cream:  "#F5EDE3",
-        ink:    "#1A1A1A",
-        muted:  "#6B6B6B",
-        border: "#DDD0C0",
+        cream:  "#F7F0E8",
+        ink:    "#14110F",
+        muted:  "#6B6862",
+        border: "#E1D5C6",
+        blush:  "#EFDEDB",
 
         sand: {
-          light:   "#FBF5EE",
-          DEFAULT: "#F5EDE3",
-          dark:    "#E8D9C8",
+          light:   "#FBF6EF",
+          DEFAULT: "#F7F0E8",
+          dark:    "#E1D5C6",
         },
 
         // ── Brand greens ────────────────────────────────────
-        olive:       "#7A8330",
-        "olive-dark": "#5E6626",
-        "olive-light": "#9AA33D",
+        olive:       "#716F39",
+        "olive-dark": "#54522A",
+        "olive-light": "#8B8950",
 
         // ── Design-system UI colours ────────────────────────
-        "hot-blue": "#2C8FE0",  // primary CTAs — was wrongly pink
-        yellow:  "#FFD166",   // prices / money — sacred, never change
-        orange:  "#FF6B35",   // scarcity / dance
-        red:     "#E63946",   // alerts / filling fast / run_club
-        purple:  "#A535C7",   // yoga sessions
-        royal:   "#2A3FE0",   // pilates sessions
-        sky:     "#4FB8E0",   // sound bath / breathwork accent
-        green:   "#4CAF82",   // confirmed state
-        hold:    "#A8D5E2",   // holding state pill
+        "hot-blue": "#0000FF",  // primary CTAs
+        yellow:  "#FCBB16",   // prices / money — sacred, never change
+        orange:  "#E96709",   // scarcity / footer / below-minimum warnings
+        red:     "#C6362E",   // destructive / error only — not in the design system's own palette
+        purple:  "#902F8A",   // yoga sessions, hero, partnership cards
+        royal:   "#0000FF",   // pilates sessions — same as hot-blue in the new system
+        sky:     "#29ABE2",   // sound bath / breathwork accent — "light blue"
+        green:   "#716F39",   // confirmed state — same slot as olive in the new system
+        hold:    "#BFE3F0",   // holding state pill
 
-        // ── Retain hot-pink for HIIT & actual-pink uses ─────
+        // ── Retain hot-pink slot for HIIT & any leftover pink uses — remapped to purple ─────
         pink: {
-          stretchy: "#FF3CAC",
-          soft:     "#FFB3E0",
-          light:    "#FFF0F9",
+          stretchy: "#902F8A",
+          soft:     "#D9A9D4",
+          light:    "#F3E4F2",
         },
       },
 
       fontFamily: {
         sans:    ["Space Grotesk", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
-        display: ["Space Grotesk", "sans-serif"],
+        display: ["BN Chubb", "Space Grotesk", "sans-serif"],
         mono:    ["JetBrains Mono", "monospace"],
       },
 
@@ -61,13 +62,10 @@ const config: Config = {
       borderRadius: {
         stretchy: "20px",
         pill:     "999px",
-        card:     "16px",
+        card:     "20px",
       },
 
-      boxShadow: {
-        card:       "0 2px 12px rgba(0,0,0,0.08)",
-        "card-hover": "0 6px 24px rgba(0,0,0,0.12)",
-      },
+      // No boxShadow tokens — the design system is flat with 2px keylines, no shadows anywhere.
 
       animation: {
         "price-drop": "priceDrop 0.4s ease-out",
@@ -77,7 +75,7 @@ const config: Config = {
 
       keyframes: {
         priceDrop: {
-          "0%":   { transform: "scale(1.05)", color: "#FFD166" },
+          "0%":   { transform: "scale(1.05)", color: "#FCBB16" },
           "100%": { transform: "scale(1)",    color: "inherit" },
         },
         fadeIn: {

@@ -51,9 +51,9 @@ export async function GET(request: NextRequest) {
     .select(`
       id, title, description, movement_type, starts_at, ends_at, duration_mins,
       location_name, location_address, getting_there,
-      host_target, min_attendees, max_attendees, state, created_at,
-      social_stretch_venue, social_stretch_note, what_to_bring,
-      hosts ( name, bio, instagram )
+      cost_base, revenue_target, currency, min_attendees, max_attendees, state, created_at,
+      social_stretch_venue, social_stretch_note, what_to_bring, cost_lines, host_paid_at,
+      host_id, gem_host_id, is_repeat, repeat_frequency
     `)
     .order("starts_at", { ascending: true });
 
@@ -102,19 +102,30 @@ export async function POST(request: NextRequest) {
     location_name,
     location_address,
     getting_there,
-    host_target,
+    revenue_target,
+    currency,
     min_attendees,
     max_attendees,
     social_stretch_venue,
     social_stretch_note,
     what_to_bring,
+    cost_lines,
+    host_id: hostIdInput,
+    gem_host_id,
+    is_draft,
+    is_repeat,
+    repeat_frequency,
   } = body;
 
-  if (!title || !starts_at || !location_name || !host_target || !min_attendees || !max_attendees) {
+  if (!title || !starts_at || !location_name || !revenue_target || !min_attendees || !max_attendees) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const host_id = await getOrCreateHostId();
+  // cost_lines: [{ role: "Teacher"|"Venue"|"GEM"|"Charity"|custom, name: string, amount: number }]
+  const costLines: { role: string; name: string; amount: number }[] = Array.isArray(cost_lines) ? cost_lines : [];
+  const cost_base = costLines.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
+
+  const host_id = hostIdInput || (await getOrCreateHostId());
 
   const startsDate = new Date(starts_at);
   const endsDate = new Date(startsDate.getTime() + (duration_mins || 60) * 60 * 1000);
@@ -123,6 +134,7 @@ export async function POST(request: NextRequest) {
     .from("sessions")
     .insert({
       host_id,
+      gem_host_id: gem_host_id || null,
       title,
       description: description || null,
       movement_type: movement_type || "yoga",
@@ -132,13 +144,19 @@ export async function POST(request: NextRequest) {
       location_name,
       location_address: location_address || "",
       getting_there: getting_there || null,
-      host_target: Number(host_target),
+      cost_base,
+      cost_lines: costLines,
+      revenue_target: Number(revenue_target),
+      currency: currency || "NZD",
       min_attendees: Number(min_attendees),
       max_attendees: Number(max_attendees),
       social_stretch_venue: social_stretch_venue || null,
       social_stretch_note: social_stretch_note || null,
       what_to_bring: what_to_bring || [],
       state: "open",
+      is_draft: !!is_draft,
+      is_repeat: !!is_repeat,
+      repeat_frequency: is_repeat ? repeat_frequency || null : null,
     })
     .select("id")
     .single();

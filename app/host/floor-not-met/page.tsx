@@ -45,7 +45,7 @@ export default function FloorNotMetPage() {
           <Link href="/host/dashboard" className="text-muted hover:text-ink text-lg transition-colors" aria-label="Back">←</Link>
         </div>
         <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">25H Alert</p>
-        <Link href="/host/inbox" className="flex items-center px-3 py-1.5 rounded-pill relative" style={{ backgroundColor: "#F5EDE3", border: "1px solid #D4CFC9" }} aria-label="Notifications">
+        <Link href="/host/inbox" className="flex items-center px-3 py-1.5 rounded-pill relative" style={{ backgroundColor: "#F7F0E8", border: "1px solid #D4CFC9" }} aria-label="Notifications">
           <span className="text-base">🔔</span>
           <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-hot-blue border-2 border-cream block" />
         </Link>
@@ -56,7 +56,7 @@ export default function FloorNotMetPage() {
         {/* ── BIG ORANGE CARD ── */}
         <div
           className="rounded-card p-6 relative overflow-hidden"
-          style={{ backgroundColor: "#FF6B35" }}
+          style={{ backgroundColor: "#E96709", border: "2px solid #14110F" }}
         >
           {/* Watermark S */}
           <div className="absolute right-[-20px] bottom-[-20px] opacity-10 text-white">
@@ -123,7 +123,7 @@ export default function FloorNotMetPage() {
         </h2>
 
         {/* OPTION 1 · SHARE IT (blue) */}
-        <div className="rounded-card p-5" style={{ backgroundColor: "#2C8FE0" }}>
+        <div className="rounded-card p-5" style={{ backgroundColor: "#0000FF", border: "2px solid #14110F" }}>
           <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] mb-2" style={{ color: "rgba(255,255,255,0.65)" }}>
             Option 1 · Fastest
           </p>
@@ -136,7 +136,7 @@ export default function FloorNotMetPage() {
           <div className="flex gap-3">
             <button
               className="flex-1 flex items-center justify-center gap-1.5 font-semibold text-ink rounded-pill transition-all hover:brightness-95 active:scale-[0.98]"
-              style={{ backgroundColor: "#F5EDE3", height: "48px", fontSize: "14px" }}
+              style={{ backgroundColor: "#F7F0E8", height: "48px", fontSize: "14px" }}
             >
               ↗ Share link
             </button>
@@ -150,7 +150,7 @@ export default function FloorNotMetPage() {
         </div>
 
         {/* OPTION 2 · LOWER THE FLOOR (yellow) */}
-        <div className="rounded-card p-5" style={{ backgroundColor: "#FFD166" }}>
+        <div className="rounded-card p-5" style={{ backgroundColor: "#FCBB16", border: "2px solid #14110F" }}>
           <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] mb-2" style={{ color: "rgba(26,26,26,0.55)" }}>
             Option 2 · Adjust
           </p>
@@ -162,7 +162,7 @@ export default function FloorNotMetPage() {
           </p>
 
           {/* New minimum display (black) */}
-          <div className="rounded-card p-4 mb-4" style={{ backgroundColor: "#1A1A1A" }}>
+          <div className="rounded-card p-4 mb-4" style={{ backgroundColor: "#14110F", border: "2px solid #14110F" }}>
             <p className="font-mono text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "rgba(255,255,255,0.50)" }}>
               New Minimum
             </p>
@@ -173,7 +173,7 @@ export default function FloorNotMetPage() {
 
           <button
             className="w-full font-semibold text-white rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
-            style={{ backgroundColor: "#1A1A1A", height: "50px", fontSize: "15px" }}
+            style={{ backgroundColor: "#14110F", height: "50px", fontSize: "15px" }}
             onClick={() => setApplied(true)}
           >
             {applied ? "✓ Floor lowered" : "Apply lower floor"}
@@ -181,7 +181,7 @@ export default function FloorNotMetPage() {
         </div>
 
         {/* OPTION 3 · CANCEL (white) */}
-        <div className="bg-white rounded-card shadow-card p-5">
+        <div className="bg-white rounded-card border-2 border-ink p-5">
           <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-muted mb-2">
             Option 3 · Call it
           </p>

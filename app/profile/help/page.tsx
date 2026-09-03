@@ -21,7 +21,7 @@ const SOCIAL_LINKS = [
     icon: "🎬",
     href: "https://www.tiktok.com/@stretchy.yoga",
     bg: "#FFF0F0",
-    color: "#1A1A1A",
+    color: "#14110F",
   },
   {
     id: "substack",
@@ -115,7 +115,7 @@ export default function HelpPage() {
         {/* Direct email */}
         <a
           href="mailto:kimberley@stretchyyoga.co.nz"
-          className="flex items-center justify-between px-5 bg-white rounded-card shadow-card transition-all hover:shadow-card-hover active:scale-[0.99]"
+          className="flex items-center justify-between px-5 bg-white rounded-card border-2 border-ink transition-all active:scale-[0.99]"
           style={{ height: "64px" }}
         >
           <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function HelpPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 px-4 py-3.5 rounded-card transition-all hover:brightness-95 active:scale-[0.99]"
-                style={{ backgroundColor: s.bg }}
+                style={{ backgroundColor: s.bg, border: "2px solid #14110F" }}
               >
                 <span className="text-2xl flex-shrink-0">{s.icon}</span>
                 <div className="flex-1 min-w-0">
@@ -155,7 +155,7 @@ export default function HelpPage() {
         {/* FAQ */}
         <div>
           <h2 className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-2">Quick answers</h2>
-          <div className="bg-white rounded-card shadow-card divide-y divide-border">
+          <div className="bg-white rounded-card border-2 border-ink divide-y divide-border">
             {FAQS.map((faq, i) => (
               <div key={i}>
                 <button
@@ -181,7 +181,7 @@ export default function HelpPage() {
         <div>
           <h2 className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-2">Send a message</h2>
           {sent ? (
-            <div className="bg-white rounded-card shadow-card p-6 flex flex-col items-center text-center">
+            <div className="bg-white rounded-card border-2 border-ink p-6 flex flex-col items-center text-center">
               <p className="text-3xl mb-3">🙌</p>
               <p className="font-bold text-ink mb-1">Got it.</p>
               <p className="text-sm text-muted leading-relaxed">We aim to reply within one working day. Check your email.</p>
@@ -190,7 +190,7 @@ export default function HelpPage() {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSend} className="bg-white rounded-card shadow-card p-4 space-y-3">
+            <form onSubmit={handleSend} className="bg-white rounded-card border-2 border-ink p-4 space-y-3">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold uppercase tracking-widest text-muted pl-1">Subject</label>
                 <input
@@ -216,7 +216,7 @@ export default function HelpPage() {
               <button
                 type="submit"
                 className="w-full font-semibold rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
-                style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3", height: "54px", fontSize: "15px" }}
+                style={{ backgroundColor: "#14110F", color: "#F7F0E8", height: "54px", fontSize: "15px" }}
               >
                 Send message →
               </button>

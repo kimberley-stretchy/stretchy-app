@@ -19,19 +19,19 @@ interface Applicant {
 }
 
 const APPLICANTS: Applicant[] = [
-  { id: "a1", initial: "T", color: "#2C8FE0", name: "Tāne Ratima",   type: "Vinyasa · Slow Flow", neighbourhood: "Grey Lynn", years: 4, status: "IN REVIEW" },
-  { id: "a2", initial: "R", color: "#2C8FE0", name: "Rua Ohia",      type: "Sound Bath",           neighbourhood: "Karangahape", years: 7, status: "PENDING" },
-  { id: "a3", initial: "M", color: "#A535C7", name: "Marlee Fisher",  type: "Sunrise Yoga",         neighbourhood: "Pt Chev", years: 9, status: "MORE INFO" },
-  { id: "a4", initial: "A", color: "#FF6B35", name: "Alex Kim",       type: "Breath · HIIT",        neighbourhood: "Herne Bay", years: 3, status: "APPROVED" },
-  { id: "a5", initial: "J", color: "#2A3FE0", name: "Jess Mendez",   type: "Pilates",              neighbourhood: "Ponsonby", years: 6, status: "DECLINED" },
-  { id: "a6", initial: "P", color: "#FF4D9E", name: "Pip Carter",    type: "Run + Stretch",        neighbourhood: "Mt Eden", years: 5, status: "PENDING" },
+  { id: "a1", initial: "T", color: "#0000FF", name: "Tāne Ratima",   type: "Vinyasa · Slow Flow", neighbourhood: "Grey Lynn", years: 4, status: "IN REVIEW" },
+  { id: "a2", initial: "R", color: "#0000FF", name: "Rua Ohia",      type: "Sound Bath",           neighbourhood: "Karangahape", years: 7, status: "PENDING" },
+  { id: "a3", initial: "M", color: "#902F8A", name: "Marlee Fisher",  type: "Sunrise Yoga",         neighbourhood: "Pt Chev", years: 9, status: "MORE INFO" },
+  { id: "a4", initial: "A", color: "#E96709", name: "Alex Kim",       type: "Breath · HIIT",        neighbourhood: "Herne Bay", years: 3, status: "APPROVED" },
+  { id: "a5", initial: "J", color: "#0000FF", name: "Jess Mendez",   type: "Pilates",              neighbourhood: "Ponsonby", years: 6, status: "DECLINED" },
+  { id: "a6", initial: "P", color: "#902F8A", name: "Pip Carter",    type: "Run + Stretch",        neighbourhood: "Mt Eden", years: 5, status: "PENDING" },
 ];
 
 const STATUS_STYLE: Record<Status, { bg: string; text: string; label: string }> = {
-  "PENDING":   { bg: "#E8F3FF", text: "#2C8FE0",  label: "PENDING" },
-  "IN REVIEW": { bg: "#FFD166", text: "#1A1A1A",  label: "IN REVIEW" },
-  "MORE INFO": { bg: "#FF6B35", text: "#fff",      label: "MORE INFO" },
-  "APPROVED":  { bg: "#4CAF82", text: "#fff",      label: "APPROVED" },
+  "PENDING":   { bg: "#E8F3FF", text: "#0000FF",  label: "PENDING" },
+  "IN REVIEW": { bg: "#FCBB16", text: "#14110F",  label: "IN REVIEW" },
+  "MORE INFO": { bg: "#E96709", text: "#fff",      label: "MORE INFO" },
+  "APPROVED":  { bg: "#716F39", text: "#fff",      label: "APPROVED" },
   "DECLINED":  { bg: "#D4CFC9", text: "#6A6560",   label: "DECLINED" },
 };
 
@@ -70,7 +70,7 @@ export default function VettingPage() {
           <Link href="/home" className="text-ink"><SMark size={28} /></Link>
           <Link href="/admin" className="text-muted hover:text-ink text-lg">←</Link>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#1A1A1A" }}>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#14110F" }}>
           <span className="w-1.5 h-1.5 rounded-full bg-hot-blue flex-shrink-0" />
           <p className="font-mono text-xs font-bold text-white uppercase tracking-widest">Stretchy HQ · Vetting</p>
         </div>
@@ -105,7 +105,7 @@ export default function VettingPage() {
           {FILTERS.map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className="font-mono text-xs font-bold px-4 py-2 rounded-pill whitespace-nowrap flex-shrink-0 transition-all"
-              style={{ backgroundColor: filter === f ? "#1A1A1A" : "#F5EDE3", color: filter === f ? "#fff" : "#1A1A1A", border: filter === f ? "none" : "1px solid #E0D9D0" }}>
+              style={{ backgroundColor: filter === f ? "#14110F" : "#F7F0E8", color: filter === f ? "#fff" : "#14110F", border: filter === f ? "none" : "1px solid #E0D9D0" }}>
               {f}
             </button>
           ))}
@@ -120,8 +120,8 @@ export default function VettingPage() {
             const isActive = st === "IN REVIEW";
 
             return (
-              <div key={a.id} className="bg-white rounded-card shadow-card p-4"
-                style={isActive ? { border: "1.5px solid #FFD166" } : undefined}>
+              <div key={a.id} className="bg-white rounded-card border-2 border-ink p-4"
+                style={isActive ? { border: "1.5px solid #FCBB16" } : undefined}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0" style={{ backgroundColor: a.color }}>
                     {a.initial}
@@ -139,7 +139,7 @@ export default function VettingPage() {
                   <div className="flex gap-2">
                     <button onClick={() => approve(a.id)}
                       className="flex-1 font-semibold text-white rounded-pill transition-all active:scale-[0.98] hover:brightness-110"
-                      style={{ backgroundColor: "#2C8FE0", height: "40px", fontSize: "14px" }}>
+                      style={{ backgroundColor: "#0000FF", height: "40px", fontSize: "14px" }}>
                       ✓ Approve
                     </button>
                     <button className="font-mono text-xs font-bold px-4 rounded-pill border border-border text-ink hover:bg-sand-dark transition-all" style={{ height: "40px" }}>

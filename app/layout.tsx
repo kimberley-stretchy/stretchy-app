@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Stretchy — A Social Movement",
   description:
     "Community movement classes where the price drops as more people join. Yoga, pilates, breathwork and more across Auckland.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://stretchy.social"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://stretchyyoga.co.nz"),
   openGraph: {
     title: "Stretchy — A Social Movement",
     description: "Move together. Pay less together.",
@@ -21,10 +21,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Stretchy",
   },
-  icons: {
-    icon: "/icon.svg",
-    apple: "/apple-icon.svg",
-  },
+  // icon / apple-icon are auto-detected from app/icon.svg + app/apple-icon.svg — no manual entry needed.
 };
 
 export default function RootLayout({
@@ -38,7 +35,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap"
           rel="stylesheet"
         />
       </head>

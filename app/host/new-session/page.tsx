@@ -85,10 +85,10 @@ function PriceCurve({
       <path d={fillD} fill="rgba(44,143,224,0.18)" />
 
       {/* Curve line */}
-      <path d={pathD} fill="none" stroke="#2C8FE0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={pathD} fill="none" stroke="#0000FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
       {/* Start dot + label */}
-      <circle cx={points[0].x} cy={points[0].y} r="4" fill="#2C8FE0" />
+      <circle cx={points[0].x} cy={points[0].y} r="4" fill="#0000FF" />
       <text x={points[0].x} y={points[0].y - 9} textAnchor="middle" fill="#fff" fontSize="11" fontFamily="monospace" fontWeight="bold">
         ${startingPrice}
       </text>
@@ -100,8 +100,8 @@ function PriceCurve({
       </text>
 
       {/* Floor dot + label */}
-      <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="4" fill="#FFD166" />
-      <text x={points[points.length - 1].x} y={points[points.length - 1].y - 9} textAnchor="middle" fill="#FFD166" fontSize="11" fontFamily="monospace" fontWeight="bold">
+      <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="4" fill="#FCBB16" />
+      <text x={points[points.length - 1].x} y={points[points.length - 1].y - 9} textAnchor="middle" fill="#FCBB16" fontSize="11" fontFamily="monospace" fontWeight="bold">
         ${floorPrice}
       </text>
 
@@ -168,7 +168,7 @@ export default function NewSessionPage() {
               style={{
                 width: s === 4 ? "20px" : "6px",
                 height: "6px",
-                backgroundColor: s === 4 ? "#1A1A1A" : "#D4CFC9",
+                backgroundColor: s === 4 ? "#14110F" : "#D4CFC9",
               }}
             />
           ))}
@@ -197,7 +197,7 @@ export default function NewSessionPage() {
         </div>
 
         {/* ── MARKET HINT (blue) ── */}
-        <div className="rounded-card p-4" style={{ backgroundColor: "#E8F3FF" }}>
+        <div className="rounded-card p-4" style={{ backgroundColor: "#E8F3FF", border: "2px solid #14110F" }}>
           <div className="flex items-start gap-2">
             <span className="text-base flex-shrink-0 mt-0.5">💡</span>
             <p className="text-sm leading-snug" style={{ color: "#1A4A80" }}>
@@ -207,7 +207,7 @@ export default function NewSessionPage() {
         </div>
 
         {/* ── TARGET SLIDER ── */}
-        <div className="bg-white rounded-card shadow-card p-5">
+        <div className="bg-white rounded-card border-2 border-ink p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
               Your Target
@@ -216,7 +216,7 @@ export default function NewSessionPage() {
           </div>
 
           {/* Yellow target display */}
-          <div className="rounded-card p-4 mb-4" style={{ backgroundColor: "#FFD166" }}>
+          <div className="rounded-card p-4 mb-4" style={{ backgroundColor: "#FCBB16", border: "2px solid #14110F" }}>
             <div className="flex items-end gap-1">
               <span className="font-mono font-black text-ink" style={{ fontSize: "22px", lineHeight: "1", marginBottom: "4px" }}>$</span>
               <span className="font-mono font-black text-ink" style={{ fontSize: "64px", lineHeight: "1", letterSpacing: "-0.04em" }}>
@@ -234,7 +234,7 @@ export default function NewSessionPage() {
             value={target}
             onChange={(e) => setTarget(Number(e.target.value))}
             className="w-full accent-ink"
-            style={{ accentColor: "#1A1A1A" }}
+            style={{ accentColor: "#14110F" }}
           />
           <p className="text-xs text-muted mt-2 leading-snug">
             Cover your venue, your time, your costs. The $20 + GST Stretchy fee is added on top.
@@ -242,7 +242,7 @@ export default function NewSessionPage() {
         </div>
 
         {/* ── MIN SPOTS SLIDER ── */}
-        <div className="bg-white rounded-card shadow-card p-5">
+        <div className="bg-white rounded-card border-2 border-ink p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
               Minimum Spots to Run
@@ -260,7 +260,7 @@ export default function NewSessionPage() {
             value={minSpots}
             onChange={(e) => setMinSpots(Number(e.target.value))}
             className="w-full mb-3"
-            style={{ accentColor: "#1A1A1A" }}
+            style={{ accentColor: "#14110F" }}
           />
 
           <p className="text-xs text-muted leading-snug">
@@ -269,7 +269,7 @@ export default function NewSessionPage() {
         </div>
 
         {/* ── LIVE PRICE PREVIEW (black) ── */}
-        <div className="rounded-card p-5" style={{ backgroundColor: "#1A1A1A" }}>
+        <div className="rounded-card p-5" style={{ backgroundColor: "#14110F", border: "2px solid #14110F" }}>
           <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] mb-4" style={{ color: "rgba(255,255,255,0.50)" }}>
             Live Price Preview
           </p>
@@ -307,11 +307,11 @@ export default function NewSessionPage() {
               <p className="font-mono text-xs font-bold uppercase tracking-widest text-white">
                 {floorSpots} Spots
               </p>
-              <p className="font-mono text-xs mt-0.5" style={{ color: "#4CAF82" }}>
+              <p className="font-mono text-xs mt-0.5" style={{ color: "#716F39" }}>
                 Floor price
               </p>
             </div>
-            <p className="font-mono font-black" style={{ fontSize: "28px", letterSpacing: "-0.04em", color: "#FFD166" }}>
+            <p className="font-mono font-black" style={{ fontSize: "28px", letterSpacing: "-0.04em", color: "#FCBB16" }}>
               <span style={{ fontSize: "14px" }}>$</span>{floorPrice}
             </p>
           </div>
@@ -322,14 +322,14 @@ export default function NewSessionPage() {
         </div>
 
         {/* ── PRICE DROP CURVE ── */}
-        <div className="rounded-card p-5" style={{ backgroundColor: "#1A1A1A" }}>
+        <div className="rounded-card p-5" style={{ backgroundColor: "#14110F", border: "2px solid #14110F" }}>
           <div className="flex items-center justify-between mb-1">
             <p className="font-mono text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "rgba(255,255,255,0.50)" }}>
               What Attendees See
             </p>
             <span
               className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-pill"
-              style={{ backgroundColor: "rgba(44,143,224,0.20)", color: "#2C8FE0" }}
+              style={{ backgroundColor: "rgba(44,143,224,0.20)", color: "#0000FF" }}
             >
               LIVE CURVE
             </span>
@@ -348,11 +348,11 @@ export default function NewSessionPage() {
 
           <div className="flex items-center justify-between mt-4 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#2C8FE0" }} />
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#0000FF" }} />
               <p className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.50)" }}>Starting</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#FFD166" }} />
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#FCBB16" }} />
               <p className="font-mono text-xs" style={{ color: "rgba(255,255,255,0.50)" }}>Floor (best deal)</p>
             </div>
           </div>
@@ -361,11 +361,11 @@ export default function NewSessionPage() {
       </div>
 
       {/* ── STICKY CTAs ── */}
-      <div className="fixed bottom-0 left-0 right-0 px-4 pb-8 pt-4 space-y-3" style={{ backgroundColor: "#F5EDE3" }}>
+      <div className="fixed bottom-0 left-0 right-0 px-4 pb-8 pt-4 space-y-3" style={{ backgroundColor: "#F7F0E8" }}>
         <div className="max-w-lg mx-auto space-y-3">
           <button
             className="w-full font-semibold text-white rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
-            style={{ backgroundColor: "#2C8FE0", height: "56px", fontSize: "16px" }}
+            style={{ backgroundColor: "#0000FF", height: "56px", fontSize: "16px" }}
             onClick={() => router.push("/host/dashboard")}
           >
             Post session · go to dashboard

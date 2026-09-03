@@ -62,10 +62,10 @@ function HostPriceCurve() {
 
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="w-full">
-      <path d={`M ${startX} ${startY} L ${nowX} ${nowY}`} stroke="#1A1A1A" strokeWidth="2" fill="none" />
-      <path d={dashPath} stroke="#1A1A1A" strokeWidth="1.5" fill="none" strokeDasharray="4 3" />
-      <circle cx={nowX} cy={nowY} r="5" fill="#E63946" />
-      <text x={nowX + 8} y={nowY - 4} fontSize="9" fontFamily="monospace" fill="#1A1A1A" fontWeight="bold">NOW ${nowPrice}</text>
+      <path d={`M ${startX} ${startY} L ${nowX} ${nowY}`} stroke="#14110F" strokeWidth="2" fill="none" />
+      <path d={dashPath} stroke="#14110F" strokeWidth="1.5" fill="none" strokeDasharray="4 3" />
+      <circle cx={nowX} cy={nowY} r="5" fill="#C6362E" />
+      <text x={nowX + 8} y={nowY - 4} fontSize="9" fontFamily="monospace" fill="#14110F" fontWeight="bold">NOW ${nowPrice}</text>
       <text x={startX} y={H - 2} fontSize="8" fontFamily="monospace" fill="#9A9590">FROM ${startPrice}</text>
       <text x={endX - 24} y={H - 2} fontSize="8" fontFamily="monospace" fill="#9A9590">FLOOR ${floorPrice}</text>
     </svg>
@@ -85,7 +85,7 @@ export default function HostDashboardPage() {
         </p>
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-          style={{ backgroundColor: "#FFD166", color: "#1A1A1A" }}
+          style={{ backgroundColor: "#FCBB16", color: "#14110F" }}
         >
           {MOCK.host.initial}
         </div>
@@ -94,7 +94,7 @@ export default function HostDashboardPage() {
       <div className="px-4 max-w-lg mx-auto space-y-4">
 
         {/* ── KIA ORA CARD (blue) ── */}
-        <div className="rounded-card p-5" style={{ backgroundColor: "#2C8FE0" }}>
+        <div className="rounded-card p-5" style={{ backgroundColor: "#0000FF", border: "2px solid #14110F" }}>
           <h1
             className="font-display font-bold text-white leading-tight mb-2"
             style={{ fontSize: "clamp(32px, 9vw, 44px)", letterSpacing: "-0.03em", lineHeight: "0.95" }}
@@ -108,7 +108,7 @@ export default function HostDashboardPage() {
 
         {/* ── STATS ROW 1 ── */}
         <div className="flex gap-3">
-          <div className="flex-1 rounded-card p-4" style={{ backgroundColor: "#FFD166" }}>
+          <div className="flex-1 rounded-card p-4" style={{ backgroundColor: "#FCBB16", border: "2px solid #14110F" }}>
             <p className="font-mono text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "rgba(26,26,26,0.55)" }}>
               This month
             </p>
@@ -117,7 +117,7 @@ export default function HostDashboardPage() {
             </p>
             <p className="font-mono text-xs mt-1" style={{ color: "#2D6A4A" }}>+ ${MOCK.vsLast} vs last</p>
           </div>
-          <div className="flex-1 bg-white rounded-card shadow-card p-4">
+          <div className="flex-1 bg-white rounded-card border-2 border-ink p-4">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-1">Ave room</p>
             <p className="font-mono font-black text-ink" style={{ fontSize: "34px", lineHeight: "1", letterSpacing: "-0.04em" }}>
               {MOCK.aveRoom}
@@ -128,11 +128,11 @@ export default function HostDashboardPage() {
 
         {/* ── STATS ROW 2 ── */}
         <div className="flex gap-3">
-          <div className="flex-1 bg-white rounded-card shadow-card p-4">
+          <div className="flex-1 bg-white rounded-card border-2 border-ink p-4">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-1">Mates hosted</p>
             <p className="font-mono font-black text-ink" style={{ fontSize: "28px", lineHeight: "1", letterSpacing: "-0.04em" }}>{MOCK.matesHosted}</p>
           </div>
-          <div className="flex-1 bg-white rounded-card shadow-card p-4">
+          <div className="flex-1 bg-white rounded-card border-2 border-ink p-4">
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-1">Repeat %</p>
             <p className="font-mono font-black text-ink" style={{ fontSize: "28px", lineHeight: "1", letterSpacing: "-0.04em" }}>{MOCK.repeatPct}%</p>
           </div>
@@ -142,7 +142,7 @@ export default function HostDashboardPage() {
         <Link
           href="/host/new-session"
           className="flex items-center justify-center w-full font-semibold text-white rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
-          style={{ backgroundColor: "#2C8FE0", height: "54px", fontSize: "16px" }}
+          style={{ backgroundColor: "#0000FF", height: "54px", fontSize: "16px" }}
         >
           + Add a Stretchy session
         </Link>
@@ -153,11 +153,11 @@ export default function HostDashboardPage() {
         </h2>
 
         {/* ── SESSION CARD ── */}
-        <div className="bg-white rounded-card shadow-card overflow-hidden">
+        <div className="bg-white rounded-card border-2 border-ink overflow-hidden">
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#4CAF82" }} />
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: "#716F39" }} />
                 <span className="font-mono text-xs font-bold text-muted uppercase tracking-widest">
                   {LIVE_SESSION.status} · {LIVE_SESSION.day} {LIVE_SESSION.time}
                 </span>
@@ -179,19 +179,19 @@ export default function HostDashboardPage() {
 
             {/* Formula */}
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              <span className="font-mono text-sm font-bold px-3 py-1.5 rounded-pill text-ink" style={{ backgroundColor: "#FFD166" }}>
+              <span className="font-mono text-sm font-bold px-3 py-1.5 rounded-pill text-ink" style={{ backgroundColor: "#FCBB16" }}>
                 TARGET ${LIVE_SESSION.target}
               </span>
               <span className="font-mono text-xs text-muted">+</span>
-              <span className="font-mono text-sm font-bold px-3 py-1.5 rounded-pill text-ink" style={{ backgroundColor: "#F5EDE3" }}>
+              <span className="font-mono text-sm font-bold px-3 py-1.5 rounded-pill text-ink" style={{ backgroundColor: "#F7F0E8" }}>
                 FEE $20 + GST
               </span>
               <span className="font-mono text-xs text-muted">÷</span>
-              <span className="font-mono text-sm font-bold px-3 py-1.5 rounded-pill text-ink" style={{ backgroundColor: "#F5EDE3" }}>
+              <span className="font-mono text-sm font-bold px-3 py-1.5 rounded-pill text-ink" style={{ backgroundColor: "#F7F0E8" }}>
                 {LIVE_SESSION.spots} SPOTS
               </span>
               <span className="font-mono text-xs text-muted">=</span>
-              <span className="font-mono text-sm font-bold px-3 py-1.5 rounded-pill text-ink" style={{ backgroundColor: "#FFD166" }}>
+              <span className="font-mono text-sm font-bold px-3 py-1.5 rounded-pill text-ink" style={{ backgroundColor: "#FCBB16" }}>
                 ${LIVE_SESSION.nowPrice} / SPOT
               </span>
             </div>
@@ -203,7 +203,7 @@ export default function HostDashboardPage() {
             <HostPriceCurve />
 
             {/* Target hit row */}
-            <div className="mt-3 rounded-card px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "#E8F3FF" }}>
+            <div className="mt-3 rounded-card px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "#E8F3FF", border: "2px solid #14110F" }}>
               <p className="text-sm font-bold" style={{ color: "#1A4A80" }}>YOU&apos;LL HIT YOUR TARGET</p>
               <p className="font-mono text-sm font-bold" style={{ color: "#1A4A80" }}>
                 {LIVE_SESSION.spots} × ${LIVE_SESSION.nowPrice} + 1 = ${LIVE_SESSION.target}
@@ -213,7 +213,7 @@ export default function HostDashboardPage() {
         </div>
 
         {/* ── PAYS MONDAY ── */}
-        <div className="rounded-card p-5 flex items-center justify-between" style={{ backgroundColor: "#FFD166" }}>
+        <div className="rounded-card p-5 flex items-center justify-between" style={{ backgroundColor: "#FCBB16", border: "2px solid #14110F" }}>
           <div>
             <p className="font-mono text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "rgba(26,26,26,0.55)" }}>
               Pays Monday

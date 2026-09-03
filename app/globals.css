@@ -2,13 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'BN Chubb';
+  src: url('/fonts/BN-Chubb.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
-    --hot-blue: #2C8FE0;
-    --yellow:   #FFD166;
-    --cream:    #F5EDE3;
-    --olive:    #7A8330;
-    --ink:      #1A1A1A;
+    --hot-blue: #0000FF;
+    --yellow:   #FCBB16;
+    --cream:    #F7F0E8;
+    --olive:    #716F39;
+    --ink:      #14110F;
   }
 
   html {
@@ -17,9 +25,14 @@
   }
 
   body {
-    background-color: #F5EDE3;
-    color: #1A1A1A;
+    background-color: #F7F0E8;
+    color: #14110F;
     font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><text y='26' font-size='26'>🧘</text></svg>") 16 16, auto;
+  }
+
+  a, button, [role="button"], input, select, textarea, label[for], summary {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><text y='26' font-size='26'>☀️</text></svg>") 16 16, pointer;
   }
 
   * { box-sizing: border-box; }
@@ -31,7 +44,7 @@
     @apply text-white font-semibold px-6 py-3 rounded-pill
            hover:brightness-110 active:scale-95 transition-all duration-150
            text-base leading-none inline-flex items-center justify-center gap-2;
-    background-color: #2C8FE0;
+    background-color: #0000FF;
   }
 
   .btn-secondary {
@@ -50,58 +63,58 @@
     @apply text-ink font-semibold px-6 py-3 rounded-pill
            hover:brightness-95 active:scale-95 transition-all duration-150
            text-base leading-none inline-flex items-center justify-center gap-2;
-    background-color: #FFD166;
+    background-color: #FCBB16;
   }
 
-  /* ─── CARDS ───────────────────────────────────────────── */
+  /* ─── CARDS — flat, 2px ink keyline, no shadows ─────────── */
   .card {
-    @apply bg-white rounded-card shadow-card p-4;
+    @apply bg-white rounded-card border-2 border-ink p-4;
   }
 
   .card-yellow {
-    @apply text-ink rounded-card p-4;
-    background-color: #FFD166;
+    @apply text-ink rounded-card border-2 border-ink p-4;
+    background-color: #FCBB16;
   }
 
   .card-olive {
-    @apply bg-olive text-white rounded-card p-4;
+    @apply bg-olive text-white rounded-card border-2 border-ink p-4;
   }
 
   /* ─── PRICE PILL — JetBrains Mono, yellow bg ─────────── */
   .price-pill {
     @apply font-mono text-ink font-bold px-2.5 py-1 rounded-pill tabular-nums leading-none inline-block;
-    background-color: #FFD166;
+    background-color: #FCBB16;
   }
 
   .price-pill-lg {
     @apply font-mono text-ink font-bold px-4 py-2 rounded-pill tabular-nums leading-none inline-block text-3xl;
-    background-color: #FFD166;
+    background-color: #FCBB16;
   }
 
   /* ─── SESSION STATUS PILLS ────────────────────────────── */
   .pill-open {
     @apply text-ink text-xs font-semibold px-3 py-1 rounded-pill;
-    background-color: #A8D5E2;  /* hold */
+    background-color: #BFE3F0;  /* hold */
   }
 
   .pill-dropping {
     @apply text-ink text-xs font-semibold px-3 py-1 rounded-pill;
-    background-color: #FFD166;  /* yellow */
+    background-color: #FCBB16;  /* yellow */
   }
 
   .pill-filling {
     @apply text-white text-xs font-semibold px-3 py-1 rounded-pill;
-    background-color: #FF6B35;  /* orange */
+    background-color: #E96709;  /* orange */
   }
 
   .pill-almost-full {
     @apply text-white text-xs font-semibold px-3 py-1 rounded-pill;
-    background-color: #E63946;  /* red */
+    background-color: #C6362E;  /* red */
   }
 
   .pill-confirmed {
     @apply text-white text-xs font-semibold px-3 py-1 rounded-pill;
-    background-color: #4CAF82;  /* green */
+    background-color: #716F39;  /* green */
   }
 
   .pill-cancelled {
@@ -129,7 +142,7 @@
 
 /* ─── PRICE DROP ANIMATION ──────────────────────────────── */
 @keyframes priceFlash {
-  0%   { color: #FFD166; transform: scale(1.04); }
+  0%   { color: #FCBB16; transform: scale(1.04); }
   100% { color: inherit; transform: scale(1); }
 }
 
@@ -160,6 +173,8 @@
   border-radius: 24px 24px 0 0;
   padding: 24px 20px 40px;
   max-height: 90vh;
+  border: 2px solid #14110F;
+  border-bottom: none;
 }
 
 @media (min-width: 640px) {
@@ -172,11 +187,11 @@
     border-radius: 24px;
     padding: 32px;
     max-height: 85vh;
-    box-shadow: 0 24px 80px rgba(26,26,26,0.25);
+    border: 2px solid #14110F;
   }
 }
 
 /* ─── SCROLLBAR ─────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #DDD0C0; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #E1D5C6; border-radius: 3px; }

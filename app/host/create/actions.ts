@@ -1,11 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { startingPrice, floorPrice, STRETCHY_FEE } from "@/lib/pricing";
-import type { SessionType } from "@/types";
+import type { MovementType } from "@/types";
 
 export interface CreateSessionInput {
-  sessionType: SessionType;
+  sessionType: MovementType;
   title: string;
   description: string;
   durationMinutes: number;
@@ -15,7 +14,8 @@ export interface CreateSessionInput {
   venueName: string;
   venueNotes: string;
   hasSocialStretch: boolean;
-  hostTarget: number;
+  costBase: number;
+  revenueTarget: number;
   minimumSpots: number;
   maxCapacity: number;
   isCharity: boolean;
@@ -64,11 +64,12 @@ export async function createSession(
   // Allow pending hosts to create sessions for testing
   // In production you'd check: host.vetting_status === 'approved'
 
-  // ── 3. Build the starts_at timestamp ──────────────────────────────────────
-  const startsAt = new Date(`${input.date}T${input.time}:00`).toISOString();
+  // ── 3. Build the starts_at / ends_at timestamps ────────────────────────────
+  const startsAt = new Date(`${input.date}T${input.time}:00`);
+  const endsAt = new Date(startsAt.getTime() + input.durationMinutes * 60 * 1000);
 
   // ── 4. Insert session ──────────────────────────────────────────────────────
-  // Note: charity fields not yet in schema — stored in description for now
+  // Note: there's no dedicated charity column yet — fold it into the description.
   const descriptionWithCharity =
     input.isCharity && input.charityName
       ? `${input.description.trim()}\n\n🎗️ Fundraiser for ${input.charityName}${input.charityNote ? `: ${input.charityNote}` : ""}`.trim()
@@ -80,22 +81,19 @@ export async function createSession(
       host_id: host.id,
       title: input.title.trim(),
       description: descriptionWithCharity,
-      session_type: input.sessionType,
-      duration_minutes: input.durationMinutes,
-      starts_at: startsAt,
-      neighbourhood: input.neighbourhood,
-      venue_name: input.venueName.trim(),
-      venue_address: input.venueName.trim(), // full address can be added later
-      venue_notes: input.venueNotes.trim() || null,
-      host_target: input.hostTarget,
-      stretchy_fee: STRETCHY_FEE,
-      minimum_spots: input.minimumSpots,
-      max_capacity: input.maxCapacity,
-      current_holds: 0,
-      confirmed_spots: 0,
-      status: "open",
-      phase: "HOLD_BELOW_MIN",
-      has_social_stretch: input.hasSocialStretch,
+      movement_type: input.sessionType,
+      duration_mins: input.durationMinutes,
+      starts_at: startsAt.toISOString(),
+      ends_at: endsAt.toISOString(),
+      location_name: input.venueName.trim(),
+      // There's no separate neighbourhood column — fold it into the address.
+      location_address: input.neighbourhood || null,
+      getting_there: input.venueNotes.trim() || null,
+      cost_base: input.costBase,
+      revenue_target: input.revenueTarget,
+      min_attendees: input.minimumSpots,
+      max_attendees: input.maxCapacity,
+      state: "open",
     })
     .select("id")
     .single();

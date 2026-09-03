@@ -14,7 +14,7 @@ export default function ModerationPage() {
           <Link href="/home" className="text-ink"><SMark size={28} /></Link>
           <Link href="/admin" className="text-muted hover:text-ink text-lg">←</Link>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#1A1A1A" }}>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#14110F" }}>
           <span className="w-1.5 h-1.5 rounded-full bg-hot-blue flex-shrink-0" />
           <p className="font-mono text-xs font-bold text-white uppercase tracking-widest">Stretchy HQ · Moderation</p>
         </div>
@@ -30,7 +30,7 @@ export default function ModerationPage() {
         </div>
 
         {/* Video card (purple) */}
-        <div className="rounded-card overflow-hidden relative" style={{ backgroundColor: "#A535C7", minHeight: "200px" }}>
+        <div className="rounded-card overflow-hidden relative" style={{ backgroundColor: "#902F8A", minHeight: "200px", border: "2px solid #14110F" }}>
           {/* Top bar */}
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
             <span className="font-mono text-xs font-bold text-white uppercase tracking-widest" style={{ opacity: 0.75 }}>VIDEO · 0:23</span>
@@ -49,30 +49,30 @@ export default function ModerationPage() {
         </div>
 
         {/* Meta card */}
-        <div className="bg-white rounded-card shadow-card p-4">
+        <div className="bg-white rounded-card border-2 border-ink p-4">
           <p className="font-bold text-ink text-sm mb-0.5">From Marlee F. · Sunday Slow Flow</p>
           <p className="text-xs text-muted mb-3">Consent given · 14 mates in frame · uploaded 3h ago</p>
 
           {/* Consent flags */}
           <div className="space-y-2 mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm" style={{ color: "#4CAF82" }}>✓</span>
+              <span className="text-sm" style={{ color: "#716F39" }}>✓</span>
               <p className="text-sm text-ink">No flagged content</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm" style={{ color: "#4CAF82" }}>✓</span>
+              <span className="text-sm" style={{ color: "#716F39" }}>✓</span>
               <p className="text-sm text-ink">Faces opt-in</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm" style={{ color: "#FF6B35" }}>⚠</span>
-              <p className="text-sm text-ink" style={{ color: "#FF6B35" }}>Audio not consented</p>
+              <span className="text-sm" style={{ color: "#E96709" }}>⚠</span>
+              <p className="text-sm text-ink" style={{ color: "#E96709" }}>Audio not consented</p>
             </div>
           </div>
 
           {/* Decision state */}
           {decision !== "none" && (
             <div className="rounded-card px-4 py-3 mb-4 text-center font-mono text-sm font-bold"
-              style={{ backgroundColor: decision === "approved" ? "#E8F5F0" : "#FFEDED", color: decision === "approved" ? "#2D6A4A" : "#E63946" }}>
+              style={{ backgroundColor: decision === "approved" ? "#E8F5F0" : "#FFEDED", color: decision === "approved" ? "#2D6A4A" : "#C6362E", border: "2px solid #14110F" }}>
               {decision === "approved" ? "✓ Approved — added to social pipeline" : "✕ Rejected — host notified"}
             </div>
           )}
@@ -85,12 +85,12 @@ export default function ModerationPage() {
               </button>
               <button onClick={() => setDecision("rejected")}
                 className="flex-1 font-mono text-xs font-bold text-white rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
-                style={{ backgroundColor: "#E63946", height: "44px" }}>
+                style={{ backgroundColor: "#C6362E", height: "44px" }}>
                 ✕ Reject
               </button>
               <button onClick={() => setDecision("approved")}
                 className="flex-1 font-mono text-xs font-bold text-white rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
-                style={{ backgroundColor: "#4CAF82", height: "44px" }}>
+                style={{ backgroundColor: "#716F39", height: "44px" }}>
                 ✓ Approve
               </button>
             </div>

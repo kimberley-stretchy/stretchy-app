@@ -3,7 +3,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM = "Stretchy <hello@stretchy.social>";
+const FROM = "Stretchy <hello@stretchyyoga.co.nz>";
 const REPLY_TO = "kimberley@stretchyyoga.co.nz";
 
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
@@ -11,7 +11,7 @@ const REPLY_TO = "kimberley@stretchyyoga.co.nz";
 const LOGO_SVG = `
   <svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <path d="M 72 18 C 85 18 90 28 85 38 C 80 48 65 50 50 50 C 35 50 20 52 15 62 C 10 72 15 82 28 82 C 41 82 55 75 65 68"
-      stroke="#1A1A1A" stroke-width="16" stroke-linecap="round" fill="none"/>
+      stroke="#14110F" stroke-width="16" stroke-linecap="round" fill="none"/>
   </svg>
 `;
 
@@ -21,11 +21,11 @@ function sLogo(color: string) {
   return `<svg viewBox="0 0 220 257" width="32" height="37" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;"><path d="${S_PATH}" fill="${color}"/></svg>`;
 }
 
-function emailHeader(accentColor = "#1A1A1A") {
+function emailHeader(accentColor = "#14110F") {
   return `
     <div style="display: flex; align-items: center; margin-bottom: 28px; gap: 10px;">
       ${sLogo(accentColor)}
-      <span style="font-size: 18px; font-weight: 900; color: #1A1A1A; letter-spacing: -0.02em;">Stretchy</span>
+      <span style="font-size: 18px; font-weight: 900; color: #14110F; letter-spacing: -0.02em;">Stretchy</span>
     </div>
   `;
 }
@@ -34,7 +34,7 @@ function emailFooter() {
   return `
     <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #E0D8CE;">
       <p style="font-size: 12px; color: #888; text-align: center; margin: 0 0 12px; line-height: 1.5;">
-        Questions? <a href="mailto:kimberley@stretchyyoga.co.nz" style="color: #1A1A1A; font-weight: 600; text-decoration: none;">kimberley@stretchyyoga.co.nz</a>
+        Questions? <a href="mailto:kimberley@stretchyyoga.co.nz" style="color: #14110F; font-weight: 600; text-decoration: none;">kimberley@stretchyyoga.co.nz</a>
       </p>
       <p style="font-size: 12px; color: #888; text-align: center; margin: 0 0 8px;">
         <a href="https://www.instagram.com/stretchy.yoga/" style="color: #888; text-decoration: none; margin: 0 6px;">@stretchy.yoga</a>
@@ -45,7 +45,7 @@ function emailFooter() {
         Made with Love by <a href="https://studiodawn.org" style="color: #AAA; text-decoration: underline;">Studio Dawn</a>
       </p>
       <p style="font-size: 12px; color: #888; text-align: center; margin: 0 0 12px;">
-        <a href="https://stretchy.social" style="color: #888; text-decoration: none;">stretchy.social</a>
+        <a href="https://stretchyyoga.co.nz" style="color: #888; text-decoration: none;">stretchyyoga.co.nz</a>
       </p>
       <p style="font-size: 11px; color: #BBB; text-align: center; margin: 0;">Stretchy Social Movement Club · Built in Aotearoa 🌿</p>
     </div>
@@ -64,15 +64,15 @@ function holdConfirmedEmail(
   cancelUrl: string
 ) {
   return `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F5EDE3; padding: 32px; border-radius: 16px;">
-      ${emailHeader("#1A1A1A")}
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F7F0E8; padding: 32px; border-radius: 16px;">
+      ${emailHeader("#14110F")}
 
-      <h1 style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 6px; letter-spacing: -0.02em;">You're in. 🙌</h1>
+      <h1 style="font-size: 30px; font-weight: 900; color: #14110F; margin: 0 0 6px; letter-spacing: -0.02em;">You're in. 🙌</h1>
       <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — your spot is held. Get excited! 🧘</p>
 
-      <div style="background: #1A1A1A; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
-        <p style="color: #FFD166; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Your Stretchy</p>
-        <p style="color: #F5EDE3; font-size: 20px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em;">${sessionTitle}</p>
+      <div style="background: #14110F; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
+        <p style="color: #FCBB16; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Your Stretchy</p>
+        <p style="color: #F7F0E8; font-size: 20px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em;">${sessionTitle}</p>
         <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">🗓 ${date}</p>
         <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">📍 ${venue}</p>
         <p style="color: rgba(245,237,227,0.6); font-size: 13px; margin: 8px 0 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">🥂 Social Stretch after at ${socialStretchVenue}</p>
@@ -80,13 +80,13 @@ function holdConfirmedEmail(
 
       <div style="background: white; border-radius: 14px; padding: 18px; margin-bottom: 20px;">
         <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: #999; margin: 0 0 4px;">Current price</p>
-        <p style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 4px; letter-spacing: -0.02em;">${price}</p>
+        <p style="font-size: 30px; font-weight: 900; color: #14110F; margin: 0 0 4px; letter-spacing: -0.02em;">${price}</p>
         <p style="font-size: 12px; color: #999; margin: 0; line-height: 1.5;">Price drops as more people hold their place. Your card is charged 2 hours before the session.</p>
       </div>
 
       <div style="background: #EDE5D8; border-radius: 14px; padding: 18px; margin-bottom: 20px;">
         <p style="font-size: 13px; color: #444; line-height: 1.6; margin: 0 0 12px;">Need to cancel? You can cancel <strong>up to 36 hours before the session</strong> and nothing will be charged. After the 36hr mark, your place is locked in — no cancellations.</p>
-        <a href="${cancelUrl}" style="display: inline-block; background: #1A1A1A; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: 8px; letter-spacing: 0.02em;">Cancel my hold</a>
+        <a href="${cancelUrl}" style="display: inline-block; background: #14110F; color: #F7F0E8; text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: 8px; letter-spacing: 0.02em;">Cancel my hold</a>
       </div>
 
       <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0;">Your card is charged at the final price <strong>2 hours before the session</strong>. The more people who join, the lower the final price — so share it around.</p>
@@ -98,14 +98,14 @@ function holdConfirmedEmail(
 
 function priceLocketEmail(name: string, sessionTitle: string, date: string, finalPrice: string, venue: string) {
   return `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #FFD166; padding: 32px; border-radius: 16px;">
-      ${emailHeader("#1A1A1A")}
-      <h1 style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 6px; letter-spacing: -0.02em;">Price locked. You're in. ✅</h1>
-      <p style="color: #1A1A1A; font-size: 15px; margin: 0 0 24px; line-height: 1.5; opacity: 0.75;">Hey ${name} — the room is set. Your card has been charged at the final price.</p>
-      <div style="background: #1A1A1A; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
-        <p style="color: #FFD166; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Final price · charged now</p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #FCBB16; padding: 32px; border-radius: 16px;">
+      ${emailHeader("#14110F")}
+      <h1 style="font-size: 30px; font-weight: 900; color: #14110F; margin: 0 0 6px; letter-spacing: -0.02em;">Price locked. You're in. ✅</h1>
+      <p style="color: #14110F; font-size: 15px; margin: 0 0 24px; line-height: 1.5; opacity: 0.75;">Hey ${name} — the room is set. Your card has been charged at the final price.</p>
+      <div style="background: #14110F; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
+        <p style="color: #FCBB16; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Final price · charged now</p>
         <p style="color: white; font-size: 36px; font-weight: 900; margin: 0 0 8px; letter-spacing: -0.02em;">${finalPrice}</p>
-        <p style="color: #F5EDE3; font-size: 18px; font-weight: 800; margin: 0 0 6px;">${sessionTitle}</p>
+        <p style="color: #F7F0E8; font-size: 18px; font-weight: 800; margin: 0 0 6px;">${sessionTitle}</p>
         <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">🗓 ${date}</p>
         <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0;">📍 ${venue}</p>
       </div>
@@ -125,13 +125,13 @@ function sessionGoingAheadEmail(
   notificationUrl?: string
 ) {
   return `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F5EDE3; padding: 32px; border-radius: 16px;">
-      ${emailHeader("#7A8330")}
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F7F0E8; padding: 32px; border-radius: 16px;">
+      ${emailHeader("#716F39")}
 
-      <h1 style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 6px; letter-spacing: -0.02em;">It's happening. ✅</h1>
+      <h1 style="font-size: 30px; font-weight: 900; color: #14110F; margin: 0 0 6px; letter-spacing: -0.02em;">It's happening. ✅</h1>
       <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — this one's going ahead. See you on the mat! 🤙</p>
 
-      <div style="background: #7A8330; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
+      <div style="background: #716F39; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
         <p style="color: rgba(255,255,255,0.65); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Confirmed</p>
         <p style="color: white; font-size: 20px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em;">${sessionTitle}</p>
         <p style="color: rgba(255,255,255,0.85); font-size: 14px; margin: 0 0 4px;">🗓 ${date}</p>
@@ -141,12 +141,12 @@ function sessionGoingAheadEmail(
 
       <div style="background: white; border-radius: 14px; padding: 18px; margin-bottom: 20px;">
         <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: #999; margin: 0 0 4px;">Final price</p>
-        <p style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 4px; letter-spacing: -0.02em;">${finalPrice}</p>
+        <p style="font-size: 30px; font-weight: 900; color: #14110F; margin: 0 0 4px; letter-spacing: -0.02em;">${finalPrice}</p>
         <p style="font-size: 12px; color: #999; margin: 0;">Charged to your card 2 hours before the session at this final price. No surprises.</p>
       </div>
 
       <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0 0 16px;">Stick around after for the Social Stretch — coffee, matcha, booch, beers and actual conversation. That's the whole point.</p>
-      ${notificationUrl ? `<a href="${notificationUrl}" style="display: inline-block; background: #7A8330; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px;">View your session →</a>` : ""}
+      ${notificationUrl ? `<a href="${notificationUrl}" style="display: inline-block; background: #716F39; color: #F7F0E8; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px;">View your session →</a>` : ""}
 
       ${emailFooter()}
     </div>
@@ -155,26 +155,26 @@ function sessionGoingAheadEmail(
 
 function sessionCancelledEmail(name: string, sessionTitle: string, date: string, notificationUrl?: string) {
   return `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F5EDE3; padding: 32px; border-radius: 16px;">
-      ${emailHeader("#1A1A1A")}
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F7F0E8; padding: 32px; border-radius: 16px;">
+      ${emailHeader("#14110F")}
 
-      <h1 style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 6px; letter-spacing: -0.02em;">Not this time. 💙</h1>
+      <h1 style="font-size: 30px; font-weight: 900; color: #14110F; margin: 0 0 6px; letter-spacing: -0.02em;">Not this time. 💙</h1>
       <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — unfortunately this one didn't get enough holds to go ahead. Nothing was charged. 💛</p>
 
-      <div style="background: #1A1A1A; border-radius: 14px; padding: 22px; margin-bottom: 20px;">
+      <div style="background: #14110F; border-radius: 14px; padding: 22px; margin-bottom: 20px;">
         <p style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Cancelled</p>
-        <p style="color: #F5EDE3; font-size: 20px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em;">${sessionTitle}</p>
+        <p style="color: #F7F0E8; font-size: 20px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em;">${sessionTitle}</p>
         <p style="color: rgba(245,237,227,0.5); font-size: 14px; margin: 0;">🗓 ${date}</p>
       </div>
 
       <div style="background: white; border-radius: 14px; padding: 18px; margin-bottom: 20px;">
-        <p style="font-size: 14px; font-weight: 700; color: #1A1A1A; margin: 0 0 4px;">Nothing was charged. ✓</p>
+        <p style="font-size: 14px; font-weight: 700; color: #14110F; margin: 0 0 4px;">Nothing was charged. ✓</p>
         <p style="font-size: 13px; color: #888; margin: 0; line-height: 1.5;">Your hold has been fully released. Your card was never touched.</p>
       </div>
 
       <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0 0 8px;">The more people who join, the better the price gets for everyone — and the more sessions go ahead. Keep an eye out for what's next.</p>
 
-      <a href="${notificationUrl ?? "https://stretchy.social/sessions"}" style="display: inline-block; background: #1A1A1A; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px; margin-top: 12px; letter-spacing: 0.02em;">See upcoming sessions →</a>
+      <a href="${notificationUrl ?? "https://stretchyyoga.co.nz/sessions"}" style="display: inline-block; background: #14110F; color: #F7F0E8; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px; margin-top: 12px; letter-spacing: 0.02em;">See upcoming sessions →</a>
 
       ${emailFooter()}
     </div>
@@ -183,25 +183,25 @@ function sessionCancelledEmail(name: string, sessionTitle: string, date: string,
 
 function holdCancelledEmail(name: string, sessionTitle: string, date: string) {
   return `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F5EDE3; padding: 32px; border-radius: 16px;">
-      ${emailHeader("#1A1A1A")}
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; background: #F7F0E8; padding: 32px; border-radius: 16px;">
+      ${emailHeader("#14110F")}
 
-      <h1 style="font-size: 30px; font-weight: 900; color: #1A1A1A; margin: 0 0 6px; letter-spacing: -0.02em;">Hold cancelled. 👋</h1>
+      <h1 style="font-size: 30px; font-weight: 900; color: #14110F; margin: 0 0 6px; letter-spacing: -0.02em;">Hold cancelled. 👋</h1>
       <p style="color: #555; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">Hey ${name} — your hold has been cancelled as requested.</p>
 
-      <div style="background: #1A1A1A; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
+      <div style="background: #14110F; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
         <p style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Cancelled</p>
-        <p style="color: #F5EDE3; font-size: 20px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em;">${sessionTitle}</p>
+        <p style="color: #F7F0E8; font-size: 20px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em;">${sessionTitle}</p>
         <p style="color: rgba(245,237,227,0.5); font-size: 14px; margin: 0;">🗓 ${date}</p>
       </div>
 
       <div style="background: white; border-radius: 14px; padding: 18px; margin-bottom: 20px;">
-        <p style="font-size: 14px; font-weight: 700; color: #1A1A1A; margin: 0 0 4px;">Nothing was charged. ✓</p>
+        <p style="font-size: 14px; font-weight: 700; color: #14110F; margin: 0 0 4px;">Nothing was charged. ✓</p>
         <p style="font-size: 13px; color: #888; margin: 0; line-height: 1.5;">Your card authorisation has been fully released. Your spot has been freed back to the group.</p>
       </div>
 
       <p style="font-size: 13px; color: #888; line-height: 1.6; margin: 0 0 12px;">Changed your mind? There's still time to grab another spot if the session hasn't hit the 36-hour mark. 🧘</p>
-      <a href="https://stretchy.social/sessions" style="display: inline-block; background: #1A1A1A; color: #F5EDE3; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px; margin-top: 4px;">Browse sessions →</a>
+      <a href="https://stretchyyoga.co.nz/sessions" style="display: inline-block; background: #14110F; color: #F7F0E8; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 22px; border-radius: 8px; margin-top: 4px;">Browse sessions →</a>
 
       ${emailFooter()}
     </div>
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
       type, to, name, sessionTitle, date, price, venue,
       socialStretchVenue, cancelUrl, sessionId
     } = await request.json();
-    const appUrl = "https://stretchy.social";
+    const appUrl = "https://stretchyyoga.co.nz";
 
     if (!type || !to) {
       return NextResponse.json({ error: "Missing type or to" }, { status: 400 });
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
           name, sessionTitle, date, price,
           venue || "TBC",
           socialStretchVenue || "nearby",
-          cancelUrl || "https://stretchy.social/my-holds"
+          cancelUrl || "https://stretchyyoga.co.nz/my-holds"
         );
         break;
       case "session_going_ahead":

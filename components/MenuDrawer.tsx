@@ -130,7 +130,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       )}
 
       <div
-        className="fixed top-0 right-0 bottom-0 z-50 w-80 bg-cream shadow-2xl flex flex-col transition-transform duration-300 ease-out"
+        className="fixed top-0 right-0 bottom-0 z-50 w-80 bg-cream border-l-2 border-ink flex flex-col transition-transform duration-300 ease-out"
         style={{ transform: open ? "translateX(0)" : "translateX(100%)" }}
       >
         {/* User header */}
@@ -144,7 +144,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
               <p className="text-xs text-muted truncate">{userEmail}</p>
             </div>
             {isAdmin && (
-              <span className="font-mono text-xs font-bold px-2 py-1 rounded-pill flex-shrink-0" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3" }}>
+              <span className="font-mono text-xs font-bold px-2 py-1 rounded-pill flex-shrink-0" style={{ backgroundColor: "#14110F", color: "#F7F0E8" }}>
                 ADMIN
               </span>
             )}

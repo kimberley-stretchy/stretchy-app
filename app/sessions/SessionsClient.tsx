@@ -5,15 +5,11 @@ import Link from "next/link";
 import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
 import { MenuDrawer } from "@/components/MenuDrawer";
-
-const STRETCHY_FEE = 23;
-function calcPrice(target: number, spots: number) {
-  return Math.round((target + STRETCHY_FEE) / Math.max(spots, 1));
-}
+import { calculatePrice } from "@/lib/pricing";
 
 const TYPE_COLORS: Record<string, string> = {
-  yoga: "#A535C7", pilates: "#2A3FE0", breath: "#7A8330",
-  sound: "#4FB8E0", flow: "#FF6B35", run: "#E63946", hiit: "#2C8FE0",
+  yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
+  sound: "#716F39", flow: "#FCBB16", run: "#E96709", hiit: "#902F8A",
 };
 const TYPE_LABELS: Record<string, string> = {
   yoga: "YOGA", pilates: "PILATES", breath: "BREATH",
@@ -27,7 +23,8 @@ type DBSession = {
   starts_at: string;
   duration_mins: number;
   location_name: string;
-  host_target: number;
+  cost_base: number;
+  revenue_target: number;
   min_attendees: number;
   max_attendees: number;
   current_holds: number;
@@ -37,17 +34,15 @@ type DBSession = {
 function getStatus(s: DBSession) {
   const holds = s.current_holds || 0;
   const confirmed = holds >= s.min_attendees || s.state === "confirmed";
-  const currentPrice = confirmed
-    ? calcPrice(s.host_target, Math.max(holds, s.min_attendees))
-    : calcPrice(s.host_target, s.min_attendees);
+  const currentPrice = calculatePrice(s.cost_base, s.revenue_target, Math.max(holds, s.min_attendees));
 
   if (confirmed) {
     const fillPct = holds / s.max_attendees;
-    if (fillPct >= 0.8) return { label: "⚡ ALMOST FULL", color: "#2C8FE0", price: currentPrice };
-    return { label: "PRICE DROPPING", color: "#FFD166", price: currentPrice };
+    if (fillPct >= 0.8) return { label: "⚡ ALMOST FULL", color: "#0000FF", price: currentPrice };
+    return { label: "PRICE BETTER-ING", color: "#FCBB16", price: currentPrice };
   }
   const need = s.min_attendees - holds;
-  return { label: `${need} MORE TO CONFIRM`, color: "#FF6B35", price: currentPrice };
+  return { label: `${need} MORE TO GO AHEAD`, color: "#E96709", price: currentPrice };
 }
 
 function SessionCard({ s }: { s: DBSession }) {
@@ -63,12 +58,12 @@ function SessionCard({ s }: { s: DBSession }) {
 
   return (
     <Link href={`/sessions/${s.id}`} className="block group">
-      <div className="bg-white rounded-card shadow-card group-hover:shadow-card-hover transition-shadow duration-200 p-4"
-        style={confirmed ? { outline: "2px solid #4CAF82" } : undefined}>
+      <div className="bg-white rounded-card border-2 border-ink p-4"
+        style={confirmed ? { outline: "2px solid #716F39" } : undefined}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3" }}>{dayStr}</span>
-            <span className="font-mono text-xs font-semibold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#E8D9C8", color: "#6B6B6B" }}>{timeStr}</span>
+            <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#14110F", color: "#F7F0E8" }}>{dayStr}</span>
+            <span className="font-mono text-xs font-semibold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#E1D5C6", color: "#6B6862" }}>{timeStr}</span>
           </div>
           <div className="w-10 h-10 rounded-card flex items-center justify-center font-bold text-base text-white flex-shrink-0" style={{ backgroundColor: typeColor }}>
             {initial}
@@ -77,7 +72,7 @@ function SessionCard({ s }: { s: DBSession }) {
         <div className="flex items-center gap-2 mb-3">
           <span className="font-mono text-xs font-bold px-2.5 py-1.5 rounded-pill" style={{ backgroundColor: typeColor, color: "#fff" }}>{typeLabel}</span>
         </div>
-        <h3 className="font-display font-bold text-ink leading-tight mb-1" style={{ fontSize: "22px" }}>{s.title}</h3>
+        <h2 className="font-display font-bold text-ink leading-tight mb-1" style={{ fontSize: "22px" }}>{s.title}</h2>
         <p className="text-sm text-muted mb-3">{s.location_name}</p>
         <div className="flex gap-1.5 flex-wrap mb-3">
           {Array.from({ length: s.min_attendees }).map((_, i) => (
@@ -90,7 +85,7 @@ function SessionCard({ s }: { s: DBSession }) {
             {holds}/{s.min_attendees} HELD · {status.label}
           </p>
           <div className="font-mono font-bold text-sm px-3 py-1.5 rounded-pill text-white flex-shrink-0 flex items-baseline gap-0.5" style={{ backgroundColor: typeColor }}>
-            <span className="text-xs font-semibold">$</span><span>{status.price}</span>
+            <span className="text-xs font-semibold">$</span><span>{status.price.toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -108,7 +103,7 @@ export default function SessionsClient({ sessions }: { sessions: DBSession[] }) 
         <button onClick={() => setMenuOpen(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-pill font-mono text-xs font-bold uppercase tracking-widest text-ink border border-border hover:bg-sand-dark transition-colors">
           ≡ MENU
         </button>
-        <Link href="/notifications" className="flex items-center px-3 py-1.5 rounded-pill relative" style={{ backgroundColor: "#F5EDE3", border: "1px solid #D4CFC9" }} aria-label="My holds">
+        <Link href="/notifications" className="flex items-center px-3 py-1.5 rounded-pill relative" style={{ backgroundColor: "#F7F0E8", border: "1px solid #D4CFC9" }} aria-label="My holds">
           <span className="text-base">🎟</span>
         </Link>
       </nav>

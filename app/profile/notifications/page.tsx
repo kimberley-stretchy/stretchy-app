@@ -48,12 +48,12 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
         width: "48px",
         height: "28px",
         borderRadius: "14px",
-        backgroundColor: on ? "#2C8FE0" : "#E0D9D0",
+        backgroundColor: on ? "#0000FF" : "#E0D9D0",
       }}
       aria-label="toggle"
     >
       <span
-        className="absolute top-1 transition-all duration-200 w-5 h-5 rounded-full bg-white shadow"
+        className="absolute top-1 transition-all duration-200 w-5 h-5 rounded-full bg-white border-2 border-ink"
         style={{ left: on ? "24px" : "4px" }}
       />
     </button>
@@ -112,7 +112,7 @@ export default function NotificationsPage() {
             >
               {section.heading}
             </h2>
-            <div className="bg-white rounded-card shadow-card divide-y divide-border">
+            <div className="bg-white rounded-card border-2 border-ink divide-y divide-border">
               {section.rows.map((row) => (
                 <div key={row.id} className="flex items-center gap-4 px-4 py-4">
                   <div className="flex-1 min-w-0">
@@ -129,7 +129,7 @@ export default function NotificationsPage() {
         {/* Push permission note */}
         <div
           className="rounded-card px-4 py-3 flex items-start gap-3"
-          style={{ backgroundColor: "#EFF6FF" }}
+          style={{ backgroundColor: "#EFF6FF", border: "2px solid #14110F" }}
         >
           <span className="text-lg flex-shrink-0">🔔</span>
           <p className="text-xs text-ink leading-snug">
@@ -144,8 +144,8 @@ export default function NotificationsPage() {
           onClick={handleSave}
           className="w-full font-semibold rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
           style={{
-            backgroundColor: saved ? "#4CAF82" : "#1A1A1A",
-            color: "#F5EDE3",
+            backgroundColor: saved ? "#716F39" : "#14110F",
+            color: "#F7F0E8",
             height: "56px",
             fontSize: "16px",
           }}

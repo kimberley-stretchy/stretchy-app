@@ -5,15 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 import { createClient } from "@/lib/supabase/client";
-
-const STRETCHY_FEE = 23;
-function calcPrice(target: number, spots: number) {
-  return Math.round((target + STRETCHY_FEE) / Math.max(spots, 1));
-}
+import { calculatePrice } from "@/lib/pricing";
 
 const TYPE_COLORS: Record<string, string> = {
-  yoga: "#A535C7", pilates: "#2A3FE0", breath: "#7A8330",
-  sound: "#4FB8E0", flow: "#FF6B35", run: "#E63946", hiit: "#2C8FE0",
+  yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
+  sound: "#716F39", flow: "#FCBB16", run: "#E96709", hiit: "#902F8A",
 };
 
 type HoldWithSession = {
@@ -26,7 +22,8 @@ type HoldWithSession = {
     starts_at: string;
     movement_type: string;
     state: string;
-    host_target: number;
+    cost_base: number;
+    revenue_target: number;
     min_attendees: number;
     max_attendees: number;
     current_holds: number;
@@ -35,11 +32,11 @@ type HoldWithSession = {
 };
 
 function statusInfo(sessionState: string, holdState: string) {
-  if (holdState === "charged") return { label: "CHARGED · LOCKED IN", color: "#4CAF82", bg: "rgba(76,175,130,0.10)" };
+  if (holdState === "charged") return { label: "CHARGED · LOCKED IN", color: "#716F39", bg: "rgba(76,175,130,0.10)" };
   if (holdState === "released") return { label: "RELEASED · $0 CHARGED", color: "#888", bg: "rgba(26,26,26,0.06)" };
   if (sessionState === "cancelled") return { label: "SESSION CANCELLED", color: "#888", bg: "rgba(26,26,26,0.06)" };
-  if (sessionState === "confirmed" || sessionState === "locked") return { label: "GOING AHEAD ✓", color: "#4CAF82", bg: "rgba(76,175,130,0.10)" };
-  return { label: "HOLDING", color: "#FFD166", bg: "rgba(255,209,102,0.15)" };
+  if (sessionState === "confirmed" || sessionState === "locked") return { label: "GOING AHEAD ✓", color: "#716F39", bg: "rgba(76,175,130,0.10)" };
+  return { label: "HOLDING", color: "#FCBB16", bg: "rgba(255,209,102,0.15)" };
 }
 
 export default function NotificationsPage() {
@@ -56,7 +53,7 @@ export default function NotificationsPage() {
         .from("holds")
         .select(`
           id, state, created_at,
-          sessions(id, title, starts_at, movement_type, state, host_target, min_attendees, max_attendees, location_name)
+          sessions(id, title, starts_at, movement_type, state, cost_base, revenue_target, min_attendees, max_attendees, location_name)
         `)
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false })
@@ -105,11 +102,11 @@ export default function NotificationsPage() {
         )}
 
         {!loading && holds.length === 0 && (
-          <div className="bg-white rounded-card shadow-card p-8 text-center">
+          <div className="bg-white rounded-card border-2 border-ink p-8 text-center">
             <p className="text-3xl mb-3">🧘</p>
             <p className="font-bold text-ink mb-2">No holds yet</p>
             <p className="text-sm text-muted mb-5">Browse sessions and hold your first spot — it's free until the session is confirmed.</p>
-            <Link href="/sessions" className="font-semibold px-6 py-3 rounded-pill" style={{ backgroundColor: "#1A1A1A", color: "#F5EDE3" }}>
+            <Link href="/sessions" className="font-semibold px-6 py-3 rounded-pill" style={{ backgroundColor: "#14110F", color: "#F7F0E8" }}>
               Browse sessions →
             </Link>
           </div>
@@ -151,10 +148,10 @@ function HoldCard({ hold: h, currentHolds }: { hold: HoldWithSession; currentHol
   const status = statusInfo(s.state, h.state);
 
   const effectiveHolds = Math.max(currentHolds, s.min_attendees);
-  const currentPrice = calcPrice(s.host_target, effectiveHolds);
+  const currentPrice = calculatePrice(s.cost_base, s.revenue_target, effectiveHolds);
 
   return (
-    <Link href={isFuture && h.state === "active" ? `/hold/${s.id}` : `/sessions/${s.id}`} className="block bg-white rounded-card shadow-card p-4">
+    <Link href={isFuture && h.state === "active" ? `/hold/${s.id}` : `/sessions/${s.id}`} className="block bg-white rounded-card border-2 border-ink p-4">
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5" style={{ backgroundColor: typeColor }}>
           {s.movement_type.charAt(0).toUpperCase()}
@@ -169,8 +166,8 @@ function HoldCard({ hold: h, currentHolds }: { hold: HoldWithSession; currentHol
               {status.label}
             </span>
             {h.state === "active" && isFuture && (
-              <span className="font-mono text-xs font-bold" style={{ color: "#FFD166" }}>
-                ${currentPrice} + GST
+              <span className="font-mono text-xs font-bold" style={{ color: "#FCBB16" }}>
+                ${currentPrice.toFixed(2)}
               </span>
             )}
           </div>

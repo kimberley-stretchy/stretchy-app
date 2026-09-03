@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendPushToUsers } from "@/lib/push-server";
+import { calculatePrice } from "@/lib/pricing";
 
 /**
  * GET /api/cron/session-check
@@ -19,7 +20,7 @@ function getAdmin() {
 }
 
 async function sendEmail(payload: Record<string, unknown>) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchy.social";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchyyoga.co.nz";
   return fetch(`${appUrl}/api/email`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
   // Find sessions starting in the 36h window that are still "open"
   const { data: sessions } = await admin
     .from("sessions")
-    .select("id, title, starts_at, ends_at, location_name, min_attendees, max_attendees, host_target, social_stretch_venue, state")
+    .select("id, title, starts_at, ends_at, location_name, min_attendees, max_attendees, cost_base, revenue_target, social_stretch_venue, state")
     .eq("state", "open")
     .gte("starts_at", windowStart.toISOString())
     .lte("starts_at", windowEnd.toISOString());
@@ -66,8 +67,7 @@ export async function GET(request: NextRequest) {
     const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
       " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
 
-    const STRETCHY_FEE = 23;
-    const finalPrice = `$${Math.round((session.host_target + STRETCHY_FEE) / Math.max(holds, 1) * 1.15)} incl. GST`;
+    const finalPrice = `$${calculatePrice(session.cost_base, session.revenue_target, Math.max(holds, session.min_attendees)).toFixed(2)} incl. GST`;
 
     if (holds >= session.min_attendees) {
       // Session going ahead — confirm it
