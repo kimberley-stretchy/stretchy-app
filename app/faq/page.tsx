@@ -48,6 +48,29 @@ const FAQS = [
     q: "Do I need experience to come to a Stretchy?",
     a: "No. Stretchy is for anyone who wants to move — first-timers and regulars alike. Every session page tells you the style and level before you book.",
   },
+  {
+    q: "Who designed and built Stretchy?",
+    a: "Stretchy — the brand, the design, the UX, the copy, the whole idea — was imagined and built by Kimberley Torrie, trading as Studio Dawn. Get in touch at kimberley@stretchyyoga.co.nz, or find Studio Dawn at studiodawn.org.",
+    jsx: (
+      <>
+        Stretchy — the brand, the design, the UX, the copy, the whole idea — was imagined and built by{" "}
+        <strong className="text-ink">Kimberley Torrie</strong>, trading as{" "}
+        <a href="https://www.studiodawn.org/" target="_blank" rel="noopener noreferrer" className="text-ink font-bold underline">Studio Dawn</a>.
+        Get in touch at{" "}
+        <a href="mailto:kimberley@stretchyyoga.co.nz" className="text-ink font-bold underline">kimberley@stretchyyoga.co.nz</a>.
+      </>
+    ),
+  },
+  {
+    q: "Is Stretchy's brand and technology protected?",
+    a: "Yes. Stretchy Yoga® and Stretching bodies minds & social circles® are registered trade marks in New Zealand, and our original creative work, technology and product thinking are protected by applicable intellectual property rights. We're open to licensing and partnership conversations — see The Stretchy World for the full picture.",
+    jsx: (
+      <>
+        Yes. Stretchy Yoga® and Stretching bodies minds &amp; social circles® are registered trade marks in New Zealand, and our original creative work, technology and product thinking are protected by applicable intellectual property rights. We&rsquo;re open to licensing and partnership conversations — see{" "}
+        <Link href="/vision" className="text-ink font-bold underline">The Stretchy World</Link> for the full picture.
+      </>
+    ),
+  },
 ];
 
 export default function FAQPage() {
@@ -83,7 +106,7 @@ export default function FAQPage() {
           {FAQS.map((f) => (
             <div key={f.q} className="bg-white rounded-card border-2 border-ink p-5">
               <h2 className="font-bold text-ink text-sm mb-2">{f.q}</h2>
-              <p className="text-sm text-muted leading-relaxed">{f.a}</p>
+              <p className="text-sm text-muted leading-relaxed">{"jsx" in f ? f.jsx : f.a}</p>
             </div>
           ))}
         </div>
