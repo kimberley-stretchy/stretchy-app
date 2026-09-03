@@ -156,7 +156,7 @@ export default function NewSessionPage() {
       {/* ── NAV ── */}
       <nav className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
         <div className="flex items-center gap-3">
-          <Link href="/home" className="text-ink"><SMark size={28} /></Link>
+          <Link href="/host/home" className="text-ink"><SMark size={28} /></Link>
           <Link href="/host/dashboard" className="text-muted hover:text-ink text-lg transition-colors" aria-label="Back">←</Link>
         </div>
         {/* Step indicator */}

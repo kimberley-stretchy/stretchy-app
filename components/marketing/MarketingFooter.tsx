@@ -66,11 +66,16 @@ export default function MarketingFooter() {
           <span className="font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.12em] lg:tracking-[0.13em]">THE FINE PRINT</span>
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy policy</a>
+          <a href="/vision">The Stretchy World</a>
           <a href="/faq">FAQ</a>
           <a href="/sitemap.xml">Sitemap</a>
           <a href="#how-it-works" className="hidden lg:inline">How pricing works</a>
         </div>
       </div>
+
+      <p className="m-0 text-[11px] text-ink/50 leading-[1.5] border-t-2 border-ink pt-4 lg:pt-6 -mx-[18px] px-[18px] lg:mx-[-44px] lg:px-[44px]">
+        Stretchy Yoga® and Stretching bodies minds &amp; social circles® are registered trade marks. Built by Kimberley Torrie, Studio Dawn. Please don&rsquo;t copy our work — <a href="/vision" className="underline font-semibold">read more</a>.
+      </p>
     </div>
   );
 }

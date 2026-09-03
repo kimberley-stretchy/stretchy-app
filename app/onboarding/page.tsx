@@ -39,8 +39,9 @@ export default function OnboardingSignUpPage() {
 
   return (
     <main className="min-h-screen flex flex-col" style={{ backgroundColor: "#716F39", color: "#14110F" }}>
-      <div className="flex-shrink-0 px-6 pt-5">
-        <SMark size={32} />
+      <div className="flex-shrink-0 px-6 pt-5 flex items-center justify-between">
+        <Link href="/" aria-label="Back to Stretchy"><SMark size={32} /></Link>
+        <Link href="/" aria-label="Close" className="w-11 h-11 flex items-center justify-center rounded-pill border-2 border-ink text-lg leading-none">×</Link>
       </div>
 
       <div className="flex-1 flex flex-col gap-4 px-6 pt-10 pb-6 max-w-lg mx-auto w-full">

@@ -24,6 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/contact`, changeFrequency: "yearly" as const, priority: 0.3 },
     { url: `${base}/privacy`, changeFrequency: "yearly" as const, priority: 0.2 },
     { url: `${base}/terms`, changeFrequency: "yearly" as const, priority: 0.2 },
+    { url: `${base}/vision`, changeFrequency: "monthly" as const, priority: 0.3 },
   ].map((r) => ({ ...r, lastModified: new Date() }));
 
   const admin = getAdmin();

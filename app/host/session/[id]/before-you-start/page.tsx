@@ -107,9 +107,9 @@ export default function BeforeYouStartPage() {
     <main className="min-h-screen bg-cream text-ink pb-16">
       <div style={{ background: "#E96709" }}>
         <div className="max-w-lg mx-auto px-6 pt-5 pb-7">
-          <div style={{ color: "#F7F0E8" }} className="mb-5">
+          <Link href="/host/home" aria-label="Back to your dashboard" style={{ color: "#F7F0E8" }} className="mb-5 inline-block">
             <SMark size={30} />
-          </div>
+          </Link>
           <div className="font-mono text-[10px] font-extrabold tracking-[0.13em]" style={{ color: "rgba(247,240,232,0.8)" }}>
             MOVING WITH CARE · {careNotes.length} {careNotes.length === 1 ? "PERSON" : "PEOPLE"}
           </div>

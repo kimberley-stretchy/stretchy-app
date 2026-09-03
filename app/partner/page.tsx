@@ -56,6 +56,13 @@ export default function PartnerPage() {
         <p className="mt-2 text-sm leading-[1.5]">Backing, licensing, brand partnerships, or Stretchy in your own city.</p>
       </div>
 
+      <div className="rounded-card p-4" style={{ backgroundColor: "rgba(247,240,232,0.1)", border: "2px solid rgba(247,240,232,0.4)" }}>
+        <p className="text-xs font-extrabold tracking-[0.1em] uppercase mb-2" style={{ fontFamily: "monospace" }}>Building something in movement, fitness or community?</p>
+        <p className="text-sm leading-[1.5]">
+          Stretchy&rsquo;s People Powered Pricing technology is being developed for more than Stretchy. We&rsquo;re exploring licensing and white-label partnerships with studios, clubs and platforms that want to make participation more rewarding as communities grow.
+        </p>
+      </div>
+
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <Label>WHAT YOU&rsquo;RE THINKING</Label>

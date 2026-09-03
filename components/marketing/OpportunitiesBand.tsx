@@ -50,6 +50,16 @@ export default function OpportunitiesBand() {
           </a>
         ))}
         <div className="bg-purple text-cream border-2 border-ink rounded-2xl p-[18px]">
+          <div className="font-display text-[22px] leading-none">Brand &amp; community partnerships</div>
+          <p className="m-0 mt-2 text-[13px] leading-[1.5]">Good people, good brands, good ideas — from community partnerships and events to aligned brands and venues.</p>
+          <a
+            href="/partner"
+            className="w-full mt-3 inline-flex items-center justify-center h-11 bg-transparent text-cream border-2 border-cream rounded-pill text-[13px] font-bold"
+          >
+            Let&rsquo;s make something good &rarr;
+          </a>
+        </div>
+        <div className="bg-purple text-cream border-2 border-ink rounded-2xl p-[18px]">
           <div className="font-display text-[22px] leading-none">Business &amp; investment opportunities</div>
           <p className="m-0 mt-2 text-[13px] leading-[1.5]">A new economic model for movement communities. Partner, back, license or collaborate.</p>
           <a
@@ -125,6 +135,11 @@ export default function OpportunitiesBand() {
           Tell us more
         </a>
       </div>
+
+      <p className="m-0 text-xs text-ink/50 leading-[1.5]">
+        Built by Stretchy. Please don&rsquo;t copy it. Like our thinking?{" "}
+        <a href="/vision" className="text-ink/70 font-semibold underline">Let&rsquo;s talk →</a>
+      </p>
     </div>
   );
 }

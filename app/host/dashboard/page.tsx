@@ -79,7 +79,7 @@ export default function HostDashboardPage() {
 
       {/* ── NAV ── */}
       <nav className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
-        <Link href="/home" className="text-ink"><SMark size={28} /></Link>
+        <Link href="/host/home" className="text-ink"><SMark size={28} /></Link>
         <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
           Host Dashboard
         </p>

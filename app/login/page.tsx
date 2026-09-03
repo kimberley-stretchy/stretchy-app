@@ -71,7 +71,10 @@ function LoginContent() {
   return (
     <main className="min-h-screen" style={{ backgroundColor: "#FCBB16", color: "#14110F" }}>
       <div className="max-w-lg mx-auto px-6 pt-5 pb-16 flex flex-col gap-4">
-        <SMark size={32} />
+        <div className="flex items-center justify-between">
+          <Link href="/" aria-label="Back to Stretchy"><SMark size={32} /></Link>
+          <Link href="/" aria-label="Close" className="w-11 h-11 flex items-center justify-center rounded-pill border-2 border-ink text-lg leading-none">×</Link>
+        </div>
 
         {sent ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center py-16">

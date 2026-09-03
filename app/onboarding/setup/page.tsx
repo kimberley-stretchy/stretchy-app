@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import SMark from "@/components/SMark";
@@ -187,7 +188,10 @@ export default function OnboardingSetupPage() {
   return (
     <main className="min-h-screen" style={{ backgroundColor: "#F7F0E8", color: "#14110F" }}>
       <div className="max-w-lg mx-auto px-6 pt-5 pb-16 flex flex-col gap-5">
-        <div className="text-purple"><SMark size={32} /></div>
+        <div className="flex items-center justify-between">
+          <Link href="/" aria-label="Back to Stretchy" className="text-purple"><SMark size={32} /></Link>
+          <Link href="/" aria-label="Close" className="w-11 h-11 flex items-center justify-center rounded-pill border-2 border-ink text-lg leading-none">×</Link>
+        </div>
 
         <div className="font-mono text-[10px] font-extrabold tracking-[0.13em]" style={{ color: "rgba(20,17,15,.45)" }}>LET&rsquo;S GET YOU SET-UP</div>
         <h1 className="font-display text-[30px] leading-none -mt-3">Where do you move?</h1>

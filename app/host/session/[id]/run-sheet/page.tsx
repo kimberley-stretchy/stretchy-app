@@ -174,9 +174,9 @@ export default function GemRunSheetPage() {
       <div style={{ background: "#716F39" }}>
         <div className="max-w-lg mx-auto px-6 pt-5 pb-6">
           <div className="flex items-center justify-between mb-5">
-            <div style={{ color: "#F7F0E8" }}>
+            <Link href="/host/home" aria-label="Back to your dashboard" style={{ color: "#F7F0E8" }}>
               <SMark size={30} />
-            </div>
+            </Link>
             <span
               className="font-mono text-[10px] font-extrabold tracking-[0.12em] px-2.5 py-1 rounded-pill"
               style={{ background: "#FCBB16", color: "#14110F" }}

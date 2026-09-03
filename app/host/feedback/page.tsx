@@ -115,7 +115,7 @@ function HostFeedbackForm() {
     <main className="min-h-screen bg-cream text-ink">
       <div className="max-w-lg mx-auto px-6 pt-5 pb-16 flex flex-col gap-5">
         <div className="flex items-center justify-between">
-          <div className="text-purple"><SMark size={32} /></div>
+          <Link href="/host/home" aria-label="Back to your dashboard" className="text-purple"><SMark size={32} /></Link>
           <Link href="/host/home" className="text-xs underline text-ink/55">Back</Link>
         </div>
 

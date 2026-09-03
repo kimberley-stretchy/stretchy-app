@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import SMark from "@/components/SMark";
 import { createClient } from "@/lib/supabase/client";
 import { MultiChipGroup } from "@/components/forms/FormPrimitives";
@@ -134,7 +135,10 @@ export default function HostCreateProfilePage() {
   return (
     <main className="min-h-screen bg-cream text-ink">
       <div className="max-w-lg mx-auto px-6 pt-5 pb-16 flex flex-col gap-5">
-        <div className="text-purple"><SMark size={32} /></div>
+        <div className="flex items-center justify-between">
+          <Link href="/" aria-label="Back to Stretchy" className="text-purple"><SMark size={32} /></Link>
+          <Link href="/" aria-label="Close" className="w-11 h-11 flex items-center justify-center rounded-pill border-2 border-ink text-lg leading-none">×</Link>
+        </div>
 
         <div className="font-mono text-[10px] font-extrabold tracking-[0.13em] text-ink/45">SET UP YOUR PROFILE</div>
         <h1 className="font-display text-[30px] leading-none -mt-3">How will you show up?</h1>

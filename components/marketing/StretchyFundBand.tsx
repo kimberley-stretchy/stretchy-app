@@ -17,7 +17,7 @@ export default function StretchyFundBand({ total }: { total: number }) {
 
   return (
     <div className="bg-yellow border-t-2 border-ink text-ink px-[18px] py-[26px] lg:p-[60px_44px]">
-      <div className="grid gap-6 lg:gap-[44px]" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,.85fr)" }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,.85fr)] gap-6 lg:gap-[44px]">
         {/* Left: copy */}
         <div className="flex flex-col gap-3.5 lg:gap-[18px]">
           <div className="font-mono text-[9px] lg:text-[11px] font-extrabold tracking-[0.14em] lg:tracking-[0.16em]">THE STRETCHY FUND</div>

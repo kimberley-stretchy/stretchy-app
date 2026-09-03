@@ -66,7 +66,7 @@ export default function HQShell({ children }: { children: React.ReactNode }) {
           flexDirection: "column",
         }}
       >
-        <Link href="/admin" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28, textDecoration: "none" }}>
+        <Link href="/admin/sessions" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28, textDecoration: "none" }}>
           <div style={{ width: 32, height: 32, background: T.cream, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <div style={{ color: T.black }}><SMark size={18} /></div>
           </div>
