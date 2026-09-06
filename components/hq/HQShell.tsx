@@ -41,7 +41,13 @@ export default function HQShell({ children }: { children: React.ReactNode }) {
         router.replace("/home?error=not_authorised");
         return;
       }
-      setChecked(true);
+      supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: aal }) => {
+        if (aal?.currentLevel !== "aal2") {
+          router.replace(`/mfa-setup?next=${encodeURIComponent(pathname)}`);
+          return;
+        }
+        setChecked(true);
+      });
     });
     return () => subscription.unsubscribe();
   }, [router, pathname]);

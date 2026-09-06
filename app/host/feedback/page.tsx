@@ -47,8 +47,10 @@ function HostFeedbackForm() {
 
   useEffect(() => {
     const supabase = createClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, session) => {
       if (!session) { router.push("/host/login?next=/host/feedback"); return; }
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.currentLevel !== "aal2") { router.push("/mfa-setup?next=/host/feedback"); return; }
       setAccessToken(session.access_token);
     });
     return () => subscription.unsubscribe();

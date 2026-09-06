@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { requireHost } from "@/lib/hostAuth";
 
 function getAdmin() {
   return createAdminClient(
@@ -29,6 +30,9 @@ async function getUser(request: NextRequest) {
 }
 
 async function getViewer(request: NextRequest, sessionId: string) {
+  const gate = await requireHost(request);
+  if ("error" in gate) return { error: gate.error } as const;
+
   const admin = getAdmin();
   const user = await getUser(request);
   if (!user) return { error: NextResponse.json({ error: "Not logged in" }, { status: 401 }) } as const;

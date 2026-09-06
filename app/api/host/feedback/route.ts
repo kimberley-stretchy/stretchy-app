@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { requireHost } from "@/lib/hostAuth";
 
 function getAdmin() {
   return createAdminClient(
@@ -30,6 +31,9 @@ async function getUser(request: NextRequest) {
 
 // POST /api/host/feedback — Teacher/GEM feedback to Stretchy HQ.
 export async function POST(request: NextRequest) {
+  const gate = await requireHost(request);
+  if ("error" in gate) return gate.error;
+
   const user = await getUser(request);
   if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
 

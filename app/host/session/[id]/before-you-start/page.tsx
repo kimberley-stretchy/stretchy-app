@@ -64,6 +64,11 @@ export default function BeforeYouStartPage() {
         router.push(`/host/login?next=/host/session/${params.id}/before-you-start`);
         return;
       }
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.currentLevel !== "aal2") {
+        router.push(`/mfa-setup?next=/host/session/${params.id}/before-you-start`);
+        return;
+      }
       load(session.access_token);
     });
     return () => subscription.unsubscribe();

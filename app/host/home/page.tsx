@@ -40,6 +40,14 @@ export default function HostHomePage() {
       }
       setHost(hostData.host);
 
+      if (hostData.host.vetting_status === "approved") {
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal?.currentLevel !== "aal2") {
+          router.push("/mfa-setup?next=/host/home");
+          return;
+        }
+      }
+
       const [{ data: mine }, reqRes] = await Promise.all([
         supabase
           .from("sessions")

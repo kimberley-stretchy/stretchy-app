@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireHost } from "@/lib/hostAuth";
 import type { MovementType } from "@/types";
 
 export interface CreateSessionInput {
@@ -36,39 +37,21 @@ export async function createSession(
 ): Promise<CreateSessionResult> {
   const supabase = createClient();
 
-  // ── 1. Get authenticated user ──────────────────────────────────────────────
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return { success: false, error: "Not authenticated. Please log in first." };
+  // ── 1. Auth + approved-host + MFA gate ─────────────────────────────────────
+  // This also closes a prior gap where any pending (unapproved) host could
+  // create real sessions — requireHost() enforces vetting_status === "approved".
+  const gate = await requireHost();
+  if ("error" in gate) {
+    const body = await gate.error.json();
+    return { success: false, error: body.error };
   }
+  const { host } = gate;
 
-  // ── 2. Look up their host record ───────────────────────────────────────────
-  const { data: host, error: hostError } = await supabase
-    .from("hosts")
-    .select("id, vetting_status")
-    .eq("auth_user_id", user.id)
-    .single();
-
-  if (hostError || !host) {
-    return {
-      success: false,
-      error:
-        "No host profile found. Please complete your host application first.",
-    };
-  }
-
-  // Allow pending hosts to create sessions for testing
-  // In production you'd check: host.vetting_status === 'approved'
-
-  // ── 3. Build the starts_at / ends_at timestamps ────────────────────────────
+  // ── 2. Build the starts_at / ends_at timestamps ────────────────────────────
   const startsAt = new Date(`${input.date}T${input.time}:00`);
   const endsAt = new Date(startsAt.getTime() + input.durationMinutes * 60 * 1000);
 
-  // ── 4. Insert session ──────────────────────────────────────────────────────
+  // ── 3. Insert session ──────────────────────────────────────────────────────
   // Note: there's no dedicated charity column yet — fold it into the description.
   const descriptionWithCharity =
     input.isCharity && input.charityName

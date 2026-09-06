@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { checkMfaStatus } from "@/lib/mfaCheck";
 
 // Every /api/admin/* route must call this first and bail out on `error`.
 // Mirrors the two checks HQShell enforces client-side (role:admin + the
@@ -31,6 +32,16 @@ export async function requireAdmin(request: NextRequest) {
   const email = user.email ?? "";
   if (role !== "admin" || !email.toLowerCase().endsWith("@stretchyyoga.co.nz")) {
     return { error: NextResponse.json({ error: "Not authorised" }, { status: 403 }) } as const;
+  }
+
+  const mfaStatus = await checkMfaStatus(supabase);
+  if (mfaStatus !== "ok") {
+    return {
+      error: NextResponse.json(
+        { error: "Two-factor verification required", code: mfaStatus === "verify_required" ? "mfa_required" : "mfa_enroll_required" },
+        { status: 403 }
+      ),
+    } as const;
   }
 
   return { user } as const;

@@ -73,6 +73,11 @@ export default function GemRunSheetPage() {
         router.push(`/host/login?next=/host/session/${params.id}/run-sheet`);
         return;
       }
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.currentLevel !== "aal2") {
+        router.push(`/mfa-setup?next=/host/session/${params.id}/run-sheet`);
+        return;
+      }
       setAccessToken(session.access_token);
       load(session.access_token);
     });

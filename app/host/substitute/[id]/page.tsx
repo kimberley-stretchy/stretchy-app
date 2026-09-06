@@ -52,6 +52,14 @@ export default function SubstituteClaimPage() {
     if (!accessToken) return;
     setClaiming(true);
     setError(null);
+
+    const supabase = createClient();
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.currentLevel !== "aal2") {
+      router.push(`/mfa-setup?next=/host/substitute/${params.id}`);
+      return;
+    }
+
     const res = await fetch(`/api/host/substitute-requests/${params.id}/claim`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` },
