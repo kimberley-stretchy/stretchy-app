@@ -90,7 +90,7 @@ export default function HostHomePage() {
         <div className="text-purple mb-2"><SMark size={32} /></div>
         <p className="text-3xl">👀</p>
         <h1 className="font-display text-[28px] leading-none">
-          {host.vetting_status === "declined" ? "Not this time." : "We&rsquo;re reviewing your application."}
+          {host.vetting_status === "declined" ? "Not this time." : "Reviewing your application."}
         </h1>
         <p className="text-sm text-ink/65 max-w-xs">
           {host.vetting_status === "declined"

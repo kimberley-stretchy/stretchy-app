@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { Resend } from "resend";
 
 function getAdmin() {
   return createAdminClient(
@@ -76,5 +77,22 @@ export async function PATCH(request: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.stretchyyoga.co.nz";
+    const roleLabel = roles.includes("teacher") && roles.includes("gem")
+      ? "teacher & GEM"
+      : roles.includes("teacher") ? "teacher" : "GEM";
+    resend.emails
+      .send({
+        from: "Stretchy <hello@stretchy.social>",
+        to: "kimberley@stretchyyoga.co.nz",
+        subject: `New ${roleLabel} application — ${name}`,
+        text: `${name} just applied to be a ${roleLabel}.\n\nReview it: ${appUrl}/admin/people?tab=${roles.includes("teacher") ? "teachers" : "gems"}`,
+      })
+      .catch((e) => console.error("New application email error:", e));
+  }
+
   return NextResponse.json({ ok: true, hostId: created.id });
 }
