@@ -14,7 +14,7 @@ export function createClient() {
       cookieOptions: {
         sameSite: "lax",
         secure: true,
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: 60 * 60 * 24 * 21, // 21 days
       },
     }
   );
