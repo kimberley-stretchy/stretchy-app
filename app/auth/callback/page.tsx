@@ -20,7 +20,11 @@ function CallbackHandler() {
       (event, session) => {
         if (event === "SIGNED_IN" && session) {
           setStatus("Signed in! Taking you there…");
-          router.push(next);
+          // A hard navigation, not router.push — middleware reads cookies
+          // fresh on every request, and a client-side push can fire before
+          // the just-set auth cookies finish propagating, bouncing admin/
+          // host routes back to /login in a race that a full reload avoids.
+          window.location.href = next;
         }
       }
     );
@@ -29,7 +33,7 @@ function CallbackHandler() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setStatus("Signed in! Taking you there…");
-        router.push(next);
+        window.location.href = next;
       }
     });
 
