@@ -14,7 +14,8 @@ function LoginContent() {
 
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const errorParam = searchParams.get("error");
+  const [authError, setAuthError] = useState<string | null>(errorParam ? decodeURIComponent(errorParam) : null);
   const [loading, setLoading] = useState<"google" | "email" | null>(null);
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
 

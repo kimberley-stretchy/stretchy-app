@@ -9,8 +9,20 @@ function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("Signing you in…");
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   useEffect(() => {
+    // Supabase redirects here with these params (not a `code`) when the
+    // magic link itself is invalid/expired at the server — previously this
+    // was silently swallowed and just looked like a generic 8s timeout.
+    const oauthError = searchParams.get("error_description") || searchParams.get("error");
+    if (oauthError) {
+      setStatus("Something went wrong.");
+      setErrorDetail(decodeURIComponent(oauthError));
+      setTimeout(() => router.push(`/login?error=${encodeURIComponent(oauthError)}`), 3000);
+      return;
+    }
+
     const next = searchParams.get("next") ?? "/sessions";
     const supabase = createClient();
 
@@ -62,6 +74,9 @@ function CallbackHandler() {
           animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
         }} />
         <p style={{ fontSize: 15, color: "rgba(26,26,26,0.6)" }}>{status}</p>
+        {errorDetail && (
+          <p style={{ fontSize: 13, color: "#902F8A", marginTop: 8, maxWidth: 320 }}>{errorDetail}</p>
+        )}
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </main>
