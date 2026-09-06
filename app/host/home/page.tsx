@@ -30,6 +30,15 @@ export default function HostHomePage() {
         router.push("/host/login");
         return;
       }
+
+      // /host/login is worded as covering "HQ" too, but it always sends
+      // people here regardless of role. An admin landing here (e.g. via
+      // that link) belongs in the actual admin panel, not the host flow.
+      if (session.user?.user_metadata?.role === "admin") {
+        router.push("/admin");
+        return;
+      }
+
       setAccessToken(session.access_token);
 
       const hostRes = await fetch("/api/host/onboarding", { headers: { Authorization: `Bearer ${session.access_token}` } });

@@ -51,6 +51,12 @@ export default function HostCreateProfilePage() {
         router.push("/host/login");
         return;
       }
+
+      if (session.user?.user_metadata?.role === "admin") {
+        router.push("/admin");
+        return;
+      }
+
       setAccessToken(session.access_token);
       setName(session.user.user_metadata?.full_name ?? "");
 
