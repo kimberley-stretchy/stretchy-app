@@ -12,7 +12,7 @@ const T = {
 
 const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
   FREE: { bg: "rgba(113,111,57,0.18)", fg: "#716F39" },
-  PENDING: { bg: "rgba(252,187,22,0.35)", fg: "#14110F" },
+  "AWAITING REVIEW": { bg: "rgba(252,187,22,0.35)", fg: "#14110F" },
   BOOKED: { bg: "rgba(20,17,15,0.10)", fg: "#14110F" },
   CONFIRMED: { bg: "rgba(41,171,226,0.18)", fg: "#0000FF" },
   NEW: { bg: "rgba(233,103,9,0.18)", fg: "#E96709" },
@@ -92,8 +92,8 @@ function PeopleSection({ title, people, applyHref, applyLabel, onDecide, busyId 
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
           {people.map((p) => {
-            const c = STATUS_COLORS[p.status] ?? STATUS_COLORS.PENDING;
-            const isPending = p.status === "PENDING" && !!onDecide;
+            const c = STATUS_COLORS[p.status] ?? STATUS_COLORS["AWAITING REVIEW"];
+            const isPending = p.status === "AWAITING REVIEW" && !!onDecide;
             const busy = busyId === p.id;
             return (
               <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 10, background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 14, padding: "10px 14px" }}>

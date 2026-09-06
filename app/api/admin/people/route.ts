@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       id: h.id,
       name: h.name,
       meta: [areasOf(h), ...(h.practice_types ?? [])].filter(Boolean).join(", "),
-      status: h.vetting_status === "approved" ? "FREE" : h.vetting_status === "pending" ? "PENDING" : h.vetting_status?.toUpperCase() ?? "PENDING",
+      status: h.vetting_status === "approved" ? "FREE" : h.vetting_status === "pending" ? "AWAITING REVIEW" : h.vetting_status?.toUpperCase() ?? "AWAITING REVIEW",
       note: h.application_notes,
     }));
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       id: h.id,
       name: h.name,
       meta: [areasOf(h), h.sessions_hosted ? `${h.sessions_hosted} sessions` : null].filter(Boolean).join(", "),
-      status: h.vetting_status === "approved" ? "FREE" : h.vetting_status === "pending" ? "PENDING" : h.vetting_status?.toUpperCase() ?? "PENDING",
+      status: h.vetting_status === "approved" ? "FREE" : h.vetting_status === "pending" ? "AWAITING REVIEW" : h.vetting_status?.toUpperCase() ?? "AWAITING REVIEW",
       note: h.application_notes,
     }));
 
