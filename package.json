@@ -11,7 +11,7 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^2.7.0",
     "@stripe/stripe-js": "^3.4.0",
-    "@supabase/ssr": "^0.3.0",
+    "@supabase/ssr": "^0.12.6",
     "@supabase/supabase-js": "^2.43.0",
     "@types/web-push": "^3.6.4",
     "clsx": "^2.1.1",

@@ -33,18 +33,9 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
-    // Temporary diagnostic logging — remove once the /admin session-not-
-    // recognized bug is root-caused. Logs cookie names present (not values)
-    // and any Supabase error so we can see server-side why getSession()
-    // failed despite a cookie being sent.
-    console.log(
-      "[middleware] no session for", pathname,
-      "cookieNames:", request.cookies.getAll().map((c) => c.name),
-      "error:", error?.message ?? null
-    );
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
