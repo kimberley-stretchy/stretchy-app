@@ -89,37 +89,68 @@ export async function POST(request: NextRequest) {
     attendee = newAttendee;
   }
 
+  async function createFreshCustomer() {
+    const customer = await stripe.customers.create({
+      email: user!.email!,
+      name: attendee?.name ?? undefined,
+      metadata: { supabase_user_id: user!.id, attendee_id: attendee?.id ?? "" },
+    });
+    await admin.from("attendees").update({ stripe_customer_id: customer.id }).eq("id", attendee!.id);
+    return customer.id;
+  }
+
+  async function createPaymentIntent(customerId: string) {
+    return stripe.paymentIntents.create({
+      amount: amountCents,
+      currency: "nzd",
+      customer: customerId,
+      payment_method_types: ["card"],
+      capture_method: "manual",
+      setup_future_usage: "off_session",
+      metadata: {
+        session_id: sessionId,
+        attendee_id: attendee?.id ?? "",
+        session_title: session.title,
+        quantity: String(quantity),
+      },
+      description: `Hold x${quantity}: ${session.title}`,
+    });
+  }
+
   // Get or create Stripe customer
   let stripeCustomerId = attendee?.stripe_customer_id;
   if (!stripeCustomerId) {
-    const customer = await stripe.customers.create({
-      email: user.email!,
-      name: attendee?.name ?? undefined,
-      metadata: { supabase_user_id: user.id, attendee_id: attendee?.id ?? "" },
-    });
-    stripeCustomerId = customer.id;
-    await admin
-      .from("attendees")
-      .update({ stripe_customer_id: stripeCustomerId })
-      .eq("id", attendee!.id);
+    try {
+      stripeCustomerId = await createFreshCustomer();
+    } catch (err) {
+      console.error("Stripe customer creation error:", err);
+      return NextResponse.json({ error: "Could not set up payment — please try again." }, { status: 500 });
+    }
   }
 
   // Create PaymentIntent — manual capture (authorize only, charge at lock-in)
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amountCents,
-    currency: "nzd",
-    customer: stripeCustomerId,
-    payment_method_types: ["card"],
-    capture_method: "manual",
-    setup_future_usage: "off_session",
-    metadata: {
-      session_id: sessionId,
-      attendee_id: attendee?.id ?? "",
-      session_title: session.title,
-      quantity: String(quantity),
-    },
-    description: `Hold x${quantity}: ${session.title}`,
-  });
+  let paymentIntent;
+  try {
+    paymentIntent = await createPaymentIntent(stripeCustomerId);
+  } catch (err) {
+    // A saved customer ID from a different Stripe mode (e.g. switching
+    // live<->test keys) won't exist here — recreate the customer once and
+    // retry, instead of failing outright with an opaque error.
+    const isMissingCustomer = err instanceof Stripe.errors.StripeError && err.code === "resource_missing";
+    if (!isMissingCustomer) {
+      console.error("PaymentIntent creation error:", err);
+      const message = err instanceof Error ? err.message : "Could not start your hold — please try again.";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+    try {
+      stripeCustomerId = await createFreshCustomer();
+      paymentIntent = await createPaymentIntent(stripeCustomerId);
+    } catch (retryErr) {
+      console.error("PaymentIntent retry error:", retryErr);
+      const message = retryErr instanceof Error ? retryErr.message : "Could not start your hold — please try again.";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  }
 
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,

@@ -42,23 +42,56 @@ export async function POST(request: NextRequest) {
     .eq("auth_user_id", user.id)
     .single();
 
+  async function createFreshCustomer() {
+    const customer = await stripe.customers.create({
+      email: user!.email!,
+      name: attendee?.name ?? user!.user_metadata?.full_name ?? undefined,
+      metadata: { supabase_user_id: user!.id },
+    });
+    if (attendee) {
+      await admin.from("attendees").update({ stripe_customer_id: customer.id }).eq("id", attendee.id);
+    }
+    return customer.id;
+  }
+
   let stripeCustomerId = attendee?.stripe_customer_id;
   if (!stripeCustomerId) {
-    const customer = await stripe.customers.create({
-      email: user.email!,
-      name: attendee?.name ?? user.user_metadata?.full_name ?? undefined,
-      metadata: { supabase_user_id: user.id },
-    });
-    stripeCustomerId = customer.id;
-    if (attendee) {
-      await admin.from("attendees").update({ stripe_customer_id: stripeCustomerId }).eq("id", attendee.id);
+    try {
+      stripeCustomerId = await createFreshCustomer();
+    } catch (err) {
+      console.error("Stripe customer creation error:", err);
+      return NextResponse.json({ error: "Could not set up payment — please try again." }, { status: 500 });
     }
   }
 
-  const setupIntent = await stripe.setupIntents.create({
-    customer: stripeCustomerId,
-    payment_method_types: ["card"],
-  });
+  let setupIntent;
+  try {
+    setupIntent = await stripe.setupIntents.create({
+      customer: stripeCustomerId,
+      payment_method_types: ["card"],
+    });
+  } catch (err) {
+    // A saved customer ID from a different Stripe mode (e.g. switching
+    // live<->test keys) won't exist here — recreate the customer once and
+    // retry, instead of failing outright with an opaque error.
+    const isMissingCustomer = err instanceof Stripe.errors.StripeError && err.code === "resource_missing";
+    if (!isMissingCustomer) {
+      console.error("SetupIntent creation error:", err);
+      const message = err instanceof Error ? err.message : "Could not set up payment — please try again.";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+    try {
+      stripeCustomerId = await createFreshCustomer();
+      setupIntent = await stripe.setupIntents.create({
+        customer: stripeCustomerId,
+        payment_method_types: ["card"],
+      });
+    } catch (retryErr) {
+      console.error("SetupIntent retry error:", retryErr);
+      const message = retryErr instanceof Error ? retryErr.message : "Could not set up payment — please try again.";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  }
 
   return NextResponse.json({ clientSecret: setupIntent.client_secret });
 }
