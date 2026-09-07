@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// The whole pricing mechanic depends on holds counts being live — without this,
+// Next.js can statically cache this route's response per session id indefinitely
+// (it has no cookies()/headers()/searchParams call to otherwise mark it dynamic).
+export const dynamic = "force-dynamic";
+
 function getAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

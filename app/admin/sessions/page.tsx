@@ -295,6 +295,8 @@ export default function AdminSessionsPage() {
   );
 }
 
+type Attendee = { name: string; email: string; spots: number; heldAt: string };
+
 function SessionCard({
   session: s,
   onCancel,
@@ -315,6 +317,25 @@ function SessionCard({
 
   const needsMore = s.min_attendees - s.current_holds;
   const isConfirmed = s.current_holds >= s.min_attendees;
+
+  const [showAttendees, setShowAttendees] = useState(false);
+  const [attendees, setAttendees] = useState<Attendee[] | null>(null);
+  const [loadingAttendees, setLoadingAttendees] = useState(false);
+
+  async function toggleAttendees() {
+    if (showAttendees) { setShowAttendees(false); return; }
+    setShowAttendees(true);
+    if (attendees !== null) return;
+    setLoadingAttendees(true);
+    try {
+      const res = await fetch(`/api/admin/sessions/${s.id}/attendees`);
+      const data = await res.json();
+      setAttendees(res.ok ? data.attendees : []);
+    } catch {
+      setAttendees([]);
+    }
+    setLoadingAttendees(false);
+  }
 
   return (
     <div style={{
@@ -368,6 +389,17 @@ function SessionCard({
 
         {/* Actions */}
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <button
+            onClick={toggleAttendees}
+            style={{
+              padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
+              background: showAttendees ? "rgba(252,187,22,0.22)" : "rgba(245,237,227,0.10)",
+              color: showAttendees ? T.yellow : T.cream,
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+            }}
+          >
+            ATTENDEES ({s.current_holds})
+          </button>
           <Link
             href={`/sessions/${s.id}`}
             style={{
@@ -428,6 +460,31 @@ function SessionCard({
           )}
         </div>
       </div>
+
+      {/* Attendee roster */}
+      {showAttendees && (
+        <div style={{ padding: "14px 20px", borderTop: "1px solid rgba(245,237,227,0.08)" }}>
+          {loadingAttendees ? (
+            <p style={{ fontSize: 12, color: "rgba(245,237,227,0.4)", fontFamily: T.mono }}>LOADING…</p>
+          ) : !attendees || attendees.length === 0 ? (
+            <p style={{ fontSize: 13, color: "rgba(245,237,227,0.4)" }}>No one&rsquo;s holding a spot yet.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {attendees.map((a, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                  <div>
+                    <span style={{ fontWeight: 700 }}>{a.name}</span>
+                    <span style={{ color: "rgba(245,237,227,0.5)", marginLeft: 8 }}>{a.email}</span>
+                  </div>
+                  {a.spots > 1 && (
+                    <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 700, color: T.yellow }}>×{a.spots}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

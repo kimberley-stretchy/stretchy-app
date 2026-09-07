@@ -63,6 +63,7 @@ function BuildAStretchyForm() {
   const [teacherRate, setTeacherRate] = useState(120);
   const [venueName, setVenueName] = useState("Bayfield School Hall");
   const [venueAddress, setVenueAddress] = useState("");
+  const [gettingThere, setGettingThere] = useState("");
   const [venueRate, setVenueRate] = useState(69.75);
   const [socialVenue, setSocialVenue] = useState("Honey Sundays · café");
   const [socialNote, setSocialNote] = useState("3 min walk · pay your own");
@@ -100,6 +101,7 @@ function BuildAStretchyForm() {
         setMovementStyle(s.description ?? "");
         setVenueName(s.location_name ?? "");
         setVenueAddress(s.location_address ?? "");
+        setGettingThere(s.getting_there ?? "");
         setSocialVenue(s.social_stretch_venue ?? "");
         setSocialNote(s.social_stretch_note ?? "");
         setCurrency(s.currency ?? "NZD");
@@ -173,6 +175,7 @@ function BuildAStretchyForm() {
           duration_mins: durationMins,
           location_name: venueName,
           location_address: venueAddress,
+          getting_there: gettingThere,
           revenue_target: revenueTarget,
           currency,
           min_attendees: minMats,
@@ -300,6 +303,13 @@ function BuildAStretchyForm() {
               <Pill value={venueName} onChange={setVenueName} placeholder="Venue name" />
               <Pill value={venueAddress} onChange={setVenueAddress} placeholder="Address" />
             </div>
+            <textarea
+              value={gettingThere}
+              onChange={(e) => setGettingThere(e.target.value)}
+              placeholder="Anything you need to know… directions, parking, props to bring, entry code, anything else worth flagging."
+              rows={3}
+              style={{ ...pillStyle, borderRadius: 14, marginTop: 10, resize: "vertical", fontFamily: "inherit" }}
+            />
           </Section>
 
           <Section label="RATES & CURRENCY">

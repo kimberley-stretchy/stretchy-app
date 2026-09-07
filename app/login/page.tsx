@@ -142,9 +142,6 @@ function LoginContent() {
             </form>
 
             <div className="mt-4 pt-3.5 flex flex-col gap-[9px]" style={{ borderTop: "1.5px solid rgba(20,17,15,.28)" }}>
-              <div className="text-[13px] font-bold">
-                New here? <Link href="/onboarding" className="underline">Make an account</Link>
-              </div>
               <div className="text-xs">
                 Teacher, GEM or HQ? <Link href="/host/login" className="underline">Log in here</Link>
               </div>

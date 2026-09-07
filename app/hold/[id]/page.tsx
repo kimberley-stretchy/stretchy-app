@@ -227,6 +227,14 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
           })()}
         </div>
 
+        {/* Good to know — directions, props, anything HQ flagged at session creation */}
+        {session.getting_there && (
+          <div className="bg-white rounded-card border-2 border-ink p-4">
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-muted mb-2">Good to know</p>
+            <p className="text-sm text-ink leading-relaxed whitespace-pre-line">{session.getting_there}</p>
+          </div>
+        )}
+
         {/* Social stretch */}
         {session.social_stretch_venue && (
           <div className="rounded-card p-4 relative overflow-hidden" style={{ backgroundColor: "#0000FF", border: "2px solid #14110F" }}>

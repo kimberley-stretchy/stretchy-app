@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import SessionsClient from "./SessionsClient";
 
+// Holds counts (and therefore price) change continuously — without this, Next
+// can serve a cached snapshot of this page instead of querying fresh each time.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "What's on — Stretchy",
   description: "Community yoga, pilates and movement sessions across Auckland. Hold your place, and the price drops as more people join.",

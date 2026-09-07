@@ -73,13 +73,25 @@ export default function SessionDetailPage() {
 
   useEffect(() => {
     if (!params.id) return;
-    fetch(`/api/sessions/${params.id}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: Session | null) => {
-        setSession(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+
+    let cancelled = false;
+    function loadSession(showLoading: boolean) {
+      if (showLoading) setLoading(true);
+      fetch(`/api/sessions/${params.id}`, { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: Session | null) => {
+          if (cancelled) return;
+          setSession(data);
+          setLoading(false);
+        })
+        .catch(() => { if (!cancelled) setLoading(false); });
+    }
+
+    loadSession(true);
+    // Price and spots-to-go depend on live hold counts — keep this in sync
+    // while someone's actually looking at the page, not just on next visit.
+    const interval = setInterval(() => loadSession(false), 15000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, [params.id]);
 
   function handleHold() {
