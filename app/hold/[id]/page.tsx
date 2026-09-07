@@ -24,6 +24,7 @@ type Session = {
   current_holds: number;
   social_stretch_venue: string | null;
   social_stretch_note: string | null;
+  my_hold_quantity?: number;
 };
 
 export default function PlaceHeldPage({ params }: { params: { id: string } }) {
@@ -47,33 +48,75 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
   }
 
   useEffect(() => {
-    fetch(`/api/sessions/${params.id}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: Session | null) => {
-        setSession(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    let cancelled = false;
+    const supabase = createClient();
+
+    function loadSession(showLoading: boolean) {
+      if (showLoading) setLoading(true);
+      supabase.auth.getSession().then(({ data: { session: authSession } }) => {
+        fetch(`/api/sessions/${params.id}`, {
+          cache: "no-store",
+          headers: authSession ? { Authorization: `Bearer ${authSession.access_token}` } : {},
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data: Session | null) => {
+            if (cancelled) return;
+            setSession(data);
+            setLoading(false);
+          })
+          .catch(() => { if (!cancelled) setLoading(false); });
+      });
+    }
+
+    loadSession(true);
+    // Holds count and price change as others join — keep this live while
+    // someone's actually looking at their held spot.
+    const interval = setInterval(() => loadSession(false), 15000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, [params.id]);
 
+  const [cancelQty, setCancelQty] = useState(1);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelMsg, setCancelMsg] = useState<string | null>(null);
+
+  function startCancel() {
+    setCancelQty(session?.my_hold_quantity ?? 1);
+    setCancelState("confirm");
+  }
+
   async function handleCancel() {
-    if (cancelState !== "confirm") { setCancelState("confirm"); return; }
     const supabase = createClient();
     const { data: { session: authSession } } = await supabase.auth.getSession();
     if (!authSession) return;
 
-    const res = await fetch(`/api/holds?sessionId=${params.id}`, {
+    setCancelling(true);
+    const res = await fetch(`/api/holds?sessionId=${params.id}&quantity=${cancelQty}`, {
       method: "DELETE",
       headers: { "Authorization": `Bearer ${authSession.access_token}` },
     });
 
     const data = await res.json();
+    setCancelling(false);
     if (!res.ok) {
       alert(data.error ?? "Could not cancel. Please contact kimberley@stretchyyoga.co.nz");
       setCancelState("idle");
       return;
     }
-    setCancelState("cancelled");
+
+    if (data.remainingSpots > 0) {
+      // Partial cancel — still holding, just fewer spots. Refresh in place
+      // rather than showing the full "cancelled" screen.
+      setSession((prev) => prev ? {
+        ...prev,
+        my_hold_quantity: data.remainingSpots,
+        current_holds: Math.max(0, prev.current_holds - cancelQty),
+      } : prev);
+      setCancelState("idle");
+      setCancelMsg(`${cancelQty} spot${cancelQty === 1 ? "" : "s"} cancelled — you still have ${data.remainingSpots} held.`);
+      setTimeout(() => setCancelMsg(null), 4000);
+    } else {
+      setCancelState("cancelled");
+    }
   }
 
   if (cancelState === "cancelled") {
@@ -113,6 +156,7 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
   const holds = session.current_holds || 0;
   const effectiveSpots = Math.max(holds, session.min_attendees);
   const currentPrice = calculatePrice(session.cost_base, session.revenue_target, effectiveSpots);
+  const myQty = session.my_hold_quantity ?? 1;
 
   const hoursUntil = (startDate.getTime() - Date.now()) / (1000 * 60 * 60);
   const canCancel = hoursUntil > 36;
@@ -137,14 +181,26 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
         <h1 className="font-display font-bold text-ink" style={{ fontSize: "clamp(54px, 15vw, 70px)", letterSpacing: "-0.04em", lineHeight: "0.90" }}>
           Place<br />held.
         </h1>
+        {myQty > 1 && (
+          <p className="font-mono text-sm font-bold text-ink">
+            You&rsquo;ve booked <span style={{ color: "#902F8A" }}>{myQty} spots</span>.
+          </p>
+        )}
 
         {/* Session summary */}
         <div className="bg-white rounded-card border-2 border-ink p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="font-mono text-xs font-semibold text-muted uppercase tracking-wide">{dayStr} · {timeStr}</p>
-            <span className="font-mono font-bold text-sm px-3 py-1 rounded-pill text-ink flex-shrink-0" style={{ backgroundColor: "#FCBB16" }}>
-              ${currentPrice.toFixed(2)}
-            </span>
+            <div className="text-right flex-shrink-0">
+              <span className="font-mono font-bold text-sm px-3 py-1 rounded-pill text-ink inline-block" style={{ backgroundColor: "#FCBB16" }}>
+                ${currentPrice.toFixed(2)} / spot
+              </span>
+              {myQty > 1 && (
+                <p className="font-mono text-[10px] font-bold text-muted mt-1">
+                  TOTAL ({myQty}): ${(currentPrice * myQty).toFixed(2)}
+                </p>
+              )}
+            </div>
           </div>
           <h2 className="font-display font-bold text-ink leading-tight mb-0.5" style={{ fontSize: "24px" }}>{session.title}</h2>
           <p className="text-sm text-muted mb-3">{session.location_name}</p>
@@ -283,19 +339,49 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
         <HowToStretchy />
 
         {/* Cancel */}
+        {cancelMsg && (
+          <p className="text-center text-sm font-semibold text-ink">{cancelMsg}</p>
+        )}
         {canCancel ? (
           cancelState === "confirm" ? (
             <div className="bg-white rounded-card border-2 border-ink p-5 space-y-3">
-              <p className="font-bold text-ink text-sm">Are you sure you want to cancel?</p>
-              <p className="text-sm text-muted">No charge will be made. Your spot goes back to the group.</p>
+              <p className="font-bold text-ink text-sm">
+                {myQty > 1 ? "How many spots do you want to cancel?" : "Are you sure you want to cancel?"}
+              </p>
+              {myQty > 1 && (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCancelQty((q) => Math.max(1, q - 1))}
+                    className="w-9 h-9 rounded-full border-2 border-ink flex items-center justify-center font-bold"
+                  >
+                    −
+                  </button>
+                  <span className="font-mono text-lg font-bold min-w-[70px] text-center">{cancelQty} of {myQty}</span>
+                  <button
+                    type="button"
+                    onClick={() => setCancelQty((q) => Math.min(myQty, q + 1))}
+                    className="w-9 h-9 rounded-full border-2 border-ink flex items-center justify-center font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
+              <p className="text-sm text-muted">
+                {cancelQty >= myQty
+                  ? "No charge will be made. Your spot goes back to the group."
+                  : `You'll keep ${myQty - cancelQty} spot${myQty - cancelQty === 1 ? "" : "s"} held. Nothing extra is charged.`}
+              </p>
               <div className="flex gap-3">
-                <button onClick={() => setCancelState("idle")} className="flex-1 font-mono text-xs font-bold py-3 rounded-pill border border-border text-ink hover:bg-sand-dark transition-colors">Keep my hold</button>
-                <button onClick={handleCancel} className="flex-1 font-mono text-xs font-bold py-3 rounded-pill text-white transition-colors" style={{ backgroundColor: "#C6362E" }}>Yes, cancel</button>
+                <button onClick={() => setCancelState("idle")} disabled={cancelling} className="flex-1 font-mono text-xs font-bold py-3 rounded-pill border border-border text-ink hover:bg-sand-dark transition-colors">Keep my hold</button>
+                <button onClick={handleCancel} disabled={cancelling} className="flex-1 font-mono text-xs font-bold py-3 rounded-pill text-white transition-colors disabled:opacity-60" style={{ backgroundColor: "#C6362E" }}>
+                  {cancelling ? "Cancelling…" : cancelQty >= myQty ? "Yes, cancel" : `Cancel ${cancelQty}`}
+                </button>
               </div>
             </div>
           ) : (
-            <button onClick={handleCancel} className="w-full font-mono text-xs font-bold py-3 rounded-pill border border-border text-muted hover:text-ink hover:bg-sand-dark transition-all">
-              Cancel hold
+            <button onClick={startCancel} className="w-full font-mono text-xs font-bold py-3 rounded-pill border border-border text-muted hover:text-ink hover:bg-sand-dark transition-all">
+              {myQty > 1 ? "Cancel some or all spots" : "Cancel hold"}
             </button>
           )
         ) : (

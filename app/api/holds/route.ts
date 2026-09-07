@@ -186,17 +186,24 @@ export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get("sessionId");
   if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+  // Optional: cancel fewer than all spots (e.g. bring 4, one person drops out).
+  // Omit or pass >= current quantity to cancel the whole hold.
+  const cancelQtyParam = searchParams.get("quantity");
+  const cancelQty = cancelQtyParam ? Math.max(1, Math.floor(Number(cancelQtyParam))) : null;
 
-  // Check session exists and get start time
+  // Check session exists and get start time + pricing fields (needed if this
+  // is a partial cancel, to re-authorize the remaining spots at the current price)
   const { data: session } = await admin
     .from("sessions")
-    .select("id, starts_at, title")
+    .select("id, starts_at, title, cost_base, revenue_target, min_attendees")
     .eq("id", sessionId)
     .single();
 
   if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
-  // Enforce 36h rule server-side
+  // Enforce 36h rule server-side — this is a hard rule, not just a UI hint:
+  // it applies here regardless of what the client shows, and to partial
+  // cancellations exactly the same as cancelling the whole hold.
   const hoursUntil = (new Date(session.starts_at).getTime() - Date.now()) / (1000 * 60 * 60);
   if (hoursUntil <= 36) {
     return NextResponse.json({
@@ -204,35 +211,83 @@ export async function DELETE(request: NextRequest) {
     }, { status: 400 });
   }
 
-  // Find all active holds for this user + session
-  const { data: holds } = await admin
+  // Find the active hold for this user + session (one row, quantity holds the spot count)
+  const { data: hold } = await admin
     .from("holds")
-    .select("id, stripe_pi_id")
+    .select("id, stripe_pi_id, quantity")
     .eq("session_id", sessionId)
     .eq("user_id", user.id)
-    .eq("state", "active");
+    .eq("state", "active")
+    .maybeSingle();
 
-  if (!holds || holds.length === 0) {
+  if (!hold) {
     return NextResponse.json({ error: "No active hold found" }, { status: 404 });
   }
 
-  // Cancel each Stripe PaymentIntent and release the holds
-  const piIds = Array.from(new Set(holds.map(h => h.stripe_pi_id).filter(Boolean)));
-  for (const piId of piIds) {
+  const remainingQty = cancelQty !== null ? hold.quantity - cancelQty : 0;
+
+  if (remainingQty <= 0) {
+    // Full cancel — release the whole hold.
+    if (hold.stripe_pi_id) {
+      try {
+        await stripe.paymentIntents.cancel(hold.stripe_pi_id);
+      } catch (e) {
+        console.error(`Failed to cancel PI ${hold.stripe_pi_id}:`, e);
+      }
+    }
+    await admin.from("holds").update({ state: "released" }).eq("id", hold.id);
+  } else {
+    // Partial cancel — re-authorize just the remaining spots at the current
+    // price. The original authorization covered the old quantity as one
+    // amount; Stripe can't shrink an existing authorization, so this cancels
+    // it and creates a fresh off-session one against the saved card instead.
+    const { data: attendee } = await admin
+      .from("attendees")
+      .select("id, stripe_customer_id")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (!attendee?.stripe_customer_id || !hold.stripe_pi_id) {
+      return NextResponse.json({ error: "Could not find your saved card — contact kimberley@stretchyyoga.co.nz to adjust this booking." }, { status: 400 });
+    }
+
     try {
-      await stripe.paymentIntents.cancel(piId);
-    } catch (e) {
-      console.error(`Failed to cancel PI ${piId}:`, e);
+      const oldPi = await stripe.paymentIntents.retrieve(hold.stripe_pi_id);
+      const paymentMethod = oldPi.payment_method as string;
+
+      // Total active spots after this reduction (everyone else's holds are unaffected)
+      const { data: allActive } = await admin
+        .from("holds")
+        .select("quantity")
+        .eq("session_id", sessionId)
+        .eq("state", "active");
+      const totalAfter = (allActive ?? []).reduce((sum, h) => sum + (h.quantity ?? 1), 0) - cancelQty!;
+
+      const effectiveSpots = Math.max(totalAfter, session.min_attendees);
+      const pricePerSpot = calculatePrice(session.cost_base, session.revenue_target, effectiveSpots);
+      const newAmountCents = Math.round(pricePerSpot * 100) * remainingQty;
+
+      await stripe.paymentIntents.cancel(hold.stripe_pi_id).catch((e) => console.error("Cancel old PI error:", e));
+
+      const newPi = await stripe.paymentIntents.create({
+        amount: newAmountCents,
+        currency: "nzd",
+        customer: attendee.stripe_customer_id,
+        payment_method: paymentMethod,
+        off_session: true,
+        confirm: true,
+        capture_method: "manual",
+        metadata: { session_id: sessionId, attendee_id: attendee.id, session_title: session.title, quantity: String(remainingQty) },
+        description: `Hold x${remainingQty}: ${session.title}`,
+      });
+
+      await admin.from("holds").update({ quantity: remainingQty, stripe_pi_id: newPi.id }).eq("id", hold.id);
+    } catch (err) {
+      console.error("Partial cancel re-authorization error:", err);
+      const message = err instanceof Error ? err.message : "Could not update your hold — please contact kimberley@stretchyyoga.co.nz.";
+      return NextResponse.json({ error: message }, { status: 500 });
     }
   }
-
-  // Mark all holds as released
-  await admin
-    .from("holds")
-    .update({ state: "released" })
-    .eq("session_id", sessionId)
-    .eq("user_id", user.id)
-    .eq("state", "active");
 
   // Send cancellation confirmation email
   try {
@@ -241,20 +296,26 @@ export async function DELETE(request: NextRequest) {
       const startDate = new Date(session.starts_at);
       const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
         " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
+      const firstName = attendeeData.name?.split(" ")[0] ?? "there";
+      const isPartial = remainingQty > 0;
+      const subject = isPartial ? `Booking updated — ${session.title}` : `Hold cancelled — ${session.title}`;
+      const bodyLine = isPartial
+        ? `${cancelQty} spot${cancelQty === 1 ? "" : "s"} cancelled for ${session.title} (${dateStr}). You still have ${remainingQty} spot${remainingQty === 1 ? "" : "s"} held — nothing extra was charged.`
+        : `Your hold for ${session.title} (${dateStr}) has been cancelled. Nothing was charged — your card authorisation has been released.`;
       const resend = new Resend(process.env.RESEND_API_KEY);
       resend.emails.send({
         from: "Stretchy <hello@stretchy.social>",
         to: attendeeData.email,
         reply_to: "kimberley@stretchyyoga.co.nz",
-        subject: `Hold cancelled — ${session.title}`,
+        subject,
         headers: { "X-Priority": "1", "Importance": "High" },
-        text: `Hi ${attendeeData.name?.split(" ")[0] ?? "there"},\n\nYour hold for ${session.title} (${dateStr}) has been cancelled. Nothing was charged — your card authorisation has been released.\n\nBrowse sessions: https://stretchyyoga.co.nz/sessions\n\nStretchy`,
-        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#F7F0E8;padding:32px;border-radius:16px;"><h1 style="font-size:26px;font-weight:900;color:#14110F;margin:0 0 8px;">Hold cancelled. 👋</h1><p style="color:#555;font-size:15px;margin:0 0 20px;">Hi ${attendeeData.name?.split(" ")[0] ?? "there"} — your hold for <strong>${session.title}</strong> (${dateStr}) has been cancelled.</p><div style="background:white;border-radius:12px;padding:18px;margin-bottom:16px;"><p style="font-size:14px;font-weight:700;color:#14110F;margin:0 0 4px;">Nothing was charged. ✓</p><p style="font-size:13px;color:#888;margin:0;">Your card authorisation has been fully released.</p></div><a href="https://stretchyyoga.co.nz/sessions" style="display:inline-block;background:#14110F;color:#F7F0E8;text-decoration:none;font-size:13px;font-weight:700;padding:12px 22px;border-radius:8px;">Browse sessions →</a><p style="font-size:11px;color:#AAA;text-align:center;margin:24px 0 0;">Made with Love by <a href="https://studiodawn.org" style="color:#AAA;">Studio Dawn</a></p></div>`,
+        text: `Hi ${firstName},\n\n${bodyLine}\n\nBrowse sessions: https://stretchyyoga.co.nz/sessions\n\nStretchy`,
+        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#F7F0E8;padding:32px;border-radius:16px;"><h1 style="font-size:26px;font-weight:900;color:#14110F;margin:0 0 8px;">${isPartial ? "Booking updated." : "Hold cancelled."} 👋</h1><p style="color:#555;font-size:15px;margin:0 0 20px;">Hi ${firstName} — ${bodyLine}</p><a href="https://stretchyyoga.co.nz/sessions" style="display:inline-block;background:#14110F;color:#F7F0E8;text-decoration:none;font-size:13px;font-weight:700;padding:12px 22px;border-radius:8px;">Browse sessions →</a><p style="font-size:11px;color:#AAA;text-align:center;margin:24px 0 0;">Made with Love by <a href="https://studiodawn.org" style="color:#AAA;">Studio Dawn</a></p></div>`,
       }).catch(console.error);
     }
   } catch (e) { console.error("Cancel email error:", e); }
 
-  return NextResponse.json({ ok: true, cancelled: holds.length });
+  return NextResponse.json({ ok: true, cancelledSpots: cancelQty ?? hold.quantity, remainingSpots: Math.max(remainingQty, 0) });
 }
 
 // PATCH /api/holds — step 2: after Stripe confirms, save hold to Supabase
@@ -361,7 +422,13 @@ export async function PATCH(request: NextRequest) {
       const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
         " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
 
-      const priceDisplay = `$${(pi.amount / 100).toFixed(2)} incl. GST`;
+      // pi.amount is the TOTAL for every spot in this hold, not the per-person
+      // price — always show per-spot, and call out the total separately when
+      // there's more than one, so this never reads as a single-person price.
+      const perSpot = pi.amount / 100 / quantity;
+      const total = pi.amount / 100;
+      const priceDisplay = `$${perSpot.toFixed(2)} incl. GST`;
+      const totalLine = quantity > 1 ? `Total for ${quantity} spots: $${total.toFixed(2)} incl. GST` : null;
 
       const resend = new Resend(process.env.RESEND_API_KEY);
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchyyoga.co.nz";
@@ -378,21 +445,22 @@ export async function PATCH(request: NextRequest) {
           "Precedence": "bulk",
           "X-Mailer": "Stretchy",
         },
-        text: `Hi ${firstName},\n\nYour spot is confirmed for ${sessionData.title}.\n\nDate: ${dateStr}\nVenue: ${sessionData.location_name}\nCurrent price: ${priceDisplay}\n\nYou can cancel up to 36 hours before the session — no charge. After that, you're locked in and your card will be charged 2 hours before the session at the final price.\n\nView or cancel your hold: ${appUrl}/hold/${sessionId}\n\nQuestions? kimberley@stretchyyoga.co.nz\n\nStretchy\nstretchyyoga.co.nz`,
+        text: `Hi ${firstName},\n\nYour spot is confirmed for ${sessionData.title}${quantity > 1 ? ` (${quantity} spots)` : ""}.\n\nDate: ${dateStr}\nVenue: ${sessionData.location_name}\nCurrent price per spot: ${priceDisplay}${totalLine ? `\n${totalLine}` : ""}\n\nYou can cancel up to 36 hours before the session — no charge. After that, you're locked in and your card will be charged 2 hours before the session at the final price.\n\nView or cancel your hold: ${appUrl}/hold/${sessionId}\n\nQuestions? kimberley@stretchyyoga.co.nz\n\nStretchy\nstretchyyoga.co.nz`,
         html: `
           <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; background: #F7F0E8; padding: 32px; border-radius: 16px;">
             <h1 style="font-size: 28px; font-weight: 900; color: #14110F; margin: 0 0 8px;">Booking confirmed. 🙌</h1>
             <p style="color: #555; font-size: 15px; margin: 0 0 24px;">Hi ${firstName} — your spot is held for ${sessionData.title}.</p>
             <div style="background: #14110F; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
               <p style="color: #FCBB16; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Your booking</p>
-              <p style="color: #F7F0E8; font-size: 20px; font-weight: 800; margin: 0 0 8px;">${sessionData.title}</p>
+              <p style="color: #F7F0E8; font-size: 20px; font-weight: 800; margin: 0 0 8px;">${sessionData.title}${quantity > 1 ? ` · ${quantity} spots` : ""}</p>
               <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">${dateStr}</p>
               <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">${sessionData.location_name}</p>
               ${sessionData.social_stretch_venue ? `<p style="color: rgba(245,237,227,0.6); font-size: 13px; margin: 8px 0 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">Social Stretch after at ${sessionData.social_stretch_venue}</p>` : ""}
             </div>
             <div style="background: white; border-radius: 14px; padding: 18px; margin-bottom: 16px;">
-              <p style="font-size: 13px; color: #555; margin: 0 0 4px;">Current price</p>
+              <p style="font-size: 13px; color: #555; margin: 0 0 4px;">Current price per spot</p>
               <p style="font-size: 28px; font-weight: 900; color: #14110F; margin: 0 0 4px;">${priceDisplay}</p>
+              ${totalLine ? `<p style="font-size: 14px; font-weight: 700; color: #14110F; margin: 0 0 4px;">${totalLine}</p>` : ""}
               <p style="font-size: 12px; color: #999; margin: 0;">Price may drop as more people join. Your card is charged 2 hours before the session at the final price.</p>
             </div>
             <div style="background: #EDE5D8; border-radius: 14px; padding: 18px; margin-bottom: 16px;">
