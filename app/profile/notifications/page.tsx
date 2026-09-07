@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import SMark from "@/components/SMark";
+import PushButton from "@/components/PushButton";
+import { createClient } from "@/lib/supabase/client";
 
 type NotifRow = {
   id: string;
@@ -60,20 +62,53 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   );
 }
 
+const DEFAULT_PREFS: Record<string, boolean> = Object.fromEntries(
+  NOTIF_SECTIONS.flatMap((s) => s.rows).map((r) => [r.id, r.defaultOn])
+);
+
 export default function NotificationsPage() {
-  const [prefs, setPrefs] = useState<Record<string, boolean>>(
-    Object.fromEntries(
-      NOTIF_SECTIONS.flatMap((s) => s.rows).map((r) => [r.id, r.defaultOn])
-    )
-  );
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [prefs, setPrefs] = useState<Record<string, boolean>>(DEFAULT_PREFS);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    fetch("/api/profile/notification-prefs", { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.prefs) setPrefs({ ...DEFAULT_PREFS, ...data.prefs });
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, [accessToken]);
 
   const toggle = (id: string) =>
     setPrefs((p) => ({ ...p, [id]: !p[id] }));
 
   const [saved, setSaved] = useState(false);
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const [saving, setSaving] = useState(false);
+  async function handleSave() {
+    if (!accessToken) return;
+    setSaving(true);
+    try {
+      await fetch("/api/profile/notification-prefs", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ prefs }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -126,23 +161,17 @@ export default function NotificationsPage() {
           </div>
         ))}
 
-        {/* Push permission note */}
-        <div
-          className="rounded-card px-4 py-3 flex items-start gap-3"
-          style={{ backgroundColor: "#EFF6FF", border: "2px solid #14110F" }}
-        >
-          <span className="text-lg flex-shrink-0">🔔</span>
-          <p className="text-xs text-ink leading-snug">
-            <span className="font-bold">Push notifications are on.</span> To change this, go to your phone&apos;s Settings → Notifications → Stretchy.
-          </p>
-        </div>
+        {/* Real push permission/subscription status, not a static claim */}
+        <PushButton accessToken={accessToken} />
+        {!loaded && <p className="text-center text-xs text-muted">Loading your saved preferences…</p>}
       </div>
 
       {/* Sticky save */}
       <div className="fixed bottom-0 left-0 right-0 px-4 pb-8 pt-4 bg-cream/90 backdrop-blur-sm max-w-lg mx-auto">
         <button
           onClick={handleSave}
-          className="w-full font-semibold rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
+          disabled={saving || !accessToken}
+          className="w-full font-semibold rounded-pill transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
           style={{
             backgroundColor: saved ? "#716F39" : "#14110F",
             color: "#F7F0E8",
@@ -150,7 +179,7 @@ export default function NotificationsPage() {
             fontSize: "16px",
           }}
         >
-          {saved ? "✓ Saved" : "Save preferences"}
+          {saving ? "Saving…" : saved ? "✓ Saved" : "Save preferences"}
         </button>
       </div>
     </main>
