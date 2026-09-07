@@ -247,19 +247,6 @@ export default function SessionDetailPage() {
         </div>
       )}
 
-      {/* Cancellation policy */}
-      <div className="mx-4 mb-6 rounded-card border-2 border-ink p-5" style={{ background: "#FCBB16" }}>
-        <p className="text-[13px] leading-relaxed text-ink mb-2.5 font-semibold">
-          How you&rsquo;ll pay — add a card, nothing charged yet. Your Stretchy locks in 36 hours out — that&rsquo;s the most you&rsquo;ll ever pay. Two hours out, we charge the final price. Often lower, never higher.
-        </p>
-        <p className="text-[13px] leading-relaxed text-ink mb-2.5">
-          Can&rsquo;t make it? Cancel free before the 36-hour mark. After that, the price stands — that&rsquo;s what keeps it fair for everyone showing up. Can&rsquo;t make it happen on our end? You&rsquo;re refunded in full, always.
-        </p>
-        <p className="text-[13px] leading-relaxed text-ink">
-          <strong>Social Stretch after</strong> — make mates off the mat. Pay your own way.
-        </p>
-      </div>
-
       <div className="mx-4 mb-6">
         <HowToStretchy />
       </div>
