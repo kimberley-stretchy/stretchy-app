@@ -1,25 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
 import HoldModal from "@/components/HoldModal";
 import { createClient } from "@/lib/supabase/client";
-import { calculatePrice } from "@/lib/pricing";
-
-const T = {
-  black:  "#14110F",
-  cream:  "#F7F0E8",
-  yellow: "#FCBB16",
-  olive:  "#716F39",
-  blue:   "#0000FF",
-  purple: "#902F8A",
-  green:  "#716F39",
-  orange: "#E96709",
-  hold:   "#BFE3F0",
-};
+import { calculatePrice, formatPrice } from "@/lib/pricing";
 
 const TYPE_COLORS: Record<string, string> = {
   yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
@@ -52,108 +40,29 @@ type Session = {
   what_to_bring: string[] | null;
 };
 
-// Interactive price curve — drag/hover to explore prices at any attendance
-function PriceCurveChart({ session: s }: { session: Session }) {
-  const [hoverSpots, setHoverSpots] = useState<number | null>(null);
-  const svgRef = React.useRef<SVGSVGElement>(null);
-
-  const W = 320; const H = 80;
-  const PAD = { left: 16, right: 16, top: 8, bottom: 28 };
-  const cW = W - PAD.left - PAD.right;
-  const cH = H - PAD.top - PAD.bottom;
-
-  const ceiling = calculatePrice(s.cost_base, s.revenue_target, s.min_attendees);
-  const floor   = calculatePrice(s.cost_base, s.revenue_target, s.max_attendees);
-  const holds   = s.current_holds || 0;
-  const range   = s.max_attendees - s.min_attendees;
-  const priceRange = ceiling - floor;
-
-  const toX = (n: number) => PAD.left + ((n - s.min_attendees) / range) * cW;
-  const toY = (p: number) => PAD.top + (1 - Math.max(0, (p - floor) / Math.max(priceRange, 1))) * cH;
-
-  const points = [];
-  for (let n = s.min_attendees; n <= s.max_attendees; n++) {
-    points.push({ x: toX(n), y: toY(calculatePrice(s.cost_base, s.revenue_target, n)), n });
+// Price ladder — a short list of evenly-stepped rows, not a continuous curve,
+// per the design system's pricing component (10-pricing-component.png).
+function ladderRows(min: number, max: number, costBase: number, revenueTarget: number) {
+  const range = Math.max(1, max - min);
+  const step = Math.max(1, Math.round(range / 8));
+  const rows: { n: number; price: number }[] = [];
+  for (let n = min; n < max; n += step) {
+    rows.push({ n, price: calculatePrice(costBase, revenueTarget, n) });
   }
-  const curvePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-
-  const activeSpots = hoverSpots ?? Math.min(Math.max(holds, s.min_attendees), s.max_attendees);
-  const activePrice = calculatePrice(s.cost_base, s.revenue_target, activeSpots);
-  const activeX = toX(activeSpots);
-  const activeY = toY(activePrice);
-
-  function handlePointer(e: React.MouseEvent<SVGElement> | React.TouchEvent<SVGElement>) {
-    const svg = svgRef.current;
-    if (!svg) return;
-    const rect = svg.getBoundingClientRect();
-    const clientX = "touches" in e ? e.touches[0]?.clientX : e.clientX;
-    if (clientX === undefined) return;
-    const x = clientX - rect.left;
-    const ratio = Math.max(0, Math.min(1, (x - PAD.left) / cW));
-    const spots = Math.round(s.min_attendees + ratio * range);
-    setHoverSpots(Math.min(Math.max(spots, s.min_attendees), s.max_attendees));
-  }
-
-  return (
-    <div style={{ position: "relative", width: "100%" }}>
-      {/* Hover tooltip */}
-      <div style={{
-        textAlign: "center", marginBottom: 8,
-        fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700,
-        color: hoverSpots ? T.yellow : "rgba(245,237,227,0.4)",
-        letterSpacing: "0.08em", transition: "color .15s",
-        minHeight: 18,
-      }}>
-        {hoverSpots
-          ? `IF ${hoverSpots} JOIN → $${activePrice.toFixed(2)}`
-          : "← DRAG TO EXPLORE PRICES →"}
-      </div>
-      <svg
-        ref={svgRef}
-        width="100%" viewBox={`0 0 ${W} ${H}`}
-        style={{ cursor: "crosshair", touchAction: "none", display: "block" }}
-        onMouseMove={handlePointer}
-        onTouchMove={handlePointer}
-        onMouseLeave={() => setHoverSpots(null)}
-        onTouchEnd={() => setHoverSpots(null)}
-      >
-        {/* Curve fill */}
-        <path d={curvePath + ` L ${points[points.length-1].x},${PAD.top+cH} L ${points[0].x},${PAD.top+cH} Z`} fill="rgba(255,209,102,0.10)" />
-        {/* Curve line */}
-        <path d={curvePath} fill="none" stroke={T.yellow} strokeWidth={1.5} strokeLinecap="round" />
-
-        {/* Hover vertical line */}
-        {hoverSpots && (
-          <line x1={activeX} y1={PAD.top} x2={activeX} y2={PAD.top + cH} stroke="rgba(255,209,102,0.3)" strokeWidth={1} strokeDasharray="3,3" />
-        )}
-
-        {/* Active dot */}
-        <circle cx={activeX} cy={activeY} r={hoverSpots ? 8 : 6} fill={T.yellow} style={{ transition: "r .1s" }} />
-        <circle cx={activeX} cy={activeY} r={hoverSpots ? 16 : 10} fill="rgba(255,209,102,0.2)" />
-
-        {/* Axis labels */}
-        <text x={PAD.left} y={H - 8} fontSize={9} fontFamily="JetBrains Mono, monospace" fontWeight={700} fill="rgba(245,237,227,0.3)">
-          {s.min_attendees} MIN · ${ceiling.toFixed(2)}
-        </text>
-        <text x={W - PAD.right} y={H - 8} fontSize={9} fontFamily="JetBrains Mono, monospace" fontWeight={700} fill="rgba(245,237,227,0.3)" textAnchor="end">
-          {s.max_attendees} MAX · ${floor.toFixed(2)}
-        </text>
-      </svg>
-    </div>
-  );
+  rows.push({ n: max, price: calculatePrice(costBase, revenueTarget, max) });
+  return rows.filter((r, i, arr) => arr.findIndex((x) => x.n === r.n) === i);
 }
 
 export default function SessionDetailPage() {
-  const params  = useParams<{ id: string }>();
-  const router  = useRouter();
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [holding, setHolding] = useState(false);
-  const [held, setHeld]       = useState(false);
+  const [held, setHeld] = useState(false);
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  // Detect auth state — fires immediately if session exists in storage
   useEffect(() => {
     const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -183,187 +92,154 @@ export default function SessionDetailPage() {
 
   if (loading) {
     return (
-      <main style={{ background: T.cream, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(26,26,26,0.35)" }}>LOADING…</p>
+      <main className="min-h-screen bg-cream flex items-center justify-center">
+        <p className="font-mono text-xs text-muted">LOADING…</p>
       </main>
     );
   }
 
   if (!session) {
     return (
-      <main style={{ background: T.cream, minHeight: "100vh", padding: 24 }}>
-        <Link href="/sessions" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, color: "rgba(26,26,26,0.45)", letterSpacing: "0.12em" }}>
-          ← BACK
-        </Link>
-        <p style={{ marginTop: 40, textAlign: "center", color: "rgba(26,26,26,0.5)" }}>Session not found.</p>
+      <main className="min-h-screen bg-cream px-6 pt-6">
+        <Link href="/sessions" className="font-mono text-xs font-bold uppercase tracking-widest text-muted">← Back</Link>
+        <p className="mt-10 text-center text-muted text-sm">Session not found.</p>
       </main>
     );
   }
 
   const s = session;
-  const typeColor   = TYPE_COLORS[s.movement_type] ?? "#888";
-  const typeLabel   = TYPE_LABELS[s.movement_type] ?? s.movement_type.toUpperCase();
-  const holds       = s.current_holds || 0;
-  const confirmed   = holds >= s.min_attendees;
-  const startingPrice = calculatePrice(s.cost_base, s.revenue_target, s.min_attendees);
-  const currentPrice  = confirmed ? calculatePrice(s.cost_base, s.revenue_target, holds) : startingPrice;
-  const floorPrice    = calculatePrice(s.cost_base, s.revenue_target, s.max_attendees);
-  const spotsToMin    = Math.max(0, s.min_attendees - holds);
+  const typeColor = TYPE_COLORS[s.movement_type] ?? "#888";
+  const typeLabel = TYPE_LABELS[s.movement_type] ?? s.movement_type.toUpperCase();
+  const holds = s.current_holds || 0;
+  const confirmed = holds >= s.min_attendees;
+  const currentN = Math.min(Math.max(holds, s.min_attendees), s.max_attendees);
+  const currentPrice = calculatePrice(s.cost_base, s.revenue_target, currentN);
+  const floorPrice = calculatePrice(s.cost_base, s.revenue_target, s.max_attendees);
+  const spotsToMin = Math.max(0, s.min_attendees - holds);
+  const rows = ladderRows(s.min_attendees, s.max_attendees, s.cost_base, s.revenue_target);
 
   const startDate = new Date(s.starts_at);
-  const dayStr    = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" });
-  const timeStr   = startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
-  const durationLabel = s.duration_mins >= 60
-    ? `${s.duration_mins / 60}hr`
-    : `${s.duration_mins} min`;
+  const weekdayStr = startDate.toLocaleDateString("en-NZ", { weekday: "short" }).toUpperCase();
+  const timeStr = startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
+  const durationLabel = s.duration_mins >= 60 ? `${s.duration_mins / 60}HR` : `${s.duration_mins} MIN`;
 
   return (
-    <main style={{ background: T.cream, minHeight: "100vh", fontFamily: "'Space Grotesk', system-ui, sans-serif", paddingBottom: 120, maxWidth: 480, margin: "0 auto" }}>
-      {/* Top bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px" }}>
-        <Link href="/sessions">
-          <SMark size={28} className="text-ink" />
-        </Link>
-        {/* Vetted badge */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 6, padding: "6px 12px",
-          borderRadius: 999, background: "#E6F5EC", color: "#2E7A52",
-          fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
-        }}>
-          ✓ VETTED HOST
-        </div>
-        <button style={{
-          width: 40, height: 40, borderRadius: "50%", border: "none",
-          background: "rgba(26,26,26,0.06)", color: T.black, fontSize: 16, cursor: "pointer",
-        }}>
+    <main className="min-h-screen bg-cream pb-36 max-w-lg mx-auto">
+      <nav className="flex items-center justify-between px-4 py-4">
+        <Link href="/sessions" className="text-ink"><SMark size={28} /></Link>
+        <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-pill" style={{ background: "#E6F5EC", color: "#2E7A52" }}>
+          ✓ Vetted host
+        </span>
+        <button className="w-10 h-10 rounded-full border-2 border-ink flex items-center justify-center text-ink text-base">
           ♡
         </button>
-      </div>
+      </nav>
 
-      {/* Title block */}
-      <div style={{ padding: "8px 22px 18px" }}>
-        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-          <span style={{ background: "#E1D5C6", color: T.black, padding: "5px 11px", borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em" }}>
-            {startDate.toLocaleDateString("en-NZ", { weekday: "short" }).toUpperCase()} · {timeStr}
+      <div className="px-4">
+        <div className="flex flex-wrap gap-2 mb-3">
+          <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-pill border-2 border-ink text-ink">
+            {weekdayStr} · {timeStr}
           </span>
-          <span style={{ background: "rgba(26,26,26,0.06)", color: T.black, padding: "5px 11px", borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em" }}>
+          <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-pill border-2 border-ink text-ink">
             {durationLabel}
           </span>
-          <span style={{ background: typeColor + "22", color: typeColor, padding: "5px 11px", borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em" }}>
+          <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-pill border-2" style={{ color: typeColor, borderColor: typeColor }}>
             {typeLabel}
           </span>
         </div>
-        <h1 style={{ fontSize: "clamp(28px,8vw,38px)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 0.95, marginBottom: 8 }}>
+        <h1 className="font-display font-bold text-ink mb-2" style={{ fontSize: "clamp(32px, 9vw, 44px)", letterSpacing: "-0.03em", lineHeight: 0.95 }}>
           {s.title}
         </h1>
-        <p style={{ fontSize: 14, color: "rgba(26,26,26,0.55)", marginBottom: 12 }}>
-          {s.location_name}
-        </p>
-        {s.description && (
-          <p style={{ fontSize: 15, lineHeight: 1.55, color: "rgba(26,26,26,0.75)" }}>
-            {s.description}
-          </p>
-        )}
+        <p className="text-sm text-muted mb-3">{s.location_name}</p>
+        {s.description && <p className="text-sm text-ink/75 leading-relaxed">{s.description}</p>}
       </div>
 
-      {/* Pricing engine */}
-      <div style={{ margin: "0 16px 20px", background: T.black, borderRadius: 20, padding: "24px 20px 28px", color: T.cream }}>
+      {/* Pricing card — cream + purple accent, price ladder not a curve */}
+      <div className="mx-4 my-5 bg-white rounded-card border-2 border-ink p-5">
+        <p className="font-mono text-xs font-bold mb-3" style={{ color: confirmed ? "#716F39" : "#E96709" }}>
+          {confirmed ? `● Going ahead · ${holds} holding` : `○ ${spotsToMin} more ${spotsToMin === 1 ? "person" : "people"} to confirm`}
+        </p>
 
-        {/* Status — big and bold */}
-        <div style={{
-          fontFamily: "'Space Grotesk', system-ui, sans-serif", fontWeight: 800,
-          fontSize: confirmed ? 22 : 26,
-          letterSpacing: "-0.02em", lineHeight: 1.1,
-          color: confirmed ? T.green : T.orange, marginBottom: 16,
-        }}>
-          {confirmed
-            ? `● Session going ahead · ${holds} holding`
-            : `○ ${spotsToMin} more ${spotsToMin === 1 ? "person" : "people"} to confirm session`}
-        </div>
-
-        {/* Holds pips */}
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+        <div className="flex gap-1.5 flex-wrap mb-4">
           {Array.from({ length: s.min_attendees }).map((_, i) => (
-            <div key={i} style={{
-              width: 14, height: 14, borderRadius: "50%",
-              background: i < holds ? typeColor : "rgba(245,237,227,0.12)",
-              transition: "background .3s",
-            }} />
+            <div key={i} className="w-3.5 h-3.5 rounded-full" style={{ background: i < holds ? "#902F8A" : "#E1D5C6" }} />
           ))}
           {holds > s.min_attendees && (
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: typeColor, alignSelf: "center" }}>
-              +{holds - s.min_attendees}
-            </span>
+            <span className="font-mono text-xs font-bold self-center" style={{ color: "#902F8A" }}>+{holds - s.min_attendees}</span>
           )}
         </div>
 
-        {/* Price — very large */}
-        <div style={{ marginBottom: 6 }}>
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.18em", marginBottom: 6 }}>
-            {confirmed ? "PRICE NOW" : "MAX YOU'LL PAY"}
+        <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-1">
+          {confirmed ? "Price now" : "Max you'll pay"}
+        </p>
+        <div className="flex items-baseline gap-2 mb-1">
+          <span className="font-mono font-extrabold text-ink" style={{ fontSize: 54, lineHeight: 1 }}>{formatPrice(currentPrice)}</span>
+          <span className="font-mono text-xs font-bold text-muted">incl. GST</span>
+        </div>
+        {!confirmed && (
+          <p className="font-mono text-[11px] font-bold text-muted mb-4">
+            Price drops as the session fills — lowest {formatPrice(floorPrice)}
           </p>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 80, color: T.yellow, lineHeight: 0.9 }}>
-              ${currentPrice.toFixed(2)}
-            </span>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: "rgba(245,237,227,0.5)", fontWeight: 700 }}>
-              incl. GST
-            </span>
+        )}
+
+        <div className="border-t-2 pt-4 mt-3" style={{ borderColor: "#E1D5C6" }}>
+          <div className="flex justify-between font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-2.5">
+            <span>People</span>
+            <span>Price each</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {rows.map((r) => {
+              const isCurrent = r.n === currentN;
+              const barWidth = 8 + ((r.n - s.min_attendees) / Math.max(1, s.max_attendees - s.min_attendees)) * 92;
+              return (
+                <div key={r.n} className="flex items-center gap-2.5">
+                  <span className="font-mono text-[11px] text-ink/55 w-12 flex-shrink-0">
+                    {r.n === s.min_attendees ? `${r.n} min` : r.n === s.max_attendees ? `${r.n} max` : r.n}
+                  </span>
+                  <div className="flex-1 h-2 rounded-pill overflow-hidden" style={{ background: "#F0E9E0" }}>
+                    <div
+                      className="h-full rounded-pill"
+                      style={{ width: `${barWidth}%`, background: isCurrent ? "#902F8A" : "#E1D5C6" }}
+                    />
+                  </div>
+                  <span className={`font-mono text-sm ${isCurrent ? "font-extrabold" : "font-bold text-ink/55"}`} style={isCurrent ? { color: "#902F8A" } : undefined}>
+                    {formatPrice(r.price)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
-
-        {/* Drop copy */}
-        {!confirmed && (
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: "rgba(245,237,227,0.35)", letterSpacing: "0.12em", marginBottom: 20 }}>
-            PRICE DROPS AS THE SESSION FILLS — LOWEST ${floorPrice.toFixed(2)}
-          </p>
-        )}
-
-        {/* Interactive price curve */}
-        <PriceCurveChart session={s} />
-
       </div>
 
-      {/* Where — yellow */}
-      <div style={{ margin: "0 16px 20px", background: T.yellow, borderRadius: 20, padding: "20px" }}>
-        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.45)", letterSpacing: "0.18em", marginBottom: 10 }}>
-          WHERE
-        </p>
-        <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{s.location_name}</p>
-        {s.location_address && (
-          <p style={{ fontSize: 13, color: "rgba(26,26,26,0.65)", marginBottom: 8 }}>{s.location_address}</p>
-        )}
-        {s.getting_there && (
-          <p style={{ fontSize: 13, color: "rgba(26,26,26,0.65)", lineHeight: 1.5 }}>{s.getting_there}</p>
-        )}
+      {/* Where */}
+      <div className="mx-4 mb-5 rounded-card border-2 border-ink p-5" style={{ background: "#FCBB16" }}>
+        <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/50 mb-2.5">Where</p>
+        <p className="font-bold text-sm text-ink mb-1">{s.location_name}</p>
+        {s.location_address && <p className="text-xs text-ink/65 mb-2">{s.location_address}</p>}
+        {s.getting_there && <p className="text-xs text-ink/65 leading-relaxed">{s.getting_there}</p>}
       </div>
 
-      {/* Social stretch — purple */}
+      {/* Social Stretch */}
       {s.social_stretch_venue && (
-        <div style={{ margin: "0 16px 20px", background: T.purple, borderRadius: 20, padding: "20px" }}>
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.55)", letterSpacing: "0.18em", marginBottom: 10 }}>
-            SOCIAL STRETCH AFTER
+        <div className="mx-4 mb-5 rounded-card border-2 border-ink p-5" style={{ background: "#902F8A" }}>
+          <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "rgba(247,240,232,.55)" }}>
+            Social Stretch after
           </p>
-          <p style={{ fontSize: 15, fontWeight: 700, color: T.cream, marginBottom: 6 }}>{s.social_stretch_venue}</p>
-          <p style={{ fontSize: 13, color: "rgba(245,237,227,0.8)", lineHeight: 1.5 }}>
-            Pay your own way — coffee & food after. Everyone welcome.
+          <p className="text-sm font-bold text-cream mb-1.5">{s.social_stretch_venue}</p>
+          <p className="text-xs leading-relaxed" style={{ color: "rgba(247,240,232,.8)" }}>
+            Pay your own way — coffee &amp; food after. Everyone welcome.
           </p>
         </div>
       )}
 
       {/* What to bring */}
       {s.what_to_bring && s.what_to_bring.length > 0 && (
-        <div style={{ margin: "0 16px 20px", background: "#fff", borderRadius: 20, padding: "20px" }}>
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(26,26,26,0.35)", letterSpacing: "0.18em", marginBottom: 10 }}>
-            BRING
-          </p>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="mx-4 mb-5 bg-white rounded-card border-2 border-ink p-5">
+          <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-2.5">Bring</p>
+          <div className="flex flex-wrap gap-2">
             {s.what_to_bring.map((item) => (
-              <span key={item} style={{
-                padding: "6px 12px", borderRadius: 999,
-                background: "rgba(26,26,26,0.05)", color: T.black,
-                fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700,
-              }}>
+              <span key={item} className="px-3 py-1.5 rounded-pill font-mono text-[11px] font-bold text-ink" style={{ background: "rgba(20,17,15,.06)" }}>
                 {item}
               </span>
             ))}
@@ -371,69 +247,53 @@ export default function SessionDetailPage() {
         </div>
       )}
 
-      {/* Cancellation policy — yellow */}
-      <div style={{ margin: "0 16px 20px", background: T.yellow, border: "2px solid #14110F", borderRadius: 20, padding: "20px" }}>
-        <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.5, color: T.black, marginBottom: 10 }}>
-          HOW YOU&rsquo;LL PAY — Add a card, nothing charged yet. Your Stretchy locks in 36 hours out — that&rsquo;s the most you&rsquo;ll ever pay. Two hours out, we charge the final price. Often lower, never higher.
+      {/* Cancellation policy */}
+      <div className="mx-4 mb-6 rounded-card border-2 border-ink p-5" style={{ background: "#FCBB16" }}>
+        <p className="text-[13px] leading-relaxed text-ink mb-2.5 font-semibold">
+          How you&rsquo;ll pay — add a card, nothing charged yet. Your Stretchy locks in 36 hours out — that&rsquo;s the most you&rsquo;ll ever pay. Two hours out, we charge the final price. Often lower, never higher.
         </p>
-        <p style={{ fontSize: 13, lineHeight: 1.5, color: T.black, marginBottom: 10 }}>
-          Can&rsquo;t make it? Cancel free before the 36-hour mark. After that, the price stands — that&rsquo;s our cancellation policy, and it&rsquo;s what keeps the system fair for everyone who shows up. Can&rsquo;t make it happen on our end? You&rsquo;re refunded in full. Every time. Genuinely can&rsquo;t help it? Flick us a message.
+        <p className="text-[13px] leading-relaxed text-ink mb-2.5">
+          Can&rsquo;t make it? Cancel free before the 36-hour mark. After that, the price stands — that&rsquo;s what keeps it fair for everyone showing up. Can&rsquo;t make it happen on our end? You&rsquo;re refunded in full, always.
         </p>
-        <p style={{ fontSize: 13, lineHeight: 1.5, color: T.black }}>
+        <p className="text-[13px] leading-relaxed text-ink">
           <strong>Social Stretch after</strong> — make mates off the mat. Pay your own way.
         </p>
       </div>
 
-      {/* How to Stretchy */}
-      <div style={{ margin: "0 16px 24px" }}>
+      <div className="mx-4 mb-6">
         <HowToStretchy />
       </div>
 
-      {/* Hold CTA — sticky bottom */}
-      <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
-        background: "rgba(245,237,227,0.95)", backdropFilter: "blur(12px)",
-        borderTop: "1px solid rgba(26,26,26,0.08)",
-        padding: "16px 20px 24px",
-        display: "flex", flexDirection: "column", gap: 8,
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+      {/* Sticky hold CTA */}
+      <div className="fixed bottom-0 left-0 right-0 border-t-2 border-ink px-5 pt-4 pb-6 flex flex-col gap-2" style={{ background: "rgba(247,240,232,.97)", backdropFilter: "blur(12px)" }}>
+        <div className="flex items-center justify-between mb-1">
           <div>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, color: T.yellow }}>${currentPrice.toFixed(2)}</span>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,26,0.45)", marginLeft: 6 }}>incl. GST</span>
+            <span className="font-mono font-extrabold text-ink" style={{ fontSize: 26 }}>{formatPrice(currentPrice)}</span>
+            <span className="font-mono text-[10px] text-muted ml-1.5">incl. GST</span>
           </div>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: confirmed ? "#716F39" : T.orange }}>
+          <span className="font-mono text-[10px] font-bold" style={{ color: confirmed ? "#716F39" : "#E96709" }}>
             {confirmed ? `${holds} HELD · GOING AHEAD` : `${spotsToMin} MORE TO CONFIRM`}
           </span>
         </div>
         {!accessToken ? (
           <Link
             href={`/login?next=/sessions/${params.id}`}
-            style={{
-              display: "block", width: "100%", padding: "18px 24px", borderRadius: 999,
-              background: T.black, color: T.cream, textDecoration: "none",
-              fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 16, fontWeight: 700,
-              letterSpacing: "-0.01em", textAlign: "center",
-            }}
+            className="w-full text-center rounded-pill py-4 font-semibold"
+            style={{ background: "#14110F", color: "#F7F0E8", fontSize: 16 }}
           >
             Log in to hold your place
           </Link>
         ) : (
-        <button
-          onClick={handleHold}
-          disabled={holding || held}
-          style={{
-            width: "100%", padding: "18px 24px", borderRadius: 999,
-            background: holding ? "rgba(26,26,26,0.4)" : T.black,
-            color: T.cream, border: "none", cursor: holding ? "not-allowed" : "pointer",
-            fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 16, fontWeight: 700,
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {holding ? "Saving your spot…" : held ? "✓ Held!" : "Hold my place — no charge yet"}
-        </button>
+          <button
+            onClick={handleHold}
+            disabled={holding || held}
+            className="w-full rounded-pill py-4 font-semibold disabled:opacity-60"
+            style={{ background: holding ? "rgba(20,17,15,.4)" : "#14110F", color: "#F7F0E8", fontSize: 16 }}
+          >
+            {holding ? "Saving your spot…" : held ? "✓ Held!" : "Hold my place — no charge yet"}
+          </button>
         )}
-        <p style={{ textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,26,0.4)", fontWeight: 700 }}>
+        <p className="text-center font-mono text-[10px] font-bold text-muted">
           NO CHARGE YET · CANCEL ANY TIME UP TO 36H OUT
         </p>
       </div>
