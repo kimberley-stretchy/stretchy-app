@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const admin = getAdmin();
 
   const [{ data: hosts }, { data: venues }] = await Promise.all([
-    admin.from("hosts").select("id, name, roles, practice_types, neighbourhood, neighbourhoods, vetting_status, sessions_hosted, application_notes"),
+    admin.from("hosts").select("id, name, email, roles, practice_types, neighbourhood, neighbourhoods, vetting_status, sessions_hosted, application_notes, bio, avatar_url"),
     admin.from("interest_submissions").select("id, name, email, fields, type, created_at").in("type", ["venue", "social_stretch"]),
   ]);
 
@@ -30,9 +30,14 @@ export async function GET(request: NextRequest) {
     .map((h) => ({
       id: h.id,
       name: h.name,
+      email: h.email,
       meta: [areasOf(h), ...(h.practice_types ?? [])].filter(Boolean).join(", "),
       status: h.vetting_status === "approved" ? "FREE" : h.vetting_status === "pending" ? "AWAITING REVIEW" : h.vetting_status?.toUpperCase() ?? "AWAITING REVIEW",
       note: h.application_notes,
+      bio: h.bio,
+      avatarUrl: h.avatar_url,
+      practiceTypes: h.practice_types ?? [],
+      neighbourhoods: h.neighbourhoods && h.neighbourhoods.length > 0 ? h.neighbourhoods : [h.neighbourhood].filter(Boolean),
     }));
 
   const gems = (hosts ?? [])
@@ -40,9 +45,14 @@ export async function GET(request: NextRequest) {
     .map((h) => ({
       id: h.id,
       name: h.name,
+      email: h.email,
       meta: [areasOf(h), h.sessions_hosted ? `${h.sessions_hosted} sessions` : null].filter(Boolean).join(", "),
       status: h.vetting_status === "approved" ? "FREE" : h.vetting_status === "pending" ? "AWAITING REVIEW" : h.vetting_status?.toUpperCase() ?? "AWAITING REVIEW",
       note: h.application_notes,
+      bio: h.bio,
+      avatarUrl: h.avatar_url,
+      practiceTypes: h.practice_types ?? [],
+      neighbourhoods: h.neighbourhoods && h.neighbourhoods.length > 0 ? h.neighbourhoods : [h.neighbourhood].filter(Boolean),
     }));
 
   const venueRows = (venues ?? []).map((v) => ({
