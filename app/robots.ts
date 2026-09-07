@@ -10,6 +10,7 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         "/admin",
         "/api",
+        "/home",
         "/host/home",
         "/host/create-profile",
         "/host/login",

@@ -5,6 +5,7 @@ import SMark from "@/components/SMark";
 export const metadata: Metadata = {
   title: "Store — Stretchy",
   description: "The Stretchy Store is coming back soon.",
+  robots: { index: false, follow: true },
 };
 
 export default function StorePage() {
