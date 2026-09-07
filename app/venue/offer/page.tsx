@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import FormShell from "@/components/forms/FormShell";
 import { Label, PillInput, ChipGroup, FormSubmitButton } from "@/components/forms/FormPrimitives";
 
 const SPACE_TYPES = ["Movement space", "Social Stretch spot", "Both", "Other"];
 
-export default function VenueOfferPage() {
+function VenueOfferForm() {
+  const searchParams = useSearchParams();
+  // Linked to from HQ (PeopleSection's "+ Add a venue") passes back the
+  // exact admin page to return to, so closing doesn't dump HQ users onto
+  // the public homepage.
+  const closeHref = searchParams.get("from") || "/";
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [spaceType, setSpaceType] = useState("");
@@ -48,7 +55,7 @@ export default function VenueOfferPage() {
 
   if (submitted) {
     return (
-      <FormShell bg="#FCBB16" closeHref="/">
+      <FormShell bg="#FCBB16" closeHref={closeHref}>
         <div className="py-10 text-center">
           <p className="text-3xl mb-3">🏠</p>
           <h1 className="font-display text-[28px] leading-none mb-2">Space offered.</h1>
@@ -59,7 +66,7 @@ export default function VenueOfferPage() {
   }
 
   return (
-    <FormShell bg="#FCBB16" closeHref="/">
+    <FormShell bg="#FCBB16" closeHref={closeHref}>
       <div>
         <div className="font-mono text-[10px] font-extrabold tracking-[0.13em]">OFFER A VENUE</div>
         <h1 className="font-display text-[32px] leading-none mt-2">Venue</h1>
@@ -102,5 +109,13 @@ export default function VenueOfferPage() {
         <p className="text-[11px] leading-[1.5]">We bring a room full of locals. You set the rate and the times that suit.</p>
       </form>
     </FormShell>
+  );
+}
+
+export default function VenueOfferPage() {
+  return (
+    <Suspense>
+      <VenueOfferForm />
+    </Suspense>
   );
 }

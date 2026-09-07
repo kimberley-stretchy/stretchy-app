@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import FormShell from "@/components/forms/FormShell";
 import { Label, PillInput, MultiChipGroup, ThreeWayChoice, FormSubmitButton } from "@/components/forms/FormPrimitives";
 
@@ -8,7 +9,13 @@ const STYLES = ["Vinyasa", "Yin", "Yin yang", "Yinyasa", "Yoga nidra", "Meditati
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const TIMES = ["Early morning", "Mid morning", "Lunch", "Afternoon", "Evening"];
 
-export default function TeacherApplyPage() {
+function TeacherApplyForm() {
+  const searchParams = useSearchParams();
+  // Linked to from HQ (PeopleSection's "+ Add a teacher") passes back the
+  // exact admin page to return to, so closing doesn't dump HQ users onto
+  // the public homepage.
+  const closeHref = searchParams.get("from") || "/";
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [styles, setStyles] = useState<string[]>([]);
@@ -54,7 +61,7 @@ export default function TeacherApplyPage() {
 
   if (submitted) {
     return (
-      <FormShell bg="#0000FF" dark closeHref="/">
+      <FormShell bg="#0000FF" dark closeHref={closeHref}>
         <div className="py-10 text-center">
           <p className="text-3xl mb-3">🙌</p>
           <h1 className="font-display text-[28px] leading-none mb-2">You&rsquo;re in the mix.</h1>
@@ -65,7 +72,7 @@ export default function TeacherApplyPage() {
   }
 
   return (
-    <FormShell bg="#0000FF" dark closeHref="/">
+    <FormShell bg="#0000FF" dark closeHref={closeHref}>
       <div>
         <div className="font-mono text-[10px] font-extrabold tracking-[0.13em]">TEACH A STRETCHY</div>
         <h1 className="font-display text-[32px] leading-none mt-2">Teacher</h1>
@@ -108,5 +115,13 @@ export default function TeacherApplyPage() {
         <FormSubmitButton dark loading={loading}>Apply to teach</FormSubmitButton>
       </form>
     </FormShell>
+  );
+}
+
+export default function TeacherApplyPage() {
+  return (
+    <Suspense>
+      <TeacherApplyForm />
+    </Suspense>
   );
 }

@@ -57,7 +57,11 @@ function PendingContent() {
             <PeopleSection
               title={tab === "gems" ? "GEMS" : "TEACHERS"}
               people={pending}
-              applyHref={tab === "gems" ? "/gem/apply" : "/host/apply"}
+              applyHref={
+                tab === "gems"
+                  ? `/gem/apply?from=${encodeURIComponent("/admin/people?tab=gems")}`
+                  : `/host/apply?from=${encodeURIComponent("/admin/people?tab=teachers")}`
+              }
               applyLabel={tab === "gems" ? "Add a GEM" : "Add a teacher"}
               onDecide={decide}
               busyId={busyId}

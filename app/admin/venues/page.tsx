@@ -34,7 +34,12 @@ export default function AdminVenuesPage() {
           {loading || !data ? (
             <p style={{ fontFamily: T.mono, fontSize: 12, color: "rgba(20,17,15,.4)" }}>LOADING…</p>
           ) : (
-            <PeopleSection title="VENUES & SOCIAL SPOTS" people={data.venues} applyHref="/venue/offer" applyLabel="Add a venue" />
+            <PeopleSection
+              title="VENUES & SOCIAL SPOTS"
+              people={data.venues}
+              applyHref={`/venue/offer?from=${encodeURIComponent("/admin/venues")}`}
+              applyLabel="Add a venue"
+            />
           )}
         </div>
       </main>

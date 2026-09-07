@@ -44,7 +44,11 @@ function ProfilesContent() {
             <PeopleSection
               title={tab === "gems" ? "GEMS" : "TEACHERS"}
               people={approved}
-              applyHref={tab === "gems" ? "/gem/apply" : "/host/apply"}
+              applyHref={
+                tab === "gems"
+                  ? `/gem/apply?from=${encodeURIComponent("/admin/profiles?tab=gems")}`
+                  : `/host/apply?from=${encodeURIComponent("/admin/profiles?tab=teachers")}`
+              }
               applyLabel={tab === "gems" ? "Add a GEM" : "Add a teacher"}
             />
           )}
