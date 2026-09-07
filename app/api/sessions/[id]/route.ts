@@ -50,9 +50,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   let myHoldQuantity = 0;
   const token = request.headers.get("Authorization")?.replace("Bearer ", "");
   if (token) {
-    const { data: { user } } = await admin.auth.getUser(token);
+    const { data: { user }, error: userErr } = await admin.auth.getUser(token);
     if (user) {
-      const { data: myHold } = await admin
+      const { data: myHold, error: holdErr } = await admin
         .from("holds")
         .select("quantity")
         .eq("session_id", id)
@@ -60,6 +60,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .eq("state", "active")
         .maybeSingle();
       myHoldQuantity = myHold?.quantity ?? 0;
+      console.log("DEBUG my_hold_quantity", { sessionId: id, resolvedUserId: user.id, myHold, holdErr: holdErr?.message });
+    } else {
+      console.log("DEBUG my_hold_quantity: no user resolved", { sessionId: id, userErr: userErr?.message, tokenPrefix: token.slice(0, 12) });
     }
   }
 
