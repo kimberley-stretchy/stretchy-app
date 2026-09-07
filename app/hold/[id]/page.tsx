@@ -72,7 +72,22 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
     // Holds count and price change as others join — keep this live while
     // someone's actually looking at their held spot.
     const interval = setInterval(() => loadSession(false), 15000);
-    return () => { cancelled = true; clearInterval(interval); };
+
+    // Returning to this tab/page (including restoration from the browser's
+    // back-forward cache, common on mobile Safari, which otherwise doesn't
+    // re-run effects at all) shouldn't wait out the rest of the 15s window.
+    function refreshOnReturn() {
+      if (document.visibilityState === "visible") loadSession(false);
+    }
+    document.addEventListener("visibilitychange", refreshOnReturn);
+    window.addEventListener("pageshow", refreshOnReturn);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+      window.removeEventListener("pageshow", refreshOnReturn);
+    };
   }, [params.id]);
 
   const [cancelQty, setCancelQty] = useState(1);
@@ -210,7 +225,9 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
             </p>
             <div className="flex items-center gap-1.5 flex-shrink-0 ml-3">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#716F39" }} />
-              <span className="font-mono text-xs font-bold tracking-wide" style={{ color: "#0000FF" }}>HOLDING</span>
+              <span className="font-mono text-xs font-bold tracking-wide" style={{ color: "#0000FF" }}>
+                HOLDING {myQty} SPOT{myQty === 1 ? "" : "S"}
+              </span>
             </div>
           </div>
         </div>

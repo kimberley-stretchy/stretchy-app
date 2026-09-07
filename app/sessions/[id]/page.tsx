@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
@@ -72,6 +72,13 @@ export default function SessionDetailPage() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // A ref, not a dependency — Supabase fires onAuthStateChange periodically
+  // (token refresh, tab focus) even when the user hasn't actually changed;
+  // depending on accessToken directly tore down and rebuilt the poll timer
+  // on every one of those, and re-triggered the full loading spinner.
+  const accessTokenRef = useRef<string | null>(null);
+  accessTokenRef.current = accessToken;
+
   useEffect(() => {
     if (!params.id) return;
 
@@ -80,7 +87,7 @@ export default function SessionDetailPage() {
       if (showLoading) setLoading(true);
       fetch(`/api/sessions/${params.id}`, {
         cache: "no-store",
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        headers: accessTokenRef.current ? { Authorization: `Bearer ${accessTokenRef.current}` } : {},
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((data: Session | null) => {
@@ -95,8 +102,25 @@ export default function SessionDetailPage() {
     // Price and spots-to-go depend on live hold counts — keep this in sync
     // while someone's actually looking at the page, not just on next visit.
     const interval = setInterval(() => loadSession(false), 15000);
-    return () => { cancelled = true; clearInterval(interval); };
-  }, [params.id, accessToken]);
+
+    // Coming back to this tab/page shouldn't wait out the rest of the 15s
+    // window — and a page restored from the browser's back-forward cache
+    // (common on mobile Safari) doesn't re-run effects at all otherwise,
+    // so without this it can sit frozen on whatever it showed when the
+    // visitor navigated away.
+    function refreshOnReturn() {
+      if (document.visibilityState === "visible") loadSession(false);
+    }
+    document.addEventListener("visibilitychange", refreshOnReturn);
+    window.addEventListener("pageshow", refreshOnReturn);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+      window.removeEventListener("pageshow", refreshOnReturn);
+    };
+  }, [params.id]);
 
   function handleHold() {
     if (!accessToken) {
