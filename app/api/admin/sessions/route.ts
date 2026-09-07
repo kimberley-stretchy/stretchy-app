@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       location_name, location_address, getting_there,
       cost_base, revenue_target, currency, min_attendees, max_attendees, state, created_at,
       social_stretch_venue, social_stretch_note, what_to_bring, cost_lines, host_paid_at,
-      host_id, gem_host_id, is_repeat, repeat_frequency
+      host_id, gem_host_id, is_repeat, repeat_frequency, is_draft
     `)
     .order("starts_at", { ascending: true });
 

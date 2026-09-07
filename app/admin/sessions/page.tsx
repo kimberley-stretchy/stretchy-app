@@ -45,6 +45,7 @@ type Session = {
   max_attendees: number;
   current_holds: number;
   state: string;
+  is_draft: boolean;
 };
 
 export default function AdminSessionsPage() {
@@ -121,6 +122,23 @@ export default function AdminSessionsPage() {
       prev.map((s) => s.id === id ? { ...s, state: "cancelled" } : s)
     );
     setCancelling(null);
+  }
+
+  const [publishing, setPublishing] = useState<string | null>(null);
+
+  async function publishSession(id: string) {
+    setPublishing(id);
+    const res = await fetch("/api/admin/sessions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, is_draft: false }),
+    });
+    if (res.ok) {
+      setSessions((prev) => prev.map((s) => s.id === id ? { ...s, is_draft: false } : s));
+    } else {
+      alert("Could not publish this session.");
+    }
+    setPublishing(null);
   }
 
   const [requestingSub, setRequestingSub] = useState<string | null>(null);
@@ -263,6 +281,8 @@ export default function AdminSessionsPage() {
                   cancelling={cancelling === s.id}
                   onRequestSub={requestSub}
                   requestingSub={requestingSub === s.id}
+                  onPublish={publishSession}
+                  publishing={publishing === s.id}
                 />
               ))}
             </div>
@@ -284,6 +304,8 @@ export default function AdminSessionsPage() {
                   cancelling={cancelling === s.id}
                   onRequestSub={requestSub}
                   requestingSub={requestingSub === s.id}
+                  onPublish={publishSession}
+                  publishing={publishing === s.id}
                 />
               ))}
             </div>
@@ -303,12 +325,16 @@ function SessionCard({
   cancelling,
   onRequestSub,
   requestingSub,
+  onPublish,
+  publishing,
 }: {
   session: Session;
   onCancel: (id: string, title: string) => void;
   cancelling: boolean;
   onRequestSub: (id: string, title: string) => void;
   requestingSub: boolean;
+  onPublish: (id: string) => void;
+  publishing: boolean;
 }) {
   const typeColor = TYPE_COLORS[s.movement_type] || "#888";
   const stateInfo = STATE_COLORS[s.state] || STATE_COLORS.open;
@@ -365,7 +391,19 @@ function SessionCard({
           </p>
         </div>
 
-        {/* State badge */}
+        {/* Draft / state badge — is_draft is a separate flag from state, so a
+            draft session still shows state "open" underneath; flag it clearly
+            since a draft is invisible on the public site regardless of state. */}
+        {s.is_draft && (
+          <div style={{
+            padding: "5px 10px", borderRadius: 999,
+            background: "rgba(245,237,227,0.15)", color: "rgba(245,237,227,0.8)",
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+            flexShrink: 0,
+          }}>
+            DRAFT — NOT LIVE
+          </div>
+        )}
         <div style={{
           padding: "5px 10px", borderRadius: 999,
           background: stateInfo.bg, color: stateInfo.fg,
@@ -389,6 +427,19 @@ function SessionCard({
 
         {/* Actions */}
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          {s.is_draft && (
+            <button
+              onClick={() => onPublish(s.id)}
+              disabled={publishing}
+              style={{
+                padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
+                background: T.yellow, color: T.black,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+              }}
+            >
+              {publishing ? "PUBLISHING…" : "PUBLISH"}
+            </button>
+          )}
           <button
             onClick={toggleAttendees}
             style={{
