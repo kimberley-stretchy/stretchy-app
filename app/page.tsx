@@ -26,13 +26,13 @@ function getAdmin() {
 async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify: MarketingSession | null }> {
   const admin = getAdmin();
 
-  const { data: sessions } = await admin
+  const { data: sessions, error } = await admin
     .from("sessions")
     .select(`
       id, movement_type, starts_at, duration_mins, location_name,
       cost_base, revenue_target, min_attendees, max_attendees,
       social_stretch_venue, social_stretch_note, state,
-      hosts ( name )
+      hosts!host_id ( name )
     `)
     .in("state", ["open", "confirmed"])
     .eq("is_draft", false)
@@ -40,6 +40,7 @@ async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify
     .order("starts_at", { ascending: true })
     .limit(6);
 
+  if (error) console.error("getUpcomingSessions error:", error.message);
   if (!sessions || sessions.length === 0) return { open: [], notify: null };
 
   const sessionIds = sessions.map((s) => s.id);
