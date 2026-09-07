@@ -46,13 +46,14 @@ async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify
   const sessionIds = sessions.map((s) => s.id);
   const { data: holds } = await admin
     .from("holds")
-    .select("session_id")
+    .select("session_id, quantity")
     .in("session_id", sessionIds)
     .eq("state", "active");
 
+  // Sum quantity, not row count — one hold row can represent more than one spot.
   const holdCounts: Record<string, number> = {};
   (holds ?? []).forEach((h) => {
-    holdCounts[h.session_id] = (holdCounts[h.session_id] ?? 0) + 1;
+    holdCounts[h.session_id] = (holdCounts[h.session_id] ?? 0) + (h.quantity ?? 1);
   });
 
   const mapped: MarketingSession[] = sessions.map((s) => ({

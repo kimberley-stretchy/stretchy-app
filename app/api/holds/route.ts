@@ -56,14 +56,16 @@ export async function POST(request: NextRequest) {
   if (sErr || !session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
   if (session.state === "cancelled") return NextResponse.json({ error: "Session is cancelled" }, { status: 400 });
 
-  // Count current holds to calculate price
-  const { count: holdCount } = await admin
+  // Count current holds to calculate price — sum quantity, not row count,
+  // since one hold row can now represent more than one spot.
+  const { data: activeHolds } = await admin
     .from("holds")
-    .select("id", { count: "exact", head: true })
+    .select("quantity")
     .eq("session_id", sessionId)
     .eq("state", "active");
 
-  const currentHolds = (holdCount ?? 0) + quantity; // +quantity spots will be added
+  const holdCount = (activeHolds ?? []).reduce((sum, h) => sum + (h.quantity ?? 1), 0);
+  const currentHolds = holdCount + quantity; // +quantity spots will be added
   const effectiveSpots = Math.max(currentHolds, session.min_attendees);
   const priceWithGST = calculatePrice(session.cost_base, session.revenue_target, effectiveSpots);
   const amountCents = Math.round(priceWithGST * 100) * quantity; // total for all spots
@@ -327,17 +329,18 @@ export async function PATCH(request: NextRequest) {
 
   if (existing) return NextResponse.json({ holdId: existing.id });
 
-  // Create one hold record per spot
-  const holdRows = Array.from({ length: quantity }, () => ({
-    session_id: sessionId,
-    user_id: holdUserId,
-    stripe_pi_id: paymentIntentId,
-    state: "active",
-  }));
-
+  // One row per hold action, with quantity recording spot count — the table
+  // has a unique constraint on (session_id, user_id, state), so inserting a
+  // separate row per spot (the old approach) always violated it for quantity > 1.
   const { data: holds, error } = await admin
     .from("holds")
-    .insert(holdRows)
+    .insert({
+      session_id: sessionId,
+      user_id: holdUserId,
+      stripe_pi_id: paymentIntentId,
+      state: "active",
+      quantity,
+    })
     .select("id");
 
   if (error) {

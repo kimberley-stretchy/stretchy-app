@@ -38,6 +38,7 @@ type Session = {
   social_stretch_venue: string | null;
   social_stretch_note: string | null;
   what_to_bring: string[] | null;
+  my_hold_quantity?: number;
 };
 
 // Price ladder — a short list of evenly-stepped rows, not a continuous curve,
@@ -77,7 +78,10 @@ export default function SessionDetailPage() {
     let cancelled = false;
     function loadSession(showLoading: boolean) {
       if (showLoading) setLoading(true);
-      fetch(`/api/sessions/${params.id}`, { cache: "no-store" })
+      fetch(`/api/sessions/${params.id}`, {
+        cache: "no-store",
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      })
         .then((r) => (r.ok ? r.json() : null))
         .then((data: Session | null) => {
           if (cancelled) return;
@@ -92,7 +96,7 @@ export default function SessionDetailPage() {
     // while someone's actually looking at the page, not just on next visit.
     const interval = setInterval(() => loadSession(false), 15000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, [params.id]);
+  }, [params.id, accessToken]);
 
   function handleHold() {
     if (!accessToken) {
@@ -281,6 +285,14 @@ export default function SessionDetailPage() {
             style={{ background: "#14110F", color: "#F7F0E8", fontSize: 16 }}
           >
             Log in to hold your place
+          </Link>
+        ) : s.my_hold_quantity && s.my_hold_quantity > 0 ? (
+          <Link
+            href={`/hold/${params.id}`}
+            className="w-full text-center rounded-pill py-4 font-semibold"
+            style={{ background: "#716F39", color: "#F7F0E8", fontSize: 16 }}
+          >
+            ✓ You&rsquo;re in — view your hold
           </Link>
         ) : (
           <button

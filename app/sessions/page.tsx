@@ -50,17 +50,18 @@ async function getSessions(): Promise<DBSession[]> {
 
   if (!sessions) return [];
 
-  // Count active holds per session
+  // Count active holds per session — sum quantity, not row count, since one
+  // hold row can now represent more than one spot.
   const sessionIds = sessions.map(s => s.id);
   const { data: holds } = await supabase
     .from("holds")
-    .select("session_id")
+    .select("session_id, quantity")
     .in("session_id", sessionIds)
     .eq("state", "active");
 
   const holdCounts: Record<string, number> = {};
   (holds ?? []).forEach(h => {
-    holdCounts[h.session_id] = (holdCounts[h.session_id] ?? 0) + 1;
+    holdCounts[h.session_id] = (holdCounts[h.session_id] ?? 0) + (h.quantity ?? 1);
   });
 
   return sessions.map(s => ({

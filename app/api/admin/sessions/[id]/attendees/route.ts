@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const { data: holds, error } = await supabase
     .from("holds")
-    .select("id, user_id, state, created_at")
+    .select("id, user_id, state, created_at, quantity")
     .eq("session_id", id)
     .eq("state", "active")
     .order("created_at", { ascending: true });
@@ -37,19 +37,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const byUser = new Map((attendees ?? []).map((a) => [a.auth_user_id, a]));
 
-  // One hold row per spot, so group by attendee to show quantity.
+  // One hold row per attendee, with quantity recording spot count — grouped
+  // defensively in case any legacy multi-row holds still exist.
   const grouped = new Map<string, { name: string; email: string; spots: number; heldAt: string }>();
   for (const h of holds) {
     const a = byUser.get(h.user_id);
     const key = h.user_id;
     const existing = grouped.get(key);
     if (existing) {
-      existing.spots += 1;
+      existing.spots += h.quantity ?? 1;
     } else {
       grouped.set(key, {
         name: a?.name ?? "Unknown",
         email: a?.email ?? "—",
-        spots: 1,
+        spots: h.quantity ?? 1,
         heldAt: h.created_at,
       });
     }

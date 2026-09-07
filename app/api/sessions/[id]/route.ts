@@ -35,11 +35,33 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   if (error || !session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
-  const { count: holdCount } = await admin
+  // Sum quantity, not row count — one hold row can represent more than one spot.
+  const { data: activeHolds } = await admin
     .from("holds")
-    .select("id", { count: "exact", head: true })
+    .select("quantity")
     .eq("session_id", id)
     .eq("state", "active");
 
-  return NextResponse.json({ ...session, current_holds: holdCount ?? 0 });
+  const currentHolds = (activeHolds ?? []).reduce((sum, h) => sum + (h.quantity ?? 1), 0);
+
+  // If the caller is logged in, tell the client whether they already hold a
+  // spot here — the hold page otherwise always shows "Hold my place" even
+  // for someone who's already in.
+  let myHoldQuantity = 0;
+  const token = request.headers.get("Authorization")?.replace("Bearer ", "");
+  if (token) {
+    const { data: { user } } = await admin.auth.getUser(token);
+    if (user) {
+      const { data: myHold } = await admin
+        .from("holds")
+        .select("quantity")
+        .eq("session_id", id)
+        .eq("user_id", user.id)
+        .eq("state", "active")
+        .maybeSingle();
+      myHoldQuantity = myHold?.quantity ?? 0;
+    }
+  }
+
+  return NextResponse.json({ ...session, current_holds: currentHolds, my_hold_quantity: myHoldQuantity });
 }

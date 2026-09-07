@@ -70,18 +70,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Count active holds for each session
+  // Count active holds for each session — sum quantity, not row count, since
+  // one hold row can now represent more than one spot.
   const sessionIds = (data || []).map((s) => s.id);
   const holdCounts: Record<string, number> = {};
   if (sessionIds.length > 0) {
     const { data: holds } = await supabase
       .from("holds")
-      .select("session_id")
+      .select("session_id, quantity")
       .in("session_id", sessionIds)
       .eq("state", "active");
 
     (holds || []).forEach((h) => {
-      holdCounts[h.session_id] = (holdCounts[h.session_id] || 0) + 1;
+      holdCounts[h.session_id] = (holdCounts[h.session_id] || 0) + (h.quantity ?? 1);
     });
   }
 
