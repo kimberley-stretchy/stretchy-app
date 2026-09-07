@@ -379,36 +379,106 @@ export async function PATCH(request: NextRequest) {
 
   const holdUserId = user.id;
 
-  // Check if hold already exists (prevent duplicates)
+  // Check if a hold already exists for this person+session. The table has a
+  // unique constraint on (session_id, user_id, state), so there can only ever
+  // be one active row — but that means a *second* genuine hold action (e.g.
+  // booking 6 more spots after already holding 1) lands here too, not just
+  // an accidental duplicate submit of the same confirmation. Those two cases
+  // must be handled differently: a true retry of the same PaymentIntent
+  // should just return the existing row untouched, but a different, newly
+  // confirmed PaymentIntent represents real additional money already
+  // authorized — silently discarding it here would both under-count the
+  // booking and leave that authorization untracked and never captured.
   const { data: existing } = await admin
     .from("holds")
-    .select("id")
+    .select("id, quantity, stripe_pi_id")
     .eq("session_id", sessionId)
     .eq("user_id", holdUserId)
     .eq("state", "active")
-    .single();
+    .maybeSingle();
 
-  if (existing) return NextResponse.json({ holdId: existing.id });
+  let hold: { id: string } | undefined;
+  const addedQuantity = quantity;
+  let combinedQuantity = quantity;
+  let finalPi = pi;
 
-  // One row per hold action, with quantity recording spot count — the table
-  // has a unique constraint on (session_id, user_id, state), so inserting a
-  // separate row per spot (the old approach) always violated it for quantity > 1.
-  const { data: holds, error } = await admin
-    .from("holds")
-    .insert({
-      session_id: sessionId,
-      user_id: holdUserId,
-      stripe_pi_id: paymentIntentId,
-      state: "active",
-      quantity,
-    })
-    .select("id");
+  if (existing && existing.stripe_pi_id === paymentIntentId) {
+    // True duplicate/retry of the exact same confirmation — nothing new to record.
+    return NextResponse.json({ holdId: existing.id });
+  } else if (existing) {
+    // Adding more spots to an existing hold. Consolidate into a single fresh
+    // PaymentIntent for the new combined total at the current price, rather
+    // than trying to track two separate PaymentIntents against one row —
+    // same pattern as the partial-cancel re-authorization below.
+    combinedQuantity = existing.quantity + quantity;
+    try {
+      const { data: session } = await admin
+        .from("sessions")
+        .select("cost_base, revenue_target, min_attendees, title")
+        .eq("id", sessionId)
+        .single();
+      const { data: attendee } = await admin
+        .from("attendees")
+        .select("id, stripe_customer_id")
+        .eq("auth_user_id", holdUserId)
+        .single();
 
-  if (error) {
-    console.error("Hold insert error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+      if (!session || !attendee?.stripe_customer_id) throw new Error("Missing session or customer for consolidation");
+
+      const { data: allActive } = await admin
+        .from("holds")
+        .select("quantity")
+        .eq("session_id", sessionId)
+        .eq("state", "active");
+      const totalAfter = (allActive ?? []).reduce((sum, h) => sum + (h.quantity ?? 1), 0) - existing.quantity + combinedQuantity;
+      const effectiveSpots = Math.max(totalAfter, session.min_attendees);
+      const pricePerSpot = calculatePrice(session.cost_base, session.revenue_target, effectiveSpots);
+      const newAmountCents = Math.round(pricePerSpot * 100) * combinedQuantity;
+
+      await stripe.paymentIntents.cancel(existing.stripe_pi_id).catch((e) => console.error("Cancel prior PI error:", e));
+      await stripe.paymentIntents.cancel(paymentIntentId).catch((e) => console.error("Cancel new PI error:", e));
+
+      const consolidatedPi = await stripe.paymentIntents.create({
+        amount: newAmountCents,
+        currency: "nzd",
+        customer: attendee.stripe_customer_id,
+        payment_method: pi.payment_method as string,
+        off_session: true,
+        confirm: true,
+        capture_method: "manual",
+        metadata: { session_id: sessionId, attendee_id: attendee.id, session_title: session.title, quantity: String(combinedQuantity) },
+        description: `Hold x${combinedQuantity}: ${session.title}`,
+      });
+
+      await admin.from("holds").update({ quantity: combinedQuantity, stripe_pi_id: consolidatedPi.id }).eq("id", existing.id);
+      hold = { id: existing.id };
+      finalPi = consolidatedPi;
+    } catch (err) {
+      console.error("Hold consolidation error:", err);
+      const message = err instanceof Error ? err.message : "Could not add those spots — please contact kimberley@stretchyyoga.co.nz.";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  } else {
+    // One row per hold action, with quantity recording spot count — the table
+    // has a unique constraint on (session_id, user_id, state), so inserting a
+    // separate row per spot (the old approach) always violated it for quantity > 1.
+    const { data: holds, error } = await admin
+      .from("holds")
+      .insert({
+        session_id: sessionId,
+        user_id: holdUserId,
+        stripe_pi_id: paymentIntentId,
+        state: "active",
+        quantity,
+      })
+      .select("id");
+
+    if (error) {
+      console.error("Hold insert error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    hold = holds?.[0];
   }
-  const hold = holds?.[0];
 
   // Send hold confirmation email (fire and forget — don't block the response)
   try {
@@ -422,13 +492,14 @@ export async function PATCH(request: NextRequest) {
       const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
         " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
 
-      // pi.amount is the TOTAL for every spot in this hold, not the per-person
+      // finalPi.amount is the TOTAL for every spot in this hold, not the per-person
       // price — always show per-spot, and call out the total separately when
       // there's more than one, so this never reads as a single-person price.
-      const perSpot = pi.amount / 100 / quantity;
-      const total = pi.amount / 100;
+      const perSpot = finalPi.amount / 100 / combinedQuantity;
+      const total = finalPi.amount / 100;
       const priceDisplay = `$${perSpot.toFixed(2)} incl. GST`;
-      const totalLine = quantity > 1 ? `Total for ${quantity} spots: $${total.toFixed(2)} incl. GST` : null;
+      const totalLine = combinedQuantity > 1 ? `Total for ${combinedQuantity} spots: $${total.toFixed(2)} incl. GST` : null;
+      const isAddition = !!existing;
 
       const resend = new Resend(process.env.RESEND_API_KEY);
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchyyoga.co.nz";
@@ -437,7 +508,7 @@ export async function PATCH(request: NextRequest) {
         from: "Stretchy <hello@stretchy.social>",
         to: attendeeData.email,
         reply_to: "kimberley@stretchyyoga.co.nz",
-        subject: `Booking confirmation — ${sessionData.title}`,
+        subject: isAddition ? `Booking updated — ${sessionData.title}` : `Booking confirmation — ${sessionData.title}`,
         headers: {
           "X-Priority": "1",
           "X-MSMail-Priority": "High",
@@ -445,14 +516,14 @@ export async function PATCH(request: NextRequest) {
           "Precedence": "bulk",
           "X-Mailer": "Stretchy",
         },
-        text: `Hi ${firstName},\n\nYour spot is confirmed for ${sessionData.title}${quantity > 1 ? ` (${quantity} spots)` : ""}.\n\nDate: ${dateStr}\nVenue: ${sessionData.location_name}\nCurrent price per spot: ${priceDisplay}${totalLine ? `\n${totalLine}` : ""}\n\nYou can cancel up to 36 hours before the session — no charge. After that, you're locked in and your card will be charged 2 hours before the session at the final price.\n\nView or cancel your hold: ${appUrl}/hold/${sessionId}\n\nQuestions? kimberley@stretchyyoga.co.nz\n\nStretchy\nstretchyyoga.co.nz`,
+        text: `Hi ${firstName},\n\n${isAddition ? `You added ${addedQuantity} more spot${addedQuantity === 1 ? "" : "s"} to` : "Your spot is confirmed for"} ${sessionData.title} — you're now holding ${combinedQuantity} spot${combinedQuantity === 1 ? "" : "s"} in total.\n\nDate: ${dateStr}\nVenue: ${sessionData.location_name}\nCurrent price per spot: ${priceDisplay}${totalLine ? `\n${totalLine}` : ""}\n\nYou can cancel up to 36 hours before the session — no charge. After that, you're locked in and your card will be charged 2 hours before the session at the final price.\n\nView or cancel your hold: ${appUrl}/hold/${sessionId}\n\nQuestions? kimberley@stretchyyoga.co.nz\n\nStretchy\nstretchyyoga.co.nz`,
         html: `
           <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; background: #F7F0E8; padding: 32px; border-radius: 16px;">
-            <h1 style="font-size: 28px; font-weight: 900; color: #14110F; margin: 0 0 8px;">Booking confirmed. 🙌</h1>
-            <p style="color: #555; font-size: 15px; margin: 0 0 24px;">Hi ${firstName} — your spot is held for ${sessionData.title}.</p>
+            <h1 style="font-size: 28px; font-weight: 900; color: #14110F; margin: 0 0 8px;">${isAddition ? "Booking updated." : "Booking confirmed."} 🙌</h1>
+            <p style="color: #555; font-size: 15px; margin: 0 0 24px;">Hi ${firstName} — ${isAddition ? `you added ${addedQuantity} more spot${addedQuantity === 1 ? "" : "s"} to` : "your spot is held for"} ${sessionData.title}.</p>
             <div style="background: #14110F; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
               <p style="color: #FCBB16; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Your booking</p>
-              <p style="color: #F7F0E8; font-size: 20px; font-weight: 800; margin: 0 0 8px;">${sessionData.title}${quantity > 1 ? ` · ${quantity} spots` : ""}</p>
+              <p style="color: #F7F0E8; font-size: 20px; font-weight: 800; margin: 0 0 8px;">${sessionData.title}${combinedQuantity > 1 ? ` · ${combinedQuantity} spots` : ""}</p>
               <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">${dateStr}</p>
               <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">${sessionData.location_name}</p>
               ${sessionData.social_stretch_venue ? `<p style="color: rgba(245,237,227,0.6); font-size: 13px; margin: 8px 0 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">Social Stretch after at ${sessionData.social_stretch_venue}</p>` : ""}
