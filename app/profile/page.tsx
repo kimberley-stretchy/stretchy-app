@@ -12,7 +12,7 @@ const SETTINGS = [
   { label: "Payment method", icon: "💳", href: "/profile/payment" },
   { label: "Invite a mate", icon: "👥", href: "/profile/invite" },
   { label: "Suggest a session", icon: "💡", href: "/suggest" },
-  { label: "Become a host", icon: "🎙️", href: "/host/apply" },
+  { label: "Become a host", icon: "🎙️", href: "/host/apply?from=%2Fprofile" },
   { label: "Help & contact", icon: "💬", href: "/profile/help" },
 ];
 

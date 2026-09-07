@@ -80,7 +80,7 @@ export default function ContactPage() {
         <div className="bg-white rounded-card border-2 border-ink p-5 text-center">
           <p className="text-sm text-muted leading-relaxed">
             Want to host a session?{" "}
-            <Link href="/host/apply" className="font-bold text-ink hover:underline">
+            <Link href="/host/apply?from=%2Fcontact" className="font-bold text-ink hover:underline">
               Apply here →
             </Link>
           </p>
