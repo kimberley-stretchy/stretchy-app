@@ -30,6 +30,21 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelState, setCancelState] = useState<"idle" | "confirm" | "cancelled">("idle");
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
+
+  function flashShareMsg(msg: string) {
+    setShareMsg(msg);
+    setTimeout(() => setShareMsg(null), 2500);
+  }
+
+  async function copyShareLink(url: string, msg = "Link copied!") {
+    try {
+      await navigator.clipboard.writeText(url);
+      flashShareMsg(msg);
+    } catch {
+      flashShareMsg("Couldn't copy — long-press the link to copy it.");
+    }
+  }
 
   useEffect(() => {
     fetch(`/api/sessions/${params.id}`)
@@ -107,10 +122,7 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
-        <div className="flex items-center gap-3">
-          <Link href="/home" className="text-ink"><SMark size={28} /></Link>
-          <Link href={`/sessions/${params.id}`} className="text-muted hover:text-ink text-lg transition-colors" aria-label="Back">←</Link>
-        </div>
+        <Link href="/home" className="text-ink"><SMark size={28} /></Link>
         <Link href="/notifications" className="flex items-center px-3 py-1.5 rounded-pill relative" style={{ backgroundColor: "#F7F0E8", border: "1px solid #D4CFC9" }} aria-label="Notifications">
           <span className="text-base">🔔</span>
         </Link>
@@ -156,13 +168,63 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
               <p className="text-sm text-muted">Share — each mate drops the price.</p>
             </div>
           </div>
-          <button
-            className="w-full flex items-center justify-center gap-2 font-semibold text-cream rounded-pill transition-all active:scale-[0.98] hover:brightness-110"
-            style={{ backgroundColor: "#14110F", height: "50px", fontSize: "15px" }}
-            onClick={() => navigator.share?.({ title: `Join me at ${session.title}`, url: `${window.location.origin}/sessions/${session.id}` })}
-          >
-            ▶ Bring a mate · live price ${currentPrice.toFixed(2)}
-          </button>
+          {(() => {
+            const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/sessions/${session.id}`;
+            const shareText = `Join me at ${session.title} — the more of us who go, the cheaper it gets.`;
+            const isIOS = typeof navigator !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent);
+            const smsHref = `sms:${isIOS ? "&" : "?"}body=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
+            const mailHref = `mailto:?subject=${encodeURIComponent(`Join me at ${session.title}`)}&body=${encodeURIComponent(`${shareText}\n\n${shareUrl}`)}`;
+            const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+
+            return (
+              <>
+                <button
+                  className="w-full flex items-center justify-center gap-2 font-semibold text-cream rounded-pill transition-all active:scale-[0.98] hover:brightness-110"
+                  style={{ backgroundColor: "#14110F", height: "50px", fontSize: "15px" }}
+                  onClick={() => copyShareLink(shareUrl, "Link copied — send it to a mate!")}
+                >
+                  🔗 Copy invite link · live price ${currentPrice.toFixed(2)}
+                </button>
+
+                <div className="flex justify-between gap-2 mt-3">
+                  {[
+                    { label: "Text", icon: "💬", href: smsHref },
+                    { label: "Email", icon: "✉️", href: mailHref },
+                    { label: "Facebook", icon: "f", href: fbHref },
+                  ].map((c) => (
+                    <a
+                      key={c.label}
+                      href={c.href}
+                      target={c.href.startsWith("http") ? "_blank" : undefined}
+                      rel={c.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                      className="flex-1 flex flex-col items-center gap-1 py-2 rounded-card hover:bg-sand-dark transition-colors"
+                    >
+                      <span className="w-10 h-10 rounded-full border-2 border-ink flex items-center justify-center text-base font-bold bg-white">{c.icon}</span>
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-muted">{c.label}</span>
+                    </a>
+                  ))}
+                  {[
+                    { label: "Instagram", icon: "📸" },
+                    { label: "TikTok", icon: "🎵" },
+                  ].map((c) => (
+                    <button
+                      key={c.label}
+                      type="button"
+                      onClick={() => copyShareLink(shareUrl, `Link copied — paste it into your ${c.label} story!`)}
+                      className="flex-1 flex flex-col items-center gap-1 py-2 rounded-card hover:bg-sand-dark transition-colors"
+                    >
+                      <span className="w-10 h-10 rounded-full border-2 border-ink flex items-center justify-center text-base font-bold bg-white">{c.icon}</span>
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-muted">{c.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {shareMsg && (
+                  <p className="text-center text-sm font-semibold text-ink mt-2">{shareMsg}</p>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Social stretch */}
