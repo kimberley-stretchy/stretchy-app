@@ -60,7 +60,9 @@ function CardForm({
     });
 
     if (stripeError) {
-      setError(stripeError.message ?? "Card error — please try again.");
+      console.error("Stripe confirmPayment error:", stripeError);
+      const detail = [stripeError.type, stripeError.code].filter(Boolean).join("/");
+      setError(`${stripeError.message ?? "Card error — please try again."}${detail ? ` (${detail})` : ""}`);
       setLoading(false);
       return;
     }
@@ -265,6 +267,7 @@ export default function HoldModal({
 
         {step === "card" && clientSecret && (
           <Elements
+            key={clientSecret}
             stripe={stripePromise}
             options={{
               clientSecret,
