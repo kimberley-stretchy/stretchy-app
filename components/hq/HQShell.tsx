@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 import { createClient } from "@/lib/supabase/client";
@@ -15,20 +15,68 @@ const T = {
   body: "'Space Grotesk', system-ui, sans-serif",
 };
 
-const NAV = [
-  { href: "/admin/sessions", label: "Today" },
-  { href: "/admin/sessions", label: "This week" },
+const NAV_FLAT = [
+  { href: "/admin/sessions", label: "Today", skipHighlight: true },
+  { href: "/admin/sessions", label: "This week", skipHighlight: true },
   { href: "/admin/sessions", label: "Sessions" },
   { href: "/admin/money", label: "Money" },
-  { href: "/admin/people?tab=teachers", label: "Teachers" },
-  { href: "/admin/people?tab=gems", label: "GEMs" },
-  { href: "/admin/people?tab=venues", label: "Venues" },
-  { href: "/admin/suggestions", label: "Community" },
+  { href: "/admin/venues", label: "Venues" },
 ];
 
-export default function HQShell({ children }: { children: React.ReactNode }) {
+const NAV_GROUPS = [
+  {
+    heading: "PROFILES",
+    items: [
+      { href: "/admin/profiles?tab=teachers", label: "Teachers" },
+      { href: "/admin/profiles?tab=gems", label: "GEMs" },
+    ],
+  },
+  {
+    heading: "PENDING & APPLIED",
+    items: [
+      { href: "/admin/people?tab=teachers", label: "Teachers" },
+      { href: "/admin/people?tab=gems", label: "GEMs" },
+    ],
+  },
+];
+
+const NAV_TAIL = [{ href: "/admin/suggestions", label: "Community" }];
+
+// A link is active on pathname match; if it also carries a ?tab= param
+// (Profiles/Pending share the "Teachers"/"GEMs" labels but point at
+// different pages+tabs), the current tab has to match too.
+function isNavActive(href: string, pathname: string, currentTab: string | null) {
+  const [hrefPath, hrefQuery] = href.split("?");
+  if (pathname !== hrefPath) return false;
+  if (!hrefQuery) return true;
+  const hrefTab = new URLSearchParams(hrefQuery).get("tab");
+  return hrefTab === currentTab;
+}
+
+function NavLink({ href, label, isActive }: { href: string; label: string; isActive: boolean }) {
+  return (
+    <Link
+      href={href}
+      style={{
+        padding: "9px 12px",
+        borderRadius: 10,
+        fontSize: 13,
+        fontWeight: isActive ? 700 : 500,
+        color: isActive ? T.black : "rgba(245,237,227,0.65)",
+        background: isActive ? T.yellow : "transparent",
+        textDecoration: "none",
+      }}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function HQShellInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab");
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
@@ -82,26 +130,41 @@ export default function HQShell({ children }: { children: React.ReactNode }) {
         </Link>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {NAV.map((item, i) => {
-            const isActive = pathname === item.href.split("?")[0] && (i >= 2);
-            return (
-              <Link
-                key={item.label}
+          {NAV_FLAT.map((item) => (
+            <NavLink
+              key={item.label + item.href}
+              href={item.href}
+              label={item.label}
+              isActive={!item.skipHighlight && isNavActive(item.href, pathname, currentTab)}
+            />
+          ))}
+
+          {NAV_GROUPS.map((group) => (
+            <div key={group.heading} style={{ marginTop: 14 }}>
+              <div style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(245,237,227,0.35)", padding: "0 12px", marginBottom: 4 }}>
+                {group.heading}
+              </div>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.label + item.href}
+                  href={item.href}
+                  label={item.label}
+                  isActive={isNavActive(item.href, pathname, currentTab)}
+                />
+              ))}
+            </div>
+          ))}
+
+          <div style={{ marginTop: 14 }}>
+            {NAV_TAIL.map((item) => (
+              <NavLink
+                key={item.label + item.href}
                 href={item.href}
-                style={{
-                  padding: "9px 12px",
-                  borderRadius: 10,
-                  fontSize: 13,
-                  fontWeight: isActive ? 700 : 500,
-                  color: isActive ? T.black : "rgba(245,237,227,0.65)",
-                  background: isActive ? T.yellow : "transparent",
-                  textDecoration: "none",
-                }}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+                label={item.label}
+                isActive={isNavActive(item.href, pathname, currentTab)}
+              />
+            ))}
+          </div>
         </nav>
 
         <div style={{ marginTop: "auto" }}>
@@ -113,5 +176,13 @@ export default function HQShell({ children }: { children: React.ReactNode }) {
 
       <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
     </div>
+  );
+}
+
+export default function HQShell({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<main style={{ background: T.black, minHeight: "100vh" }} />}>
+      <HQShellInner>{children}</HQShellInner>
+    </Suspense>
   );
 }

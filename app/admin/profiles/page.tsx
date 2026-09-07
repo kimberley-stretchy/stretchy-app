@@ -13,32 +13,19 @@ const T = {
 
 type Data = { teachers: Person[]; gems: Person[]; venues: Person[] };
 
-function PendingContent() {
+function ProfilesContent() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") === "gems" ? "gems" : "teachers";
 
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<string | null>(null);
 
-  function load() {
+  useEffect(() => {
     fetch("/api/admin/people").then((r) => r.json()).then((d) => { setData(d); setLoading(false); }).catch(() => setLoading(false));
-  }
-  useEffect(load, []);
-
-  async function decide(hostId: string, vettingStatus: "approved" | "declined") {
-    setBusyId(hostId);
-    await fetch("/api/admin/people", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hostId, vettingStatus }),
-    });
-    setBusyId(null);
-    load();
-  }
+  }, []);
 
   const people = data ? (tab === "gems" ? data.gems : data.teachers) : [];
-  const pending = people.filter((p) => p.status === "AWAITING REVIEW");
+  const approved = people.filter((p) => p.status === "FREE");
 
   return (
     <HQShell>
@@ -48,7 +35,7 @@ function PendingContent() {
             {tab === "gems" ? "GEMS" : "TEACHERS"}
           </p>
           <h1 style={{ fontFamily: "'BN Chubb', 'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 32, letterSpacing: "-0.02em", lineHeight: 1, textTransform: "uppercase", color: T.ink, marginBottom: 24 }}>
-            Pending &amp; applied
+            Who&rsquo;s available
           </h1>
 
           {loading || !data ? (
@@ -56,11 +43,9 @@ function PendingContent() {
           ) : (
             <PeopleSection
               title={tab === "gems" ? "GEMS" : "TEACHERS"}
-              people={pending}
+              people={approved}
               applyHref={tab === "gems" ? "/gem/apply" : "/host/apply"}
               applyLabel={tab === "gems" ? "Add a GEM" : "Add a teacher"}
-              onDecide={decide}
-              busyId={busyId}
             />
           )}
         </div>
@@ -69,10 +54,10 @@ function PendingContent() {
   );
 }
 
-export default function AdminPeoplePage() {
+export default function AdminProfilesPage() {
   return (
     <Suspense>
-      <PendingContent />
+      <ProfilesContent />
     </Suspense>
   );
 }
