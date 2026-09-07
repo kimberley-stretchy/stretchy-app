@@ -13,6 +13,14 @@ const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
 
 const INK = "#14110F";
 
+export type ActiveSession = {
+  id: string;
+  title: string;
+  startsAt: string;
+  locationName: string;
+  role: "teacher" | "gem";
+};
+
 export type Person = {
   id: string;
   name: string;
@@ -24,15 +32,21 @@ export type Person = {
   avatarUrl?: string | null;
   practiceTypes?: string[];
   neighbourhoods?: string[];
+  activeSessions?: ActiveSession[];
 };
 
 function initials(name: string) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
 }
 
-export default function PeopleSection({ title, people, applyHref, applyLabel, onDecide, busyId }: {
+export default function PeopleSection({
+  title, people, applyHref, applyLabel, onDecide, busyId, onCancelSession, onFindCover, sessionActionId,
+}: {
   title: string; people: Person[]; applyHref: string; applyLabel: string;
   onDecide?: (hostId: string, status: "approved" | "declined") => void; busyId?: string | null;
+  onCancelSession?: (sessionId: string) => void;
+  onFindCover?: (sessionId: string, role: "teacher" | "gem") => void;
+  sessionActionId?: string | null;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -56,7 +70,7 @@ export default function PeopleSection({ title, people, applyHref, applyLabel, on
             const isPending = p.status === "AWAITING REVIEW" && !!onDecide;
             const busy = busyId === p.id;
             const expanded = expandedId === p.id;
-            const hasDetail = !!(p.bio || p.email || (p.practiceTypes && p.practiceTypes.length) || (p.neighbourhoods && p.neighbourhoods.length));
+            const hasDetail = !!(p.bio || p.email || (p.practiceTypes && p.practiceTypes.length) || (p.neighbourhoods && p.neighbourhoods.length) || (p.activeSessions && p.activeSessions.length));
             return (
               <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 10, background: "#fff", border: `2px solid ${INK}`, borderRadius: 14, padding: "10px 14px" }}>
                 <div
@@ -102,6 +116,46 @@ export default function PeopleSection({ title, people, applyHref, applyLabel, on
                       <p style={{ fontSize: 12, color: "rgba(20,17,15,.55)", margin: 0 }}>
                         <strong style={{ color: INK }}>Areas:</strong> {p.neighbourhoods.join(", ")}
                       </p>
+                    )}
+                    {p.activeSessions && p.activeSessions.length > 0 && (
+                      <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: INK, margin: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                          Upcoming sessions
+                        </p>
+                        {p.activeSessions.map((s) => {
+                          const sessionBusy = sessionActionId === s.id;
+                          return (
+                            <div key={s.id} style={{ border: "1px solid rgba(20,17,15,.15)", borderRadius: 10, padding: "8px 10px" }}>
+                              <p style={{ fontSize: 12, fontWeight: 700, color: INK, margin: 0 }}>{s.title}</p>
+                              <p style={{ fontSize: 11, color: "rgba(20,17,15,.55)", margin: "1px 0 6px" }}>
+                                {new Date(s.startsAt).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" })} · {s.locationName} · {s.role === "teacher" ? "Teaching" : "GEM"}
+                              </p>
+                              {(onCancelSession || onFindCover) && (
+                                <div style={{ display: "flex", gap: 6 }}>
+                                  {onFindCover && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); onFindCover(s.id, s.role); }}
+                                      disabled={sessionBusy}
+                                      style={{ flex: 1, height: 28, borderRadius: 999, border: `1.5px solid ${INK}`, cursor: "pointer", background: "transparent", color: INK, fontSize: 11, fontWeight: 700, opacity: sessionBusy ? 0.6 : 1 }}
+                                    >
+                                      {sessionBusy ? "…" : "Find cover"}
+                                    </button>
+                                  )}
+                                  {onCancelSession && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); onCancelSession(s.id); }}
+                                      disabled={sessionBusy}
+                                      style={{ flex: 1, height: 28, borderRadius: 999, border: "none", cursor: "pointer", background: "#C6362E", color: "#F7F0E8", fontSize: 11, fontWeight: 700, opacity: sessionBusy ? 0.6 : 1 }}
+                                    >
+                                      {sessionBusy ? "…" : "Cancel"}
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 )}

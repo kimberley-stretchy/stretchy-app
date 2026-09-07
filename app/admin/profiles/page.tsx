@@ -19,10 +19,30 @@ function ProfilesContent() {
 
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionActionId, setSessionActionId] = useState<string | null>(null);
 
-  useEffect(() => {
+  function load() {
     fetch("/api/admin/people").then((r) => r.json()).then((d) => { setData(d); setLoading(false); }).catch(() => setLoading(false));
-  }, []);
+  }
+  useEffect(load, []);
+
+  async function cancelSession(sessionId: string) {
+    if (!confirm("Cancel this session? Attendees will be refunded automatically.")) return;
+    setSessionActionId(sessionId);
+    await fetch(`/api/admin/sessions?id=${sessionId}`, { method: "DELETE" }).catch(() => {});
+    setSessionActionId(null);
+    load();
+  }
+
+  async function findCover(sessionId: string, role: "teacher" | "gem") {
+    setSessionActionId(sessionId);
+    await fetch("/api/admin/substitute-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, role }),
+    }).catch(() => {});
+    setSessionActionId(null);
+  }
 
   const people = data ? (tab === "gems" ? data.gems : data.teachers) : [];
   const approved = people.filter((p) => p.status === "FREE");
@@ -50,6 +70,9 @@ function ProfilesContent() {
                   : `/host/apply?from=${encodeURIComponent("/admin/profiles?tab=teachers")}`
               }
               applyLabel={tab === "gems" ? "Add a GEM" : "Add a teacher"}
+              onCancelSession={cancelSession}
+              onFindCover={findCover}
+              sessionActionId={sessionActionId}
             />
           )}
         </div>

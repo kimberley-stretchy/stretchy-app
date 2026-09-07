@@ -17,13 +17,28 @@ export async function GET(request: NextRequest) {
 
   const admin = getAdmin();
 
-  const [{ data: hosts }, { data: venues }] = await Promise.all([
+  const [{ data: hosts }, { data: venues }, { data: upcomingSessions }] = await Promise.all([
     admin.from("hosts").select("id, name, email, roles, practice_types, neighbourhood, neighbourhoods, vetting_status, sessions_hosted, application_notes, bio, avatar_url"),
     admin.from("interest_submissions").select("id, name, email, fields, type, created_at").in("type", ["venue", "social_stretch"]),
+    admin
+      .from("sessions")
+      .select("id, title, starts_at, location_name, host_id, gem_host_id")
+      .neq("state", "cancelled")
+      .gt("starts_at", new Date().toISOString())
+      .order("starts_at", { ascending: true }),
   ]);
 
   const areasOf = (h: { neighbourhood: string; neighbourhoods?: string[] | null }) =>
     h.neighbourhoods && h.neighbourhoods.length > 0 ? h.neighbourhoods.join(", ") : h.neighbourhood;
+
+  const activeSessionsFor = (hostId: string) => [
+    ...(upcomingSessions ?? [])
+      .filter((s) => s.host_id === hostId)
+      .map((s) => ({ id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name, role: "teacher" as const })),
+    ...(upcomingSessions ?? [])
+      .filter((s) => s.gem_host_id === hostId)
+      .map((s) => ({ id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name, role: "gem" as const })),
+  ];
 
   const teachers = (hosts ?? [])
     .filter((h) => (h.roles ?? []).includes("teacher"))
@@ -38,6 +53,7 @@ export async function GET(request: NextRequest) {
       avatarUrl: h.avatar_url,
       practiceTypes: h.practice_types ?? [],
       neighbourhoods: h.neighbourhoods && h.neighbourhoods.length > 0 ? h.neighbourhoods : [h.neighbourhood].filter(Boolean),
+      activeSessions: activeSessionsFor(h.id),
     }));
 
   const gems = (hosts ?? [])
@@ -53,6 +69,7 @@ export async function GET(request: NextRequest) {
       avatarUrl: h.avatar_url,
       practiceTypes: h.practice_types ?? [],
       neighbourhoods: h.neighbourhoods && h.neighbourhoods.length > 0 ? h.neighbourhoods : [h.neighbourhood].filter(Boolean),
+      activeSessions: activeSessionsFor(h.id),
     }));
 
   const venueRows = (venues ?? []).map((v) => ({

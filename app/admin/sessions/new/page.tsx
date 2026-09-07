@@ -75,7 +75,7 @@ function BuildAStretchyForm() {
   const [currency, setCurrency] = useState("NZD");
   const [minMats, setMinMats] = useState(14);
   const [maxMats, setMaxMats] = useState(32);
-  const [openingPriceCap, setOpeningPriceCap] = useState(28.66);
+  const [stretchyAmount, setStretchyAmount] = useState(200);
   const [simulateN, setSimulateN] = useState(18);
 
   const [isRepeat, setIsRepeat] = useState(false);
@@ -122,8 +122,7 @@ function BuildAStretchyForm() {
         if (charityLine) { setCharityName(charityLine.name); setCharityRate(charityLine.amount); }
         if (otherLines.length) setExtraLines(otherLines.map((l) => ({ name: l.name, amount: l.amount })));
 
-        const min = s.min_attendees ?? 14;
-        if (min > 0) setOpeningPriceCap(Math.round(((s.cost_base ?? 0) + (s.revenue_target ?? 0)) / min * 100) / 100);
+        if (s.revenue_target != null) setStretchyAmount(s.revenue_target);
         setLoadingDuplicate(false);
       })
       .catch(() => setLoadingDuplicate(false));
@@ -144,7 +143,8 @@ function BuildAStretchyForm() {
   );
 
   const costBase = costLines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
-  const revenueTarget = Math.max(0, Math.round((openingPriceCap * minMats - costBase) * 100) / 100);
+  const revenueTarget = stretchyAmount;
+  const openingPriceCap = calculatePrice(costBase, revenueTarget, minMats);
   const floorPrice = calculatePrice(costBase, revenueTarget, maxMats);
   const effectiveN = Math.min(Math.max(simulateN, minMats), maxMats);
   const previewPrice = calculatePrice(costBase, revenueTarget, effectiveN);
@@ -334,10 +334,7 @@ function BuildAStretchyForm() {
                   <button type="button" onClick={() => setExtraLines((prev) => prev.filter((_, xi) => xi !== i))} style={{ border: "none", background: "none", cursor: "pointer", color: "rgba(20,17,15,.4)", fontSize: 16 }}>×</button>
                 </div>
               ))}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderTop: "1px solid rgba(20,17,15,.12)" }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Running Stretchy</span>
-                <span style={{ fontFamily: T.mono, fontSize: 14, fontWeight: 700 }}>${revenueTarget.toFixed(2)}</span>
-              </div>
+              <RateRow label="Stretchy" value={stretchyAmount} onChange={setStretchyAmount} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderTop: "1px solid rgba(20,17,15,.12)", background: T.ink }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: T.cream }}>Total to cover</span>
                 <span style={{ fontFamily: T.mono, fontSize: 15, fontWeight: 800, color: T.yellow }}>${(costBase + revenueTarget).toFixed(2)}</span>
@@ -358,7 +355,7 @@ function BuildAStretchyForm() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 10 }}>
                 <NumberField label="MINIMUM MATS" value={minMats} onChange={(v) => setMinMats(Math.max(1, v))} />
                 <NumberField label="MAXIMUM MATS" value={maxMats} onChange={(v) => setMaxMats(Math.max(minMats, v))} />
-                <NumberField label="OPENING PRICE CAP" value={openingPriceCap} onChange={setOpeningPriceCap} step={0.01} prefix="$" />
+                <NumberField label="OPENING PRICE CAP" value={openingPriceCap} step={0.01} prefix="$" readOnly />
               </div>
               <p style={{ fontSize: 11, color: "rgba(20,17,15,.5)", marginBottom: 14 }}>
                 Fewer mats = higher price each. More mats = lower price each — that&rsquo;s the whole idea: the price drops as the room fills.
@@ -413,7 +410,7 @@ function BuildAStretchyForm() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16, fontSize: 13 }}>
-            <PreviewRow label="Opens at" value={`$${calculatePrice(costBase, revenueTarget, minMats).toFixed(2)}`} />
+            <PreviewRow label="Opens at" value={`$${openingPriceCap.toFixed(2)}`} />
             <PreviewRow label="Best case, full room" value={`$${floorPrice.toFixed(2)}`} />
             <PreviewRow label="One more person" value={`$${nextPrice.toFixed(2)}`} />
           </div>
@@ -482,19 +479,25 @@ function RateRow({ label, value, onChange, name, onNameChange }: {
   );
 }
 
-function NumberField({ label, value, onChange, step = 1, prefix }: { label: string; value: number; onChange: (v: number) => void; step?: number; prefix?: string }) {
+function NumberField({ label, value, onChange, step = 1, prefix, readOnly }: { label: string; value: number; onChange?: (v: number) => void; step?: number; prefix?: string; readOnly?: boolean }) {
   return (
     <div>
       <p style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", color: "rgba(20,17,15,.55)", marginBottom: 5 }}>{label}</p>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 999, padding: "6px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, background: readOnly ? "rgba(20,17,15,.05)" : "#fff", border: `2px solid ${T.ink}`, borderRadius: 999, padding: "6px 12px" }}>
         {prefix && <span style={{ fontSize: 13, color: "rgba(20,17,15,.5)" }}>{prefix}</span>}
-        <input
-          type="number"
-          step={step}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          style={{ border: "none", outline: "none", background: "transparent", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: T.mono }}
-        />
+        {readOnly ? (
+          <span style={{ fontSize: 14, fontWeight: 700, width: "100%", fontFamily: T.mono, color: "rgba(20,17,15,.7)" }}>
+            {step < 1 ? value.toFixed(2) : value}
+          </span>
+        ) : (
+          <input
+            type="number"
+            step={step}
+            value={value}
+            onChange={(e) => onChange!(Number(e.target.value))}
+            style={{ border: "none", outline: "none", background: "transparent", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: T.mono }}
+          />
+        )}
       </div>
     </div>
   );

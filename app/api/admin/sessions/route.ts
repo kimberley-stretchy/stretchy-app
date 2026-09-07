@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/adminAuth";
+import { notifyHostScheduled } from "@/lib/notifyHostScheduled";
 
 // Create inside each request handler so env vars are always available at runtime
 function getSupabase() {
@@ -132,6 +133,7 @@ export async function POST(request: NextRequest) {
   const costLines: { role: string; name: string; amount: number }[] = Array.isArray(cost_lines) ? cost_lines : [];
   const cost_base = costLines.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
 
+  const realHostAssigned = !!hostIdInput;
   const host_id = hostIdInput || (await getOrCreateHostId());
 
   const startsDate = new Date(starts_at);
@@ -171,6 +173,20 @@ export async function POST(request: NextRequest) {
   if (error) {
     console.error("Create session error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const sessionForNotify = {
+    title,
+    startsAt: starts_at,
+    endsAt: endsDate.toISOString(),
+    locationName: location_name,
+    locationAddress: location_address,
+  };
+  if (realHostAssigned) {
+    notifyHostScheduled({ hostId: host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher notify error:", e));
+  }
+  if (gem_host_id) {
+    notifyHostScheduled({ hostId: gem_host_id, role: "gem", session: sessionForNotify }).catch((e) => console.error("GEM notify error:", e));
   }
 
   return NextResponse.json({ id: data.id }, { status: 201 });
