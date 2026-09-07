@@ -54,6 +54,12 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
   const pipCount = s.min_attendees;
   const pipsFilled = Math.min(holds, pipCount);
 
+  // Temporary: a real test session dated Sat 19 Sept 2026 also needs the
+  // blackout treatment on its photo, independent of isPlaceholder — remove
+  // this once that test session is no longer live.
+  const isSept19TestSession = start.toISOString().slice(0, 10) === "2026-09-19";
+  const showPlaceholderOverlay = s.isPlaceholder || isSept19TestSession;
+
   return (
     <div className="border-2 border-ink rounded-[18px] lg:rounded-[22px] overflow-hidden relative flex flex-col">
       <Image
@@ -63,7 +69,7 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
         height={260}
         className="block w-full h-[180px] lg:h-[260px] object-cover"
       />
-      {s.isPlaceholder && (
+      {showPlaceholderOverlay && (
         <div className="absolute inset-0 flex items-center justify-center bg-ink/50 pointer-events-none">
           <span className="font-mono text-[11px] lg:text-sm font-extrabold tracking-[0.1em] text-cream text-center px-4 -rotate-12 border-2 border-cream rounded-lg py-1.5">
             PLACEHOLDER FOR APP TESTING
