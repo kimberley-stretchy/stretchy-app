@@ -289,7 +289,11 @@ export async function PATCH(request: NextRequest) {
   // Verify PaymentIntent is in the right state, and that it actually belongs to this caller
   const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
   if (!["requires_capture", "succeeded"].includes(pi.status)) {
-    return NextResponse.json({ error: `Payment not confirmed (status: ${pi.status})` }, { status: 400 });
+    const declineDetail = pi.last_payment_error?.message ?? pi.last_payment_error?.code;
+    console.error("Hold confirm failed:", { paymentIntentId, status: pi.status, lastPaymentError: pi.last_payment_error });
+    return NextResponse.json({
+      error: `Payment not confirmed (status: ${pi.status})${declineDetail ? ` — ${declineDetail}` : ""}`,
+    }, { status: 400 });
   }
   if (pi.metadata?.attendee_id) {
     const { data: piOwner } = await admin.from("attendees").select("auth_user_id").eq("id", pi.metadata.attendee_id).single();
