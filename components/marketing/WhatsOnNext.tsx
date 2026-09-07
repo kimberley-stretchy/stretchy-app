@@ -63,6 +63,13 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
         height={260}
         className="block w-full h-[180px] lg:h-[260px] object-cover"
       />
+      {s.isPlaceholder && (
+        <div className="absolute inset-0 flex items-center justify-center bg-ink/50 pointer-events-none">
+          <span className="font-mono text-[11px] lg:text-sm font-extrabold tracking-[0.1em] text-cream text-center px-4 -rotate-12 border-2 border-cream rounded-lg py-1.5">
+            PLACEHOLDER FOR APP TESTING
+          </span>
+        </div>
+      )}
       <div className="absolute top-3 left-3 lg:top-4 lg:left-4 bg-cream rounded-[10px] lg:rounded-xl px-[11px] py-[7px] lg:px-[14px] lg:py-[10px] text-center">
         <div className="font-mono text-[13px] lg:text-[15px] font-extrabold" style={{ color: accent }}>{dayShort}</div>
         <div className="font-display text-[26px] lg:text-[32px] leading-[.9]">{dayNum}</div>
