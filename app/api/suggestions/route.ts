@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 
 function getAdmin() {
   return createClient(
@@ -43,6 +44,21 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Notify HQ — fire and forget, never seen before this.
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const summary = [session_type.replace(/_/g, " "), neighbourhood, preferred_time].filter(Boolean).join(" · ");
+    resend.emails
+      .send({
+        from: "Stretchy <hello@stretchy.social>",
+        to: "kimberley@stretchyyoga.co.nz",
+        subject: `New Stretchy suggestion — ${summary}`,
+        text: `${summary}${notes ? `\n\n${notes}` : ""}\n\nView the board: https://stretchyyoga.co.nz/admin/suggestions`,
+      })
+      .catch((e) => console.error("Suggestion notify email error:", e));
+  }
+
   return NextResponse.json({ id: data.id }, { status: 201 });
 }
 
