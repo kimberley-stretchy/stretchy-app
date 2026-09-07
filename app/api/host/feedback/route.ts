@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { Resend } from "resend";
 import { requireHost } from "@/lib/hostAuth";
 
 function getAdmin() {
@@ -54,5 +55,19 @@ export async function POST(request: NextRequest) {
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (process.env.RESEND_API_KEY) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.stretchyyoga.co.nz";
+    resend.emails
+      .send({
+        from: "Stretchy <hello@stretchy.social>",
+        to: "kimberley@stretchyyoga.co.nz",
+        subject: `Feedback from ${me.name}${category ? ` — ${category}` : ""}`,
+        text: `${me.name} sent feedback${area ? ` (${area})` : ""}:\n\n${message.trim()}${sessionContext ? `\n\nSession: ${sessionContext}` : ""}\n\nReview it: ${appUrl}/admin/feedback`,
+      })
+      .catch((e) => console.error("Host feedback email error:", e));
+  }
+
   return NextResponse.json({ ok: true });
 }

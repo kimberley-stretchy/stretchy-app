@@ -40,7 +40,10 @@ const NAV_GROUPS = [
   },
 ];
 
-const NAV_TAIL = [{ href: "/admin/suggestions", label: "Community" }];
+const NAV_TAIL = [
+  { href: "/admin/suggestions", label: "Community" },
+  { href: "/admin/feedback", label: "Feedback" },
+];
 
 // A link is active on pathname match; if it also carries a ?tab= param
 // (Profiles/Pending share the "Teachers"/"GEMs" labels but point at

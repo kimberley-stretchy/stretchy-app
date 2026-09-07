@@ -24,7 +24,7 @@ export default function AdminFeedbackPage() {
         <div style={{ maxWidth: 760, padding: "32px 32px 60px" }}>
           <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.2em", marginBottom: 6 }}>COMMUNITY</p>
           <h1 style={{ fontFamily: "'BN Chubb', sans-serif", fontSize: "clamp(36px,8vw,48px)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 0.92, margin: "0 0 28px", textTransform: "uppercase" }}>
-            {loading ? "Loading…" : `${items.length} from teachers & GEMs.`}
+            {loading ? "Loading…" : `${items.length} from your community.`}
           </h1>
 
           {!loading && items.length === 0 && (
