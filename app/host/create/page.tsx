@@ -692,11 +692,11 @@ function StepReview({ form }: { form: FormState }) {
   const typeConfig = SESSION_TYPES.find((t) => t.value === form.sessionType);
 
   const formattedDate = form.date
-    ? new Date(form.date + "T12:00").toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" })
+    ? new Date(form.date + "T12:00").toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" })
     : null;
 
   const formattedTime = form.time
-    ? new Date(`2000-01-01T${form.time}`).toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true })
+    ? new Date(`2000-01-01T${form.time}`).toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true })
     : null;
 
   return (

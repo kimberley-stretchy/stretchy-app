@@ -29,7 +29,7 @@ async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify
   const { data: sessions, error } = await admin
     .from("sessions")
     .select(`
-      id, movement_type, starts_at, duration_mins, location_name,
+      id, title, movement_type, starts_at, duration_mins, location_name,
       cost_base, revenue_target, min_attendees, max_attendees,
       social_stretch_venue, social_stretch_note, state,
       hosts!host_id ( name )
@@ -58,6 +58,7 @@ async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify
 
   const mapped: MarketingSession[] = sessions.map((s) => ({
     id: s.id,
+    title: s.title,
     movement_type: s.movement_type,
     starts_at: s.starts_at,
     duration_mins: s.duration_mins,

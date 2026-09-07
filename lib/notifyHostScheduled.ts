@@ -37,8 +37,8 @@ export async function notifyHostScheduled({
     const roleLabel = role === "teacher" ? "teaching" : "GEM-ing";
     const startDate = new Date(session.startsAt);
     const dateStr =
-      startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
-      " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
+      startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
+      " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
     const location = session.locationAddress || session.locationName;
 
     const calendarEvent = {

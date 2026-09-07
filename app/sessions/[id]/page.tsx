@@ -135,8 +135,8 @@ export default function SessionDetailPage() {
   const rows = ladderRows(s.min_attendees, s.max_attendees, s.cost_base, s.revenue_target);
 
   const startDate = new Date(s.starts_at);
-  const weekdayStr = startDate.toLocaleDateString("en-NZ", { weekday: "short" }).toUpperCase();
-  const timeStr = startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
+  const weekdayStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short" }).toUpperCase();
+  const timeStr = startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
   const durationLabel = s.duration_mins >= 60 ? `${s.duration_mins / 60}HR` : `${s.duration_mins} MIN`;
 
   return (

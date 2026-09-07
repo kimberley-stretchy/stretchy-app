@@ -58,7 +58,7 @@ export default function AdminMoneyPage() {
                 <div>
                   <p style={{ fontWeight: 700, fontSize: 15, color: T.cream, margin: 0 }}>{s.title}</p>
                   <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.45)", letterSpacing: "0.1em", marginTop: 3 }}>
-                    {new Date(s.starts_at).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase()} · {s.location_name}
+                    {new Date(s.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase()} · {s.location_name}
                   </p>
                 </div>
                 <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: T.yellow, letterSpacing: "0.1em" }}>

@@ -52,8 +52,8 @@ function SessionCard({ s }: { s: DBSession }) {
   const status    = getStatus(s);
   const holds     = s.current_holds || 0;
   const startDate = new Date(s.starts_at);
-  const dayStr    = startDate.toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase();
-  const timeStr   = startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
+  const dayStr    = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase();
+  const timeStr   = startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
   const confirmed = holds >= s.min_attendees || s.state === "confirmed";
 
   return (

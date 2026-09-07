@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!s) return { title: "Session — Stretchy" };
 
   const price = calculatePrice(s.cost_base, s.revenue_target, s.min_attendees);
-  const dateStr = new Date(s.starts_at).toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" });
+  const dateStr = new Date(s.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" });
   const description = `${s.title} — ${dateStr} at ${s.location_name}. Starts from $${price.toFixed(2)}, and the price drops as more people join. ${s.description ?? ""}`.trim();
 
   return {

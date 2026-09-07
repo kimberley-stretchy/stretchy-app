@@ -145,7 +145,7 @@ export default function HostHomePage() {
                   <div className="font-display text-lg leading-none">{r.sessions?.title}</div>
                   {r.sessions && (
                     <p className="text-xs text-ink/70 mt-1.5">
-                      {new Date(r.sessions.starts_at).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" })} · {r.sessions.location_name}
+                      {new Date(r.sessions.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" })} · {r.sessions.location_name}
                     </p>
                   )}
                 </Link>
@@ -173,7 +173,7 @@ export default function HostHomePage() {
                     </div>
                     <div className="font-display text-lg leading-none">{s.title}</div>
                     <p className="text-xs text-ink/65 mt-1.5">
-                      {new Date(s.starts_at).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" })} · {s.location_name}
+                      {new Date(s.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" })} · {s.location_name}
                     </p>
                     <div className="flex gap-2 mt-3">
                       {asTeacher && (

@@ -294,8 +294,8 @@ export async function DELETE(request: NextRequest) {
     const { data: attendeeData } = await admin.from("attendees").select("name, email").eq("auth_user_id", user.id).single();
     if (attendeeData?.email) {
       const startDate = new Date(session.starts_at);
-      const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
-        " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
+      const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
+        " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
       const firstName = attendeeData.name?.split(" ")[0] ?? "there";
       const isPartial = remainingQty > 0;
       const subject = isPartial ? `Booking updated — ${session.title}` : `Hold cancelled — ${session.title}`;
@@ -419,8 +419,8 @@ export async function PATCH(request: NextRequest) {
 
     if (sessionData && attendeeData?.email) {
       const startDate = new Date(sessionData.starts_at);
-      const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
-        " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
+      const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
+        " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
 
       // pi.amount is the TOTAL for every spot in this hold, not the per-person
       // price — always show per-spot, and call out the total separately when

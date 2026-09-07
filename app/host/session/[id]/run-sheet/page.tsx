@@ -168,9 +168,9 @@ export default function GemRunSheetPage() {
 
   const startDate = new Date(session.startsAt);
   const subtitle =
-    startDate.toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase() +
+    startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase() +
     " · " +
-    startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }) +
+    startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }) +
     " · " +
     session.locationName.toUpperCase();
 
@@ -248,7 +248,7 @@ export default function GemRunSheetPage() {
             <span className="font-mono text-[9px] font-extrabold tracking-[0.11em]">NOTICE FROM HQ</span>
             {latestNotice && (
               <span className="font-mono text-[9px] text-ink/55">
-                {new Date(latestNotice.created_at).toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" })}
+                {new Date(latestNotice.created_at).toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit" })}
               </span>
             )}
           </div>

@@ -50,7 +50,7 @@ export default function AdminNewsletterPage() {
               <div key={s.email} style={{ display: "flex", justifyContent: "space-between", padding: "12px 18px", borderRadius: 12, background: "rgba(245,237,227,0.05)", border: "1px solid rgba(245,237,227,0.10)" }}>
                 <span style={{ fontSize: 14 }}>{s.email}</span>
                 <span style={{ fontFamily: T.mono, fontSize: 11, color: "rgba(245,237,227,0.4)" }}>
-                  {new Date(s.created_at).toLocaleDateString("en-NZ", { day: "numeric", month: "short", year: "numeric" })}
+                  {new Date(s.created_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "short", year: "numeric" })}
                 </span>
               </div>
             ))}

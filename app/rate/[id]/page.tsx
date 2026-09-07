@@ -93,7 +93,7 @@ export default function RateItPage() {
         <div>
           {session && (
             <p className="font-mono text-xs font-bold uppercase tracking-[0.20em] text-muted mb-2">
-              {new Date(session.starts_at).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase()} · {session.location_name}
+              {new Date(session.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase()} · {session.location_name}
             </p>
           )}
           <h1 className="font-display font-bold text-ink" style={{ fontSize: "clamp(36px, 10vw, 48px)", letterSpacing: "-0.03em", lineHeight: "1.0" }}>

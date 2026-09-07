@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchyyoga.co.nz";
   const startDate = new Date(session.starts_at);
   const dateStr =
-    startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
-    " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
+    startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
+    " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
   const roleLabel = role === "teacher" ? "a teacher" : "a Good Energy Manager";
   const claimUrl = `${appUrl}/host/substitute/${created.id}`;
 

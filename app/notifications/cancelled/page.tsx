@@ -26,8 +26,8 @@ function CancelledContent() {
 
   const title = session?.title ?? "Your session";
   const dateStr = session
-    ? new Date(session.starts_at).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase() + " · " +
-      new Date(session.starts_at).toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()
+    ? new Date(session.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase() + " · " +
+      new Date(session.starts_at).toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()
     : "";
 
   return (

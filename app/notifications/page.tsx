@@ -143,8 +143,8 @@ function HoldCard({ hold: h, currentHolds }: { hold: HoldWithSession; currentHol
 
   const typeColor = TYPE_COLORS[s.movement_type] ?? "#888";
   const startDate = new Date(s.starts_at);
-  const dayStr = startDate.toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase();
-  const timeStr = startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
+  const dayStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase();
+  const timeStr = startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
   const isFuture = startDate > new Date();
   const status = statusInfo(s.state, h.state);
 

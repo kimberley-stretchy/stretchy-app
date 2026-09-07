@@ -46,7 +46,7 @@ export default function AdminFeedbackPage() {
                   {it.area && <span style={{ fontSize: 11, color: "rgba(245,237,227,0.5)" }}>{it.area}</span>}
                   {it.session_context && <span style={{ fontSize: 11, color: "rgba(245,237,227,0.4)" }}>· {it.session_context}</span>}
                   <span style={{ marginLeft: "auto", fontFamily: T.mono, fontSize: 10, color: "rgba(245,237,227,0.35)" }}>
-                    {new Date(it.created_at).toLocaleDateString("en-NZ", { day: "numeric", month: "short" })}
+                    {new Date(it.created_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "short" })}
                   </span>
                 </div>
                 <p style={{ fontSize: 14, lineHeight: 1.5, marginBottom: it.image_urls.length ? 10 : 0 }}>{it.message}</p>

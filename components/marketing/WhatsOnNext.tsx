@@ -4,6 +4,7 @@ import { calculatePrice, formatPrice } from "@/lib/pricing";
 
 export type MarketingSession = {
   id: string;
+  title?: string;
   movement_type: string;
   starts_at: string;
   duration_mins: number | null;
@@ -23,7 +24,11 @@ const CARD_PHOTOS = ["/images/marketing/arriving-honey-sundays.jpg", "/images/ma
 const ACCENTS = ["#902F8A", "#E96709"]; // purple, orange — alternating per card, matching the design's two examples
 
 function timeOfDay(startsAt: string): string {
-  const h = new Date(startsAt).getHours();
+  // getHours() reads the server's own local time (UTC on Vercel), not NZ
+  // time — always resolve the NZ-local hour explicitly instead.
+  const h = Number(
+    new Date(startsAt).toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", hour12: false })
+  );
   if (h < 12) return "MORNING";
   if (h < 17) return "LUNCH";
   return "EVENING";
@@ -38,12 +43,12 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
   const photo = CARD_PHOTOS[index % CARD_PHOTOS.length];
   const start = new Date(s.starts_at);
   const end = s.duration_mins ? new Date(start.getTime() + s.duration_mins * 60 * 1000) : null;
-  const dayShort = s.isPlaceholder ? "" : start.toLocaleDateString("en-NZ", { weekday: "short" }).toUpperCase();
-  const dayNum = s.isPlaceholder ? "XX" : start.toLocaleDateString("en-NZ", { day: "2-digit" });
-  const monthShort = s.isPlaceholder ? "AUG" : start.toLocaleDateString("en-NZ", { month: "short" }).toUpperCase();
+  const dayShort = s.isPlaceholder ? "" : start.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short" }).toUpperCase();
+  const dayNum = s.isPlaceholder ? "XX" : start.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", day: "2-digit" });
+  const monthShort = s.isPlaceholder ? "AUG" : start.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", month: "short" }).toUpperCase();
   const timeRange = end
-    ? `${start.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" })}–${end.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" })}`
-    : start.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" });
+    ? `${start.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit" })}–${end.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit" })}`
+    : start.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit" });
   const durationLabel = s.duration_mins ? `${s.duration_mins} MIN` : "";
 
   const holds = s.current_holds ?? 0;
@@ -54,11 +59,11 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
   const pipCount = s.min_attendees;
   const pipsFilled = Math.min(holds, pipCount);
 
-  // Temporary: a real test session dated Sat 19 Sept 2026 also needs the
-  // blackout treatment on its photo, independent of isPlaceholder — remove
-  // this once that test session is no longer live.
-  const isSept19TestSession = start.toISOString().slice(0, 10) === "2026-09-19";
-  const showPlaceholderOverlay = s.isPlaceholder || isSept19TestSession;
+  // Any real session with "TEST" in its title gets the same blackout as a
+  // synthetic placeholder card — catches every test session as they're
+  // created/renamed, not just whichever one was live when this was written.
+  const isTestSession = (s.title ?? "").toUpperCase().includes("TEST");
+  const showPlaceholderOverlay = s.isPlaceholder || isTestSession;
 
   return (
     <div className="border-2 border-ink rounded-[18px] lg:rounded-[22px] overflow-hidden relative flex flex-col">
@@ -203,7 +208,7 @@ export default function WhatsOnNext({
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-5 border-2 border-dashed border-ink/30 rounded-[18px] lg:rounded-[20px] p-[18px] lg:p-[20px_24px]">
           <div className="lg:min-w-[280px]">
             <div className="font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em] text-ink/50">
-              {new Date(notifySession.starts_at).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase()} &middot; NOT OPEN YET
+              {new Date(notifySession.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase()} &middot; NOT OPEN YET
             </div>
             <div className="font-display text-[22px] lg:text-[23px] leading-none mt-1.5 text-ink/80">
               {notifySession.location_name.toUpperCase()} | {timeOfDay(notifySession.starts_at)}
@@ -218,6 +223,13 @@ export default function WhatsOnNext({
           </button>
         </div>
       )}
+
+      <Link
+        href="/sessions"
+        className="self-center inline-flex items-center justify-center h-12 px-8 mt-1 lg:mt-2 bg-ink text-cream rounded-pill text-sm font-bold whitespace-nowrap"
+      >
+        See all Stretchy sessions →
+      </Link>
     </div>
   );
 }

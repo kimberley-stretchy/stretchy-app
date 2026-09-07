@@ -90,8 +90,8 @@ export default function SubstituteClaimPage() {
 
   const s = detail.sessions;
   const startDate = new Date(s.starts_at);
-  const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
-    " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
+  const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
+    " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
   const roleLabel = detail.role === "teacher" ? "Teacher" : "Good Energy Manager";
   const alreadyFilled = detail.status !== "open" && !claimed;
 

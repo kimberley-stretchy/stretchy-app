@@ -128,7 +128,7 @@ export default function PeopleSection({
                             <div key={s.id} style={{ border: "1px solid rgba(20,17,15,.15)", borderRadius: 10, padding: "8px 10px" }}>
                               <p style={{ fontSize: 12, fontWeight: 700, color: INK, margin: 0 }}>{s.title}</p>
                               <p style={{ fontSize: 11, color: "rgba(20,17,15,.55)", margin: "1px 0 6px" }}>
-                                {new Date(s.startsAt).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" })} · {s.locationName} · {s.role === "teacher" ? "Teaching" : "GEM"}
+                                {new Date(s.startsAt).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" })} · {s.locationName} · {s.role === "teacher" ? "Teaching" : "GEM"}
                               </p>
                               {(onCancelSession || onFindCover) && (
                                 <div style={{ display: "flex", gap: 6 }}>

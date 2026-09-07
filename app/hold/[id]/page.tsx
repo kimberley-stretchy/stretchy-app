@@ -149,9 +149,9 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
 
   const startDate = new Date(session.starts_at);
   const endDate   = new Date(session.ends_at);
-  const dayStr    = startDate.toLocaleDateString("en-NZ", { weekday: "short" }).toUpperCase();
-  const timeStr   = startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
-  const fullDateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" });
+  const dayStr    = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short" }).toUpperCase();
+  const timeStr   = startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
+  const fullDateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" });
 
   const holds = session.current_holds || 0;
   const effectiveSpots = Math.max(holds, session.min_attendees);

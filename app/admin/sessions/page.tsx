@@ -89,7 +89,7 @@ export default function AdminSessionsPage() {
         to: testEmailAddress,
         name: testEmailAddress.split("@")[0],
         sessionTitle: firstSession?.title ?? "Sunday Slow Flow",
-        date: firstSession ? new Date(firstSession.starts_at).toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) + " at 9:00 AM" : "Sunday 6 July at 9:00 AM",
+        date: firstSession ? new Date(firstSession.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) + " at 9:00 AM" : "Sunday 6 July at 9:00 AM",
         price: "$28 incl. GST",
         venue: firstSession?.location_name ?? "Grey Lynn Community Centre",
         socialStretchVenue: "nearby",
@@ -384,7 +384,7 @@ function SessionCard({
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontWeight: 700, fontSize: 15, margin: 0, lineHeight: 1.2 }}>{s.title}</p>
           <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.45)", letterSpacing: "0.1em", marginTop: 3 }}>
-            {startDate.toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase()} · {startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()}
+            {startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase()} · {startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()}
           </p>
           <p style={{ fontSize: 12, color: "rgba(245,237,227,0.45)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {s.location_name}

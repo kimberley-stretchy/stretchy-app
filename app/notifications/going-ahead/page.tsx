@@ -39,10 +39,10 @@ function GoingAheadContent() {
   const currentPrice = session ? calculatePrice(session.cost_base, session.revenue_target, Math.max(holds, session.min_attendees)) : 0;
   const startDate = session ? new Date(session.starts_at) : null;
   const dateStr = startDate
-    ? startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" })
+    ? startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" })
     : "";
   const timeStr = startDate
-    ? startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()
+    ? startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()
     : "";
 
   return (

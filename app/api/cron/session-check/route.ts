@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
 
     const holds = holdCount ?? 0;
     const startDate = new Date(session.starts_at);
-    const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
-      " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
+    const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
+      " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
 
     const finalPrice = `$${calculatePrice(session.cost_base, session.revenue_target, Math.max(holds, session.min_attendees)).toFixed(2)} incl. GST`;
 

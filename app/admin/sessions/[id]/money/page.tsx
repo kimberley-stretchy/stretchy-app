@@ -70,7 +70,7 @@ export default function SessionMoneyPage() {
         ) : (
           <div style={{ background: T.cream, border: `2px solid ${T.ink}`, borderRadius: 20, padding: 24, maxWidth: 460, width: "100%", alignSelf: "flex-start" }}>
             <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", color: T.purple, marginBottom: 6 }}>
-              MONEY · {new Date(data.session.startsAt).toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase()}
+              MONEY · {new Date(data.session.startsAt).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase()}
               {data.session.hostPaidAt ? ", SETTLED" : ""}
             </p>
             <h1 style={{ fontFamily: "'BN Chubb', 'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 34, letterSpacing: "-0.02em", lineHeight: 1, textTransform: "uppercase", color: T.ink, marginBottom: 20 }}>

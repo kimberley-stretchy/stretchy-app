@@ -71,8 +71,8 @@ export async function GET(request: NextRequest) {
     const finalAmountCents = Math.round(finalPrice * 100);
 
     const startDate = new Date(session.starts_at);
-    const dateStr = startDate.toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" }) +
-      " at " + startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true });
+    const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
+      " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
 
     let charged = 0;
     let failed = 0;

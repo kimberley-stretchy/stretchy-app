@@ -88,7 +88,7 @@ export default function ProfilePage() {
   }, [router]);
 
   const joinedDate = attendee?.created_at
-    ? new Date(attendee.created_at).toLocaleDateString("en-NZ", { month: "short", year: "2-digit" })
+    ? new Date(attendee.created_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", month: "short", year: "2-digit" })
     : "";
 
   return (
@@ -142,8 +142,8 @@ export default function ProfilePage() {
                 if (!s) return null;
                 const typeColor = TYPE_COLORS[s.movement_type] ?? "#888";
                 const startDate = new Date(s.starts_at);
-                const dayStr = startDate.toLocaleDateString("en-NZ", { weekday: "short", day: "numeric", month: "short" }).toUpperCase();
-                const timeStr = startDate.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
+                const dayStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase();
+                const timeStr = startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
                 const isConfirmed = s.state === "confirmed" || h.state === "confirmed";
                 return (
                   <Link key={h.id} href={`/hold/${s.id}`} className="block bg-white rounded-card border-2 border-ink p-4">
