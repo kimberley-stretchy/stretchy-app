@@ -6,6 +6,7 @@ import Link from "next/link";
 import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
 import HoldModal from "@/components/HoldModal";
+import CapacityPips from "@/components/CapacityPips";
 import { createClient } from "@/lib/supabase/client";
 import { calculatePrice, formatPrice } from "@/lib/pricing";
 
@@ -200,13 +201,15 @@ export default function SessionDetailPage() {
           {confirmed ? `● Going ahead · ${holds} holding` : `○ ${spotsToMin} more ${spotsToMin === 1 ? "person" : "people"} to confirm`}
         </p>
 
-        <div className="flex gap-1.5 flex-wrap mb-4">
-          {Array.from({ length: s.min_attendees }).map((_, i) => (
-            <div key={i} className="w-3.5 h-3.5 rounded-full" style={{ background: i < holds ? "#902F8A" : "#E1D5C6" }} />
-          ))}
-          {holds > s.min_attendees && (
-            <span className="font-mono text-xs font-bold self-center" style={{ color: "#902F8A" }}>+{holds - s.min_attendees}</span>
-          )}
+        <div className="mb-4">
+          <CapacityPips
+            min={s.min_attendees}
+            max={s.max_attendees}
+            held={holds}
+            accent="#902F8A"
+            pipClassName="w-3.5 h-3.5 rounded-full border-0 flex-shrink-0"
+            gapClassName="flex gap-1.5 flex-wrap"
+          />
         </div>
 
         <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-1">

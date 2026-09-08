@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { calculatePrice, formatPrice } from "@/lib/pricing";
+import CapacityPips from "@/components/CapacityPips";
 
 export type MarketingSession = {
   id: string;
@@ -55,9 +56,6 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
   const goingAhead = holds >= s.min_attendees;
   const price = calculatePrice(s.cost_base, s.revenue_target, Math.max(holds, s.min_attendees));
   const spotsNeeded = Math.max(0, s.min_attendees - holds);
-
-  const pipCount = s.min_attendees;
-  const pipsFilled = Math.min(holds, pipCount);
 
   // Any real session with "TEST" in its title gets the same blackout as a
   // synthetic placeholder card — catches every test session as they're
@@ -161,19 +159,7 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
             <span>{goingAhead ? "GOING AHEAD" : "SPOTS TO MINIMUM"}</span>
             <span>{s.max_attendees} MAX</span>
           </div>
-          <div className="flex gap-[2px] lg:gap-[3px]">
-            {Array.from({ length: pipCount }).map((_, i) => (
-              <div
-                key={i}
-                className="flex-1 h-[14px] lg:h-[18px] rounded-pill border-[1.5px]"
-                style={
-                  i < pipsFilled
-                    ? { backgroundColor: accent, borderColor: accent }
-                    : { backgroundColor: "transparent", borderColor: "#E1D5C6" }
-                }
-              />
-            ))}
-          </div>
+          <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={accent} />
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
 import { MenuDrawer } from "@/components/MenuDrawer";
+import CapacityPips from "@/components/CapacityPips";
 import { calculatePrice } from "@/lib/pricing";
 
 const TYPE_COLORS: Record<string, string> = {
@@ -74,11 +75,15 @@ function SessionCard({ s }: { s: DBSession }) {
         </div>
         <h2 className="font-display font-bold text-ink leading-tight mb-1" style={{ fontSize: "22px" }}>{s.title}</h2>
         <p className="text-sm text-muted mb-3">{s.location_name}</p>
-        <div className="flex gap-1.5 flex-wrap mb-3">
-          {Array.from({ length: s.min_attendees }).map((_, i) => (
-            <div key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: i < holds ? typeColor : "rgba(26,26,26,0.12)" }} />
-          ))}
-          {holds > s.min_attendees && <span className="font-mono text-xs font-bold" style={{ color: typeColor }}>+{holds - s.min_attendees}</span>}
+        <div className="mb-3">
+          <CapacityPips
+            min={s.min_attendees}
+            max={s.max_attendees}
+            held={holds}
+            accent={typeColor}
+            pipClassName="w-2 h-2 rounded-full border-0 flex-shrink-0"
+            gapClassName="flex gap-1.5 flex-wrap"
+          />
         </div>
         <div className="flex items-center justify-between">
           <p className="font-mono text-xs font-bold uppercase tracking-wide" style={{ color: status.color }}>
