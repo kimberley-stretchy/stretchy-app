@@ -56,6 +56,8 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
   const goingAhead = holds >= s.min_attendees;
   const price = calculatePrice(s.cost_base, s.revenue_target, Math.max(holds, s.min_attendees));
   const spotsNeeded = Math.max(0, s.min_attendees - holds);
+  const openingPrice = calculatePrice(s.cost_base, s.revenue_target, s.min_attendees);
+  const floorPrice = calculatePrice(s.cost_base, s.revenue_target, s.max_attendees);
 
   // Any real session with "TEST" in its title gets the same blackout as a
   // synthetic placeholder card — catches every test session as they're
@@ -162,6 +164,10 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
             <span>{s.max_attendees} MAX</span>
           </div>
           <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={accent} />
+          <div className="flex justify-between gap-2.5 font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em] text-ink/50 mt-1.5">
+            <span>{formatPrice(openingPrice)}</span>
+            <span>{formatPrice(floorPrice)}</span>
+          </div>
         </div>
       </div>
     </div>
