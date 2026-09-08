@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { requireAdmin } from "@/lib/adminAuth";
-import { notifyHostScheduled } from "@/lib/notifyHostScheduled";
+import { notifyHostScheduled, notifyHostCancelled } from "@/lib/notifyHostScheduled";
 
 // Create inside each request handler so env vars are always available at runtime
 function getSupabase() {
@@ -237,7 +237,7 @@ export async function DELETE(request: NextRequest) {
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, title, starts_at, location_name")
+    .select("id, title, starts_at, location_name, host_id, gem_host_id")
     .eq("id", id)
     .single();
 
@@ -269,6 +269,20 @@ export async function DELETE(request: NextRequest) {
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Notify the assigned teacher/GEM too — skip the auto-provisioned Kimberley
+  // placeholder host (unassigned sessions default to her record), same
+  // distinction the create-session route already makes for "scheduled" emails.
+  const sessionForNotify = { title: session.title, startsAt: session.starts_at, locationName: session.location_name };
+  if (session.host_id) {
+    const { data: teacherHost } = await supabase.from("hosts").select("email").eq("id", session.host_id).single();
+    if (teacherHost?.email !== KIMBERLEY_EMAIL) {
+      notifyHostCancelled({ hostId: session.host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher cancel-notify error:", e));
+    }
+  }
+  if (session.gem_host_id) {
+    notifyHostCancelled({ hostId: session.gem_host_id, role: "gem", session: sessionForNotify }).catch((e) => console.error("GEM cancel-notify error:", e));
+  }
 
   // Email every affected attendee — fire and forget, don't block the response.
   if ((holds ?? []).length > 0 && process.env.RESEND_API_KEY) {

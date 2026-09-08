@@ -89,3 +89,62 @@ export async function notifyHostScheduled({
     console.error("notifyHostScheduled error:", e);
   }
 }
+
+// Notifies a teacher/GEM when a session they were assigned to gets
+// cancelled — same fire-and-forget contract as notifyHostScheduled.
+export async function notifyHostCancelled({
+  hostId,
+  role,
+  session,
+}: {
+  hostId: string;
+  role: "teacher" | "gem";
+  session: { title: string; startsAt: string; locationName: string };
+}) {
+  try {
+    const admin = getAdmin();
+    const { data: host } = await admin
+      .from("hosts")
+      .select("name, email, auth_user_id")
+      .eq("id", hostId)
+      .single();
+
+    if (!host) return;
+
+    const firstName = host.name?.split(" ")[0] ?? "there";
+    const roleLabel = role === "teacher" ? "teaching" : "GEM-ing";
+    const startDate = new Date(session.startsAt);
+    const dateStr =
+      startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
+      " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
+
+    if (host.email && process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails
+        .send({
+          from: "Stretchy HQ <hello@stretchy.social>",
+          to: host.email,
+          subject: `Cancelled: ${session.title}`,
+          text: `Hi ${firstName},\n\nHeads up — ${session.title} (${dateStr}, ${session.locationName}) that you were ${roleLabel} has been cancelled. Nothing you need to do — just remove it from your calendar.\n\nStretchy HQ`,
+          html: `
+            <div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;background:#F7F0E8;padding:32px;border-radius:16px;">
+              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;letter-spacing:.14em;color:#C6362E;margin:0 0 12px;">STRETCHY HQ · CANCELLED</p>
+              <h1 style="font-size:26px;font-weight:900;color:#14110F;margin:0 0 12px;">${session.title}</h1>
+              <p style="color:rgba(20,17,15,.7);font-size:15px;margin:0;">Hi ${firstName} — heads up, this one's been cancelled. It was ${dateStr} at ${session.locationName}, and you were ${roleLabel} it. Nothing you need to do — just remove it from your calendar.</p>
+            </div>
+          `,
+        })
+        .catch((e) => console.error("Session-cancelled email error:", e));
+    }
+
+    if (host.auth_user_id) {
+      sendPushToUser(host.auth_user_id, {
+        title: "Session cancelled",
+        body: `${session.title} — ${dateStr} — no longer happening`,
+        url: "/host/home",
+      }).catch((e) => console.error("Session-cancelled push error:", e));
+    }
+  } catch (e) {
+    console.error("notifyHostCancelled error:", e);
+  }
+}

@@ -217,14 +217,7 @@ export default function SessionDetailPage() {
         </p>
 
         <div className="mb-4">
-          <CapacityPips
-            min={s.min_attendees}
-            max={s.max_attendees}
-            held={holds}
-            accent="#902F8A"
-            pipClassName="w-3.5 h-3.5 rounded-full border-0 flex-shrink-0"
-            gapClassName="flex gap-1.5 flex-wrap"
-          />
+          <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent="#902F8A" />
         </div>
 
         <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-1">

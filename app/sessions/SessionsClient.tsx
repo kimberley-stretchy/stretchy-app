@@ -76,14 +76,7 @@ function SessionCard({ s }: { s: DBSession }) {
         <h2 className="font-display font-bold text-ink leading-tight mb-1" style={{ fontSize: "22px" }}>{s.title}</h2>
         <p className="text-sm text-muted mb-3">{s.location_name}</p>
         <div className="mb-3">
-          <CapacityPips
-            min={s.min_attendees}
-            max={s.max_attendees}
-            held={holds}
-            accent={typeColor}
-            pipClassName="w-2 h-2 rounded-full border-0 flex-shrink-0"
-            gapClassName="flex gap-1.5 flex-wrap"
-          />
+          <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={typeColor} />
         </div>
         <div className="flex items-center justify-between">
           <p className="font-mono text-xs font-bold uppercase tracking-wide" style={{ color: status.color }}>
