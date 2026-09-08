@@ -22,6 +22,7 @@ type Session = {
   min_attendees: number;
   max_attendees: number;
   current_holds: number;
+  state: string;
   social_stretch_venue: string | null;
   social_stretch_note: string | null;
   my_hold_quantity?: number;
@@ -158,6 +159,17 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
       <main className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 text-center">
         <p className="text-muted mb-4">Session not found.</p>
         <Link href="/sessions" className="font-semibold text-ink">← Browse sessions</Link>
+      </main>
+    );
+  }
+
+  if (session.state === "cancelled") {
+    return (
+      <main className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-4xl mb-4">😔</p>
+        <h1 className="font-display font-bold text-ink mb-2" style={{ fontSize: "36px", letterSpacing: "-0.03em" }}>This one&rsquo;s not going ahead.</h1>
+        <p className="text-sm text-muted leading-relaxed mb-8">{session.title} has been cancelled. Nothing was charged — your card authorisation has been fully released, and you&rsquo;ll have had an email.</p>
+        <Link href="/sessions" className="font-semibold text-cream rounded-pill px-8 py-4 transition-all" style={{ backgroundColor: "#14110F", fontSize: "15px" }}>Browse other sessions →</Link>
       </main>
     );
   }

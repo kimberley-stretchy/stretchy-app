@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import Stripe from "stripe";
+import { Resend } from "resend";
 import { requireAdmin } from "@/lib/adminAuth";
 import { notifyHostScheduled } from "@/lib/notifyHostScheduled";
 
@@ -10,6 +12,9 @@ function getSupabase() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { global: { fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }) } }
   );
+}
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-04-10" });
 }
 
 const KIMBERLEY_EMAIL = "kimberley@stretchyyoga.co.nz";
@@ -215,16 +220,48 @@ export async function PATCH(request: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// DELETE /api/admin/sessions — cancel/delete a session
+// DELETE /api/admin/sessions — cancel a session: release every active hold's
+// Stripe authorization, mark those holds released, and email attendees —
+// previously this only flipped the session's own state and left holders'
+// cards authorized and never told, so cancelling here fixed nothing for them.
 export async function DELETE(request: NextRequest) {
   const authed = await requireAdmin(request);
   if ("error" in authed) return authed.error;
 
   const supabase = getSupabase();
+  const stripe = getStripe();
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
 
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("id, title, starts_at, location_name")
+    .eq("id", id)
+    .single();
+
+  if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+
+  const { data: holds } = await supabase
+    .from("holds")
+    .select("id, user_id, stripe_pi_id, quantity")
+    .eq("session_id", id)
+    .eq("state", "active");
+
+  // Release every authorization before touching the session/holds rows, so a
+  // Stripe failure can't leave the session cancelled with money still held.
+  for (const hold of holds ?? []) {
+    if (hold.stripe_pi_id) {
+      try {
+        await stripe.paymentIntents.cancel(hold.stripe_pi_id);
+      } catch (e) {
+        console.error(`Failed to cancel PI ${hold.stripe_pi_id} for hold ${hold.id}:`, e);
+      }
+    }
+  }
+
+  await supabase.from("holds").update({ state: "released" }).eq("session_id", id).eq("state", "active");
 
   const { error } = await supabase
     .from("sessions")
@@ -233,5 +270,33 @@ export async function DELETE(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true });
+  // Email every affected attendee — fire and forget, don't block the response.
+  if ((holds ?? []).length > 0 && process.env.RESEND_API_KEY) {
+    const userIds = Array.from(new Set((holds ?? []).map((h) => h.user_id)));
+    const { data: attendees } = await supabase
+      .from("attendees")
+      .select("auth_user_id, name, email")
+      .in("auth_user_id", userIds);
+
+    const startDate = new Date(session.starts_at);
+    const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
+      " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    for (const a of attendees ?? []) {
+      if (!a.email) continue;
+      const firstName = a.name?.split(" ")[0] ?? "there";
+      resend.emails.send({
+        from: "Stretchy <hello@stretchy.social>",
+        to: a.email,
+        reply_to: "kimberley@stretchyyoga.co.nz",
+        subject: `This one's not going ahead — ${session.title}`,
+        headers: { "X-Priority": "1", "Importance": "High" },
+        text: `Hi ${firstName},\n\nSorry — ${session.title} (${dateStr}) at ${session.location_name} has been cancelled. Nothing was charged, and your card authorisation has been fully released.\n\nBrowse other sessions: https://stretchyyoga.co.nz/sessions\n\nStretchy`,
+        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#F7F0E8;padding:32px;border-radius:16px;"><h1 style="font-size:26px;font-weight:900;color:#14110F;margin:0 0 8px;">This one&rsquo;s not going ahead. 😔</h1><p style="color:#555;font-size:15px;margin:0 0 20px;">Hi ${firstName} — sorry, <strong>${session.title}</strong> (${dateStr}) at ${session.location_name} has been cancelled.</p><div style="background:white;border-radius:12px;padding:18px;margin-bottom:16px;"><p style="font-size:14px;font-weight:700;color:#14110F;margin:0 0 4px;">Nothing was charged. ✓</p><p style="font-size:13px;color:#888;margin:0;">Your card authorisation has been fully released.</p></div><a href="https://stretchyyoga.co.nz/sessions" style="display:inline-block;background:#14110F;color:#F7F0E8;text-decoration:none;font-size:13px;font-weight:700;padding:12px 22px;border-radius:8px;">Browse other sessions →</a><p style="font-size:11px;color:#AAA;text-align:center;margin:24px 0 0;">Made with Love by <a href="https://studiodawn.org" style="color:#AAA;">Studio Dawn</a></p></div>`,
+      }).catch((e: unknown) => console.error("Cancellation notify email error:", e));
+    }
+  }
+
+  return NextResponse.json({ ok: true, releasedHolds: (holds ?? []).length });
 }
