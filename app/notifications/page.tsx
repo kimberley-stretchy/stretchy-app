@@ -16,6 +16,7 @@ type HoldWithSession = {
   id: string;
   state: string;
   created_at: string;
+  quantity: number;
   sessions: {
     id: string;
     title: string;
@@ -52,7 +53,7 @@ export default function NotificationsPage() {
       const { data } = await supabase
         .from("holds")
         .select(`
-          id, state, created_at,
+          id, state, created_at, quantity,
           sessions(id, title, starts_at, movement_type, state, cost_base, revenue_target, min_attendees, max_attendees, location_name)
         `)
         .eq("user_id", session.user.id)
@@ -161,17 +162,27 @@ function HoldCard({ hold: h, currentHolds }: { hold: HoldWithSession; currentHol
           <p className="font-bold text-ink leading-tight">{s.title}</p>
           <p className="font-mono text-xs text-muted mt-0.5">{dayStr} · {timeStr}</p>
           <p className="text-xs text-muted mt-0.5">{s.location_name}</p>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
             <span className="font-mono text-xs font-bold px-2 py-1 rounded-pill"
               style={{ background: status.bg, color: status.color }}>
               {status.label}
             </span>
+            {h.quantity > 1 && (
+              <span className="font-mono text-xs font-bold px-2 py-1 rounded-pill" style={{ background: "rgba(144,47,138,0.1)", color: "#902F8A" }}>
+                {h.quantity} SPOTS
+              </span>
+            )}
             {h.state === "active" && isFuture && (
               <span className="font-mono text-xs font-bold" style={{ color: "#FCBB16" }}>
-                ${currentPrice.toFixed(2)}
+                ${currentPrice.toFixed(2)}{h.quantity > 1 ? ` / spot` : ""}
               </span>
             )}
           </div>
+          {h.state === "active" && isFuture && (
+            <p className="font-mono text-[10px] font-bold text-muted mt-1.5 underline">
+              Manage or cancel →
+            </p>
+          )}
         </div>
         <span className="text-muted text-lg flex-shrink-0">›</span>
       </div>
