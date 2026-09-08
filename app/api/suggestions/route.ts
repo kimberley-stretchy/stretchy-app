@@ -27,10 +27,14 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const admin = getAdmin();
   const body = await request.json();
-  const { session_type, neighbourhood, preferred_time, notes, details } = body;
+  const { session_type, neighbourhood, preferred_time, notes } = body;
 
   if (!session_type) return NextResponse.json({ error: "Missing session_type" }, { status: 400 });
 
+  // Note: the public /suggest form also sends a `details` object (movement,
+  // days, neighbourhoods, etc.) but the suggestions table has no such column
+  // — every real submission was failing outright before this was dropped
+  // here. Nothing currently reads `details` back, so it's just omitted.
   const { data, error } = await admin
     .from("suggestions")
     .insert({
@@ -38,7 +42,6 @@ export async function POST(request: NextRequest) {
       preferred_neighbourhood: neighbourhood || null,
       preferred_time: preferred_time || null,
       notes: notes || null,
-      details: details || {},
       vote_count: 1,
     })
     .select("id")
