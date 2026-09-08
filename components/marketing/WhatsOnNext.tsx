@@ -156,7 +156,7 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
 
         <div className="mt-auto">
           <div className="flex justify-between gap-2.5 font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em] text-ink/50 mb-1.5">
-            <span>{goingAhead ? "GOING AHEAD" : "SPOTS TO MINIMUM"}</span>
+            <span>{goingAhead ? "GOING AHEAD" : `${spotsNeeded} SPOTS TO MINIMUM`}</span>
             <span>{s.max_attendees} MAX</span>
           </div>
           <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={accent} />
