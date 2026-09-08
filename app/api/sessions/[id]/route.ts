@@ -9,7 +9,12 @@ export const dynamic = "force-dynamic";
 function getAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    // supabase-js's underlying fetch calls don't reliably inherit this route's
+    // force-dynamic no-caching default in every case — force it explicitly so
+    // a specific query's exact URL/params can never get served a stale
+    // response regardless of Next.js's own fetch-cache heuristics.
+    { global: { fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }) } }
   );
 }
 
