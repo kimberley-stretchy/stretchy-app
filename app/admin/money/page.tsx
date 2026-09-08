@@ -5,11 +5,14 @@ import Link from "next/link";
 import HQShell from "@/components/hq/HQShell";
 
 const T = {
-  black: "#14110F",
+  ink: "#14110F",
   cream: "#F7F0E8",
   yellow: "#FCBB16",
+  purple: "#902F8A",
+  olive: "#716F39",
   mono: "'JetBrains Mono', monospace",
   body: "'Space Grotesk', system-ui, sans-serif",
+  display: "'BN Chubb', 'Space Grotesk', sans-serif",
 };
 
 type Session = { id: string; title: string; starts_at: string; location_name: string; state: string; host_paid_at?: string | null };
@@ -29,18 +32,18 @@ export default function AdminMoneyPage() {
 
   return (
     <HQShell>
-      <main style={{ background: T.black, minHeight: "100vh", color: T.cream, fontFamily: T.body }}>
+      <main style={{ background: T.cream, minHeight: "100vh", color: T.ink, fontFamily: T.body }}>
         <div style={{ maxWidth: 760, padding: "32px 32px 60px" }}>
-          <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.2em", marginBottom: 6 }}>MONEY</p>
-          <h1 style={{ fontSize: "clamp(36px,8vw,48px)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 0.92, margin: "0 0 28px" }}>
+          <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: T.purple, letterSpacing: "0.12em", marginBottom: 6 }}>MONEY</p>
+          <h1 style={{ fontFamily: T.display, fontWeight: 700, fontSize: "clamp(32px,8vw,44px)", letterSpacing: "-0.02em", lineHeight: 1, textTransform: "uppercase", margin: "0 0 24px" }}>
             {loading ? "Loading…" : `${settleable.length} to settle.`}
           </h1>
 
           {!loading && settleable.length === 0 && (
-            <div style={{ textAlign: "center", padding: 60, background: "rgba(245,237,227,0.04)", borderRadius: 20, border: "1px dashed rgba(245,237,227,0.12)" }}>
+            <div style={{ textAlign: "center", padding: 60, background: "#fff", borderRadius: 20, border: "2px dashed rgba(20,17,15,.25)" }}>
               <p style={{ fontSize: 32, marginBottom: 12 }}>💸</p>
-              <p style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.16em" }}>NOTHING TO SETTLE YET</p>
-              <p style={{ fontSize: 14, color: "rgba(245,237,227,0.5)", marginTop: 8 }}>Locked or completed sessions will show up here.</p>
+              <p style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 800, color: "rgba(20,17,15,.4)", letterSpacing: "0.16em" }}>NOTHING TO SETTLE YET</p>
+              <p style={{ fontSize: 14, color: "rgba(20,17,15,.5)", marginTop: 8 }}>Locked or completed sessions will show up here.</p>
             </div>
           )}
 
@@ -51,17 +54,22 @@ export default function AdminMoneyPage() {
                 href={`/admin/sessions/${s.id}/money`}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "16px 20px", borderRadius: 16, textDecoration: "none",
-                  background: "rgba(245,237,227,0.05)", border: "1px solid rgba(245,237,227,0.10)",
+                  padding: "16px 20px", borderRadius: 14, textDecoration: "none",
+                  background: "#fff", border: `2px solid ${T.ink}`,
                 }}
               >
                 <div>
-                  <p style={{ fontWeight: 700, fontSize: 15, color: T.cream, margin: 0 }}>{s.title}</p>
-                  <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.45)", letterSpacing: "0.1em", marginTop: 3 }}>
+                  <p style={{ fontWeight: 700, fontSize: 15, color: T.ink, margin: 0 }}>{s.title}</p>
+                  <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.5)", letterSpacing: "0.08em", marginTop: 3 }}>
                     {new Date(s.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase()} · {s.location_name}
                   </p>
                 </div>
-                <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: T.yellow, letterSpacing: "0.1em" }}>
+                <span style={{
+                  fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em",
+                  padding: "5px 10px", borderRadius: 999,
+                  background: s.host_paid_at ? "rgba(113,111,57,.18)" : "rgba(252,187,22,.28)",
+                  color: s.host_paid_at ? T.olive : T.ink,
+                }}>
                   {s.host_paid_at ? "SETTLED" : "VIEW →"}
                 </span>
               </Link>
