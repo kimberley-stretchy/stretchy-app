@@ -6,17 +6,17 @@ import HQShell from "@/components/hq/HQShell";
 import { calculatePrice } from "@/lib/pricing";
 
 const T = {
-  black:  "#14110F",
+  ink:    "#14110F",
   cream:  "#F7F0E8",
   yellow: "#FCBB16",
   blue:   "#0000FF",
-  green:  "#716F39",
+  olive:  "#716F39",
   orange: "#E96709",
   red:    "#C6362E",
-  olive:  "#716F39",
   purple: "#902F8A",
   mono:   "'JetBrains Mono', monospace",
   body:   "'Space Grotesk', system-ui, sans-serif",
+  display: "'BN Chubb', 'Space Grotesk', sans-serif",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -25,11 +25,11 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 const STATE_COLORS: Record<string, { bg: string; fg: string; label: string }> = {
-  open:      { bg: "rgba(255,209,102,0.15)", fg: T.yellow,  label: "OPEN" },
-  confirmed: { bg: "rgba(76,175,130,0.15)",  fg: T.green,   label: "CONFIRMED" },
-  locked:    { bg: "rgba(44,143,224,0.15)",  fg: T.blue,    label: "LOCKED" },
-  cancelled: { bg: "rgba(26,26,26,0.3)",     fg: "#888",    label: "CANCELLED" },
-  completed: { bg: "rgba(76,175,130,0.10)",  fg: "#888",    label: "DONE" },
+  open:      { bg: "rgba(252,187,22,.28)",  fg: T.ink,    label: "OPEN" },
+  confirmed: { bg: "rgba(113,111,57,.18)",  fg: T.olive,  label: "CONFIRMED" },
+  locked:    { bg: "rgba(41,171,226,.18)",  fg: T.blue,   label: "LOCKED" },
+  cancelled: { bg: "rgba(20,17,15,.08)",    fg: "rgba(20,17,15,.5)", label: "CANCELLED" },
+  completed: { bg: "rgba(20,17,15,.06)",    fg: "rgba(20,17,15,.4)", label: "DONE" },
 };
 
 type Session = {
@@ -78,7 +78,6 @@ export default function AdminSessionsPage() {
   async function sendTestEmail() {
     setTestEmailSending(true);
     setTestEmailResult(null);
-    // Use real session ID if available
     const allSessions = sessions;
     const firstSession = allSessions.find(s => s.state === "open") ?? allSessions[0];
     const res = await fetch("/api/email", {
@@ -167,15 +166,15 @@ export default function AdminSessionsPage() {
 
   return (
     <HQShell>
-    <main style={{ background: T.black, minHeight: "100vh", color: T.cream, fontFamily: T.body }}>
-      <div style={{ maxWidth: 760, padding: "32px 32px 60px" }}>
+    <main style={{ background: T.cream, minHeight: "100vh", color: T.ink, fontFamily: T.body }}>
+      <div style={{ maxWidth: 780, padding: "32px 32px 60px" }}>
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 28 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 14 }}>
           <div>
-            <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.2em", marginBottom: 6 }}>
+            <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: T.purple, letterSpacing: "0.12em", marginBottom: 6 }}>
               SESSIONS
             </p>
-            <h1 style={{ fontSize: "clamp(36px,10vw,52px)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 0.92, margin: 0 }}>
+            <h1 style={{ fontFamily: T.display, fontWeight: 700, fontSize: "clamp(32px,8vw,44px)", letterSpacing: "-0.02em", lineHeight: 1, textTransform: "uppercase", margin: 0 }}>
               {loading ? "Loading…" : `${upcoming.length} live.`}
             </h1>
           </div>
@@ -183,8 +182,8 @@ export default function AdminSessionsPage() {
             href="/admin/sessions/new"
             style={{
               display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "12px 20px", borderRadius: 999,
-              background: T.cream, color: T.black,
+              padding: "12px 22px", borderRadius: 999,
+              background: T.ink, color: T.cream,
               fontFamily: T.body, fontSize: 14, fontWeight: 700,
               textDecoration: "none", flexShrink: 0,
             }}
@@ -194,47 +193,47 @@ export default function AdminSessionsPage() {
         </div>
 
         {/* Test push notification */}
-        <div style={{ marginBottom: 16, padding: "16px 20px", borderRadius: 14, background: "rgba(245,237,227,0.06)", border: "1px solid rgba(245,237,227,0.10)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+        <div style={{ marginBottom: 14, padding: "16px 20px", borderRadius: 14, background: "#fff", border: `2px solid ${T.ink}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
           <div>
-            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.14em", marginBottom: 4 }}>PUSH NOTIFICATION TEST</p>
-            <p style={{ fontSize: 13, color: "rgba(245,237,227,0.6)" }}>Send a test push to yourself (must have notifications enabled on your device)</p>
+            <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.45)", letterSpacing: "0.12em", marginBottom: 4 }}>PUSH NOTIFICATION TEST</p>
+            <p style={{ fontSize: 13, color: "rgba(20,17,15,.65)" }}>Send a test push to yourself (must have notifications enabled on your device)</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {testPushResult && <span style={{ fontSize: 12, color: testPushResult.startsWith("✓") ? "#716F39" : "#C6362E" }}>{testPushResult}</span>}
-            <button onClick={sendTestPush} disabled={testPushSending} style={{ padding: "10px 18px", borderRadius: 999, background: "rgba(245,237,227,0.15)", color: "#F7F0E8", border: "1px solid rgba(245,237,227,0.2)", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em" }}>
+            {testPushResult && <span style={{ fontSize: 12, color: testPushResult.startsWith("✓") ? T.olive : T.red }}>{testPushResult}</span>}
+            <button onClick={sendTestPush} disabled={testPushSending} style={{ padding: "10px 18px", borderRadius: 999, border: `2px solid ${T.ink}`, background: "transparent", color: T.ink, cursor: "pointer", fontFamily: T.mono, fontSize: 11, fontWeight: 800, letterSpacing: "0.1em" }}>
               {testPushSending ? "SENDING…" : "SEND TEST PUSH"}
             </button>
           </div>
         </div>
 
         {/* Test email button */}
-        <div style={{ marginBottom: 24, padding: "16px 20px", borderRadius: 14, background: "rgba(245,237,227,0.06)", border: "1px solid rgba(245,237,227,0.10)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+        <div style={{ marginBottom: 24, padding: "16px 20px", borderRadius: 14, background: "#fff", border: `2px solid ${T.ink}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
           <div style={{ flex: 1 }}>
-            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.14em", marginBottom: 8 }}>TEST EMAIL — HOLD CONFIRMATION</p>
+            <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.45)", letterSpacing: "0.12em", marginBottom: 8 }}>TEST EMAIL — HOLD CONFIRMATION</p>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <input
                 value={testEmailAddress}
                 onChange={e => setTestEmailAddress(e.target.value)}
                 placeholder="email@example.com"
-                style={{ padding: "8px 14px", borderRadius: 8, background: "rgba(245,237,227,0.08)", border: "1px solid rgba(245,237,227,0.15)", color: "#F7F0E8", fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, outline: "none", minWidth: 220 }}
+                style={{ padding: "9px 14px", borderRadius: 8, background: T.cream, border: "1.5px solid rgba(20,17,15,.2)", color: T.ink, fontFamily: T.body, fontSize: 14, outline: "none", minWidth: 220 }}
               />
-              <button onClick={sendTestEmail} disabled={testEmailSending} style={{ padding: "9px 18px", borderRadius: 999, background: "rgba(245,237,227,0.15)", color: "#F7F0E8", border: "1px solid rgba(245,237,227,0.2)", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", flexShrink: 0 }}>
+              <button onClick={sendTestEmail} disabled={testEmailSending} style={{ padding: "9px 18px", borderRadius: 999, border: `2px solid ${T.ink}`, background: "transparent", color: T.ink, cursor: "pointer", fontFamily: T.mono, fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", flexShrink: 0 }}>
                 {testEmailSending ? "SENDING…" : "SEND TEST"}
               </button>
-              {testEmailResult && <span style={{ fontSize: 12, color: testEmailResult.startsWith("✓") ? "#716F39" : "#C6362E" }}>{testEmailResult}</span>}
+              {testEmailResult && <span style={{ fontSize: 12, color: testEmailResult.startsWith("✓") ? T.olive : T.red }}>{testEmailResult}</span>}
             </div>
           </div>
         </div>
 
         {loadError && (
-          <div style={{ marginBottom: 20, padding: "14px 18px", borderRadius: 12, background: "rgba(230,57,70,0.15)", border: "1px solid rgba(230,57,70,0.3)", color: "#C6362E", fontSize: 13, fontWeight: 600 }}>
+          <div style={{ marginBottom: 20, padding: "14px 18px", borderRadius: 12, background: "rgba(198,54,46,.10)", border: `1.5px solid ${T.red}`, color: T.red, fontSize: 13, fontWeight: 600 }}>
             {loadError}
           </div>
         )}
 
         {/* Loading */}
         {loading && (
-          <div style={{ textAlign: "center", padding: 60, color: "rgba(245,237,227,0.3)", fontFamily: T.mono, fontSize: 12 }}>
+          <div style={{ textAlign: "center", padding: 60, color: "rgba(20,17,15,.35)", fontFamily: T.mono, fontSize: 12 }}>
             LOADING…
           </div>
         )}
@@ -243,21 +242,21 @@ export default function AdminSessionsPage() {
         {!loading && sessions.length === 0 && (
           <div style={{
             textAlign: "center", padding: 60,
-            background: "rgba(245,237,227,0.04)", borderRadius: 20,
-            border: "1px dashed rgba(245,237,227,0.12)",
+            background: "#fff", borderRadius: 20,
+            border: "2px dashed rgba(20,17,15,.25)",
           }}>
             <p style={{ fontSize: 32, marginBottom: 12 }}>🧘</p>
-            <p style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.16em" }}>
+            <p style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 800, color: "rgba(20,17,15,.4)", letterSpacing: "0.16em" }}>
               NO SESSIONS YET
             </p>
-            <p style={{ fontSize: 14, color: "rgba(245,237,227,0.5)", marginTop: 8, marginBottom: 24 }}>
+            <p style={{ fontSize: 14, color: "rgba(20,17,15,.5)", marginTop: 8, marginBottom: 24 }}>
               Create your first session to get things moving.
             </p>
             <Link
               href="/admin/sessions/new"
               style={{
                 display: "inline-block", padding: "14px 24px", borderRadius: 999,
-                background: T.cream, color: T.black, textDecoration: "none",
+                background: T.ink, color: T.cream, textDecoration: "none",
                 fontFamily: T.body, fontSize: 15, fontWeight: 700,
               }}
             >
@@ -268,10 +267,13 @@ export default function AdminSessionsPage() {
 
         {/* Upcoming sessions */}
         {upcoming.length > 0 && (
-          <div style={{ marginBottom: 36 }}>
-            <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.18em", marginBottom: 14 }}>
-              UPCOMING
-            </p>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: T.ink }}>
+                UPCOMING · {upcoming.length}
+              </span>
+              <span style={{ flex: 1, height: 1, background: "rgba(20,17,15,.15)" }} />
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {upcoming.map((s) => (
                 <SessionCard
@@ -292,9 +294,12 @@ export default function AdminSessionsPage() {
         {/* Past sessions */}
         {past.length > 0 && (
           <div>
-            <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.18em", marginBottom: 14 }}>
-              PAST
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: T.ink }}>
+                PAST · {past.length}
+              </span>
+              <span style={{ flex: 1, height: 1, background: "rgba(20,17,15,.15)" }} />
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {past.map((s) => (
                 <SessionCard
@@ -364,29 +369,26 @@ function SessionCard({
   }
 
   return (
-    <div style={{
-      background: "rgba(245,237,227,0.05)", borderRadius: 16,
-      border: "1px solid rgba(245,237,227,0.10)", overflow: "hidden",
-    }}>
+    <div style={{ background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 14, overflow: "hidden" }}>
       {/* Top row */}
-      <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
         {/* Type dot */}
         <div style={{
-          width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+          width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
           background: typeColor + "22", display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, color: typeColor }}>
+          <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 800, color: typeColor }}>
             {s.movement_type.charAt(0).toUpperCase()}
           </span>
         </div>
 
         {/* Title + location */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontWeight: 700, fontSize: 15, margin: 0, lineHeight: 1.2 }}>{s.title}</p>
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.45)", letterSpacing: "0.1em", marginTop: 3 }}>
+          <p style={{ fontWeight: 700, fontSize: 15, margin: 0, lineHeight: 1.2, color: T.ink }}>{s.title}</p>
+          <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.5)", letterSpacing: "0.08em", marginTop: 3 }}>
             {startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase()} · {startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()}
           </p>
-          <p style={{ fontSize: 12, color: "rgba(245,237,227,0.45)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <p style={{ fontSize: 12, color: "rgba(20,17,15,.5)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {s.location_name}
           </p>
         </div>
@@ -395,46 +397,44 @@ function SessionCard({
             draft session still shows state "open" underneath; flag it clearly
             since a draft is invisible on the public site regardless of state. */}
         {s.is_draft && (
-          <div style={{
-            padding: "5px 10px", borderRadius: 999,
-            background: "rgba(245,237,227,0.15)", color: "rgba(245,237,227,0.8)",
-            fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
-            flexShrink: 0,
+          <span style={{
+            fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
+            padding: "4px 10px", borderRadius: 999, flexShrink: 0,
+            background: "rgba(252,187,22,.35)", color: T.ink,
           }}>
             DRAFT — NOT LIVE
-          </div>
+          </span>
         )}
-        <div style={{
-          padding: "5px 10px", borderRadius: 999,
+        <span style={{
+          fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
+          padding: "4px 10px", borderRadius: 999, flexShrink: 0,
           background: stateInfo.bg, color: stateInfo.fg,
-          fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
-          flexShrink: 0,
         }}>
           {stateInfo.label}
-        </div>
+        </span>
       </div>
 
       {/* Stats row */}
       <div style={{
-        padding: "12px 20px", display: "flex", gap: 24, alignItems: "center",
-        borderTop: "1px solid rgba(245,237,227,0.06)",
-        background: "rgba(0,0,0,0.2)",
+        padding: "12px 18px", display: "flex", gap: 22, alignItems: "center", flexWrap: "wrap",
+        borderTop: "1px solid rgba(20,17,15,.10)",
+        background: T.cream,
       }}>
         <Stat label="HOLDS" value={`${s.current_holds} / ${s.max_attendees}`} />
-        <Stat label="PRICE NOW" value={`$${currentPrice.toFixed(2)}`} color={T.yellow} />
+        <Stat label="PRICE NOW" value={`$${currentPrice.toFixed(2)}`} color={T.purple} />
         <Stat label="COSTS + TARGET" value={`$${s.cost_base} + $${s.revenue_target}`} />
-        <Stat label="MIN" value={`${s.min_attendees} needed`} color={isConfirmed ? T.green : needsMore > 0 ? "#E96709" : T.green} />
+        <Stat label="MIN" value={`${s.min_attendees} needed`} color={isConfirmed ? T.olive : needsMore > 0 ? T.orange : T.olive} />
 
         {/* Actions */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
           {s.is_draft && (
             <button
               onClick={() => onPublish(s.id)}
               disabled={publishing}
               style={{
                 padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
-                background: T.yellow, color: T.black,
-                fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+                background: T.yellow, color: T.ink,
+                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
               }}
             >
               {publishing ? "PUBLISHING…" : "PUBLISH"}
@@ -443,10 +443,11 @@ function SessionCard({
           <button
             onClick={toggleAttendees}
             style={{
-              padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
-              background: showAttendees ? "rgba(252,187,22,0.22)" : "rgba(245,237,227,0.10)",
-              color: showAttendees ? T.yellow : T.cream,
-              fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+              padding: "7px 14px", borderRadius: 999, cursor: "pointer",
+              border: `1.5px solid ${T.ink}`,
+              background: showAttendees ? T.ink : "transparent",
+              color: showAttendees ? T.cream : T.ink,
+              fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
             }}
           >
             ATTENDEES ({s.current_holds})
@@ -455,8 +456,8 @@ function SessionCard({
             href={`/sessions/${s.id}`}
             style={{
               padding: "7px 14px", borderRadius: 999, textDecoration: "none",
-              background: "rgba(245,237,227,0.10)", color: T.cream,
-              fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+              border: `1.5px solid ${T.ink}`, background: "transparent", color: T.ink,
+              fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
             }}
           >
             VIEW
@@ -465,8 +466,8 @@ function SessionCard({
             href={`/admin/sessions/new?duplicate=${s.id}`}
             style={{
               padding: "7px 14px", borderRadius: 999, textDecoration: "none",
-              background: "rgba(245,237,227,0.10)", color: T.cream,
-              fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+              border: `1.5px solid ${T.ink}`, background: "transparent", color: T.ink,
+              fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
             }}
           >
             DUPLICATE
@@ -476,8 +477,8 @@ function SessionCard({
               href={`/admin/sessions/${s.id}/money`}
               style={{
                 padding: "7px 14px", borderRadius: 999, textDecoration: "none",
-                background: "rgba(252,187,22,0.18)", color: T.yellow,
-                fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+                background: T.yellow, color: T.ink,
+                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
               }}
             >
               MONEY
@@ -489,8 +490,8 @@ function SessionCard({
               disabled={requestingSub}
               style={{
                 padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
-                background: "rgba(252,187,22,0.18)", color: T.yellow,
-                fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+                background: "rgba(233,103,9,.18)", color: T.orange,
+                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
               }}
             >
               {requestingSub ? "SENDING…" : "NEED SUB"}
@@ -502,8 +503,8 @@ function SessionCard({
               disabled={cancelling}
               style={{
                 padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
-                background: "rgba(230,57,70,0.15)", color: "#C6362E",
-                fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+                background: T.red, color: T.cream,
+                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
               }}
             >
               {cancelling ? "…" : "CANCEL"}
@@ -514,21 +515,21 @@ function SessionCard({
 
       {/* Attendee roster */}
       {showAttendees && (
-        <div style={{ padding: "14px 20px", borderTop: "1px solid rgba(245,237,227,0.08)" }}>
+        <div style={{ padding: "14px 18px", borderTop: "1px solid rgba(20,17,15,.10)" }}>
           {loadingAttendees ? (
-            <p style={{ fontSize: 12, color: "rgba(245,237,227,0.4)", fontFamily: T.mono }}>LOADING…</p>
+            <p style={{ fontSize: 12, color: "rgba(20,17,15,.4)", fontFamily: T.mono }}>LOADING…</p>
           ) : !attendees || attendees.length === 0 ? (
-            <p style={{ fontSize: 13, color: "rgba(245,237,227,0.4)" }}>No one&rsquo;s holding a spot yet.</p>
+            <p style={{ fontSize: 13, color: "rgba(20,17,15,.45)" }}>No one&rsquo;s holding a spot yet.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {attendees.map((a, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
                   <div>
-                    <span style={{ fontWeight: 700 }}>{a.name}</span>
-                    <span style={{ color: "rgba(245,237,227,0.5)", marginLeft: 8 }}>{a.email}</span>
+                    <span style={{ fontWeight: 700, color: T.ink }}>{a.name}</span>
+                    <span style={{ color: "rgba(20,17,15,.5)", marginLeft: 8 }}>{a.email}</span>
                   </div>
                   {a.spots > 1 && (
-                    <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 700, color: T.yellow }}>×{a.spots}</span>
+                    <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 800, color: T.purple }}>×{a.spots}</span>
                   )}
                 </div>
               ))}
@@ -543,10 +544,10 @@ function SessionCard({
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div>
-      <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700, color: "rgba(245,237,227,0.35)", letterSpacing: "0.14em", marginBottom: 2 }}>
+      <p style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, color: "rgba(20,17,15,.4)", letterSpacing: "0.1em", marginBottom: 2 }}>
         {label}
       </p>
-      <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: color || "#F7F0E8" }}>
+      <p style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 800, color: color || T.ink }}>
         {value}
       </p>
     </div>
