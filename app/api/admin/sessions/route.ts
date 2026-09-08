@@ -303,6 +303,7 @@ export async function DELETE(request: NextRequest) {
       resend.emails.send({
         from: "Stretchy <hello@stretchy.social>",
         to: a.email,
+        bcc: "kimberley@stretchyyoga.co.nz",
         reply_to: "kimberley@stretchyyoga.co.nz",
         subject: `This one's not going ahead — ${session.title}`,
         headers: { "X-Priority": "1", "Importance": "High" },

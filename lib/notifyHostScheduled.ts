@@ -57,6 +57,7 @@ export async function notifyHostScheduled({
         .send({
           from: "Stretchy HQ <hello@stretchy.social>",
           to: host.email,
+          bcc: "kimberley@stretchyyoga.co.nz",
           subject: `You're scheduled: ${session.title}`,
           text: `Hi ${firstName},\n\nYou're down for ${roleLabel} ${session.title} — ${dateStr}, ${session.locationName}.\n\nAdd it to your calendar: ${calUrl}\n(or open the attached .ics file)\n\nStretchy HQ`,
           html: `
@@ -124,6 +125,7 @@ export async function notifyHostCancelled({
         .send({
           from: "Stretchy HQ <hello@stretchy.social>",
           to: host.email,
+          bcc: "kimberley@stretchyyoga.co.nz",
           subject: `Cancelled: ${session.title}`,
           text: `Hi ${firstName},\n\nHeads up — ${session.title} (${dateStr}, ${session.locationName}) that you were ${roleLabel} has been cancelled. Nothing you need to do — just remove it from your calendar.\n\nStretchy HQ`,
           html: `

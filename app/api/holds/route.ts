@@ -307,6 +307,7 @@ export async function DELETE(request: NextRequest) {
       resend.emails.send({
         from: "Stretchy <hello@stretchy.social>",
         to: attendeeData.email,
+        bcc: "kimberley@stretchyyoga.co.nz",
         reply_to: "kimberley@stretchyyoga.co.nz",
         subject,
         headers: { "X-Priority": "1", "Importance": "High" },
@@ -508,6 +509,7 @@ export async function PATCH(request: NextRequest) {
       await resend.emails.send({
         from: "Stretchy <hello@stretchy.social>",
         to: attendeeData.email,
+        bcc: "kimberley@stretchyyoga.co.nz",
         reply_to: "kimberley@stretchyyoga.co.nz",
         subject: isAddition ? `Booking updated — ${sessionData.title}` : `Booking confirmation — ${sessionData.title}`,
         headers: {
