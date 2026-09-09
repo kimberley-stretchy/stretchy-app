@@ -20,7 +20,7 @@ const STEPS = [
   {
     n: "04",
     title: "The Social Stretch.",
-    body: "The fun bit after the bit. Café, bar, grass. Always say “kia ora” to someone new. (Pay your own way for food & drink.)",
+    body: "The fun bit after the other fun bit. Café, bar, park, beach. Always say “kia ora” to someone new. (Pay your own way for food & drink.)",
   },
 ];
 

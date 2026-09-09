@@ -33,8 +33,8 @@ const CARDS = [
     n: "04",
     timing: "AFTERWARDS",
     title: "The Social Stretch",
-    bodyMobile: 'The fun bit after the bit. Café, bar, grass. Always say “kia ora” to someone new.',
-    bodyDesktop: 'The fun bit after the bit. Café, bar, grass. Here we make mates off the mat & always say “kia ora” to someone new.',
+    bodyMobile: 'The fun bit after the other fun bit. Café, bar, park, beach. Always say “kia ora” to someone new.',
+    bodyDesktop: 'The fun bit after the other fun bit. Café, bar, park, beach. Here we make mates off the mat & always say “kia ora” to someone new.',
   },
 ];
 
