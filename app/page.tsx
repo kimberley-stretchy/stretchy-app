@@ -168,6 +168,12 @@ export default async function HomePage() {
   const suggestionsToShow =
     suggestions.length >= 4 ? suggestions : [...suggestions, ...PLACEHOLDER_SUGGESTIONS.slice(suggestions.length)];
 
+  // The "How it works" pricing simulator reads real numbers from whichever
+  // session is currently featured first, rather than hardcoding Herne Bay's
+  // figures — falls back to the reference Herne Bay | Morning values when
+  // there's no real session live yet.
+  const pricingSource = open[0] ?? { cost_base: 201.25, revenue_target: 200, min_attendees: 14, max_attendees: 32 };
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -187,7 +193,12 @@ export default async function HomePage() {
       <MarketingNav />
       <Hero />
       <WhatStretchyIs />
-      <HowItWorks />
+      <HowItWorks
+        costBase={pricingSource.cost_base}
+        revenueTarget={pricingSource.revenue_target}
+        minMats={pricingSource.min_attendees}
+        maxMats={pricingSource.max_attendees}
+      />
       <WhatsOnNext sessions={sessionsToShow} notifySession={notify} />
       <SuggestBand suggestions={suggestionsToShow} />
       <SocialStretchBand />

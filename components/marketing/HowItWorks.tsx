@@ -1,6 +1,12 @@
+"use client";
+
+import { useState } from "react";
+import { calculatePrice, formatPrice } from "@/lib/pricing";
+
 const CARDS = [
   {
     n: "01",
+    timing: "UP TO 36 HRS OUT",
     title: "Hold your place",
     bodyMobile: "Nothing is charged. You see the most you could ever pay, up front. Confirmed 36 hours before.",
     bodyDesktop:
@@ -9,6 +15,7 @@ const CARDS = [
   },
   {
     n: "02",
+    timing: "UP TO 2 HRS OUT",
     title: "The room fills, gets better for all",
     bodyMobile: "Once the minimum viable mats are reached, the session is locked in. Your final price is locked 2 hours out.",
     bodyDesktop:
@@ -16,6 +23,7 @@ const CARDS = [
   },
   {
     n: "03",
+    timing: "STRETCHY TIME",
     title: "We move together",
     bodyMobile: "Your teacher guides the practice, and our Good Energy Managers are there for the community vibes.",
     bodyDesktop:
@@ -23,20 +31,74 @@ const CARDS = [
   },
   {
     n: "04",
+    timing: "AFTERWARDS",
     title: "The Social Stretch",
     bodyMobile: 'The fun bit after the bit. Café, bar, grass. Always say “kia ora” to someone new.',
     bodyDesktop: 'The fun bit after the bit. Café, bar, grass. Here we make mates off the mat & always say “kia ora” to someone new.',
   },
 ];
 
-export default function HowItWorks() {
+function StepLabel({ n, timing }: { n: string; timing: string }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <span className="font-mono text-[11px] lg:text-[13px] font-extrabold tracking-[0.12em]">{n}</span>
+      <span className="w-[1.5px] h-[10px] lg:h-3 bg-[rgba(20,17,15,.4)] flex-shrink-0" />
+      <span className="font-mono text-[11px] lg:text-[13px] font-extrabold tracking-[0.12em]">{timing}</span>
+    </div>
+  );
+}
+
+// The interactive pricing simulator inside step 02 — a marketing illustration,
+// not a booking control. Reads its numbers from a real session's cost_base +
+// revenue_target + min/max mats (passed in as props) rather than hardcoding
+// the Herne Bay figures, so this stays accurate as sessions change; only the
+// footnote text names Herne Bay specifically, per the design handover.
+function PriceSimulator({ costBase, revenueTarget, minMats, maxMats }: { costBase: number; revenueTarget: number; minMats: number; maxMats: number }) {
+  const [mats, setMats] = useState(minMats);
+  const price = calculatePrice(costBase, revenueTarget, Math.max(mats, minMats));
+
+  return (
+    <div className="mt-auto pt-[14px] border-t-2 border-ink">
+      <div className="font-mono text-[22px] font-extrabold tracking-[0.02em]">
+        {formatPrice(price)} EACH
+      </div>
+      <input
+        type="range"
+        min={minMats}
+        max={maxMats}
+        step={1}
+        value={mats}
+        onChange={(e) => setMats(Number(e.target.value))}
+        className="w-full mt-3 h-11 lg:h-12 accent-ink"
+        aria-label="Simulate room size"
+      />
+      <div className="flex justify-between font-mono text-[10px] font-extrabold tracking-[0.08em] mt-1">
+        <span>{minMats} MIN</span>
+        <span>{maxMats} FULL</span>
+      </div>
+      <p className="text-[11px] italic mt-3 mb-0">*Eg pricing based on Herne Bay mornings.</p>
+    </div>
+  );
+}
+
+export default function HowItWorks({
+  costBase = 201.25,
+  revenueTarget = 200,
+  minMats = 14,
+  maxMats = 32,
+}: {
+  costBase?: number;
+  revenueTarget?: number;
+  minMats?: number;
+  maxMats?: number;
+}) {
   return (
     <div
       id="how-it-works"
       className="bg-sky text-ink border-t-2 border-ink px-[18px] py-[26px] lg:p-[60px_44px] flex flex-col gap-[14px] lg:gap-9"
     >
       <div className="flex flex-col gap-[14px] max-w-[800px]">
-        <div className="font-mono text-[9px] lg:text-[11px] font-extrabold tracking-[0.14em] lg:tracking-[0.15em]">
+        <div className="font-mono text-[9px] lg:text-[11px] font-extrabold tracking-[0.15em]">
           HOW IT WORKS &middot; SOCIAL PRICING
         </div>
         <h2 className="font-display text-[34px] lg:text-[50px] leading-[.94] lg:leading-[.94] m-0 max-w-[16ch]">
@@ -50,13 +112,13 @@ export default function HowItWorks() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-[9px] lg:grid lg:grid-cols-[repeat(auto-fit,minmax(230px,1fr))] lg:gap-[18px]">
+      <div className="flex flex-col gap-[9px] lg:grid lg:grid-cols-[repeat(4,minmax(0,1fr))] lg:gap-[18px] lg:items-stretch">
         {CARDS.map((c) => (
           <div
             key={c.n}
             className="bg-sky border-2 border-ink rounded-2xl lg:rounded-[20px] p-4 lg:p-6 flex flex-col gap-3"
           >
-            <div className="font-mono text-[11px] lg:text-[13px] font-extrabold tracking-[0.12em]">{c.n}</div>
+            <StepLabel n={c.n} timing={c.timing} />
             <div className="font-display text-[22px] lg:text-[23px] leading-none mt-1.5 lg:mt-0">{c.title}</div>
             <p className="m-0 mt-1.5 lg:mt-0 text-[13px] leading-[1.5]">
               <span className="lg:hidden">{c.bodyMobile}</span>
@@ -69,6 +131,9 @@ export default function HowItWorks() {
               >
                 {c.cta}
               </a>
+            )}
+            {c.n === "02" && (
+              <PriceSimulator costBase={costBase} revenueTarget={revenueTarget} minMats={minMats} maxMats={maxMats} />
             )}
           </div>
         ))}
