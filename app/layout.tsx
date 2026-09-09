@@ -1,5 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+
+// Without this, some Android browsers (Chrome/Samsung Internet's "force dark
+// theme" setting) auto-invert the whole page to a dark palette on devices
+// set to dark mode — the app has no dark theme, so testers on those devices
+// were seeing a broken, algorithmically-inverted version of the light one.
+export const viewport: Viewport = {
+  colorScheme: "light",
+};
 
 export const metadata: Metadata = {
   title: "Stretchy — A Social Movement",

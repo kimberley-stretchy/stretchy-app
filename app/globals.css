@@ -12,6 +12,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --hot-blue: #0000FF;
     --yellow:   #FCBB16;
     --cream:    #F7F0E8;
