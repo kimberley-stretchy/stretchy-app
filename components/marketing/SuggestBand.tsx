@@ -98,7 +98,11 @@ export default function SuggestBand({ suggestions }: { suggestions: MarketingSug
   const board = items.slice(0, 4);
 
   return (
-    <div id="suggest" className="bg-olive border-t-2 border-ink text-cream px-[18px] py-[22px] lg:p-[60px_44px]">
+    <div className="bg-cream lg:bg-olive lg:border-t-2 lg:border-ink px-[14px] py-[14px] lg:px-0 lg:py-0">
+      <div
+        id="suggest"
+        className="bg-olive text-cream rounded-[24px] lg:rounded-none border-2 border-ink lg:border-0 px-[18px] py-[22px] lg:p-[60px_44px]"
+      >
       <div className="lg:grid lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)] lg:gap-[52px] lg:items-center">
         {/* Left — the pitch */}
         <div className="flex flex-col gap-3">
@@ -144,6 +148,7 @@ export default function SuggestBand({ suggestions }: { suggestions: MarketingSug
       >
         Suggest your own
       </a>
+      </div>
     </div>
   );
 }
