@@ -201,9 +201,6 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
 
       <div className="px-4 max-w-lg mx-auto space-y-4">
 
-        {/* S-mark */}
-        <div style={{ color: "#29ABE2" }}><SMark size={88} /></div>
-
         <p className="font-mono text-xs font-bold uppercase tracking-[0.22em] text-muted">Your hold</p>
         <h1 className="font-display font-bold text-ink" style={{ fontSize: "clamp(54px, 15vw, 70px)", letterSpacing: "-0.04em", lineHeight: "0.90" }}>
           Place<br />held.

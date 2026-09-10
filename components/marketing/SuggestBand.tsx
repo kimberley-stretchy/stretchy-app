@@ -45,8 +45,7 @@ function SuggestionRow({ s, voted, onVote }: { s: BoardSuggestion; voted: boolea
       onClick={() => onVote(s.id)}
       disabled={voted}
       aria-label={voted ? `You voted for ${title}` : `Vote for ${title}`}
-      className="w-full text-left flex items-center gap-3 lg:gap-[14px] rounded-2xl lg:rounded-[18px] border-2 border-cream px-3.5 py-3 lg:px-[18px] lg:py-[14px] transition-colors"
-      style={{ background: voted ? "#14110F" : "transparent" }}
+      className="w-full text-left flex items-center gap-3 lg:gap-[14px] rounded-2xl lg:rounded-[18px] border-2 border-cream px-3.5 py-3 lg:px-[18px] lg:py-[14px] bg-transparent"
     >
       <span className="w-10 h-10 lg:w-11 lg:h-11 rounded-full border-2 border-cream flex items-center justify-center flex-shrink-0">
         <HeartIcon voted={voted} />

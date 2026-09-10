@@ -60,7 +60,7 @@ function PriceSimulator({ costBase, revenueTarget, minMats, maxMats }: { costBas
   return (
     <div className="mt-auto pt-[14px] border-t-2 border-ink">
       <div className="font-mono text-[22px] font-extrabold tracking-[0.02em] leading-tight">
-        {formatPrice(price)} EACH <span className="opacity-60">/ AT {Math.max(mats, minMats)} PEEPS</span>
+        {formatPrice(price)} EACH <span className="opacity-60">/ {Math.max(mats, minMats)} PEEPS</span>
       </div>
       <input
         type="range"
