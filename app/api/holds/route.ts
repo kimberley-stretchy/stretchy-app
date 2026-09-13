@@ -5,6 +5,19 @@ import Stripe from "stripe";
 import { Resend } from "resend";
 import { cookies } from "next/headers";
 import { calculatePrice } from "@/lib/pricing";
+import { sendAttendeeEmail } from "@/lib/stretchy-email";
+import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
+
+// Age in whole years from a YYYY-MM-DD date-of-birth string.
+function ageFromDob(dob: string): number | null {
+  const d = new Date(dob);
+  if (isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-04-10" });
@@ -482,11 +495,11 @@ export async function PATCH(request: NextRequest) {
     hold = holds?.[0];
   }
 
-  // Send hold confirmation email (fire and forget — don't block the response)
+  // Booking-held email (new template, fire and forget) + under-18 HQ alert.
   try {
     const [{ data: sessionData }, { data: attendeeData }] = await Promise.all([
-      admin.from("sessions").select("title, starts_at, location_name, social_stretch_venue").eq("id", sessionId).single(),
-      admin.from("attendees").select("name, email").eq("auth_user_id", holdUserId).single(),
+      admin.from("sessions").select("title, starts_at, location_name, social_stretch_venue, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram").eq("id", sessionId).single(),
+      admin.from("attendees").select("name, email, date_of_birth").eq("auth_user_id", holdUserId).single(),
     ]);
 
     if (sessionData && attendeeData?.email) {
@@ -494,58 +507,43 @@ export async function PATCH(request: NextRequest) {
       const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
         " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
 
-      // finalPi.amount is the TOTAL for every spot in this hold, not the per-person
-      // price — always show per-spot, and call out the total separately when
-      // there's more than one, so this never reads as a single-person price.
+      // finalPi.amount is the TOTAL for every spot — show the per-spot price.
       const perSpot = finalPi.amount / 100 / combinedQuantity;
-      const total = finalPi.amount / 100;
       const priceDisplay = `$${perSpot.toFixed(2)} incl. GST`;
-      const totalLine = combinedQuantity > 1 ? `Total for ${combinedQuantity} spots: $${total.toFixed(2)} incl. GST` : null;
-      const isAddition = !!existing;
-
-      const resend = new Resend(process.env.RESEND_API_KEY);
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchyyoga.co.nz";
-      const firstName = attendeeData.name?.split(" ")[0] ?? "there";
-      await resend.emails.send({
-        from: "Stretchy <hello@stretchy.social>",
+
+      const [extras, firstTimer] = await Promise.all([
+        buildSessionEmailExtras(admin, sessionData),
+        isFirstStretchy(admin, holdUserId),
+      ]);
+
+      await sendAttendeeEmail("hold_confirmed", {
         to: attendeeData.email,
-        bcc: "kimberley@stretchyyoga.co.nz",
-        reply_to: "kimberley@stretchyyoga.co.nz",
-        subject: isAddition ? `Booking updated — ${sessionData.title}` : `Booking confirmation — ${sessionData.title}`,
-        headers: {
-          "X-Priority": "1",
-          "X-MSMail-Priority": "High",
-          "Importance": "High",
-          "Precedence": "bulk",
-          "X-Mailer": "Stretchy",
-        },
-        text: `Hi ${firstName},\n\n${isAddition ? `You added ${addedQuantity} more spot${addedQuantity === 1 ? "" : "s"} to` : "Your spot is confirmed for"} ${sessionData.title} — you're now holding ${combinedQuantity} spot${combinedQuantity === 1 ? "" : "s"} in total.\n\nDate: ${dateStr}\nVenue: ${sessionData.location_name}\nCurrent price per spot: ${priceDisplay}${totalLine ? `\n${totalLine}` : ""}\n\nYou can cancel up to 36 hours before the session — no charge. After that, you're locked in and your card will be charged 2 hours before the session at the final price.\n\nView or cancel your hold: ${appUrl}/hold/${sessionId}\n\nQuestions? kimberley@stretchyyoga.co.nz\n\nStretchy\nstretchyyoga.co.nz`,
-        html: `
-          <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; background: #F7F0E8; padding: 32px; border-radius: 16px;">
-            <h1 style="font-size: 28px; font-weight: 900; color: #14110F; margin: 0 0 8px;">${isAddition ? "Booking updated." : "Booking confirmed."} 🙌</h1>
-            <p style="color: #555; font-size: 15px; margin: 0 0 24px;">Hi ${firstName} — ${isAddition ? `you added ${addedQuantity} more spot${addedQuantity === 1 ? "" : "s"} to` : "your spot is held for"} ${sessionData.title}.</p>
-            <div style="background: #14110F; border-radius: 14px; padding: 22px; margin-bottom: 16px;">
-              <p style="color: #FCBB16; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 6px;">Your booking</p>
-              <p style="color: #F7F0E8; font-size: 20px; font-weight: 800; margin: 0 0 8px;">${sessionData.title}${combinedQuantity > 1 ? ` · ${combinedQuantity} spots` : ""}</p>
-              <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">${dateStr}</p>
-              <p style="color: rgba(245,237,227,0.7); font-size: 14px; margin: 0 0 4px;">${sessionData.location_name}</p>
-              ${sessionData.social_stretch_venue ? `<p style="color: rgba(245,237,227,0.6); font-size: 13px; margin: 8px 0 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">Social Stretch after at ${sessionData.social_stretch_venue}</p>` : ""}
-            </div>
-            <div style="background: white; border-radius: 14px; padding: 18px; margin-bottom: 16px;">
-              <p style="font-size: 13px; color: #555; margin: 0 0 4px;">Current price per spot</p>
-              <p style="font-size: 28px; font-weight: 900; color: #14110F; margin: 0 0 4px;">${priceDisplay}</p>
-              ${totalLine ? `<p style="font-size: 14px; font-weight: 700; color: #14110F; margin: 0 0 4px;">${totalLine}</p>` : ""}
-              <p style="font-size: 12px; color: #999; margin: 0;">Price may drop as more people join. Your card is charged 2 hours before the session at the final price.</p>
-            </div>
-            <div style="background: #EDE5D8; border-radius: 14px; padding: 18px; margin-bottom: 16px;">
-              <p style="font-size: 13px; color: #444; line-height: 1.6; margin: 0 0 12px;">You can cancel up to <strong>36 hours before</strong> the session — no charge. After that, you are locked in.</p>
-              <a href="${appUrl}/hold/${sessionId}" style="display: inline-block; background: #14110F; color: #F7F0E8; text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: 8px;">View or cancel my booking</a>
-            </div>
-            <p style="font-size: 12px; color: #888; text-align: center; margin: 20px 0 0;">Questions? <a href="mailto:kimberley@stretchyyoga.co.nz" style="color: #14110F; font-weight: 600; text-decoration: none;">kimberley@stretchyyoga.co.nz</a></p>
-            <p style="font-size: 11px; color: #AAA; text-align: center; margin: 8px 0 0;">Made with Love by <a href="https://studiodawn.org" style="color: #AAA;">Studio Dawn</a></p>
-          </div>
-        `,
-      }).catch((e: unknown) => console.error("Hold email error:", e));
+        name: attendeeData.name?.split(" ")[0] ?? "there",
+        sessionTitle: sessionData.title,
+        date: dateStr,
+        price: priceDisplay,
+        venue: sessionData.location_name,
+        socialStretchVenue: sessionData.social_stretch_venue ?? undefined,
+        sessionId,
+        cancelUrl: `${appUrl}/hold/${sessionId}`,
+        isFirstStretchy: firstTimer,
+        ...extras,
+      }, { bcc: "kimberley@stretchyyoga.co.nz" });
+
+      // Under-18 → alert HQ (they can still book).
+      if (attendeeData.date_of_birth) {
+        const age = ageFromDob(attendeeData.date_of_birth);
+        if (age !== null && age < 18 && process.env.RESEND_API_KEY) {
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          await resend.emails.send({
+            from: "Stretchy HQ <hello@stretchy.social>",
+            to: "kimberley@stretchyyoga.co.nz",
+            subject: `⚠️ Under-18 booking — ${attendeeData.name ?? attendeeData.email}`,
+            text: `${attendeeData.name ?? "A member"} (${attendeeData.email}), age ${age}, just held a place for ${sessionData.title} (${dateStr}). Flagging for HQ — they were allowed to book.`,
+          }).catch((e: unknown) => console.error("Under-18 alert error:", e));
+        }
+      }
     }
   } catch (emailErr) {
     console.error("Email send error (non-blocking):", emailErr);

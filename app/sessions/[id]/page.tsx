@@ -40,6 +40,7 @@ type Session = {
   social_stretch_note: string | null;
   what_to_bring: string[] | null;
   my_hold_quantity?: number;
+  im_interested?: boolean;
 };
 
 // Price ladder — a short list of evenly-stepped rows, not a continuous curve,
@@ -64,6 +65,9 @@ export default function SessionDetailPage() {
   const [held, setHeld] = useState(false);
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [interested, setInterested] = useState(false);
+  const [interestBusy, setInterestBusy] = useState(false);
+  const didInitInterest = useRef(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -123,12 +127,42 @@ export default function SessionDetailPage() {
     };
   }, [params.id]);
 
+  // Seed the "interested" toggle from the server once the session loads. Only
+  // once, so a background refetch can't clobber a tap the visitor just made.
+  useEffect(() => {
+    if (session && !didInitInterest.current) {
+      setInterested(!!session.im_interested);
+      didInitInterest.current = true;
+    }
+  }, [session]);
+
   function handleHold() {
     if (!accessToken) {
       router.push(`/login?next=/sessions/${params.id}`);
       return;
     }
     setShowHoldModal(true);
+  }
+
+  async function toggleInterest() {
+    if (!accessToken) {
+      router.push(`/login?next=/sessions/${params.id}`);
+      return;
+    }
+    if (interestBusy) return;
+    const next = !interested;
+    setInterested(next);
+    setInterestBusy(true);
+    try {
+      const res = await fetch(`/api/sessions/${params.id}/interest`, {
+        method: next ? "POST" : "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) setInterested(!next);
+    } catch {
+      setInterested(!next);
+    }
+    setInterestBusy(false);
   }
 
   if (loading) {
@@ -186,8 +220,17 @@ export default function SessionDetailPage() {
         <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-pill" style={{ background: "#E6F5EC", color: "#2E7A52" }}>
           ✓ Vetted host
         </span>
-        <button className="w-10 h-10 rounded-full border-2 border-ink flex items-center justify-center text-ink text-base">
-          ♡
+        <button
+          onClick={toggleInterest}
+          disabled={interestBusy}
+          aria-pressed={interested}
+          title={interested ? "You're interested — tap to remove" : "I'm interested — notify me about this one"}
+          className="w-10 h-10 rounded-full border-2 flex items-center justify-center text-base transition-colors"
+          style={interested
+            ? { background: "#902F8A", color: "#F7F0E8", borderColor: "#902F8A" }
+            : { borderColor: "#14110F", color: "#14110F", background: "transparent" }}
+        >
+          {interested ? "♥" : "♡"}
         </button>
       </nav>
 

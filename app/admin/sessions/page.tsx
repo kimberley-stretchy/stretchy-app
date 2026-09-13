@@ -352,6 +352,37 @@ function SessionCard({
   const [showAttendees, setShowAttendees] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[] | null>(null);
   const [loadingAttendees, setLoadingAttendees] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addName, setAddName] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [addMsg, setAddMsg] = useState<string | null>(null);
+
+  async function addComp() {
+    if (!addEmail.trim() || adding) return;
+    setAdding(true);
+    setAddMsg(null);
+    try {
+      const res = await fetch(`/api/admin/sessions/${s.id}/attendees`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: addEmail.trim(), name: addName.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAddMsg(`✓ Added ${data.attendee?.name ?? addEmail}${data.newAccount ? " — new account, they'll get a set-up link" : ""}`);
+        setAddEmail("");
+        setAddName("");
+        const r = await fetch(`/api/admin/sessions/${s.id}/attendees`);
+        const d = await r.json();
+        if (r.ok) setAttendees(d.attendees);
+      } else {
+        setAddMsg(data.error ?? "Could not add.");
+      }
+    } catch {
+      setAddMsg("Could not add.");
+    }
+    setAdding(false);
+  }
 
   async function toggleAttendees() {
     if (showAttendees) { setShowAttendees(false); return; }
@@ -533,6 +564,41 @@ function SessionCard({
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Comp someone in — Stretchy covers it, no charge. They get the full
+              "you're in — on us" email + the 38h / 36h / 2h reminders. */}
+          {s.state !== "cancelled" && s.state !== "completed" && (
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px dashed rgba(20,17,15,.2)" }}>
+              <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.45)", letterSpacing: "0.1em", marginBottom: 8 }}>
+                ADD SOMEONE — ON US (NO CHARGE)
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <input
+                  value={addEmail}
+                  onChange={(e) => setAddEmail(e.target.value)}
+                  placeholder="email@example.com"
+                  type="email"
+                  style={{ padding: "8px 12px", borderRadius: 8, background: T.cream, border: "1.5px solid rgba(20,17,15,.2)", color: T.ink, fontFamily: T.body, fontSize: 13, outline: "none", flex: "1 1 180px", minWidth: 160 }}
+                />
+                <input
+                  value={addName}
+                  onChange={(e) => setAddName(e.target.value)}
+                  placeholder="Name (optional)"
+                  style={{ padding: "8px 12px", borderRadius: 8, background: T.cream, border: "1.5px solid rgba(20,17,15,.2)", color: T.ink, fontFamily: T.body, fontSize: 13, outline: "none", flex: "1 1 130px", minWidth: 120 }}
+                />
+                <button
+                  onClick={addComp}
+                  disabled={adding || !addEmail.trim()}
+                  style={{ padding: "8px 16px", borderRadius: 999, border: "none", cursor: adding || !addEmail.trim() ? "default" : "pointer", background: T.purple, color: T.cream, fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", opacity: adding || !addEmail.trim() ? 0.5 : 1 }}
+                >
+                  {adding ? "ADDING…" : "ADD (ON US)"}
+                </button>
+              </div>
+              {addMsg && (
+                <p style={{ fontSize: 12, marginTop: 8, color: addMsg.startsWith("✓") ? T.olive : T.red }}>{addMsg}</p>
+              )}
             </div>
           )}
         </div>

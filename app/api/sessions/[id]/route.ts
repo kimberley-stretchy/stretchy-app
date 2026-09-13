@@ -53,6 +53,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // spot here — the hold page otherwise always shows "Hold my place" even
   // for someone who's already in.
   let myHoldQuantity = 0;
+  let imInterested = false;
   const token = request.headers.get("Authorization")?.replace("Bearer ", "");
   if (token) {
     const { data: { user } } = await admin.auth.getUser(token);
@@ -65,8 +66,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .eq("state", "active")
         .maybeSingle();
       myHoldQuantity = myHold?.quantity ?? 0;
+
+      const { data: myInterest } = await admin
+        .from("session_interest")
+        .select("id")
+        .eq("session_id", id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      imInterested = !!myInterest;
     }
   }
 
-  return NextResponse.json({ ...session, current_holds: currentHolds, my_hold_quantity: myHoldQuantity });
+  return NextResponse.json({ ...session, current_holds: currentHolds, my_hold_quantity: myHoldQuantity, im_interested: imInterested });
 }

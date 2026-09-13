@@ -67,10 +67,15 @@ function SetupForm({
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dob, setDob] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!stripe || !elements) return;
+    if (!dob) {
+      setError("Please add your date of birth.");
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -98,6 +103,7 @@ function SetupForm({
         notifyGoingAhead,
         notifyPriceLocked,
         notifyNewNearby,
+        dateOfBirth: dob,
         stripePaymentMethodId: typeof setupIntent?.payment_method === "string" ? setupIntent.payment_method : null,
       }),
     });
@@ -130,6 +136,23 @@ function SetupForm({
         </p>
         <p className="text-xs leading-[1.6]" style={{ color: "#14110F" }}>
           Something serious come up? Get in touch.
+        </p>
+      </div>
+
+      <div style={{ background: "#fff", border: "2px solid #14110F", borderRadius: 20, padding: "20px" }}>
+        <label htmlFor="dob" className="font-mono text-[10px] font-extrabold tracking-[0.12em] block mb-2.5" style={{ color: "rgba(20,17,15,.6)" }}>DATE OF BIRTH</label>
+        <input
+          id="dob"
+          type="date"
+          value={dob}
+          onChange={(e) => setDob(e.target.value)}
+          required
+          max={new Date().toISOString().slice(0, 10)}
+          className="w-full h-[46px] rounded-pill px-4 text-[15px]"
+          style={{ background: "#F7F0E8", border: "2px solid #14110F", color: "#14110F" }}
+        />
+        <p className="text-xs leading-[1.6] mt-2.5" style={{ color: "rgba(20,17,15,.6)" }}>
+          So we know who&rsquo;s moving with us. Under 18? You&rsquo;re welcome — we&rsquo;ll just be in touch.
         </p>
       </div>
 

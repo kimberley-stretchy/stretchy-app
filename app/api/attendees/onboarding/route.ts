@@ -46,6 +46,7 @@ export async function PATCH(request: NextRequest) {
     notifyPriceLocked,
     notifyNewNearby,
     stripePaymentMethodId,
+    dateOfBirth,
   } = body;
 
   const admin = getAdmin();
@@ -68,6 +69,7 @@ export async function PATCH(request: NextRequest) {
     notify_new_nearby: notifyNewNearby ?? false,
   };
   if (stripePaymentMethodId) updates.stripe_pm_id = stripePaymentMethodId;
+  if (dateOfBirth !== undefined) updates.date_of_birth = dateOfBirth || null;
 
   if (existing) {
     const { error } = await admin.from("attendees").update(updates).eq("id", existing.id);

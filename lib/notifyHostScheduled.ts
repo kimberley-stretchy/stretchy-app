@@ -110,7 +110,10 @@ export async function notifyHostCancelled({
       .eq("id", hostId)
       .single();
 
-    if (!host) return;
+    // Skip the auto-provisioned HQ placeholder host (unassigned sessions
+    // default to Kimberley's record) — she gets the HQ digest instead, not a
+    // misleading "you were teaching this" note.
+    if (!host || host.email === "kimberley@stretchyyoga.co.nz") return;
 
     const firstName = host.name?.split(" ")[0] ?? "there";
     const roleLabel = role === "teacher" ? "teaching" : "GEM-ing";

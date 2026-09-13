@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { buildWaitlistEmail } from "@/lib/stretchy-email";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = "Stretchy <kimberley@stretchyyoga.co.nz>";
@@ -81,12 +82,14 @@ export async function POST(request: NextRequest) {
       console.log("Waitlist DB insert OK");
     }
 
-    // ── 2. Send confirmation email ────────────────────────────────────────────
+    // ── 2. Send confirmation email (shared all-orange template) ───────────────
+    const waitlistEmail = buildWaitlistEmail(name.trim(), city.trim());
     const { error: resendError1 } = await resend.emails.send({
       from: FROM,
       to: email.trim(),
-      subject: "You're on the Stretchy waitlist 🌏",
-      html: emailWaitlistConfirm(name.trim(), city.trim(), role || "mover"),
+      reply_to: "kimberley@stretchyyoga.co.nz",
+      subject: waitlistEmail.subject,
+      html: waitlistEmail.html,
     });
     if (resendError1) console.error("Resend user email error:", JSON.stringify(resendError1));
     else console.log("User confirmation email sent");
