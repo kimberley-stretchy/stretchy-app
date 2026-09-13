@@ -44,7 +44,7 @@ export type Scheme = { bg: string; text: string; btnBg: string; btnText: string 
 export const SCHEMES: Record<string, Scheme> = {
   cream:  { bg: "#F7F0E8", text: "#14110F", btnBg: "#14110F", btnText: "#F7F0E8" },
   blue:   { bg: "#29ABE2", text: "#14110F", btnBg: "#14110F", btnText: "#F7F0E8" },
-  olive:  { bg: "#716F39", text: "#F7F0E8", btnBg: "#F7F0E8", btnText: "#14110F" },
+  olive:  { bg: "#8A8746", text: "#14110F", btnBg: "#14110F", btnText: "#F7F0E8" },
   purple: { bg: "#902F8A", text: "#F7F0E8", btnBg: "#F7F0E8", btnText: "#14110F" },
   orange: { bg: "#E96709", text: "#14110F", btnBg: "#14110F", btnText: "#F7F0E8" },
   dkblue: { bg: "#2233E0", text: "#F7F0E8", btnBg: "#F7F0E8", btnText: "#14110F" },
@@ -194,7 +194,6 @@ function holdConfirmedEmail(p: AttendeeEmailPayload) {
     ${priceBox(sc, p.price ?? "TBC", "Price drops as more people join. Your card is charged 2 hours before the session at the final price. 📉")}
     ${tellMates(sc)}
     ${box(sc, `${label(sc, "Cancellation window")}<p style="color:${sc.text};font-size:13px;line-height:1.6;margin:0 0 12px;">${CANCEL_WINDOW}</p>${button(sc, p.cancelUrl || `${APP_URL}/hold/${p.sessionId ?? ""}`, "View or cancel my booking")}`)}
-    ${p.isFirstStretchy ? firstStretchy(sc, p) : ""}
   `);
 }
 
@@ -212,14 +211,15 @@ function almostThereEmail(p: AttendeeEmailPayload) {
       ${box(sc, `${label(sc, "Heads up · cancellation window")}<p style="color:${sc.text};font-size:13px;line-height:1.6;margin:0 0 12px;">You can still cancel free until the <strong>36-hour mark — about 2 hours from now</strong>. After that your place is locked in and the price stands. If we don't reach the minimum by then, it's called off and nothing's charged.</p>${button(sc, p.cancelUrl || `${APP_URL}/hold/${p.sessionId ?? ""}`, "Manage my hold")}`)}
     `);
   }
+  const neededPeople = `${needed} more ${needed === 1 ? "person" : "people"}`;
   return page("purple", (sc) => `
-    ${h1(sc, "It's so close. 👀")}
+    ${h1(sc, `Interested?! We need ${neededPeople} for this Stretchy to go ahead.`)}
     ${hey(sc, p.name)}
-    ${msg(sc, `This is the moment: hold your spot & the session's going ahead! Plus, the more people who move together, the better it gets for all — so the price may just keep on dropping. 📉`)}
-    ${bigCount(sc, needed)}
-    ${stretchyCard(sc, p, "Your Stretchy")}
+    ${msg(sc, `We just need <strong>${neededPeople}</strong> for this Stretchy session to go ahead. From there, the price may keep dropping — the more people who move together, the better it gets for all. 📉`)}
+    ${button(sc, shareUrl, "Grab your spot →")}
+    ${stretchyCard(sc, p, "The Session")}
     ${p.price ? priceBox(sc, p.price, "The more people who move together, the better it gets — and the price only keeps dropping. 📉", "Price right now") : ""}
-    ${button(sc, shareUrl, "Grab a spot →")}
+    ${button(sc, shareUrl, "Grab your spot →")}
   `);
 }
 
@@ -232,9 +232,8 @@ function sessionGoingAheadEmail(p: AttendeeEmailPayload) {
     ${msg(sc, `This one's going ahead. See you on the mat! 🤙`)}
     ${stretchyCard(sc, p, "Confirmed")}
     ${priceBox(sc, isComp ? "On us 💛" : (p.price ?? "TBC"), isComp ? "This one's covered by Stretchy — nothing to pay. Just show up. 🧘" : "Charged to your card 2 hours before the session at this final price. No surprises.", isComp ? "Your spot" : "Final price")}
-    ${whatToBring(sc)}
+    ${p.isFirstStretchy ? firstStretchy(sc, p) : whatToBring(sc)}
     ${directionsBox(sc, p.directions)}
-    ${p.isFirstStretchy ? firstStretchy(sc, p) : ""}
     ${button(sc, url, "View your session →")}
   `);
 }
@@ -242,7 +241,7 @@ function sessionGoingAheadEmail(p: AttendeeEmailPayload) {
 function openConfirmedEmail(p: AttendeeEmailPayload) {
   const bookUrl = p.shareUrl || (p.sessionId ? `${APP_URL}/sessions/${p.sessionId}` : `${APP_URL}/sessions`);
   return page("orange", (sc) => `
-    ${h1(sc, "It's on. 🎉")}
+    ${h1(sc, "Still interested? Stretchy is on & the price is droppppppin' 📉")}
     ${hey(sc, p.name)}
     ${msg(sc, `<strong>${p.sessionTitle}</strong> hit its minimum and is going ahead. You marked yourself interested, so heads up: there's still room, but spots go. Grab yours. 🧘`)}
     ${stretchyCard(sc, p, "Going ahead")}
@@ -276,7 +275,6 @@ function priceLockedEmail(p: AttendeeEmailPayload) {
     ${whatToBring(sc)}
     ${directionsBox(sc, p.directions)}
     ${p.isFirstStretchy ? firstStretchy(sc, p) : ""}
-    ${para(sc, "Doors close in 2 hours. See you on the mat. 🧘")}
     ${msg(sc, "See you soon,<br>Stretchy")}
   `);
 }
