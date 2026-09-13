@@ -5,7 +5,7 @@ import { calculatePrice } from "@/lib/pricing";
 import { sendAttendeeEmail, APP_URL } from "@/lib/stretchy-email";
 import { notifyHostCancelled } from "@/lib/notifyHostScheduled";
 import { notifyHostConfirmed, notifyHostRecruit, notifyHQ } from "@/lib/notifyLifecycle";
-import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
+import { buildSessionEmailExtras, isFirstStretchy, movementLabel } from "@/lib/sessionEmailContext";
 
 /**
  * GET /api/cron/session-check — runs hourly via Vercel Cron.
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
   try {
     const { data: nudgeSessions } = await admin
       .from("sessions")
-      .select("id, title, starts_at, location_name, min_attendees, social_stretch_venue, host_id, gem_host_id")
+      .select("id, title, starts_at, location_name, min_attendees, social_stretch_venue, host_id, gem_host_id, movement_type")
       .eq("state", "open")
       .not("is_draft", "is", true)
       .gte("starts_at", hoursFromNow(now, 37))
@@ -168,8 +168,9 @@ export async function GET(request: NextRequest) {
       }).catch(console.error);
 
       // Teacher + GEM — "help fill it" heads-up.
-      if (s.host_id) notifyHostRecruit({ hostId: s.host_id, role: "teacher", session: { id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name }, needed, shareUrl }).catch(console.error);
-      if (s.gem_host_id) notifyHostRecruit({ hostId: s.gem_host_id, role: "gem", session: { id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name }, needed, shareUrl }).catch(console.error);
+      const recruitStyle = movementLabel(s.movement_type);
+      if (s.host_id) notifyHostRecruit({ hostId: s.host_id, role: "teacher", session: { id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name }, needed, shareUrl, style: recruitStyle }).catch(console.error);
+      if (s.gem_host_id) notifyHostRecruit({ hostId: s.gem_host_id, role: "gem", session: { id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name }, needed, shareUrl, style: recruitStyle }).catch(console.error);
 
       // Optional: general city waitlist (not session-specific — best-effort match)
       if (NUDGE_WAITLIST) {
@@ -199,7 +200,8 @@ export async function GET(request: NextRequest) {
       // HQ heads-up ("from us") — decision is ~2h away
       await notifyHQ({
         subject: `Almost there: ${s.title} (${count}/${s.min_attendees})`,
-        label: "STRETCHY HQ · DECISION IN ~2H",
+        scheme: "purple",
+        kicker: "Stretchy HQ · Decision in ~2h",
         heading: `${s.title} — ${count}/${s.min_attendees}`,
         rows: [
           `Needs <strong>${needed}</strong> more hold${needed === 1 ? "" : "s"} to lock in. Holders, interested people, teacher and GEM have all been nudged to share it.`,
@@ -299,12 +301,12 @@ export async function GET(request: NextRequest) {
       }
 
       // Teacher + GEM + HQ
-      if (session.host_id) notifyHostConfirmed({ hostId: session.host_id, role: "teacher", session: hostSession }).catch(console.error);
-      if (session.gem_host_id) notifyHostConfirmed({ hostId: session.gem_host_id, role: "gem", session: hostSession }).catch(console.error);
+      if (session.host_id) notifyHostConfirmed({ hostId: session.host_id, role: "teacher", session: hostSession, gemName: emailExtras.gemName, style: emailExtras.teacherStyle }).catch(console.error);
+      if (session.gem_host_id) notifyHostConfirmed({ hostId: session.gem_host_id, role: "gem", session: hostSession, style: emailExtras.teacherStyle }).catch(console.error);
       await notifyHQ({
         subject: `Confirmed: ${session.title} (${holds}/${session.min_attendees})`,
-        label: "STRETCHY HQ · CONFIRMED ✅",
-        accent: "#716F39",
+        scheme: "olive",
+        kicker: "Stretchy HQ · Confirmed ✅",
         heading: `${session.title} is going ahead`,
         rows: [
           `<strong>${holds}</strong> holds — minimum met. Teacher and GEM have been notified.`,
@@ -343,8 +345,8 @@ export async function GET(request: NextRequest) {
       if (session.gem_host_id) notifyHostCancelled({ hostId: session.gem_host_id, role: "gem", session: hostSession }).catch(console.error);
       await notifyHQ({
         subject: `Cancelled: ${session.title} (${holds}/${session.min_attendees})`,
-        label: "STRETCHY HQ · CANCELLED",
-        accent: "#C6362E",
+        scheme: "cream",
+        kicker: "Stretchy HQ · Cancelled",
         heading: `${session.title} didn't reach minimum`,
         rows: [
           `Only <strong>${holds}</strong> of ${session.min_attendees} holds — cancelled. All holds released, nothing charged.`,

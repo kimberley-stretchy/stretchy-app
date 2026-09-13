@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { buildSessionEmailExtras } from "@/lib/sessionEmailContext";
 
 // The whole pricing mechanic depends on holds counts being live — without this,
 // Next.js can statically cache this route's response per session id indefinitely
@@ -32,7 +33,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       id, title, description, movement_type, starts_at, ends_at, duration_mins,
       location_name, location_address, getting_there,
       cost_base, revenue_target, min_attendees, max_attendees, state,
-      social_stretch_venue, social_stretch_note, what_to_bring
+      social_stretch_venue, social_stretch_note, what_to_bring,
+      host_id, gem_host_id, venue_instagram, social_venue_instagram
     `)
     .eq("id", id)
     .eq("is_draft", false)
@@ -77,5 +79,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
   }
 
-  return NextResponse.json({ ...session, current_holds: currentHolds, my_hold_quantity: myHoldQuantity, im_interested: imInterested });
+  // Teacher / GEM names + handles, venue handles, style (skips HQ placeholder).
+  const extras = await buildSessionEmailExtras(admin, session);
+
+  return NextResponse.json({
+    ...session,
+    current_holds: currentHolds,
+    my_hold_quantity: myHoldQuantity,
+    im_interested: imInterested,
+    teacherName: extras.teacherName ?? null,
+    teacherStyle: extras.teacherStyle ?? null,
+    gemName: extras.gemName ?? null,
+    teacherHandle: extras.teacherHandle ?? null,
+    gemHandle: extras.gemHandle ?? null,
+    venueHandle: extras.venueHandle ?? null,
+    socialVenueHandle: extras.socialVenueHandle ?? null,
+  });
 }

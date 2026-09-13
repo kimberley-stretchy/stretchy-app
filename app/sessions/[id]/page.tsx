@@ -41,7 +41,24 @@ type Session = {
   what_to_bring: string[] | null;
   my_hold_quantity?: number;
   im_interested?: boolean;
+  teacherName?: string | null;
+  teacherStyle?: string | null;
+  gemName?: string | null;
+  teacherHandle?: string | null;
+  gemHandle?: string | null;
+  venueHandle?: string | null;
+  socialVenueHandle?: string | null;
 };
+
+function handleHref(v?: string | null): string | null {
+  if (!v) return null;
+  return v.startsWith("http") ? v : `https://www.instagram.com/${v.replace(/^@+/, "")}/`;
+}
+function Handle({ value }: { value?: string | null }) {
+  const href = handleHref(value);
+  if (!href) return null;
+  return <a href={href} target="_blank" rel="noreferrer" className="underline" style={{ color: "#902F8A" }}>{value}</a>;
+}
 
 // Price ladder — a short list of evenly-stepped rows, not a continuous curve,
 // per the design system's pricing component (10-pricing-component.png).
@@ -251,6 +268,14 @@ export default function SessionDetailPage() {
         </h1>
         <p className="text-sm text-muted mb-3">{s.location_name}</p>
         {s.description && <p className="text-sm text-ink/75 leading-relaxed">{s.description}</p>}
+        {(s.teacherName || s.gemName || s.teacherStyle) && (
+          <div className="mt-3 flex flex-col gap-1 text-sm text-ink/75">
+            {(s.teacherStyle || s.teacherName) && (
+              <p>🧘 {s.teacherStyle ?? "Movement"}{s.teacherName ? ` with ${s.teacherName}` : ""} {s.teacherHandle && <>· <Handle value={s.teacherHandle} /></>}</p>
+            )}
+            {s.gemName && <p>💫 GEM on the day: {s.gemName} {s.gemHandle && <>· <Handle value={s.gemHandle} /></>}</p>}
+          </div>
+        )}
       </div>
 
       {/* Pricing card — cream + purple accent, price ladder not a curve */}
@@ -309,7 +334,7 @@ export default function SessionDetailPage() {
       {/* Where */}
       <div className="mx-4 mb-5 rounded-card border-2 border-ink p-5" style={{ background: "#FCBB16" }}>
         <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/50 mb-2.5">Where</p>
-        <p className="font-bold text-sm text-ink mb-1">{s.location_name}</p>
+        <p className="font-bold text-sm text-ink mb-1">{s.location_name} {s.venueHandle && <>· <Handle value={s.venueHandle} /></>}</p>
         {s.location_address && <p className="text-xs text-ink/65 mb-2">{s.location_address}</p>}
         {s.getting_there && <p className="text-xs text-ink/65 leading-relaxed">{s.getting_there}</p>}
       </div>
@@ -320,7 +345,12 @@ export default function SessionDetailPage() {
           <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "rgba(247,240,232,.55)" }}>
             Social Stretch after
           </p>
-          <p className="text-sm font-bold text-cream mb-1.5">{s.social_stretch_venue}</p>
+          <p className="text-sm font-bold text-cream mb-1.5">
+            {s.social_stretch_venue}
+            {s.socialVenueHandle && (
+              <>{" · "}<a href={handleHref(s.socialVenueHandle) ?? "#"} target="_blank" rel="noreferrer" className="underline" style={{ color: "#F7F0E8" }}>{s.socialVenueHandle}</a></>
+            )}
+          </p>
           <p className="text-xs leading-relaxed" style={{ color: "rgba(247,240,232,.8)" }}>
             Pay your own way — coffee &amp; food after. Everyone welcome.
           </p>

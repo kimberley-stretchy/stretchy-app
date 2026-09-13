@@ -493,6 +493,18 @@ function SessionCard({
           >
             VIEW
           </Link>
+          {s.state !== "cancelled" && s.state !== "completed" && (
+            <Link
+              href={`/admin/sessions/new?edit=${s.id}`}
+              style={{
+                padding: "7px 14px", borderRadius: 999, textDecoration: "none",
+                border: "none", background: T.ink, color: T.cream,
+                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
+              }}
+            >
+              EDIT
+            </Link>
+          )}
           <Link
             href={`/admin/sessions/new?duplicate=${s.id}`}
             style={{

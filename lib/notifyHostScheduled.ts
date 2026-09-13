@@ -2,18 +2,26 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { buildIcsContent, googleCalendarUrl } from "@/lib/calendar";
 import { sendPushToUser } from "@/lib/push-server";
+import { REPLY_TO, page, box, label, button, h1, hey, msg, row } from "@/lib/stretchy-email";
+
+const HQ_FROM = "Stretchy HQ <hello@stretchy.social>";
+const HQ_EMAIL = "kimberley@stretchyyoga.co.nz";
 
 function getAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+}
+
+function fmtDate(startsAt: string): string {
+  const d = new Date(startsAt);
+  return (
+    d.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
+    " at " +
+    d.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true })
   );
 }
 
-// Notifies a teacher/GEM the moment they're assigned to a session — email
-// (with a calendar file attached and a Google Calendar link) plus a push
-// notification. Fire-and-forget, matching every other notification call
-// site in this codebase: never throws, never blocks the caller.
+// Notifies a teacher/GEM the moment they're assigned to a session — email (with
+// a calendar file + Google Calendar link) plus a push. Fire-and-forget.
 export async function notifyHostScheduled({
   hostId,
   role,
@@ -21,24 +29,24 @@ export async function notifyHostScheduled({
 }: {
   hostId: string;
   role: "teacher" | "gem";
-  session: { title: string; startsAt: string; endsAt: string; locationName: string; locationAddress?: string | null };
+  session: {
+    title: string;
+    startsAt: string;
+    endsAt: string;
+    locationName: string;
+    locationAddress?: string | null;
+    style?: string | null;
+    socialStretchVenue?: string | null;
+  };
 }) {
   try {
     const admin = getAdmin();
-    const { data: host } = await admin
-      .from("hosts")
-      .select("name, email, auth_user_id")
-      .eq("id", hostId)
-      .single();
-
+    const { data: host } = await admin.from("hosts").select("name, email, auth_user_id").eq("id", hostId).single();
     if (!host) return;
 
     const firstName = host.name?.split(" ")[0] ?? "there";
     const roleLabel = role === "teacher" ? "teaching" : "GEM-ing";
-    const startDate = new Date(session.startsAt);
-    const dateStr =
-      startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
-      " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
+    const dateStr = fmtDate(session.startsAt);
     const location = session.locationAddress || session.locationName;
 
     const calendarEvent = {
@@ -52,23 +60,24 @@ export async function notifyHostScheduled({
     const icsContent = buildIcsContent(calendarEvent);
 
     if (host.email && process.env.RESEND_API_KEY) {
+      const html = page("blue", (sc) => `
+        ${label(sc, "Stretchy HQ · You're scheduled")}
+        ${h1(sc, "You're scheduled. 🗓")}
+        ${hey(sc, firstName)}
+        ${msg(sc, `You're down for ${roleLabel} this one.`)}
+        ${box(sc, `${label(sc, "The session")}${row(sc, `<strong>${session.title}</strong>`)}${row(sc, `🗓 ${dateStr}`)}${row(sc, `📍 ${session.locationName}`)}${session.style ? row(sc, `🧘 ${session.style}`) : ""}${session.socialStretchVenue ? row(sc, `🌞 Social Stretch after at ${session.socialStretchVenue}`) : ""}`)}
+        ${button(sc, calUrl, "Add to Google Calendar →")}
+        ${msg(sc, "Using Apple Calendar or Outlook? Open the attached file instead.")}
+      `);
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails
         .send({
-          from: "Stretchy HQ <hello@stretchy.social>",
+          from: HQ_FROM,
           to: host.email,
-          bcc: "kimberley@stretchyyoga.co.nz",
+          bcc: HQ_EMAIL,
+          reply_to: REPLY_TO,
           subject: `You're scheduled: ${session.title}`,
-          text: `Hi ${firstName},\n\nYou're down for ${roleLabel} ${session.title} — ${dateStr}, ${session.locationName}.\n\nAdd it to your calendar: ${calUrl}\n(or open the attached .ics file)\n\nStretchy HQ`,
-          html: `
-            <div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;background:#F7F0E8;padding:32px;border-radius:16px;">
-              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;letter-spacing:.14em;color:#902F8A;margin:0 0 12px;">STRETCHY HQ · YOU'RE SCHEDULED</p>
-              <h1 style="font-size:26px;font-weight:900;color:#14110F;margin:0 0 12px;">${session.title}</h1>
-              <p style="color:rgba(20,17,15,.7);font-size:15px;margin:0 0 20px;">Hi ${firstName} — you're down for ${roleLabel} this one. ${dateStr} at ${session.locationName}.</p>
-              <a href="${calUrl}" style="display:inline-block;background:#14110F;color:#F7F0E8;text-decoration:none;font-size:14px;font-weight:700;padding:14px 26px;border-radius:999px;">Add to Google Calendar →</a>
-              <p style="font-size:12px;color:rgba(20,17,15,.5);margin:20px 0 0;">Using Apple Calendar or Outlook? Open the attached file instead.</p>
-            </div>
-          `,
+          html,
           attachments: [
             {
               filename: `${session.title.replace(/\s+/g, "-").toLowerCase()}.ics`,
@@ -91,8 +100,8 @@ export async function notifyHostScheduled({
   }
 }
 
-// Notifies a teacher/GEM when a session they were assigned to gets
-// cancelled — same fire-and-forget contract as notifyHostScheduled.
+// Notifies a teacher/GEM when their session is cancelled. Skips the HQ
+// placeholder host (unassigned sessions default to Kimberley's record).
 export async function notifyHostCancelled({
   hostId,
   role,
@@ -104,41 +113,24 @@ export async function notifyHostCancelled({
 }) {
   try {
     const admin = getAdmin();
-    const { data: host } = await admin
-      .from("hosts")
-      .select("name, email, auth_user_id")
-      .eq("id", hostId)
-      .single();
-
-    // Skip the auto-provisioned HQ placeholder host (unassigned sessions
-    // default to Kimberley's record) — she gets the HQ digest instead, not a
-    // misleading "you were teaching this" note.
-    if (!host || host.email === "kimberley@stretchyyoga.co.nz") return;
+    const { data: host } = await admin.from("hosts").select("name, email, auth_user_id").eq("id", hostId).single();
+    if (!host || host.email === HQ_EMAIL) return;
 
     const firstName = host.name?.split(" ")[0] ?? "there";
     const roleLabel = role === "teacher" ? "teaching" : "GEM-ing";
-    const startDate = new Date(session.startsAt);
-    const dateStr =
-      startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
-      " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
+    const dateStr = fmtDate(session.startsAt);
 
     if (host.email && process.env.RESEND_API_KEY) {
+      const html = page("cream", (sc) => `
+        ${label(sc, "Stretchy HQ · Cancelled")}
+        ${h1(sc, "This one's off. 💛")}
+        ${hey(sc, firstName)}
+        ${msg(sc, `Heads up — this one's been cancelled. You were ${roleLabel} it. Nothing you need to do — just remove it from your calendar.`)}
+        ${box(sc, `${row(sc, `<strong>${session.title}</strong>`)}${row(sc, `🗓 ${dateStr}`)}${row(sc, `📍 ${session.locationName}`)}`)}
+      `, { highlight: false });
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails
-        .send({
-          from: "Stretchy HQ <hello@stretchy.social>",
-          to: host.email,
-          bcc: "kimberley@stretchyyoga.co.nz",
-          subject: `Cancelled: ${session.title}`,
-          text: `Hi ${firstName},\n\nHeads up — ${session.title} (${dateStr}, ${session.locationName}) that you were ${roleLabel} has been cancelled. Nothing you need to do — just remove it from your calendar.\n\nStretchy HQ`,
-          html: `
-            <div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;background:#F7F0E8;padding:32px;border-radius:16px;">
-              <p style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;letter-spacing:.14em;color:#C6362E;margin:0 0 12px;">STRETCHY HQ · CANCELLED</p>
-              <h1 style="font-size:26px;font-weight:900;color:#14110F;margin:0 0 12px;">${session.title}</h1>
-              <p style="color:rgba(20,17,15,.7);font-size:15px;margin:0;">Hi ${firstName} — heads up, this one's been cancelled. It was ${dateStr} at ${session.locationName}, and you were ${roleLabel} it. Nothing you need to do — just remove it from your calendar.</p>
-            </div>
-          `,
-        })
+        .send({ from: HQ_FROM, to: host.email, bcc: HQ_EMAIL, reply_to: REPLY_TO, subject: `Cancelled: ${session.title}`, html })
         .catch((e) => console.error("Session-cancelled email error:", e));
     }
 

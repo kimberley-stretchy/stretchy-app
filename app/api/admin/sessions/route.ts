@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { Resend } from "resend";
 import { requireAdmin } from "@/lib/adminAuth";
 import { notifyHostScheduled, notifyHostCancelled } from "@/lib/notifyHostScheduled";
+import { movementLabel } from "@/lib/sessionEmailContext";
 
 // Create inside each request handler so env vars are always available at runtime
 function getSupabase() {
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
       id, title, description, movement_type, starts_at, ends_at, duration_mins,
       location_name, location_address, getting_there,
       cost_base, revenue_target, currency, min_attendees, max_attendees, state, created_at,
-      social_stretch_venue, social_stretch_note, what_to_bring, cost_lines, host_paid_at,
+      social_stretch_venue, social_stretch_note, venue_instagram, social_venue_instagram, what_to_bring, cost_lines, host_paid_at,
       host_id, gem_host_id, is_repeat, repeat_frequency, is_draft
     `)
     .order("starts_at", { ascending: true });
@@ -123,6 +124,8 @@ export async function POST(request: NextRequest) {
     max_attendees,
     social_stretch_venue,
     social_stretch_note,
+    venue_instagram,
+    social_venue_instagram,
     what_to_bring,
     cost_lines,
     host_id: hostIdInput,
@@ -168,6 +171,8 @@ export async function POST(request: NextRequest) {
       max_attendees: Number(max_attendees),
       social_stretch_venue: social_stretch_venue || null,
       social_stretch_note: social_stretch_note || null,
+      venue_instagram: venue_instagram || null,
+      social_venue_instagram: social_venue_instagram || null,
       what_to_bring: what_to_bring || [],
       state: "open",
       is_draft: !!is_draft,
@@ -188,6 +193,8 @@ export async function POST(request: NextRequest) {
     endsAt: endsDate.toISOString(),
     locationName: location_name,
     locationAddress: location_address,
+    style: movementLabel(movement_type),
+    socialStretchVenue: social_stretch_venue || null,
   };
   if (realHostAssigned) {
     notifyHostScheduled({ hostId: host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher notify error:", e));

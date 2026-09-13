@@ -41,11 +41,13 @@ function BuildAStretchyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const duplicateId = searchParams.get("duplicate");
+  const editId = searchParams.get("edit");
+  const loadId = editId || duplicateId;
   const [teachers, setTeachers] = useState<Person[]>([]);
   const [gems, setGems] = useState<Person[]>([]);
-  const [saving, setSaving] = useState<"publish" | "draft" | null>(null);
+  const [saving, setSaving] = useState<"publish" | "draft" | "save" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loadingDuplicate, setLoadingDuplicate] = useState(!!duplicateId);
+  const [loadingDuplicate, setLoadingDuplicate] = useState(!!loadId);
 
   useEffect(() => {
     fetch("/api/admin/people").then((r) => r.json()).then((d) => { setTeachers(d.teachers ?? []); setGems(d.gems ?? []); }).catch(() => {});
@@ -67,6 +69,8 @@ function BuildAStretchyForm() {
   const [venueRate, setVenueRate] = useState(69.75);
   const [socialVenue, setSocialVenue] = useState("Honey Sundays · café");
   const [socialNote, setSocialNote] = useState("3 min walk · pay your own");
+  const [venueInstagram, setVenueInstagram] = useState("");
+  const [socialVenueInstagram, setSocialVenueInstagram] = useState("");
   const [gemId, setGemId] = useState("");
   const [gemRate, setGemRate] = useState(18);
   const [charityName, setCharityName] = useState("Stretchy Donation");
@@ -83,8 +87,8 @@ function BuildAStretchyForm() {
   const [repeatFrequency, setRepeatFrequency] = useState("Weekly");
 
   useEffect(() => {
-    if (!duplicateId) return;
-    fetch(`/api/admin/sessions?id=${duplicateId}`)
+    if (!loadId) return;
+    fetch(`/api/admin/sessions?id=${loadId}`)
       .then((r) => r.json())
       .then((rows) => {
         const s = Array.isArray(rows) ? rows[0] : rows;
@@ -104,6 +108,8 @@ function BuildAStretchyForm() {
         setGettingThere(s.getting_there ?? "");
         setSocialVenue(s.social_stretch_venue ?? "");
         setSocialNote(s.social_stretch_note ?? "");
+        setVenueInstagram(s.venue_instagram ?? "");
+        setSocialVenueInstagram(s.social_venue_instagram ?? "");
         setCurrency(s.currency ?? "NZD");
         setMinMats(s.min_attendees ?? 14);
         setMaxMats(s.max_attendees ?? 32);
@@ -128,7 +134,7 @@ function BuildAStretchyForm() {
         setLoadingDuplicate(false);
       })
       .catch(() => setLoadingDuplicate(false));
-  }, [duplicateId]);
+  }, [loadId]);
 
   const teacherName = teachers.find((t) => t.id === teacherId)?.name ?? "";
   const gemName = gems.find((g) => g.id === gemId)?.name ?? "";
@@ -156,7 +162,7 @@ function BuildAStretchyForm() {
   const goingAhead = simulateN >= minMats;
   const title = `${neighbourhood} | ${timeOfDay}`;
 
-  async function submit(mode: "publish" | "draft") {
+  async function submit(mode: "publish" | "draft" | "save") {
     if (!neighbourhood || !date || !venueName) {
       setError("Neighbourhood, date, and venue are required.");
       return;
@@ -164,32 +170,49 @@ function BuildAStretchyForm() {
     setError(null);
     setSaving(mode);
     try {
-      const res = await fetch("/api/admin/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          description: movementStyle,
-          movement_type: movementType,
-          starts_at: `${date}T${time}:00+12:00`,
-          duration_mins: durationMins,
-          location_name: venueName,
-          location_address: venueAddress,
-          getting_there: gettingThere,
-          revenue_target: revenueTarget,
-          currency,
-          min_attendees: minMats,
-          max_attendees: maxMats,
-          social_stretch_venue: socialVenue,
-          social_stretch_note: socialNote,
-          cost_lines: costLines,
-          host_id: teacherId || undefined,
-          gem_host_id: gemId || undefined,
-          is_draft: mode === "draft",
-          is_repeat: isRepeat,
-          repeat_frequency: isRepeat ? repeatFrequency : null,
-        }),
-      });
+      const startsAt = `${date}T${time}:00+12:00`;
+      const common = {
+        title,
+        description: movementStyle,
+        movement_type: movementType,
+        starts_at: startsAt,
+        duration_mins: durationMins,
+        location_name: venueName,
+        location_address: venueAddress,
+        getting_there: gettingThere,
+        revenue_target: revenueTarget,
+        currency,
+        min_attendees: minMats,
+        max_attendees: maxMats,
+        social_stretch_venue: socialVenue,
+        social_stretch_note: socialNote,
+        venue_instagram: venueInstagram || null,
+        social_venue_instagram: socialVenueInstagram || null,
+        cost_lines: costLines,
+        host_id: teacherId || undefined,
+        gem_host_id: gemId || undefined,
+        is_repeat: isRepeat,
+        repeat_frequency: isRepeat ? repeatFrequency : null,
+      };
+
+      let res: Response;
+      if (editId) {
+        // Editing an existing session: PATCH writes updates verbatim, so compute
+        // the server-derived fields (cost_base, ends_at) here too. is_draft is
+        // left untouched so editing doesn't accidentally unpublish a live session.
+        const endsAt = new Date(new Date(startsAt).getTime() + durationMins * 60 * 1000).toISOString();
+        res = await fetch("/api/admin/sessions", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editId, ...common, cost_base: costBase, ends_at: endsAt }),
+        });
+      } else {
+        res = await fetch("/api/admin/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...common, is_draft: mode === "draft" }),
+        });
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save this session");
       router.push("/admin/sessions");
@@ -205,10 +228,10 @@ function BuildAStretchyForm() {
         {/* Center form */}
         <div style={{ flex: 1, background: T.cream, padding: "28px 36px 80px", minWidth: 0 }}>
           <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", color: T.purple, marginBottom: 6 }}>
-            SESSIONS / {duplicateId ? "DUPLICATE" : "NEW"}
+            SESSIONS / {editId ? "EDIT" : duplicateId ? "DUPLICATE" : "NEW"}
           </p>
           <h1 style={{ fontFamily: "'BN Chubb', 'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 40, letterSpacing: "-0.02em", lineHeight: 1, textTransform: "uppercase", color: T.ink, marginBottom: 24 }}>
-            {loadingDuplicate ? "Loading…" : "Build a Stretchy"}
+            {loadingDuplicate ? "Loading…" : editId ? "Edit Stretchy" : "Build a Stretchy"}
           </h1>
 
           <Section label="THE BASICS">
@@ -294,6 +317,7 @@ function BuildAStretchyForm() {
                   {gems.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                 </select>
                 <Pill value={socialNote} onChange={setSocialNote} placeholder="Distance · who pays" borderColor={T.orange} />
+                <Pill value={socialVenueInstagram} onChange={setSocialVenueInstagram} placeholder="Social venue @handle (optional)" borderColor={T.orange} />
               </div>
             </Section>
           </div>
@@ -302,6 +326,7 @@ function BuildAStretchyForm() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <Pill value={venueName} onChange={setVenueName} placeholder="Venue name" />
               <Pill value={venueAddress} onChange={setVenueAddress} placeholder="Address" />
+              <Pill value={venueInstagram} onChange={setVenueInstagram} placeholder="Venue @handle (optional)" />
             </div>
             <textarea
               value={gettingThere}
@@ -429,20 +454,32 @@ function BuildAStretchyForm() {
             Go/no-go checked 36h out. Final price locked and cards charged 2h out.
           </p>
 
-          <button
-            onClick={() => submit("publish")}
-            disabled={saving !== null}
-            style={{ width: "100%", height: 48, borderRadius: 999, border: "none", cursor: "pointer", background: T.yellow, color: T.ink, fontWeight: 800, fontSize: 15, marginBottom: 10 }}
-          >
-            {saving === "publish" ? "Publishing…" : "Publish this Stretchy"}
-          </button>
-          <button
-            onClick={() => submit("draft")}
-            disabled={saving !== null}
-            style={{ width: "100%", height: 48, borderRadius: 999, border: `2px solid ${T.cream}`, cursor: "pointer", background: "transparent", color: T.cream, fontWeight: 700, fontSize: 14 }}
-          >
-            {saving === "draft" ? "Saving…" : "Save as draft"}
-          </button>
+          {editId ? (
+            <button
+              onClick={() => submit("save")}
+              disabled={saving !== null}
+              style={{ width: "100%", height: 48, borderRadius: 999, border: "none", cursor: "pointer", background: T.yellow, color: T.ink, fontWeight: 800, fontSize: 15 }}
+            >
+              {saving === "save" ? "Saving…" : "Save changes"}
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => submit("publish")}
+                disabled={saving !== null}
+                style={{ width: "100%", height: 48, borderRadius: 999, border: "none", cursor: "pointer", background: T.yellow, color: T.ink, fontWeight: 800, fontSize: 15, marginBottom: 10 }}
+              >
+                {saving === "publish" ? "Publishing…" : "Publish this Stretchy"}
+              </button>
+              <button
+                onClick={() => submit("draft")}
+                disabled={saving !== null}
+                style={{ width: "100%", height: 48, borderRadius: 999, border: `2px solid ${T.cream}`, cursor: "pointer", background: "transparent", color: T.cream, fontWeight: 700, fontSize: 14 }}
+              >
+                {saving === "draft" ? "Saving…" : "Save as draft"}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </HQShell>
