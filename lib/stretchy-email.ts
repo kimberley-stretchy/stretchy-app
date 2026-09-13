@@ -41,17 +41,16 @@ function sLogo(color: string) {
 
 export type Scheme = { bg: string; text: string; btnBg: string; btnText: string };
 
-// Stretchy brand palette (from tailwind.config.ts) as one-colour email grounds,
-// every one carrying 100% black (#000000) text, borders and buttons. Deep brand
-// hues (#902F8A purple, #0000FF blue, #716F39 olive) can't carry black legibly,
-// so we use the palette's readable tints: sky, olive-light, brand light-purple.
+// Stretchy brand palette (from tailwind.config.ts) at FULL tint. Light grounds
+// carry 100% black text/borders/buttons; dark grounds carry white — black is
+// illegible on the deep purple/green/blue.
 export const SCHEMES: Record<string, Scheme> = {
-  cream:  { bg: "#F7F0E8", text: "#000000", btnBg: "#000000", btnText: "#F7F0E8" }, // cream
-  blue:   { bg: "#29ABE2", text: "#000000", btnBg: "#000000", btnText: "#F7F0E8" }, // sky (light blue)
-  olive:  { bg: "#8B8950", text: "#000000", btnBg: "#000000", btnText: "#F7F0E8" }, // olive-light (green)
-  purple: { bg: "#D9A9D4", text: "#000000", btnBg: "#000000", btnText: "#F7F0E8" }, // brand light purple
-  orange: { bg: "#E96709", text: "#000000", btnBg: "#000000", btnText: "#F7F0E8" }, // orange
-  dkblue: { bg: "#BFE3F0", text: "#000000", btnBg: "#000000", btnText: "#F7F0E8" }, // hold (pale blue)
+  cream:  { bg: "#F7F0E8", text: "#000000", btnBg: "#000000", btnText: "#FFFFFF" }, // cream · black
+  blue:   { bg: "#29ABE2", text: "#000000", btnBg: "#000000", btnText: "#FFFFFF" }, // sky (light blue) · black
+  orange: { bg: "#E96709", text: "#000000", btnBg: "#000000", btnText: "#FFFFFF" }, // orange · black
+  olive:  { bg: "#716F39", text: "#FFFFFF", btnBg: "#FFFFFF", btnText: "#000000" }, // green (olive) · white
+  purple: { bg: "#902F8A", text: "#FFFFFF", btnBg: "#FFFFFF", btnText: "#000000" }, // purple · white
+  dkblue: { bg: "#0000FF", text: "#FFFFFF", btnBg: "#FFFFFF", btnText: "#000000" }, // hot-blue · white
 };
 
 const HELLO = "hello@stretchyyoga.co.nz";
