@@ -61,7 +61,7 @@ function fmtDate(startsAt: string): string {
 async function getHoldSummary(
   admin: SupabaseClient,
   sessionId: string
-): Promise<{ count: number; userIds: string[]; compUserIds: Set<string> }> {
+): Promise<{ count: number; userIds: string[]; compUserIds: Set<string>; spotsByUser: Map<string, number> }> {
   const { data } = await admin
     .from("holds")
     .select("user_id, quantity, is_comp")
@@ -71,7 +71,13 @@ async function getHoldSummary(
   const count = rows.reduce((s, h) => s + (h.quantity ?? 1), 0);
   const userIds = Array.from(new Set(rows.map((h) => h.user_id).filter(Boolean)));
   const compUserIds = new Set(rows.filter((h) => h.is_comp && h.user_id).map((h) => h.user_id as string));
-  return { count, userIds, compUserIds };
+  // Spots per holder — one row can be several spaces (e.g. "bring 4").
+  const spotsByUser = new Map<string, number>();
+  for (const h of rows) {
+    if (!h.user_id) continue;
+    spotsByUser.set(h.user_id, (spotsByUser.get(h.user_id) ?? 0) + (h.quantity ?? 1));
+  }
+  return { count, userIds, compUserIds, spotsByUser };
 }
 
 async function getAttendees(
@@ -109,16 +115,15 @@ export async function GET(request: NextRequest) {
       .from("sessions")
       .select("id, title, starts_at, location_name, min_attendees, social_stretch_venue, host_id, gem_host_id, movement_type, venue_instagram, social_venue_instagram")
       .eq("state", "open")
-      // Fires ~37–38.5h out (covers the 38h mark and tonight's 37h catch-up).
-      // Half-hour-offset bounds so whole-hour sessions land mid-window — the
-      // hourly cron fires a few seconds after :00, so integer-hour bounds get
-      // missed by that drift.
+      // Fires ONCE at the ~38h mark. Half-hour-offset bounds (37.5–38.5) so a
+      // whole-hour session hits exactly one cron run (H=38, mid-window, drift-
+      // safe) — never two, so no double nudge even before the dedup migration.
       .not("is_draft", "is", true)
-      .gte("starts_at", hoursFromNow(now, 36.5))
+      .gte("starts_at", hoursFromNow(now, 37.5))
       .lt("starts_at", hoursFromNow(now, 38.5));
 
     for (const s of nudgeSessions ?? []) {
-      const { count, userIds, compUserIds } = await getHoldSummary(admin, s.id);
+      const { count, userIds, compUserIds, spotsByUser } = await getHoldSummary(admin, s.id);
       if (count >= s.min_attendees) continue; // already there — it'll confirm at 36h
       if (count < NUDGE_MIN_HOLDS) continue; // too empty to bother nudging
 
@@ -149,6 +154,7 @@ export async function GET(request: NextRequest) {
           sessionId: s.id,
           isHolder: true,
           cancelUrl: `${APP_URL}/my-holds`,
+          spots: spotsByUser.get(a.auth_user_id),
         },
       })));
 
@@ -253,7 +259,7 @@ export async function GET(request: NextRequest) {
   const results: Record<string, unknown>[] = [];
 
   for (const session of sessions ?? []) {
-    const { count: holds, userIds, compUserIds } = await getHoldSummary(admin, session.id);
+    const { count: holds, userIds, compUserIds, spotsByUser } = await getHoldSummary(admin, session.id);
     const dateStr = fmtDate(session.starts_at);
     const hostSession = {
       id: session.id,
@@ -291,6 +297,7 @@ export async function GET(request: NextRequest) {
             sessionId: session.id,
             isComp: compUserIds.has(a.auth_user_id),
             isFirstStretchy: await isFirstStretchy(admin, a.auth_user_id),
+            spots: spotsByUser.get(a.auth_user_id),
             ...emailExtras,
           },
         });
@@ -361,6 +368,7 @@ export async function GET(request: NextRequest) {
           sessionTitle: session.title,
           date: dateStr,
           sessionId: session.id,
+          spots: spotsByUser.get(a.auth_user_id),
         },
       })));
       sendPushToUsers(userIds, {

@@ -60,13 +60,16 @@ export async function GET(request: NextRequest) {
     // Get all active holds
     const { data: holds } = await admin
       .from("holds")
-      .select("id, user_id, stripe_pi_id, is_comp")
+      .select("id, user_id, stripe_pi_id, is_comp, quantity")
       .eq("session_id", session.id)
       .eq("state", "active");
 
     if (!holds || holds.length === 0) continue;
 
-    const totalHolds = holds.length;
+    // One hold row can be several spots — count SPOTS, not rows, everywhere
+    // (price, charge amount, "N people" copy).
+    const qtyOf = (h: { quantity: number | null }) => h.quantity ?? 1;
+    const totalHolds = holds.reduce((s, h) => s + qtyOf(h), 0);
     // Final price never rises above the opening price at min_attendees — floor it at the minimum
     const finalPrice = calculatePrice(session.cost_base, session.revenue_target, Math.max(totalHolds, session.min_attendees));
     const finalAmountCents = Math.round(finalPrice * 100);
@@ -86,24 +89,25 @@ export async function GET(request: NextRequest) {
         const pi = await stripe.paymentIntents.retrieve(piId);
 
         if (pi.status === "requires_capture") {
-          // Adjust the amount to the final price (it may have been authorised at a higher price)
+          // Adjust the amount to the final price (it may have been authorised at a
+          // higher price). Charge per SPOT — a 4-spot hold pays 4× the final price.
           const holdsForThisPi = holds.filter(h => h.stripe_pi_id === piId);
-          const captureAmount = finalAmountCents * holdsForThisPi.length;
+          const spotsForThisPi = holdsForThisPi.reduce((s, h) => s + qtyOf(h), 0);
+          const captureAmount = finalAmountCents * spotsForThisPi;
 
           await stripe.paymentIntents.capture(piId, {
             amount_to_capture: Math.min(captureAmount, pi.amount), // never capture more than authorised
           });
 
-          // Mark these holds as charged
-          await admin
-            .from("holds")
-            .update({
-              state: "charged",
-              amount_charged_nzd: finalAmountCents * holdsForThisPi.length,
-            })
-            .in("id", holdsForThisPi.map(h => h.id));
+          // Mark these holds as charged (per row: final price × that row's spots)
+          for (const h of holdsForThisPi) {
+            await admin
+              .from("holds")
+              .update({ state: "charged", amount_charged_nzd: finalAmountCents * qtyOf(h) })
+              .eq("id", h.id);
+          }
 
-          charged += holdsForThisPi.length;
+          charged += spotsForThisPi;
         }
       } catch (err) {
         console.error(`Failed to capture PI ${piId}:`, err);
@@ -136,6 +140,7 @@ export async function GET(request: NextRequest) {
         .single();
       if (!attendee?.email) continue;
       const firstTimer = await isFirstStretchy(admin, hold.user_id);
+      const spots = qtyOf(hold);
       lockItems.push({
         type: "price_locked" as const,
         payload: {
@@ -150,6 +155,8 @@ export async function GET(request: NextRequest) {
           isComp: !!hold.is_comp,
           isFirstStretchy: firstTimer,
           attendeeCount: totalHolds,
+          spots,
+          totalPrice: `$${(finalPrice * spots).toFixed(2)} incl. GST`,
           ...emailExtras,
         },
       });

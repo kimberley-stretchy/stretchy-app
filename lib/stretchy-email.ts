@@ -81,7 +81,10 @@ export function button(sc: Scheme, href: string, text: string) {
   // Colour is forced with !important AND a nested span — otherwise mail clients
   // (Apple Mail especially) override the link colour and the label goes dark on
   // the dark pill / illegible.
-  return `<a href="${href}" style="display:block;text-align:center;background:${sc.btnBg};color:${sc.btnText} !important;text-decoration:none;font-size:15px;font-weight:800;padding:15px 24px;border-radius:999px;margin:0 0 16px;letter-spacing:.01em;"><span style="color:${sc.btnText} !important;text-decoration:none;">${text}</span></a>`;
+  // -webkit-text-fill-color is the reliable one: Apple Mail's dark-mode colour
+  // remap ignores `color` (even !important) on links but respects text-fill,
+  // so the label stays legible on the dark pill.
+  return `<a href="${href}" style="display:block;text-align:center;background:${sc.btnBg};color:${sc.btnText} !important;-webkit-text-fill-color:${sc.btnText} !important;text-decoration:none;font-size:15px;font-weight:800;padding:15px 24px;border-radius:999px;margin:0 0 16px;letter-spacing:.01em;"><span style="color:${sc.btnText} !important;-webkit-text-fill-color:${sc.btnText} !important;text-decoration:none;">${text}</span></a>`;
 }
 export function row(sc: Scheme, text: string) {
   return `<p style="color:${sc.text};font-size:14px;line-height:1.5;margin:0 0 7px;">${text}</p>`;
@@ -105,6 +108,8 @@ function stretchyCard(sc: Scheme, p: AttendeeEmailPayload, tag: string) {
     parts.push(`<p style="color:${sc.text};font-size:14px;margin:0 0 4px;">🧘 ${p.teacherStyle ?? "Movement"}${p.teacherName ? ` with ${p.teacherName}` : ""}${p.teacherHandle ? ` · ${p.teacherHandle}` : ""}</p>`);
   if (p.gemName)
     parts.push(`<p style="color:${sc.text};font-size:14px;margin:0 0 4px;">💫 GEM on the day: ${p.gemName}${p.gemHandle ? ` · ${p.gemHandle}` : ""}</p>`);
+  if (p.spots && p.spots > 1)
+    parts.push(`<p style="color:${sc.text};font-size:14px;font-weight:800;margin:0 0 4px;">🎟 ${p.spots} spots reserved under you</p>`);
   // Social Stretch + getting-there/parking live together at the foot of the card.
   const foot: string[] = [];
   if (p.socialStretchVenue)
@@ -213,10 +218,11 @@ function holdConfirmedEmail(p: AttendeeEmailPayload) {
   return page("blue", (sc) => `
     ${h1(sc, "You've held a spot. 🙌")}
     ${hey(sc, p.name)}
-    ${msg(sc, `Your spot's held for <strong>${p.sessionTitle}</strong>. Nothing's charged yet. 🧘`)}
+    ${msg(sc, `${p.spots && p.spots > 1 ? `Your <strong>${p.spots} spots are</strong> held` : `Your spot's held`} for <strong>${p.sessionTitle}</strong>. Nothing's charged yet. 🧘`)}
     ${stretchyCard(sc, p, "Your Stretchy")}
     ${box(sc, `${label(sc, "Current price per spot")}
       <p style="font-size:32px;font-weight:900;color:${sc.text};margin:0 0 4px;letter-spacing:-0.02em;">${p.price ?? "TBC"}</p>
+      ${p.spots && p.spots > 1 && p.totalPrice ? `<p style="color:${sc.text};font-size:15px;font-weight:800;margin:0 0 6px;">× ${p.spots} spots = ${p.totalPrice} at today's price</p>` : ""}
       ${caption(sc, "The current starting price — the most you could ever pay for this one. From here it only gets better-er as more people join. Your card's charged 2 hours before, at the final price. 📉")}
       ${cancellationBlock(sc, p.cancelUrl || `${APP_URL}/hold/${p.sessionId ?? ""}`)}`)}
     ${tellMates(sc)}
@@ -302,13 +308,17 @@ function priceLockedEmail(p: AttendeeEmailPayload) {
     ${hey(sc, p.name)}
     ${msg(sc, isComp
       ? `We now have <strong>${crew}</strong> coming together for ${style} in a couple of hours. This one's on us — nothing to pay.`
-      : `We now have <strong>${crew}</strong> coming together for ${style} in a couple of hours. So the final price is now locked &amp; loaded: <strong>${p.price ?? ""}</strong>.`)}
+      : `We now have <strong>${crew}</strong> coming together for ${style} in a couple of hours. So the final price is now locked &amp; loaded: <strong>${p.price ?? ""}</strong>${p.spots && p.spots > 1 ? ` per spot` : ""}.`)}
     ${msg(sc, isComp ? "We'll see you shortly to stretch bodies, minds &amp; social circles." : "Your card is now charged and we'll see you shortly to stretch bodies, minds &amp; social circles.")}
     ${msg(sc, "All the deets below.")}
     ${msg(sc, "Catch you soon,<br>Stretchy")}
-    ${box(sc, `${label(sc, isComp ? "Your spot · on us" : "Final price · charged now")}
-      <p style="font-size:36px;font-weight:900;color:${sc.text};margin:0 0 6px;letter-spacing:-0.02em;">${isComp ? "On us 💛" : (p.price ?? "")}</p>
-      ${caption(sc, isComp ? "Covered by Stretchy — nothing to pay. Thanks for coming along." : "Your final price for this Stretchy social movement. Thanks for making it happen. Heads up, your card is charged now at this final price per person.")}`)}
+    ${box(sc, `${label(sc, isComp ? "Your spot · on us" : (p.spots && p.spots > 1 ? "Total charged now" : "Final price · charged now"))}
+      <p style="font-size:36px;font-weight:900;color:${sc.text};margin:0 0 6px;letter-spacing:-0.02em;">${isComp ? "On us 💛" : (p.spots && p.spots > 1 && p.totalPrice ? p.totalPrice : (p.price ?? ""))}</p>
+      ${caption(sc, isComp
+        ? "Covered by Stretchy — nothing to pay. Thanks for coming along."
+        : (p.spots && p.spots > 1
+            ? `Your ${p.spots} spots at ${p.price ?? ""} each — charged now in one go. Thanks for making it happen.`
+            : "Your final price for this Stretchy social movement. Thanks for making it happen. Heads up, your card is charged now at this final price per person."))}`)}
     ${stretchyCard(sc, p, "You're in")}
     ${p.isFirstStretchy ? firstStretchy(sc, p) : whatToBring(sc)}
   `);
@@ -333,7 +343,7 @@ function compHoldConfirmedEmail(p: AttendeeEmailPayload) {
   const whiteBox = (heading: string, bodyHtml: string, href: string, cta: string) => `<div style="background:#FFFFFF;border-radius:16px;padding:18px;margin:0 0 16px;">
     ${heading ? `<p style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#902F8A;margin:0 0 8px;">${heading}</p>` : ""}
     <p style="color:#902F8A;font-size:13px;line-height:1.5;margin:0 0 12px;">${bodyHtml}</p>
-    <a href="${href}" style="display:block;text-align:center;background:#902F8A;color:#FFFFFF !important;text-decoration:none;font-size:15px;font-weight:800;padding:15px 24px;border-radius:999px;"><span style="color:#FFFFFF !important;text-decoration:none;">${cta}</span></a>
+    <a href="${href}" style="display:block;text-align:center;background:#902F8A;color:#FFFFFF !important;-webkit-text-fill-color:#FFFFFF !important;text-decoration:none;font-size:15px;font-weight:800;padding:15px 24px;border-radius:999px;"><span style="color:#FFFFFF !important;-webkit-text-fill-color:#FFFFFF !important;text-decoration:none;">${cta}</span></a>
   </div>`;
   return page("purple", (sc) => `
     ${h1(sc, "We've held you a place — on us. 💛")}
@@ -399,6 +409,8 @@ export interface AttendeeEmailPayload {
   isFirstStretchy?: boolean;
   sessionGoingAhead?: boolean;
   attendeeCount?: number;
+  spots?: number;        // how many spaces THIS person reserved
+  totalPrice?: string;   // per-spot price × spots (formatted), when spots > 1
   teacherHandle?: string;
   gemHandle?: string;
   venueHandle?: string;
