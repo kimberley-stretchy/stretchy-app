@@ -110,8 +110,8 @@ export async function GET(request: NextRequest) {
       .select("id, title, starts_at, location_name, min_attendees, social_stretch_venue, host_id, gem_host_id, movement_type, venue_instagram, social_venue_instagram")
       .eq("state", "open")
       .not("is_draft", "is", true)
-      .gte("starts_at", hoursFromNow(now, 37))
-      .lt("starts_at", hoursFromNow(now, 38));
+      .gte("starts_at", hoursFromNow(now, 38))
+      .lt("starts_at", hoursFromNow(now, 39));
 
     for (const s of nudgeSessions ?? []) {
       const { count, userIds, compUserIds } = await getHoldSummary(admin, s.id);
