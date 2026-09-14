@@ -196,7 +196,7 @@ export function page(schemeName: string, inner: (sc: Scheme) => string, opts: { 
 }
 
 const CANCEL_WINDOW =
-  "Free to cancel before your Stretchy locks in at 36 hours out. After that, the price stands — that's what keeps it fair for everyone showing up. If we ever have to cancel on our end, you're refunded in full, always.";
+  "Cancel free any time before the 36-hour mark — no charge. After that, we treat it as locked in and the price stands, because by then we've committed to your teacher, your GEM, and your venue. That's what keeps it fair for everyone who shows up. If we ever have to cancel on our end, you're refunded in full — always.";
 
 // ─── EMAIL TEMPLATES ──────────────────────────────────────────────────────────
 
@@ -208,7 +208,7 @@ function holdConfirmedEmail(p: AttendeeEmailPayload) {
     ${stretchyCard(sc, p, "Your Stretchy")}
     ${box(sc, `${label(sc, "Current price per spot")}
       <p style="font-size:32px;font-weight:900;color:${sc.text};margin:0 0 4px;letter-spacing:-0.02em;">${p.price ?? "TBC"}</p>
-      ${caption(sc, "Price drops as more people join. Your card is charged 2 hours before the session at the final price. 📉")}
+      ${caption(sc, "The current starting price — the most you could ever pay for this one. From here it only gets better-er as more people join. Your card's charged 2 hours before, at the final price. 📉")}
       ${cancellationBlock(sc, p.cancelUrl || `${APP_URL}/hold/${p.sessionId ?? ""}`)}`)}
     ${tellMates(sc)}
     ${signoff(sc, "See you soon")}
@@ -237,7 +237,7 @@ function almostThereEmail(p: AttendeeEmailPayload) {
     ${msg(sc, `From there if we reach our minimum numbers, the session is all go, and the price may keep dropping — the more people who move together, the better it gets for all. Spread the word.`)}
     ${button(sc, shareUrl, "Grab your spot →")}
     ${stretchyCard(sc, p, "The Session")}
-    ${p.price ? priceBox(sc, p.price, "The more people who move together, the better it gets — and the price only keeps dropping.", "Price right now") : ""}
+    ${p.price ? priceBox(sc, p.price, "The more of us who come together, the better-er it gets — the price only keeps dropping.", "Price right now") : ""}
     ${button(sc, shareUrl, "Grab your spot →")}
     ${signoff(sc, "Hope to see you soon")}
   `);
@@ -251,7 +251,7 @@ function sessionGoingAheadEmail(p: AttendeeEmailPayload) {
     ${hey(sc, p.name)}
     ${msg(sc, `This one's going ahead. See you on the mat! 🤙`)}
     ${stretchyCard(sc, p, "Confirmed")}
-    ${priceBox(sc, isComp ? "On us 💛" : (p.price ?? "TBC"), isComp ? "This one's covered by Stretchy — nothing to pay. Just show up. 🧘" : "The price may keep dropping — the more people who move together, the better it gets for all. Your card is charged 2 hours before the session at the final price.", isComp ? "Your spot" : "The current price")}
+    ${priceBox(sc, isComp ? "On us 💛" : (p.price ?? "TBC"), isComp ? "This one's covered by Stretchy — nothing to pay. Just show up. 🧘" : "This is your ceiling — the most you'll ever pay. It can still drop from here, never rise. Your card's charged 2 hours before, at the final price. 📉", isComp ? "Your spot" : "The current price")}
     ${p.isFirstStretchy ? firstStretchy(sc, p) : whatToBring(sc)}
     ${directionsBox(sc, p.directions)}
     ${button(sc, url, "View your session →")}
@@ -265,7 +265,7 @@ function openConfirmedEmail(p: AttendeeEmailPayload) {
     ${hey(sc, p.name)}
     ${msg(sc, `<strong>${p.sessionTitle}</strong> hit its minimum and is going ahead. You marked yourself interested, so heads up: there's still room, but spots go. Grab yours. 🧘`)}
     ${stretchyCard(sc, p, "Going ahead")}
-    ${p.price ? priceBox(sc, p.price, "Nothing's charged until 2 hours before — and the more people who move together, the better it gets.", "Price right now") : ""}
+    ${p.price ? priceBox(sc, p.price, "Nothing's charged until 2 hours before — and the more of us who come together, the better-er it gets.", "Price right now") : ""}
     ${button(sc, bookUrl, "Book my spot →")}
     ${signoff(sc, "Hope to see you soon")}
   `);
