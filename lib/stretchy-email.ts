@@ -460,3 +460,47 @@ export async function sendAttendeeEmail(
     return { error };
   }
 }
+
+// Send many attendee emails in ONE Resend request (up to 100 per call) so a
+// cron looping over a roomful of holders can't trip Resend's ~2/sec rate limit
+// (which was silently dropping most sends). Never throws.
+export async function sendAttendeeBatch(
+  items: { type: AttendeeEmailType; payload: AttendeeEmailPayload; bcc?: string }[]
+): Promise<{ sent: number; error?: unknown }> {
+  const valid = items.filter((i) => i.payload.to);
+  if (valid.length === 0) return { sent: 0 };
+  if (!process.env.RESEND_API_KEY) {
+    console.error("sendAttendeeBatch: RESEND_API_KEY missing");
+    return { sent: 0, error: "RESEND_API_KEY missing" };
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const emails = valid.map(({ type, payload, bcc }) => {
+    const { subject, html } = buildAttendeeEmail(type, payload);
+    return {
+      from: FROM,
+      to: payload.to,
+      reply_to: REPLY_TO,
+      ...(bcc ? { bcc } : {}),
+      subject,
+      html,
+      text: toPlainText(html),
+      headers: { "X-Priority": "1", "Importance": "High" },
+    };
+  });
+  let sent = 0;
+  try {
+    for (let i = 0; i < emails.length; i += 100) {
+      const chunk = emails.slice(i, i + 100);
+      const { error } = await resend.batch.send(chunk);
+      if (error) {
+        console.error("sendAttendeeBatch error:", error);
+        return { sent, error };
+      }
+      sent += chunk.length;
+    }
+  } catch (error) {
+    console.error("sendAttendeeBatch threw:", error);
+    return { sent, error };
+  }
+  return { sent };
+}

@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { sendPushToUsers } from "@/lib/push-server";
 import { calculatePrice } from "@/lib/pricing";
 import { notifyHQ } from "@/lib/notifyLifecycle";
-import { sendAttendeeEmail } from "@/lib/stretchy-email";
+import { sendAttendeeBatch } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
 
 /**
@@ -127,18 +127,18 @@ export async function GET(request: NextRequest) {
     // Send "price locked" email to each attendee (new template + real details).
     const emailExtras = await buildSessionEmailExtras(admin, session);
     const priceStr = `$${finalPrice.toFixed(2)} incl. GST`;
+    const lockItems = [];
     for (const hold of holds) {
-      try {
-        const { data: attendee } = await admin
-          .from("attendees")
-          .select("name, email")
-          .eq("auth_user_id", hold.user_id)
-          .single();
-
-        if (!attendee?.email) continue;
-
-        const firstTimer = await isFirstStretchy(admin, hold.user_id);
-        await sendAttendeeEmail("price_locked", {
+      const { data: attendee } = await admin
+        .from("attendees")
+        .select("name, email")
+        .eq("auth_user_id", hold.user_id)
+        .single();
+      if (!attendee?.email) continue;
+      const firstTimer = await isFirstStretchy(admin, hold.user_id);
+      lockItems.push({
+        type: "price_locked" as const,
+        payload: {
           to: attendee.email,
           name: attendee.name?.split(" ")[0] ?? "there",
           sessionTitle: session.title,
@@ -151,11 +151,10 @@ export async function GET(request: NextRequest) {
           isFirstStretchy: firstTimer,
           attendeeCount: totalHolds,
           ...emailExtras,
-        });
-      } catch (emailErr) {
-        console.error("Email error:", emailErr);
-      }
+        },
+      });
     }
+    await sendAttendeeBatch(lockItems);
 
     // Send push notifications to all holders
     const holderUserIds = holds.map(h => h.user_id);

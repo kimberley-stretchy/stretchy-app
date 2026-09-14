@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { sendPushToUsers } from "@/lib/push-server";
 import { calculatePrice } from "@/lib/pricing";
-import { sendAttendeeEmail, APP_URL } from "@/lib/stretchy-email";
+import { sendAttendeeEmail, sendAttendeeBatch, APP_URL } from "@/lib/stretchy-email";
 import { notifyHostCancelled } from "@/lib/notifyHostScheduled";
 import { notifyHostConfirmed, notifyHostRecruit, notifyHQ } from "@/lib/notifyLifecycle";
 import { buildSessionEmailExtras, isFirstStretchy, movementLabel } from "@/lib/sessionEmailContext";
@@ -136,10 +136,10 @@ export async function GET(request: NextRequest) {
       // gifted in and can't cancel/be charged, so they skip this one.
       const payingHolderIds = userIds.filter((uid) => !compUserIds.has(uid));
       const holders = await getAttendees(admin, payingHolderIds);
-      for (const a of holders) {
-        if (!a.email) continue;
-        await sendAttendeeEmail("almost_there", {
-          to: a.email,
+      await sendAttendeeBatch(holders.map((a) => ({
+        type: "almost_there" as const,
+        payload: {
+          to: a.email ?? "",
           name: firstNameOf(a.name),
           sessionTitle: s.title,
           date: dateStr,
@@ -149,16 +149,16 @@ export async function GET(request: NextRequest) {
           sessionId: s.id,
           isHolder: true,
           cancelUrl: `${APP_URL}/my-holds`,
-        });
-      }
+        },
+      })));
 
       // Interested / watching (not already holding) — "grab a spot" variant.
       const interestedIds = (await getInterestedUserIds(admin, s.id)).filter((uid) => !userIds.includes(uid));
       const interested = await getAttendees(admin, interestedIds);
-      for (const a of interested) {
-        if (!a.email) continue;
-        await sendAttendeeEmail("almost_there", {
-          to: a.email,
+      await sendAttendeeBatch(interested.map((a) => ({
+        type: "almost_there" as const,
+        payload: {
+          to: a.email ?? "",
           name: firstNameOf(a.name),
           sessionTitle: s.title,
           date: dateStr,
@@ -167,8 +167,8 @@ export async function GET(request: NextRequest) {
           shareUrl,
           sessionId: s.id,
           isHolder: false,
-        });
-      }
+        },
+      })));
 
       // Push to paying holders + interested.
       sendPushToUsers([...payingHolderIds, ...interestedIds], {
@@ -243,8 +243,12 @@ export async function GET(request: NextRequest) {
     .select("id, title, starts_at, ends_at, location_name, min_attendees, max_attendees, cost_base, revenue_target, social_stretch_venue, state, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram")
     .eq("state", "open")
     .not("is_draft", "is", true)
-    .gte("starts_at", hoursFromNow(now, 35))
-    .lt("starts_at", hoursFromNow(now, 37));
+    // Fires at the ~36h mark. Half-hour-offset bounds so a whole-hour session
+    // lands MID-window (36h) — otherwise the cron's few-seconds drift lets a
+    // 37h session slip past a whole-hour upper bound and decide an hour early
+    // (which is what made the nudge + cancel land in the same run).
+    .gte("starts_at", hoursFromNow(now, 34.5))
+    .lt("starts_at", hoursFromNow(now, 36.5));
 
   const results: Record<string, unknown>[] = [];
 
@@ -271,22 +275,27 @@ export async function GET(request: NextRequest) {
       // Attendees
       const emailExtras = await buildSessionEmailExtras(admin, session);
       const holders = await getAttendees(admin, userIds);
+      const goAheadItems = [];
       for (const a of holders) {
         if (!a.email) continue;
-        await sendAttendeeEmail("session_going_ahead", {
-          to: a.email,
-          name: firstNameOf(a.name),
-          sessionTitle: session.title,
-          date: dateStr,
-          price: finalPrice,
-          venue: session.location_name,
-          socialStretchVenue: session.social_stretch_venue ?? "nearby",
-          sessionId: session.id,
-          isComp: compUserIds.has(a.auth_user_id),
-          isFirstStretchy: await isFirstStretchy(admin, a.auth_user_id),
-          ...emailExtras,
+        goAheadItems.push({
+          type: "session_going_ahead" as const,
+          payload: {
+            to: a.email,
+            name: firstNameOf(a.name),
+            sessionTitle: session.title,
+            date: dateStr,
+            price: finalPrice,
+            venue: session.location_name,
+            socialStretchVenue: session.social_stretch_venue ?? "nearby",
+            sessionId: session.id,
+            isComp: compUserIds.has(a.auth_user_id),
+            isFirstStretchy: await isFirstStretchy(admin, a.auth_user_id),
+            ...emailExtras,
+          },
         });
       }
+      await sendAttendeeBatch(goAheadItems);
       sendPushToUsers(userIds, {
         title: "It's happening! ✅",
         body: `${session.title} is confirmed. Price may still drop — see you there!`,
@@ -297,10 +306,10 @@ export async function GET(request: NextRequest) {
       // Interested / watching (not already holding) — "it's on, now book".
       const interestedIds = (await getInterestedUserIds(admin, session.id)).filter((uid) => !userIds.includes(uid));
       const interested = await getAttendees(admin, interestedIds);
-      for (const a of interested) {
-        if (!a.email) continue;
-        await sendAttendeeEmail("session_confirmed_open", {
-          to: a.email,
+      await sendAttendeeBatch(interested.map((a) => ({
+        type: "session_confirmed_open" as const,
+        payload: {
+          to: a.email ?? "",
           name: firstNameOf(a.name),
           sessionTitle: session.title,
           date: dateStr,
@@ -309,8 +318,8 @@ export async function GET(request: NextRequest) {
           socialStretchVenue: session.social_stretch_venue ?? "nearby",
           sessionId: session.id,
           ...emailExtras,
-        });
-      }
+        },
+      })));
       if (interestedIds.length > 0) {
         sendPushToUsers(interestedIds, {
           title: "It's on 🎉",
@@ -344,16 +353,16 @@ export async function GET(request: NextRequest) {
 
       // Attendees (the ids we captured before releasing)
       const holders = await getAttendees(admin, userIds);
-      for (const a of holders) {
-        if (!a.email) continue;
-        await sendAttendeeEmail("session_cancelled", {
-          to: a.email,
+      await sendAttendeeBatch(holders.map((a) => ({
+        type: "session_cancelled" as const,
+        payload: {
+          to: a.email ?? "",
           name: firstNameOf(a.name),
           sessionTitle: session.title,
           date: dateStr,
           sessionId: session.id,
-        });
-      }
+        },
+      })));
       sendPushToUsers(userIds, {
         title: "Not this time 💙",
         body: `${session.title} didn't reach the minimum. Nothing was charged.`,
