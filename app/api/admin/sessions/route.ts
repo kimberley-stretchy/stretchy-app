@@ -195,6 +195,8 @@ export async function POST(request: NextRequest) {
     locationAddress: location_address,
     style: movementLabel(movement_type),
     socialStretchVenue: social_stretch_venue || null,
+    venueHandle: venue_instagram || null,
+    socialVenueHandle: social_venue_instagram || null,
   };
   if (realHostAssigned) {
     notifyHostScheduled({ hostId: host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher notify error:", e));

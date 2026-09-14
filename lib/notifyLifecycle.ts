@@ -1,7 +1,30 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { sendPushToUser } from "@/lib/push-server";
-import { HQ_EMAIL, REPLY_TO, APP_URL, page, box, label, button, h1, hey, msg, row } from "@/lib/stretchy-email";
+import { HQ_EMAIL, REPLY_TO, APP_URL, page, box, label, button, h1, hey, msg, row, type Scheme } from "@/lib/stretchy-email";
+
+// Extra session detail for host emails' session box — good for sharing.
+export interface HostDetails {
+  social?: string | null;
+  teacherHandle?: string | null;
+  gemHandle?: string | null;
+  venueHandle?: string | null;
+  socialVenueHandle?: string | null;
+}
+const withHandle = (v?: string | null) => (v ? ` · ${v}` : "");
+function hostSessionBox(
+  sc: Scheme,
+  o: { title: string; dateStr: string; locationName: string; style?: string; gemName?: string; details?: HostDetails }
+) {
+  const d = o.details ?? {};
+  return box(sc, `${label(sc, "The session")}
+    ${row(sc, `<strong>${o.title}</strong>`)}
+    ${row(sc, `🗓 ${o.dateStr}`)}
+    ${row(sc, `📍 ${o.locationName}${withHandle(d.venueHandle)}`)}
+    ${o.style ? row(sc, `🧘 ${o.style}${withHandle(d.teacherHandle)}`) : ""}
+    ${o.gemName ? row(sc, `💫 GEM on the day: ${o.gemName}${withHandle(d.gemHandle)}`) : ""}
+    ${d.social ? row(sc, `🌞 Social Stretch after at ${d.social}${withHandle(d.socialVenueHandle)}`) : ""}`);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LIFECYCLE NOTIFICATIONS — teacher / GEM / Stretchy HQ
@@ -84,12 +107,14 @@ export async function notifyHostConfirmed({
   session,
   gemName,
   style,
+  details,
 }: {
   hostId: string;
   role: "teacher" | "gem";
   session: LifecycleSession;
   gemName?: string;
   style?: string;
+  details?: HostDetails;
 }): Promise<void> {
   try {
     const host = await getHost(hostId);
@@ -102,9 +127,11 @@ export async function notifyHostConfirmed({
       ${h1(sc, "It's on. ✅")}
       ${hey(sc, firstName)}
       ${msg(sc, `Good news — this one hit its minimum and is going ahead. You're confirmed for ${roleWord(role)} it.`)}
-      ${box(sc, `${label(sc, "The session")}${row(sc, `<strong>${session.title}</strong>`)}${row(sc, `🗓 ${dateStr}`)}${row(sc, `📍 ${session.locationName}`)}${style ? row(sc, `🧘 ${style}`) : ""}${gemName && role === "teacher" ? row(sc, `💫 GEM on the day: ${gemName}`) : ""}`)}
+      ${hostSessionBox(sc, { title: session.title, dateStr, locationName: session.locationName, style, gemName: role === "teacher" ? gemName : undefined, details })}
       ${button(sc, runSheet, "Open your run sheet →")}
-      ${msg(sc, "Any issues, let Kimberley know 💛")}
+      ${msg(sc, "Check out the attendees &amp; any flagged wellbeing considerations.")}
+      ${msg(sc, "Have fun and enjoy your Stretchy session! Any issues, let Kimberley know.")}
+      ${msg(sc, "Cheers,<br>Stretchy")}
     `);
     await sendHostEmail(host.email, `It's on: ${session.title}`, html, HQ_EMAIL);
     if (host.auth_user_id) {
@@ -128,6 +155,8 @@ export async function notifyHostRecruit({
   needed,
   shareUrl,
   style,
+  gemName,
+  details,
 }: {
   hostId: string;
   role: "teacher" | "gem";
@@ -135,6 +164,8 @@ export async function notifyHostRecruit({
   needed: number;
   shareUrl: string;
   style?: string;
+  gemName?: string;
+  details?: HostDetails;
 }): Promise<void> {
   try {
     const host = await getHost(hostId);
@@ -146,10 +177,11 @@ export async function notifyHostRecruit({
       ${label(sc, "Stretchy HQ · Nearly there")}
       ${h1(sc, "So close. 👀")}
       ${hey(sc, firstName)}
-      ${msg(sc, `The one you're ${roleWord(role)} is <strong>${needLine}</strong> short, and the 36-hour decision is about 2 hours away.`)}
-      ${msg(sc, "If you can share it with anyone who'd come, now's the moment. Stretching bodies, minds and social circles works best when we're all together — the more who move, the better it gets. 🌞")}
-      ${box(sc, `${label(sc, "The session")}${row(sc, `<strong>${session.title}</strong>`)}${row(sc, `🗓 ${dateStr}`)}${row(sc, `📍 ${session.locationName}`)}${style ? row(sc, `🧘 ${style}`) : ""}`)}
+      ${msg(sc, `Your Stretchy session is <strong>${needLine}</strong> short. The 36-hour decision to go ahead is coming up.`)}
+      ${msg(sc, "Share your session with your network or those who'd like to come — now's the moment. Stretching bodies, minds and social circles works best when we're all together — the more who move, the better it gets. 🌞")}
+      ${hostSessionBox(sc, { title: session.title, dateStr, locationName: session.locationName, style, gemName, details })}
       ${button(sc, shareUrl, "Share this Stretchy →")}
+      ${msg(sc, "Cheers,<br>Stretchy")}
     `);
     await sendHostEmail(host.email, `Nearly there: ${session.title} needs ${needed} more`, html);
     if (host.auth_user_id) {

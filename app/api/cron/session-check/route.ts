@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
   try {
     const { data: nudgeSessions } = await admin
       .from("sessions")
-      .select("id, title, starts_at, location_name, min_attendees, social_stretch_venue, host_id, gem_host_id, movement_type")
+      .select("id, title, starts_at, location_name, min_attendees, social_stretch_venue, host_id, gem_host_id, movement_type, venue_instagram, social_venue_instagram")
       .eq("state", "open")
       .not("is_draft", "is", true)
       .gte("starts_at", hoursFromNow(now, 37))
@@ -169,8 +169,11 @@ export async function GET(request: NextRequest) {
 
       // Teacher + GEM — "help fill it" heads-up.
       const recruitStyle = movementLabel(s.movement_type);
-      if (s.host_id) notifyHostRecruit({ hostId: s.host_id, role: "teacher", session: { id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name }, needed, shareUrl, style: recruitStyle }).catch(console.error);
-      if (s.gem_host_id) notifyHostRecruit({ hostId: s.gem_host_id, role: "gem", session: { id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name }, needed, shareUrl, style: recruitStyle }).catch(console.error);
+      const nudgeExtras = await buildSessionEmailExtras(admin, s);
+      const nudgeDetails = { social: s.social_stretch_venue, teacherHandle: nudgeExtras.teacherHandle, gemHandle: nudgeExtras.gemHandle, venueHandle: nudgeExtras.venueHandle, socialVenueHandle: nudgeExtras.socialVenueHandle };
+      const recruitSession = { id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name };
+      if (s.host_id) notifyHostRecruit({ hostId: s.host_id, role: "teacher", session: recruitSession, needed, shareUrl, style: recruitStyle, gemName: nudgeExtras.gemName, details: nudgeDetails }).catch(console.error);
+      if (s.gem_host_id) notifyHostRecruit({ hostId: s.gem_host_id, role: "gem", session: recruitSession, needed, shareUrl, style: recruitStyle, details: nudgeDetails }).catch(console.error);
 
       // Optional: general city waitlist (not session-specific — best-effort match)
       if (NUDGE_WAITLIST) {
@@ -301,8 +304,9 @@ export async function GET(request: NextRequest) {
       }
 
       // Teacher + GEM + HQ
-      if (session.host_id) notifyHostConfirmed({ hostId: session.host_id, role: "teacher", session: hostSession, gemName: emailExtras.gemName, style: emailExtras.teacherStyle }).catch(console.error);
-      if (session.gem_host_id) notifyHostConfirmed({ hostId: session.gem_host_id, role: "gem", session: hostSession, style: emailExtras.teacherStyle }).catch(console.error);
+      const hostDetails = { social: session.social_stretch_venue, teacherHandle: emailExtras.teacherHandle, gemHandle: emailExtras.gemHandle, venueHandle: emailExtras.venueHandle, socialVenueHandle: emailExtras.socialVenueHandle };
+      if (session.host_id) notifyHostConfirmed({ hostId: session.host_id, role: "teacher", session: hostSession, gemName: emailExtras.gemName, style: emailExtras.teacherStyle, details: hostDetails }).catch(console.error);
+      if (session.gem_host_id) notifyHostConfirmed({ hostId: session.gem_host_id, role: "gem", session: hostSession, style: emailExtras.teacherStyle, details: hostDetails }).catch(console.error);
       await notifyHQ({
         subject: `Confirmed: ${session.title} (${holds}/${session.min_attendees})`,
         scheme: "olive",

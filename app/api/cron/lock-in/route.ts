@@ -149,6 +149,7 @@ export async function GET(request: NextRequest) {
           sessionId: session.id,
           isComp: !!hold.is_comp,
           isFirstStretchy: firstTimer,
+          attendeeCount: totalHolds,
           ...emailExtras,
         });
       } catch (emailErr) {

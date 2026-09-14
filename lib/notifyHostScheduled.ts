@@ -37,6 +37,8 @@ export async function notifyHostScheduled({
     locationAddress?: string | null;
     style?: string | null;
     socialStretchVenue?: string | null;
+    venueHandle?: string | null;
+    socialVenueHandle?: string | null;
   };
 }) {
   try {
@@ -65,9 +67,10 @@ export async function notifyHostScheduled({
         ${h1(sc, "You're scheduled. 🗓")}
         ${hey(sc, firstName)}
         ${msg(sc, `You're down for ${roleLabel} this one.`)}
-        ${box(sc, `${label(sc, "The session")}${row(sc, `<strong>${session.title}</strong>`)}${row(sc, `🗓 ${dateStr}`)}${row(sc, `📍 ${session.locationName}`)}${session.style ? row(sc, `🧘 ${session.style}`) : ""}${session.socialStretchVenue ? row(sc, `🌞 Social Stretch after at ${session.socialStretchVenue}`) : ""}`)}
+        ${box(sc, `${label(sc, "The session")}${row(sc, `<strong>${session.title}</strong>`)}${row(sc, `🗓 ${dateStr}`)}${row(sc, `📍 ${session.locationName}${session.venueHandle ? ` · ${session.venueHandle}` : ""}`)}${session.style ? row(sc, `🧘 ${session.style}`) : ""}${session.socialStretchVenue ? row(sc, `🌞 Social Stretch after at ${session.socialStretchVenue}${session.socialVenueHandle ? ` · ${session.socialVenueHandle}` : ""}`) : ""}`)}
         ${button(sc, calUrl, "Add to Google Calendar →")}
         ${msg(sc, "Using Apple Calendar or Outlook? Open the attached file instead.")}
+        ${msg(sc, "Cheers,<br>Stretchy")}
       `);
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails
@@ -127,6 +130,7 @@ export async function notifyHostCancelled({
         ${hey(sc, firstName)}
         ${msg(sc, `Heads up — this one's been cancelled. You were ${roleLabel} it. Nothing you need to do — just remove it from your calendar.`)}
         ${box(sc, `${row(sc, `<strong>${session.title}</strong>`)}${row(sc, `🗓 ${dateStr}`)}${row(sc, `📍 ${session.locationName}`)}`)}
+        ${msg(sc, "Cheers,<br>Stretchy")}
       `, { highlight: false });
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails
