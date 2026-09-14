@@ -202,19 +202,18 @@ function holdConfirmedEmail(p: AttendeeEmailPayload) {
 
 function almostThereEmail(p: AttendeeEmailPayload) {
   const needed = Math.max(p.needed ?? 1, 1);
+  const neededPeople = `${needed} more ${needed === 1 ? "person" : "people"}`;
   const shareUrl = p.shareUrl || (p.sessionId ? `${APP_URL}/sessions/${p.sessionId}` : `${APP_URL}/sessions`);
   if (p.isHolder) {
     return page("purple", (sc) => `
       ${h1(sc, "So close. 👀")}
       ${hey(sc, p.name)}
-      ${msg(sc, `Just this many more and <strong>${p.sessionTitle}</strong> is locked in. This is the moment: tell your mates, your co-workers, the guy in the coffee line. 🙌`)}
-      ${bigCount(sc, needed)}
+      ${msg(sc, `We just need <strong>${neededPeople}</strong> for this Stretchy session to go ahead. This is the moment: tell your mates, your co-workers, the guy in the coffee line. 🙌`)}
       ${stretchyCard(sc, p, "Your Stretchy")}
       ${button(sc, shareUrl, "Share this Stretchy →")}
       ${box(sc, `${label(sc, "Heads up · cancellation window")}<p style="color:${sc.text};font-size:13px;line-height:1.6;margin:0 0 12px;">You can still cancel free until the <strong>36-hour mark — about 2 hours from now</strong>. After that your place is locked in and the price stands. If we don't reach the minimum by then, it's called off and nothing's charged.</p>${button(sc, p.cancelUrl || `${APP_URL}/hold/${p.sessionId ?? ""}`, "Manage my hold")}`)}
     `);
   }
-  const neededPeople = `${needed} more ${needed === 1 ? "person" : "people"}`;
   return page("purple", (sc) => `
     ${h1(sc, `Interested?! We need ${neededPeople} for this Stretchy to go ahead.`)}
     ${hey(sc, p.name)}
