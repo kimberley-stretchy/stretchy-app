@@ -78,7 +78,10 @@ export function box(sc: Scheme, inner: string, pad = 18) {
   return `<div style="border:2px solid ${sc.text};border-radius:16px;padding:${pad}px;margin:0 0 16px;background:transparent;">${inner}</div>`;
 }
 export function button(sc: Scheme, href: string, text: string) {
-  return `<a href="${href}" style="display:block;text-align:center;background:${sc.btnBg};color:${sc.btnText};text-decoration:none;font-size:15px;font-weight:800;padding:15px 24px;border-radius:999px;margin:0 0 16px;letter-spacing:.01em;">${text}</a>`;
+  // Colour is forced with !important AND a nested span — otherwise mail clients
+  // (Apple Mail especially) override the link colour and the label goes dark on
+  // the dark pill / illegible.
+  return `<a href="${href}" style="display:block;text-align:center;background:${sc.btnBg};color:${sc.btnText} !important;text-decoration:none;font-size:15px;font-weight:800;padding:15px 24px;border-radius:999px;margin:0 0 16px;letter-spacing:.01em;"><span style="color:${sc.btnText} !important;text-decoration:none;">${text}</span></a>`;
 }
 export function row(sc: Scheme, text: string) {
   return `<p style="color:${sc.text};font-size:14px;line-height:1.5;margin:0 0 7px;">${text}</p>`;
@@ -330,7 +333,7 @@ function compHoldConfirmedEmail(p: AttendeeEmailPayload) {
   const whiteBox = (heading: string, bodyHtml: string, href: string, cta: string) => `<div style="background:#FFFFFF;border-radius:16px;padding:18px;margin:0 0 16px;">
     ${heading ? `<p style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#902F8A;margin:0 0 8px;">${heading}</p>` : ""}
     <p style="color:#902F8A;font-size:13px;line-height:1.5;margin:0 0 12px;">${bodyHtml}</p>
-    <a href="${href}" style="display:block;text-align:center;background:#902F8A;color:#FFFFFF;text-decoration:none;font-size:15px;font-weight:800;padding:15px 24px;border-radius:999px;">${cta}</a>
+    <a href="${href}" style="display:block;text-align:center;background:#902F8A;color:#FFFFFF !important;text-decoration:none;font-size:15px;font-weight:800;padding:15px 24px;border-radius:999px;"><span style="color:#FFFFFF !important;text-decoration:none;">${cta}</span></a>
   </div>`;
   return page("purple", (sc) => `
     ${h1(sc, "We've held you a place — on us. 💛")}
