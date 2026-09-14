@@ -122,6 +122,12 @@ export async function GET(request: NextRequest) {
       if (count >= s.min_attendees) continue; // already there — it'll confirm at 36h
       if (count < NUDGE_MIN_HOLDS) continue; // too empty to bother nudging
 
+      // Fire ONCE per session — never a double nudge within the window. Fail-open:
+      // if the nudge_sent_at column isn't there yet, the read errors and we send
+      // anyway (guard just doesn't apply until the migration is run).
+      const { data: nudgeRow, error: nudgeErr } = await admin.from("sessions").select("nudge_sent_at").eq("id", s.id).maybeSingle();
+      if (!nudgeErr && nudgeRow?.nudge_sent_at) continue;
+
       const needed = s.min_attendees - count;
       const dateStr = fmtDate(s.starts_at);
       const shareUrl = `${APP_URL}/sessions/${s.id}`;
@@ -204,20 +210,26 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // HQ heads-up ("from us") — decision is ~2h away
+      // HQ heads-up ("from us") — the matching record of exactly what just went
+      // out to customers / teacher / GEM.
+      const teacherGemBits = [s.host_id ? "teacher" : null, s.gem_host_id ? "GEM" : null].filter(Boolean).join(" + ");
       await notifyHQ({
         subject: `Almost there: ${s.title} (${count}/${s.min_attendees})`,
         scheme: "purple",
         kicker: "Stretchy HQ · Decision in ~2h",
         heading: `${s.title} — ${count}/${s.min_attendees}`,
         rows: [
-          `Needs <strong>${needed}</strong> more hold${needed === 1 ? "" : "s"} to lock in. Holders, interested people, teacher and GEM have all been nudged to share it.`,
+          `Needs <strong>${needed}</strong> more hold${needed === 1 ? "" : "s"} to lock in.`,
+          `<strong>Nudge just sent to:</strong> ${payingHolderIds.length} holder${payingHolderIds.length === 1 ? "" : "s"}${interestedIds.length ? `, ${interestedIds.length} interested` : ""}${teacherGemBits ? `, ${teacherGemBits}` : ""}.`,
           `🗓 ${dateStr}`,
           `📍 ${s.location_name}`,
           `The 36-hour auto-decision runs in about 2 hours. If it's still short then, it's cancelled and no one is charged.`,
         ],
         cta: { href: shareUrl, text: "View session →" },
       });
+
+      // Mark it nudged so it can't fire again (fail-open: ignored if column absent).
+      await admin.from("sessions").update({ nudge_sent_at: new Date().toISOString() }).eq("id", s.id);
 
       nudged++;
     }
