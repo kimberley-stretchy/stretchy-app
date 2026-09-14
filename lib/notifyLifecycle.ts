@@ -127,11 +127,11 @@ export async function notifyHostConfirmed({
       ${h1(sc, "It's on. ✅")}
       ${hey(sc, firstName)}
       ${msg(sc, `Good news — this one hit its minimum and is going ahead. You're confirmed for ${roleWord(role)} it.`)}
-      ${hostSessionBox(sc, { title: session.title, dateStr, locationName: session.locationName, style, gemName: role === "teacher" ? gemName : undefined, details })}
-      ${button(sc, runSheet, "Open your run sheet →")}
       ${msg(sc, "Check out the attendees &amp; any flagged wellbeing considerations.")}
       ${msg(sc, "Have fun and enjoy your Stretchy session! Any issues, let Kimberley know.")}
       ${msg(sc, "Cheers,<br>Stretchy")}
+      ${hostSessionBox(sc, { title: session.title, dateStr, locationName: session.locationName, style, gemName: role === "teacher" ? gemName : undefined, details })}
+      ${button(sc, runSheet, "Open your run sheet →")}
     `);
     await sendHostEmail(host.email, `It's on: ${session.title}`, html, HQ_EMAIL);
     if (host.auth_user_id) {
