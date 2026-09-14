@@ -109,12 +109,13 @@ export async function GET(request: NextRequest) {
       .from("sessions")
       .select("id, title, starts_at, location_name, min_attendees, social_stretch_venue, host_id, gem_host_id, movement_type, venue_instagram, social_venue_instagram")
       .eq("state", "open")
-      // ~37.5h out, half-hour-offset bounds so a session starting on a whole
-      // hour lands MID-window — the hourly cron fires a few seconds after :00,
-      // so integer-hour bounds (e.g. exactly 38h) get missed by that drift.
+      // Fires ~37–38.5h out (covers the 38h mark and tonight's 37h catch-up).
+      // Half-hour-offset bounds so whole-hour sessions land mid-window — the
+      // hourly cron fires a few seconds after :00, so integer-hour bounds get
+      // missed by that drift.
       .not("is_draft", "is", true)
       .gte("starts_at", hoursFromNow(now, 36.5))
-      .lt("starts_at", hoursFromNow(now, 37.5));
+      .lt("starts_at", hoursFromNow(now, 38.5));
 
     for (const s of nudgeSessions ?? []) {
       const { count, userIds, compUserIds } = await getHoldSummary(admin, s.id);
