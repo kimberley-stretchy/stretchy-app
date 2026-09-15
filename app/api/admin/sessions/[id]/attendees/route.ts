@@ -192,7 +192,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const emailExtras = await buildSessionEmailExtras(admin, session);
   const firstTimer = await isFirstStretchy(admin, userId);
-  await sendAttendeeEmail(
+  const emailResult = await sendAttendeeEmail(
     "comp_hold_confirmed",
     {
       to: email,
@@ -204,14 +204,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       sessionId,
       newAccount,
       isFirstStretchy: firstTimer,
+      spots: quantity,
       ...emailExtras,
     },
     { bcc: "kimberley@stretchyyoga.co.nz" }
   );
 
+  // The hold is placed regardless, but tell HQ if the "on us" email didn't send
+  // so a silent Resend rejection can't look like success in the UI.
+  const emailDelivered = !emailResult.error;
+  if (!emailDelivered) {
+    console.error(`Comp email FAILED for ${email} (${session.title}):`, emailResult.error);
+  }
+
   return NextResponse.json({
     ok: true,
     newAccount,
+    emailDelivered,
+    emailError: emailDelivered ? undefined : String((emailResult.error as { message?: string })?.message ?? emailResult.error),
     attendee: { name: attendeeName, email, spots: quantity },
     manageUrl: `${APP_URL}/hold/${sessionId}`,
   });
