@@ -109,7 +109,7 @@ function stretchyCard(sc: Scheme, p: AttendeeEmailPayload, tag: string) {
   if (p.gemName)
     parts.push(`<p style="color:${sc.text};font-size:14px;margin:0 0 4px;">💫 GEM on the day: ${p.gemName}${p.gemHandle ? ` · ${p.gemHandle}` : ""}</p>`);
   if (p.spots && p.spots > 1)
-    parts.push(`<p style="color:${sc.text};font-size:14px;font-weight:800;margin:0 0 4px;">🎟 ${p.spots} spots reserved under you</p>`);
+    parts.push(`<p style="color:${sc.text};font-size:14px;font-weight:800;margin:0 0 4px;">🎟 You're holding ${p.spots} spots — bring the crew!</p>`);
   // Social Stretch + getting-there/parking live together at the foot of the card.
   const foot: string[] = [];
   if (p.socialStretchVenue)
@@ -215,10 +215,14 @@ const CANCEL_WINDOW =
 // ─── EMAIL TEMPLATES ──────────────────────────────────────────────────────────
 
 function holdConfirmedEmail(p: AttendeeEmailPayload) {
+  const many = !!(p.spots && p.spots > 1);
+  const crew = p.spots && p.spots >= 4 ? "a whole crew" : "you and your people";
   return page("blue", (sc) => `
-    ${h1(sc, "You've held a spot. 🙌")}
+    ${h1(sc, many ? `You've held ${p.spots} spots. 🙌` : "You've held a spot. 🙌")}
     ${hey(sc, p.name)}
-    ${msg(sc, `${p.spots && p.spots > 1 ? `Your <strong>${p.spots} spots are</strong> held` : `Your spot's held`} for <strong>${p.sessionTitle}</strong>. Nothing's charged yet. 🧘`)}
+    ${msg(sc, many
+      ? `You've held <strong>${p.spots} spots</strong> for <strong>${p.sessionTitle}</strong> — love it, that's ${crew} coming together. 🙌 Nothing's charged yet. 🧘`
+      : `Your spot's held for <strong>${p.sessionTitle}</strong>. Nothing's charged yet. 🧘`)}
     ${stretchyCard(sc, p, "Your Stretchy")}
     ${box(sc, `${label(sc, "Current price per spot")}
       <p style="font-size:32px;font-weight:900;color:${sc.text};margin:0 0 4px;letter-spacing:-0.02em;">${p.price ?? "TBC"}</p>
@@ -264,7 +268,9 @@ function sessionGoingAheadEmail(p: AttendeeEmailPayload) {
   return page("olive", (sc) => `
     ${h1(sc, "It's happening! 🧘")}
     ${hey(sc, p.name)}
-    ${msg(sc, `This one's going ahead. See you on the mat! 🤙`)}
+    ${msg(sc, p.spots && p.spots > 1
+      ? `This one's going ahead — all <strong>${p.spots}</strong> of your spots are in. See you on the mat! 🤙`
+      : `This one's going ahead. See you on the mat! 🤙`)}
     ${stretchyCard(sc, p, "Confirmed")}
     ${priceBox(sc, isComp ? "On us 💛" : (p.price ?? "TBC"), isComp ? "This one's covered by Stretchy — nothing to pay. Just show up. 🧘" : "This is your ceiling — the most you'll ever pay. It can still drop from here, never rise. Your card's charged 2 hours before, at the final price. 📉", isComp ? "Your spot" : "The current price")}
     ${p.isFirstStretchy ? firstStretchy(sc, p) : whatToBring(sc)}
