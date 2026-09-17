@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { syncMarketingContact } from "@/lib/resendAudience";
 
 function getAdmin() {
   return createClient(
@@ -32,6 +33,16 @@ export async function POST(request: NextRequest) {
     console.error("Newsletter signup error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // A newsletter signup IS explicit marketing opt-in → add them to the Resend
+  // marketing Audience (best-effort; no-ops until RESEND_AUDIENCE_ID is set). If
+  // they already have an attendee account, flag consent there too so it stays in
+  // step with the in-app toggle.
+  await syncMarketingContact({ email: cleanEmail, subscribed: true });
+  await admin
+    .from("attendees")
+    .update({ marketing_consent: true, marketing_consent_at: new Date().toISOString() })
+    .eq("email", cleanEmail);
 
   // Notify HQ and confirm to the signer — new signups only, fire and forget.
   if (!existing && process.env.RESEND_API_KEY) {

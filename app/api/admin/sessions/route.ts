@@ -246,11 +246,37 @@ export async function DELETE(request: NextRequest) {
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, title, starts_at, location_name, host_id, gem_host_id")
+    .select("id, title, starts_at, location_name, host_id, gem_host_id, state")
     .eq("id", id)
     .single();
 
   if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+
+  // Hard delete (permanent). Only allowed for sessions that are already past or
+  // cancelled — never an upcoming live one — so this can't nuke an active session
+  // by accident. Removes the session and its holds + interest rows.
+  if (searchParams.get("hard") === "true") {
+    const isPast = new Date(session.starts_at).getTime() < Date.now();
+    if (!isPast && session.state !== "cancelled") {
+      return NextResponse.json(
+        { error: "Only past or cancelled sessions can be permanently deleted. Cancel it first." },
+        { status: 400 }
+      );
+    }
+    // Release any still-active card authorisations before deleting the holds.
+    const { data: activeHolds } = await supabase
+      .from("holds").select("stripe_pi_id").eq("session_id", id).eq("state", "active");
+    for (const h of activeHolds ?? []) {
+      if (h.stripe_pi_id) {
+        try { await stripe.paymentIntents.cancel(h.stripe_pi_id); } catch (e) { console.error("PI cancel on hard-delete:", e); }
+      }
+    }
+    await supabase.from("holds").delete().eq("session_id", id);
+    await supabase.from("session_interest").delete().eq("session_id", id);
+    const { error: delErr } = await supabase.from("sessions").delete().eq("id", id);
+    if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
+    return NextResponse.json({ ok: true, deleted: true });
+  }
 
   const { data: holds } = await supabase
     .from("holds")

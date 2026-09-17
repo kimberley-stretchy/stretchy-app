@@ -138,6 +138,33 @@ export default function AdminSessionsPage() {
     setCancelling(null);
   }
 
+  // Selecting past sessions to permanently delete.
+  const [selectedPast, setSelectedPast] = useState<Set<string>>(new Set());
+  const [deletingPast, setDeletingPast] = useState(false);
+  const togglePast = (id: string) =>
+    setSelectedPast((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
+  async function deleteSelectedPast() {
+    const ids = Array.from(selectedPast);
+    if (ids.length === 0 || deletingPast) return;
+    if (!confirm(`Permanently delete ${ids.length} session${ids.length === 1 ? "" : "s"}? This removes the session and its records and can't be undone.`)) return;
+    setDeletingPast(true);
+    const deleted: string[] = [];
+    for (const id of ids) {
+      try {
+        const res = await fetch(`/api/admin/sessions?id=${id}&hard=true`, { method: "DELETE" });
+        if (res.ok) deleted.push(id);
+      } catch { /* skip */ }
+    }
+    setSessions((prev) => prev.filter((s) => !deleted.includes(s.id)));
+    setSelectedPast(new Set());
+    setDeletingPast(false);
+  }
+
   const [confirming, setConfirming] = useState<string | null>(null);
 
   // HQ override: force a session to go ahead regardless of the minimum. Fires the
@@ -202,8 +229,13 @@ export default function AdminSessionsPage() {
     else alert(data.error ?? "Could not send the request.");
   }
 
-  const upcoming = sessions.filter((s) => s.state !== "cancelled" && s.state !== "completed");
-  const past     = sessions.filter((s) => s.state === "completed" || s.state === "cancelled");
+  // Past = already happened (date is behind us) OR cancelled — so sessions that
+  // actually ran show here too, not just ones explicitly marked completed. Newest
+  // past first. Upcoming = still to come and not cancelled.
+  const nowMs = Date.now();
+  const hasHappened = (s: Session) => new Date(s.starts_at).getTime() < nowMs || s.state === "cancelled";
+  const upcoming = sessions.filter((s) => !hasHappened(s));
+  const past     = sessions.filter(hasHappened).sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
 
   return (
     <HQShell>
@@ -348,7 +380,8 @@ export default function AdminSessionsPage() {
           </div>
         )}
 
-        {/* Past sessions */}
+        {/* Past sessions — everything that already ran or was cancelled. Tick to
+            permanently delete. */}
         {past.length > 0 && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -356,6 +389,15 @@ export default function AdminSessionsPage() {
                 PAST · {past.length}
               </span>
               <span style={{ flex: 1, height: 1, background: "rgba(20,17,15,.15)" }} />
+              {selectedPast.size > 0 && (
+                <button
+                  onClick={deleteSelectedPast}
+                  disabled={deletingPast}
+                  style={{ padding: "6px 14px", borderRadius: 999, border: "none", cursor: "pointer", background: T.red, color: T.cream, fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", flexShrink: 0 }}
+                >
+                  {deletingPast ? "DELETING…" : `DELETE SELECTED (${selectedPast.size})`}
+                </button>
+              )}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {past.map((s) => (
@@ -370,6 +412,9 @@ export default function AdminSessionsPage() {
                   publishing={publishing === s.id}
                   onConfirm={keepAlive}
                   confirming={confirming === s.id}
+                  selectable
+                  selected={selectedPast.has(s.id)}
+                  onSelect={() => togglePast(s.id)}
                 />
               ))}
             </div>
@@ -415,6 +460,9 @@ function SessionCard({
   publishing,
   onConfirm,
   confirming,
+  selectable = false,
+  selected = false,
+  onSelect,
 }: {
   session: Session;
   onCancel: (id: string, title: string) => void;
@@ -425,6 +473,9 @@ function SessionCard({
   publishing: boolean;
   onConfirm: (id: string, title: string, holds: number, min: number) => void;
   confirming: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
 }) {
   const typeColor = TYPE_COLORS[s.movement_type] || "#888";
   const stateInfo = STATE_COLORS[s.state] || STATE_COLORS.open;
@@ -506,6 +557,16 @@ function SessionCard({
     <div style={{ background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 14, overflow: "hidden" }}>
       {/* Top row */}
       <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+        {/* Tick to select for deletion (past sessions only) */}
+        {selectable && (
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onSelect}
+            title="Select to permanently delete"
+            style={{ width: 18, height: 18, flexShrink: 0, cursor: "pointer", accentColor: "#C6362E" }}
+          />
+        )}
         {/* Type dot */}
         <div style={{
           width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
