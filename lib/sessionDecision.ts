@@ -168,6 +168,7 @@ export async function confirmSession(
     scheme: "olive",
     kicker: "Stretchy HQ · Confirmed ✅",
     heading: `${session.title} is going ahead`,
+    sessionId: session.id,
     rows: [
       `<strong>${holds}</strong> holds — minimum met. Teacher and GEM have been notified.`,
       `🗓 ${dateStr}`,
@@ -219,6 +220,7 @@ export async function cancelSession(
     scheme: "cream",
     kicker: "Stretchy HQ · Cancelled",
     heading: `${session.title} didn't reach minimum`,
+    sessionId: session.id,
     rows: [
       `Only <strong>${holds}</strong> of ${session.min_attendees} holds — cancelled. All holds released, nothing charged.`,
       `🗓 ${dateStr}`,
@@ -247,6 +249,7 @@ export async function startGrace(
     scheme: "purple",
     kicker: "Stretchy HQ · Your call — grace window open",
     heading: `${session.title} is ${needed} short`,
+    sessionId: session.id,
     rows: [
       `It has <strong>${holds}</strong> of ${session.min_attendees} holds. Left alone, it <strong>auto-cancels at the 35-hour mark (about 1 hour from now)</strong> and everyone's told.`,
       `To run it anyway, hit <strong>Keep it alive &amp; confirm</strong> before then — that locks it in and sends everyone the "it's happening" email.`,

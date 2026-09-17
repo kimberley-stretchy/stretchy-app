@@ -12,6 +12,7 @@
 // auth hop entirely.
 // ─────────────────────────────────────────────────────────────────────────────
 import { Resend } from "resend";
+import { logEmail, logEmails } from "@/lib/emailLog";
 
 export const FROM = "Stretchy <hello@stretchy.social>";
 export const REPLY_TO = "kimberley@stretchyyoga.co.nz";
@@ -475,6 +476,15 @@ export async function sendAttendeeEmail(
       text: toPlainText(html),
       headers: { "X-Priority": "1", "X-MSMail-Priority": "High", "Importance": "High" },
     });
+    await logEmail({
+      sessionId: payload.sessionId,
+      recipient: payload.to,
+      emailType: type,
+      subject,
+      resendId: data?.id ?? null,
+      status: error ? "error" : "sent",
+      error: error ? (error as { message?: string }).message ?? String(error) : null,
+    });
     if (error) {
       console.error(`sendAttendeeEmail(${type}) error:`, error);
       return { error };
@@ -482,6 +492,7 @@ export async function sendAttendeeEmail(
     return { id: data?.id };
   } catch (error) {
     console.error(`sendAttendeeEmail(${type}) threw:`, error);
+    await logEmail({ sessionId: payload.sessionId, recipient: payload.to, emailType: type, status: "error", error: String(error) });
     return { error };
   }
 }
@@ -516,7 +527,17 @@ export async function sendAttendeeBatch(
   try {
     for (let i = 0; i < emails.length; i += 100) {
       const chunk = emails.slice(i, i + 100);
+      const chunkItems = valid.slice(i, i + 100);
       const { error } = await resend.batch.send(chunk);
+      // Audit-log every recipient in the chunk (one Resend error fails the chunk).
+      await logEmails(chunkItems.map(({ type, payload }) => ({
+        sessionId: payload.sessionId,
+        recipient: payload.to,
+        emailType: type,
+        subject: buildAttendeeEmail(type, payload).subject,
+        status: error ? "error" : "sent",
+        error: error ? (error as { message?: string }).message ?? String(error) : null,
+      })));
       if (error) {
         console.error("sendAttendeeBatch error:", error);
         return { sent, error };

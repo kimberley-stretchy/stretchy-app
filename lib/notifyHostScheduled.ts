@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { buildIcsContent, googleCalendarUrl } from "@/lib/calendar";
 import { sendPushToUser } from "@/lib/push-server";
 import { REPLY_TO, page, box, label, button, h1, hey, msg, row } from "@/lib/stretchy-email";
+import { logEmail } from "@/lib/emailLog";
 
 const HQ_FROM = "Stretchy HQ <hello@stretchy.social>";
 const HQ_EMAIL = "kimberley@stretchyyoga.co.nz";
@@ -88,7 +89,16 @@ export async function notifyHostScheduled({
             },
           ],
         })
-        .catch((e) => console.error("Session-assigned email error:", e));
+        .catch((e) => { console.error("Session-assigned email error:", e); return { error: e }; })
+        .then((r) => logEmail({
+          sessionId: (session as { id?: string }).id,
+          recipient: host.email!,
+          emailType: `host_scheduled_${role}`,
+          subject: `You're scheduled: ${session.title}`,
+          resendId: (r as { data?: { id?: string } })?.data?.id ?? null,
+          status: (r as { error?: unknown })?.error ? "error" : "sent",
+          error: (r as { error?: unknown })?.error ? String((r as { error?: unknown }).error) : null,
+        }));
     }
 
     if (host.auth_user_id) {
@@ -135,7 +145,16 @@ export async function notifyHostCancelled({
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails
         .send({ from: HQ_FROM, to: host.email, bcc: HQ_EMAIL, reply_to: REPLY_TO, subject: `Cancelled: ${session.title}`, html })
-        .catch((e) => console.error("Session-cancelled email error:", e));
+        .catch((e) => { console.error("Session-cancelled email error:", e); return { error: e }; })
+        .then((r) => logEmail({
+          sessionId: (session as { id?: string }).id,
+          recipient: host.email!,
+          emailType: `host_cancelled_${role}`,
+          subject: `Cancelled: ${session.title}`,
+          resendId: (r as { data?: { id?: string } })?.data?.id ?? null,
+          status: (r as { error?: unknown })?.error ? "error" : "sent",
+          error: (r as { error?: unknown })?.error ? String((r as { error?: unknown }).error) : null,
+        }));
     }
 
     if (host.auth_user_id) {

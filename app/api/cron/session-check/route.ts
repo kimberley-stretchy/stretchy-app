@@ -164,6 +164,7 @@ export async function GET(request: NextRequest) {
           scheme: "purple",
           kicker: "Stretchy HQ · Decision in ~2h",
           heading: `${s.title} — ${count}/${s.min_attendees}`,
+          sessionId: s.id,
           rows: [
             `Needs <strong>${needed}</strong> more hold${needed === 1 ? "" : "s"} to lock in.`,
             `<strong>Nudge just sent to:</strong> ${holders.length} holder${holders.length === 1 ? "" : "s"}${interestedIds.length ? `, ${interestedIds.length} interested` : ""}${teacherGemBits ? `, ${teacherGemBits}` : ""}.`,

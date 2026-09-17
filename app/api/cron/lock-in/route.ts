@@ -179,6 +179,7 @@ export async function GET(request: NextRequest) {
       scheme: "orange",
       kicker: "Stretchy HQ · Starting soon",
       heading: `${session.title} — in ~2 hours`,
+      sessionId: session.id,
       rows: [
         `<strong>${totalHolds}</strong> attendee${totalHolds === 1 ? "" : "s"} · ${charged} charged${failed ? ` · <strong>${failed} charge${failed === 1 ? "" : "s"} failed</strong>` : ""}.`,
         `Final price: $${finalPrice.toFixed(2)} incl. GST.`,

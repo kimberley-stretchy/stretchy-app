@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { sendPushToUser } from "@/lib/push-server";
 import { HQ_EMAIL, REPLY_TO, APP_URL, page, box, label, button, h1, hey, msg, row, type Scheme } from "@/lib/stretchy-email";
+import { logEmail } from "@/lib/emailLog";
 
 // Extra session detail for host emails' session box — good for sharing.
 export interface HostDetails {
@@ -66,12 +67,29 @@ function roleWord(role: "teacher" | "gem"): string {
   return role === "teacher" ? "teaching" : "GEM-ing";
 }
 
-async function sendHostEmail(to: string, subject: string, html: string, bcc?: string): Promise<void> {
+async function sendHostEmail(
+  to: string,
+  subject: string,
+  html: string,
+  bcc?: string,
+  meta?: { emailType?: string; sessionId?: string }
+): Promise<void> {
   if (!process.env.RESEND_API_KEY) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
-  await resend.emails
+  const res = await resend.emails
     .send({ from: HQ_FROM, to, reply_to: REPLY_TO, subject, html, ...(bcc ? { bcc } : {}) })
-    .catch((e) => console.error("host email error:", e));
+    .catch((e) => ({ data: null, error: e }));
+  const error = (res as { error?: unknown })?.error;
+  if (error) console.error("host email error:", error);
+  await logEmail({
+    sessionId: meta?.sessionId,
+    recipient: to,
+    emailType: meta?.emailType ?? "host",
+    subject,
+    resendId: (res as { data?: { id?: string } })?.data?.id ?? null,
+    status: error ? "error" : "sent",
+    error: error ? (error as { message?: string }).message ?? String(error) : null,
+  });
 }
 
 // ── HQ digest (internal, to Kimberley) ─────────────────────────────────────────
@@ -82,6 +100,7 @@ export async function notifyHQ(opts: {
   heading: string;
   rows: string[];
   cta?: { href: string; text: string };
+  sessionId?: string;
 }): Promise<void> {
   try {
     const html = page(
@@ -94,7 +113,7 @@ export async function notifyHQ(opts: {
       `,
       { highlight: false }
     );
-    await sendHostEmail(HQ_EMAIL, opts.subject, html);
+    await sendHostEmail(HQ_EMAIL, opts.subject, html, undefined, { emailType: "hq_digest", sessionId: opts.sessionId });
   } catch (e) {
     console.error("notifyHQ error:", e);
   }
@@ -133,7 +152,7 @@ export async function notifyHostConfirmed({
       ${hostSessionBox(sc, { title: session.title, dateStr, locationName: session.locationName, style, gemName: role === "teacher" ? gemName : undefined, details })}
       ${button(sc, runSheet, "Open your run sheet →")}
     `);
-    await sendHostEmail(host.email, `It's on: ${session.title}`, html, HQ_EMAIL);
+    await sendHostEmail(host.email, `It's on: ${session.title}`, html, HQ_EMAIL, { emailType: `host_confirmed_${role}`, sessionId: session.id });
     if (host.auth_user_id) {
       sendPushToUser(host.auth_user_id, {
         title: "It's on ✅",
@@ -183,7 +202,7 @@ export async function notifyHostRecruit({
       ${button(sc, shareUrl, "Share this Stretchy →")}
       ${msg(sc, "Cheers,<br>Stretchy")}
     `);
-    await sendHostEmail(host.email, `Nearly there: ${session.title} needs ${needed} more`, html);
+    await sendHostEmail(host.email, `Nearly there: ${session.title} needs ${needed} more`, html, undefined, { emailType: `host_recruit_${role}`, sessionId: session.id });
     if (host.auth_user_id) {
       sendPushToUser(host.auth_user_id, {
         title: `${needed} more and it's on`,

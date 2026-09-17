@@ -353,6 +353,28 @@ export default function AdminSessionsPage() {
 }
 
 type Attendee = { name: string; email: string; spots: number; heldAt: string };
+type EmailLogRow = { id: string; recipient: string; email_type: string; subject: string | null; status: string; error: string | null; created_at: string };
+
+// Friendly names for the audit-log panel.
+const EMAIL_LABELS: Record<string, string> = {
+  hold_confirmed: "Booking held",
+  almost_there: "38h nudge",
+  session_going_ahead: "36h — it's happening",
+  session_confirmed_open: "It's on (interested)",
+  session_cancelled: "Cancelled",
+  price_locked: "2h — locked in",
+  hold_cancelled: "Hold cancelled",
+  comp_hold_confirmed: "Comp — on us",
+  hq_digest: "HQ digest",
+  host_confirmed_teacher: "Teacher — confirmed",
+  host_confirmed_gem: "GEM — confirmed",
+  host_recruit_teacher: "Teacher — nudge",
+  host_recruit_gem: "GEM — nudge",
+  host_scheduled_teacher: "Teacher — assigned",
+  host_scheduled_gem: "GEM — assigned",
+  host_cancelled_teacher: "Teacher — cancelled",
+  host_cancelled_gem: "GEM — cancelled",
+};
 
 function SessionCard({
   session: s,
@@ -386,6 +408,9 @@ function SessionCard({
   const [showAttendees, setShowAttendees] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[] | null>(null);
   const [loadingAttendees, setLoadingAttendees] = useState(false);
+  const [showEmails, setShowEmails] = useState(false);
+  const [emails, setEmails] = useState<EmailLogRow[] | null>(null);
+  const [loadingEmails, setLoadingEmails] = useState(false);
   const [addEmail, setAddEmail] = useState("");
   const [addName, setAddName] = useState("");
   const [adding, setAdding] = useState(false);
@@ -431,6 +456,21 @@ function SessionCard({
       setAttendees([]);
     }
     setLoadingAttendees(false);
+  }
+
+  async function toggleEmails() {
+    if (showEmails) { setShowEmails(false); return; }
+    setShowEmails(true);
+    if (emails !== null) return;
+    setLoadingEmails(true);
+    try {
+      const res = await fetch(`/api/admin/sessions/${s.id}/emails`);
+      const data = await res.json();
+      setEmails(res.ok ? data.emails : []);
+    } catch {
+      setEmails([]);
+    }
+    setLoadingEmails(false);
   }
 
   return (
@@ -516,6 +556,19 @@ function SessionCard({
             }}
           >
             ATTENDEES ({s.current_holds})
+          </button>
+          <button
+            onClick={toggleEmails}
+            title="Every email sent for this session — who got what, and delivery status."
+            style={{
+              padding: "7px 14px", borderRadius: 999, cursor: "pointer",
+              border: `1.5px solid ${T.ink}`,
+              background: showEmails ? T.ink : "transparent",
+              color: showEmails ? T.cream : T.ink,
+              fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
+            }}
+          >
+            EMAILS
           </button>
           <Link
             href={`/sessions/${s.id}`}
@@ -659,6 +712,44 @@ function SessionCard({
               {addMsg && (
                 <p style={{ fontSize: 12, marginTop: 8, color: addMsg.startsWith("✓") ? T.olive : T.red }}>{addMsg}</p>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Email audit log — every email sent for this session, who got it, status. */}
+      {showEmails && (
+        <div style={{ padding: "14px 18px", borderTop: "1px solid rgba(20,17,15,.10)" }}>
+          {loadingEmails ? (
+            <p style={{ fontSize: 12, color: "rgba(20,17,15,.4)", fontFamily: T.mono }}>LOADING…</p>
+          ) : !emails || emails.length === 0 ? (
+            <p style={{ fontSize: 13, color: "rgba(20,17,15,.45)" }}>No emails logged for this session yet.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.45)", letterSpacing: "0.1em", marginBottom: 4 }}>
+                {emails.length} EMAIL{emails.length === 1 ? "" : "S"} SENT
+              </p>
+              {emails.map((e) => (
+                <div key={e.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, fontSize: 12.5, borderBottom: "1px solid rgba(20,17,15,.06)", paddingBottom: 5 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <span style={{ fontWeight: 700, color: T.ink }}>{EMAIL_LABELS[e.email_type] ?? e.email_type}</span>
+                    <span style={{ color: "rgba(20,17,15,.55)", marginLeft: 8, overflow: "hidden", textOverflow: "ellipsis" }}>{e.recipient}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <span style={{ fontFamily: T.mono, fontSize: 10, color: "rgba(20,17,15,.4)" }}>
+                      {new Date(e.created_at).toLocaleString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })}
+                    </span>
+                    <span style={{
+                      fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",
+                      padding: "3px 8px", borderRadius: 999,
+                      background: e.status === "error" ? "rgba(214,40,40,.14)" : "rgba(113,111,57,.16)",
+                      color: e.status === "error" ? T.red : T.olive,
+                    }} title={e.error ?? undefined}>
+                      {e.status === "error" ? "FAILED" : "SENT"}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
