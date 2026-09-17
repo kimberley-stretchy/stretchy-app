@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { syncMarketingContact } from "@/lib/resendAudience";
 
 function getAdmin() {
   return createAdminClient(
@@ -47,13 +48,14 @@ export async function PATCH(request: NextRequest) {
     notifyNewNearby,
     stripePaymentMethodId,
     dateOfBirth,
+    marketingConsent,
   } = body;
 
   const admin = getAdmin();
 
   const { data: existing } = await admin
     .from("attendees")
-    .select("id")
+    .select("id, notification_prefs")
     .eq("auth_user_id", user.id)
     .single();
 
@@ -71,24 +73,41 @@ export async function PATCH(request: NextRequest) {
   if (stripePaymentMethodId) updates.stripe_pm_id = stripePaymentMethodId;
   if (dateOfBirth !== undefined) updates.date_of_birth = dateOfBirth || null;
 
+  // Marketing opt-in (newsletter). Explicit consent → the durable columns AND the
+  // notification_prefs.news toggle stay in step; synced to the Resend Audience below.
+  if (typeof marketingConsent === "boolean") {
+    updates.marketing_consent = marketingConsent;
+    updates.marketing_consent_at = new Date().toISOString();
+    const prevPrefs = (existing?.notification_prefs as Record<string, unknown>) ?? {};
+    updates.notification_prefs = { ...prevPrefs, news: marketingConsent };
+  }
+
+  let attendeeId: string;
   if (existing) {
     const { error } = await admin.from("attendees").update(updates).eq("id", existing.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true, attendeeId: existing.id });
+    attendeeId = existing.id;
+  } else {
+    const { data: created, error } = await admin
+      .from("attendees")
+      .insert({
+        auth_user_id: user.id,
+        name: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Stretchy Member",
+        email: user.email!,
+        avatar_url: user.user_metadata?.avatar_url ?? null,
+        ...updates,
+      })
+      .select("id")
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    attendeeId = created.id;
   }
 
-  const { data: created, error } = await admin
-    .from("attendees")
-    .insert({
-      auth_user_id: user.id,
-      name: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Stretchy Member",
-      email: user.email!,
-      avatar_url: user.user_metadata?.avatar_url ?? null,
-      ...updates,
-    })
-    .select("id")
-    .single();
+  // Best-effort marketing-audience sync when consent was set.
+  if (typeof marketingConsent === "boolean" && user.email) {
+    const name = user.user_metadata?.full_name ?? user.email.split("@")[0];
+    await syncMarketingContact({ email: user.email, firstName: name, subscribed: marketingConsent });
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, attendeeId: created.id });
+  return NextResponse.json({ ok: true, attendeeId });
 }

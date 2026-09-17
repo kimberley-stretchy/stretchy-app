@@ -55,11 +55,11 @@ function ToggleRow({ label, on, onChange }: { label: string; on: boolean; onChan
 
 function SetupForm({
   neighbourhoods, whenSuits, careNote, careDuration,
-  showFirstName, notifyGoingAhead, notifyPriceLocked, notifyNewNearby,
+  showFirstName, notifyGoingAhead, notifyPriceLocked, notifyNewNearby, marketingConsent,
   accessToken,
 }: {
   neighbourhoods: string[]; whenSuits: string[]; careNote: string; careDuration: string;
-  showFirstName: boolean; notifyGoingAhead: boolean; notifyPriceLocked: boolean; notifyNewNearby: boolean;
+  showFirstName: boolean; notifyGoingAhead: boolean; notifyPriceLocked: boolean; notifyNewNearby: boolean; marketingConsent: boolean;
   accessToken: string;
 }) {
   const stripe = useStripe();
@@ -103,6 +103,7 @@ function SetupForm({
         notifyGoingAhead,
         notifyPriceLocked,
         notifyNewNearby,
+        marketingConsent,
         dateOfBirth: dob,
         stripePaymentMethodId: typeof setupIntent?.payment_method === "string" ? setupIntent.payment_method : null,
       }),
@@ -185,6 +186,7 @@ export default function OnboardingSetupPage() {
   const [notifyGoingAhead, setNotifyGoingAhead] = useState(true);
   const [notifyPriceLocked, setNotifyPriceLocked] = useState(true);
   const [notifyNewNearby, setNotifyNewNearby] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   const toggleIn = (arr: string[], v: string, set: (a: string[]) => void) =>
     set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
@@ -307,6 +309,17 @@ export default function OnboardingSetupPage() {
                 <span className="absolute top-0.5 w-5 h-5 rounded-pill bg-cream transition-all" style={{ left: notifyNewNearby ? "20px" : "2px" }} />
               </button>
             </div>
+            <div className="py-3 flex justify-between items-center gap-2.5">
+              <span className="text-[13px] font-semibold pr-2">Stretchy updates &amp; what&rsquo;s on <span className="font-normal" style={{ color: "rgba(20,17,15,.55)" }}>— the newsletter. Unsubscribe any time.</span></span>
+              <button
+                type="button"
+                onClick={() => setMarketingConsent(!marketingConsent)}
+                className="w-[42px] h-6 rounded-pill relative flex-shrink-0"
+                style={{ background: marketingConsent ? "#902F8A" : "rgba(20,17,15,.16)" }}
+              >
+                <span className="absolute top-0.5 w-5 h-5 rounded-pill bg-cream transition-all" style={{ left: marketingConsent ? "20px" : "2px" }} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -342,6 +355,7 @@ export default function OnboardingSetupPage() {
               notifyGoingAhead={notifyGoingAhead}
               notifyPriceLocked={notifyPriceLocked}
               notifyNewNearby={notifyNewNearby}
+              marketingConsent={marketingConsent}
               accessToken={accessToken}
             />
           </Elements>

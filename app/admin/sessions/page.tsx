@@ -57,6 +57,21 @@ export default function AdminSessionsPage() {
   const [testEmailAddress, setTestEmailAddress] = useState("kimberleytorrie@gmail.com");
   const [testPushSending, setTestPushSending] = useState(false);
   const [testPushResult, setTestPushResult] = useState<string | null>(null);
+  const [marketingSyncing, setMarketingSyncing] = useState(false);
+  const [marketingResult, setMarketingResult] = useState<string | null>(null);
+
+  async function syncMarketing() {
+    setMarketingSyncing(true);
+    setMarketingResult(null);
+    try {
+      const res = await fetch("/api/admin/marketing/sync", { method: "POST" });
+      const d = await res.json();
+      setMarketingResult(res.ok ? `✓ ${d.synced}/${d.total} synced · ${d.optedIn} opted in${d.failed ? ` · ${d.failed} failed` : ""}` : `Error: ${d.error}`);
+    } catch {
+      setMarketingResult("Error: could not sync.");
+    }
+    setMarketingSyncing(false);
+  }
 
   async function sendTestPush() {
     setTestPushSending(true);
@@ -248,6 +263,20 @@ export default function AdminSessionsPage() {
               </button>
               {testEmailResult && <span style={{ fontSize: 12, color: testEmailResult.startsWith("✓") ? T.olive : T.red }}>{testEmailResult}</span>}
             </div>
+          </div>
+        </div>
+
+        {/* Marketing audience backfill */}
+        <div style={{ marginBottom: 24, padding: "16px 20px", borderRadius: 14, background: "#fff", border: `2px solid ${T.ink}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+          <div>
+            <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.45)", letterSpacing: "0.12em", marginBottom: 4 }}>MARKETING AUDIENCE</p>
+            <p style={{ fontSize: 13, color: "rgba(20,17,15,.65)" }}>Push everyone who&rsquo;s opted in to newsletters into the Resend Audience (needs RESEND_AUDIENCE_ID set). Safe to run any time.</p>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {marketingResult && <span style={{ fontSize: 12, color: marketingResult.startsWith("✓") ? T.olive : T.red }}>{marketingResult}</span>}
+            <button onClick={syncMarketing} disabled={marketingSyncing} style={{ padding: "10px 18px", borderRadius: 999, border: `2px solid ${T.ink}`, background: "transparent", color: T.ink, cursor: "pointer", fontFamily: T.mono, fontSize: 11, fontWeight: 800, letterSpacing: "0.1em" }}>
+              {marketingSyncing ? "SYNCING…" : "SYNC CONTACTS"}
+            </button>
           </div>
         </div>
 

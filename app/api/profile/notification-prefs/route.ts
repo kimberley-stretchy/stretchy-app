@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { syncMarketingContact } from "@/lib/resendAudience";
 
 export const dynamic = "force-dynamic";
 
@@ -57,11 +58,26 @@ export async function PATCH(request: NextRequest) {
   }
 
   const admin = getAdmin();
-  const { error } = await admin
-    .from("attendees")
-    .update({ notification_prefs: prefs })
-    .eq("auth_user_id", user.id);
 
+  // The "news" toggle IS the marketing-consent signal. Keep the durable consent
+  // columns in step with it, and sync the Resend marketing Audience accordingly.
+  const update: Record<string, unknown> = { notification_prefs: prefs };
+  const hasNews = typeof prefs.news === "boolean";
+  if (hasNews) {
+    update.marketing_consent = prefs.news;
+    update.marketing_consent_at = new Date().toISOString();
+  }
+
+  const { error } = await admin.from("attendees").update(update).eq("auth_user_id", user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (hasNews) {
+    // Best-effort — never block the save on the marketing sync.
+    const { data } = await admin.from("attendees").select("email, name").eq("auth_user_id", user.id).maybeSingle();
+    if (data?.email) {
+      await syncMarketingContact({ email: data.email, firstName: data.name, subscribed: !!prefs.news });
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
