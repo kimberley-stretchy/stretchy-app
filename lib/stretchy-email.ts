@@ -239,13 +239,17 @@ function almostThereEmail(p: AttendeeEmailPayload) {
   const neededPeople = `${needed} more ${needed === 1 ? "person" : "people"}`;
   const shareUrl = p.shareUrl || (p.sessionId ? `${APP_URL}/sessions/${p.sessionId}` : `${APP_URL}/sessions`);
   if (p.isHolder) {
+    const spotWord = p.isComp ? "place is saved" : "spot is held";
     return page("purple", (sc) => `
       ${h1(sc, "So close to going ahead. 👀")}
       ${hey(sc, p.name)}
-      ${msg(sc, `We just need <strong>${neededPeople}</strong> for this Stretchy session to go ahead. Your spot is held, but this is the moment to get more people together: tell your mates, your co-workers, the guy in the coffee line. 🙌`)}
+      ${msg(sc, `We just need <strong>${neededPeople}</strong> for this Stretchy session to go ahead. Your ${spotWord}, but this is the moment to get more people together: tell your mates, your co-workers, the guy in the coffee line. 🙌`)}
       ${button(sc, shareUrl, "Share this Stretchy →")}
       ${stretchyCard(sc, p, "Your Stretchy")}
-      ${box(sc, `${label(sc, "Heads up · cancellation window")}<p style="color:${sc.text};font-size:13px;line-height:1.6;margin:0 0 12px;">You can still cancel free until the <strong>36-hour mark — about 2 hours from now</strong>. After that your place is locked in and the price stands. If we don't reach the minimum by then, it's called off and nothing's charged.</p>${button(sc, p.cancelUrl || `${APP_URL}/hold/${p.sessionId ?? ""}`, "Manage my hold")}`)}
+      ${p.isComp
+        // Comps can't cancel or be charged — no cancellation-window box, just a nudge to help fill it.
+        ? box(sc, `${label(sc, "Heads up · on us")}<p style="color:${sc.text};font-size:13px;line-height:1.6;margin:0;">You're in on us — nothing to pay. We just need <strong>${neededPeople}</strong> to lock it in by the <strong>36-hour mark (about 2 hours from now)</strong>. Share it around and help make it happen. 💛</p>`)
+        : box(sc, `${label(sc, "Heads up · cancellation window")}<p style="color:${sc.text};font-size:13px;line-height:1.6;margin:0 0 12px;">You can still cancel free until the <strong>36-hour mark — about 2 hours from now</strong>. After that your place is locked in and the price stands. If we don't reach the minimum by then, it's called off and nothing's charged.</p>${button(sc, p.cancelUrl || `${APP_URL}/hold/${p.sessionId ?? ""}`, "Manage my hold")}`)}
       ${signoff(sc, "See you soon")}
     `);
   }

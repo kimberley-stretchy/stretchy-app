@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { sendPushToUsers } from "@/lib/push-server";
 import { calculatePrice } from "@/lib/pricing";
-import { sendAttendeeEmail, sendAttendeeBatch, APP_URL } from "@/lib/stretchy-email";
+import { sendAttendeeBatch, APP_URL } from "@/lib/stretchy-email";
 import { notifyHostCancelled } from "@/lib/notifyHostScheduled";
 import { notifyHostConfirmed, notifyHostRecruit, notifyHQ } from "@/lib/notifyLifecycle";
 import { buildSessionEmailExtras, isFirstStretchy, movementLabel } from "@/lib/sessionEmailContext";
@@ -31,9 +31,6 @@ import { buildSessionEmailExtras, isFirstStretchy, movementLabel } from "@/lib/s
 // Only nudge sessions with at least this many holds at the 38h mark. Raise this
 // (or switch to a fraction of min_attendees) to nudge only when genuinely close.
 const NUDGE_MIN_HOLDS = 1;
-// Also blast the general city waitlist (NOT session-specific — best-effort city
-// match on the venue name). Off by default; flip to true to widen the net.
-const NUDGE_WAITLIST = false;
 
 function getAdmin() {
   return createClient(
@@ -110,38 +107,40 @@ export async function GET(request: NextRequest) {
   // ── A) 38h RECRUIT NUDGE ────────────────────────────────────────────────────
   // Wrapped so a nudge failure can never stop the 36h decision below.
   let nudged = 0;
-  try {
-    const { data: nudgeSessions } = await admin
-      .from("sessions")
-      .select("id, title, starts_at, location_name, min_attendees, social_stretch_venue, host_id, gem_host_id, movement_type, venue_instagram, social_venue_instagram")
-      .eq("state", "open")
-      // Fires ONCE at the ~38h mark. Half-hour-offset bounds (37.5–38.5) so a
-      // whole-hour session hits exactly one cron run (H=38, mid-window, drift-
-      // safe) — never two, so no double nudge even before the dedup migration.
-      .not("is_draft", "is", true)
-      .gte("starts_at", hoursFromNow(now, 37.5))
-      .lt("starts_at", hoursFromNow(now, 38.5));
+  // Catch-up band, not a single window. The nudge belongs at ~38h, but if that
+  // one hourly run fails (a throw, a transient Resend error, the session still a
+  // draft at that minute), a fixed 37.5–38.5h window would lose it forever. Here
+  // any still-open, under-min session in [36.5h, 39h) is eligible every hourly
+  // run until it's actually nudged — so a miss is retried on the next tick. The
+  // lower bound stays strictly ABOVE the decision's 36.5h upper bound, so a nudge
+  // and the go/cancel decision can never land in the same run.
+  const { data: nudgeSessions } = await admin
+    .from("sessions")
+    .select("id, title, starts_at, location_name, min_attendees, social_stretch_venue, host_id, gem_host_id, movement_type, venue_instagram, social_venue_instagram, nudge_sent_at")
+    .eq("state", "open")
+    .not("is_draft", "is", true)
+    .gte("starts_at", hoursFromNow(now, 36.5))
+    .lt("starts_at", hoursFromNow(now, 39));
 
-    for (const s of nudgeSessions ?? []) {
+  for (const s of nudgeSessions ?? []) {
+    // Per-session isolation: one session's failure must never skip the rest, and
+    // must never stop the 36h decision block below.
+    try {
+      if (s.nudge_sent_at) continue; // once-only, but only stamped after a send succeeds (below)
+
       const { count, userIds, compUserIds, spotsByUser } = await getHoldSummary(admin, s.id);
       if (count >= s.min_attendees) continue; // already there — it'll confirm at 36h
       if (count < NUDGE_MIN_HOLDS) continue; // too empty to bother nudging
-
-      // Fire ONCE per session — never a double nudge within the window. Fail-open:
-      // if the nudge_sent_at column isn't there yet, the read errors and we send
-      // anyway (guard just doesn't apply until the migration is run).
-      const { data: nudgeRow, error: nudgeErr } = await admin.from("sessions").select("nudge_sent_at").eq("id", s.id).maybeSingle();
-      if (!nudgeErr && nudgeRow?.nudge_sent_at) continue;
 
       const needed = s.min_attendees - count;
       const dateStr = fmtDate(s.starts_at);
       const shareUrl = `${APP_URL}/sessions/${s.id}`;
 
-      // Holders (paid) — recruit nudge + cancellation-window reminder. Comps are
-      // gifted in and can't cancel/be charged, so they skip this one.
-      const payingHolderIds = userIds.filter((uid) => !compUserIds.has(uid));
-      const holders = await getAttendees(admin, payingHolderIds);
-      await sendAttendeeBatch(holders.map((a) => ({
+      // Everyone holding — paying AND comps — gets the "nearly there" nudge: comps
+      // can't cancel/be charged, but they can still help fill it by sharing. The
+      // template drops the cancellation-window box for comps.
+      const holders = await getAttendees(admin, userIds);
+      const holderRes = await sendAttendeeBatch(holders.map((a) => ({
         type: "almost_there" as const,
         payload: {
           to: a.email ?? "",
@@ -153,6 +152,7 @@ export async function GET(request: NextRequest) {
           shareUrl,
           sessionId: s.id,
           isHolder: true,
+          isComp: compUserIds.has(a.auth_user_id),
           cancelUrl: `${APP_URL}/my-holds`,
           spots: spotsByUser.get(a.auth_user_id),
         },
@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
       // Interested / watching (not already holding) — "grab a spot" variant.
       const interestedIds = (await getInterestedUserIds(admin, s.id)).filter((uid) => !userIds.includes(uid));
       const interested = await getAttendees(admin, interestedIds);
-      await sendAttendeeBatch(interested.map((a) => ({
+      const interestedRes = await sendAttendeeBatch(interested.map((a) => ({
         type: "almost_there" as const,
         payload: {
           to: a.email ?? "",
@@ -176,14 +176,14 @@ export async function GET(request: NextRequest) {
         },
       })));
 
-      // Push to paying holders + interested.
-      sendPushToUsers([...payingHolderIds, ...interestedIds], {
+      // Push to holders + interested (best-effort, never blocks).
+      sendPushToUsers([...userIds, ...interestedIds], {
         title: needed <= 1 ? "1 more and it's on 👀" : `${needed} more and it's on 👀`,
         body: `${s.title} needs ${needed} more to lock in. Tell your mates!`,
         url: shareUrl,
       }).catch(console.error);
 
-      // Teacher + GEM — "help fill it" heads-up.
+      // Teacher + GEM — "help fill it" heads-up (isolated; can't block the stamp).
       const recruitStyle = movementLabel(s.movement_type);
       const nudgeExtras = await buildSessionEmailExtras(admin, s);
       const nudgeDetails = { social: s.social_stretch_venue, teacherHandle: nudgeExtras.teacherHandle, gemHandle: nudgeExtras.gemHandle, venueHandle: nudgeExtras.venueHandle, socialVenueHandle: nudgeExtras.socialVenueHandle };
@@ -191,56 +191,40 @@ export async function GET(request: NextRequest) {
       if (s.host_id) notifyHostRecruit({ hostId: s.host_id, role: "teacher", session: recruitSession, needed, shareUrl, style: recruitStyle, gemName: nudgeExtras.gemName, details: nudgeDetails }).catch(console.error);
       if (s.gem_host_id) notifyHostRecruit({ hostId: s.gem_host_id, role: "gem", session: recruitSession, needed, shareUrl, style: recruitStyle, details: nudgeDetails }).catch(console.error);
 
-      // Optional: general city waitlist (not session-specific — best-effort match)
-      if (NUDGE_WAITLIST) {
-        try {
-          const { data: wl } = await admin.from("waitlist").select("name, email, city");
-          const venue = (s.location_name ?? "").toLowerCase();
-          for (const w of wl ?? []) {
-            const city = (w.city ?? "").toLowerCase();
-            if (!w.email || !city || !venue.includes(city)) continue;
-            await sendAttendeeEmail("almost_there", {
-              to: w.email,
-              name: firstNameOf(w.name),
-              sessionTitle: s.title,
-              date: dateStr,
-              venue: s.location_name,
-              needed,
-              shareUrl,
-              sessionId: s.id,
-              isHolder: false,
-            });
-          }
-        } catch (e) {
-          console.error("Waitlist nudge error:", e);
-        }
+      // HQ heads-up ("from us") — isolated so an HQ-email hiccup can't stop the
+      // once-only stamp (or cascade to other sessions).
+      const teacherGemBits = [s.host_id ? "teacher" : null, s.gem_host_id ? "GEM" : null].filter(Boolean).join(" + ");
+      try {
+        await notifyHQ({
+          subject: `Almost there: ${s.title} (${count}/${s.min_attendees})`,
+          scheme: "purple",
+          kicker: "Stretchy HQ · Decision in ~2h",
+          heading: `${s.title} — ${count}/${s.min_attendees}`,
+          rows: [
+            `Needs <strong>${needed}</strong> more hold${needed === 1 ? "" : "s"} to lock in.`,
+            `<strong>Nudge just sent to:</strong> ${holders.length} holder${holders.length === 1 ? "" : "s"}${interestedIds.length ? `, ${interestedIds.length} interested` : ""}${teacherGemBits ? `, ${teacherGemBits}` : ""}.`,
+            `🗓 ${dateStr}`,
+            `📍 ${s.location_name}`,
+            `The 36-hour auto-decision runs in about 2 hours. If it's still short then, it's cancelled and no one is charged.`,
+          ],
+          cta: { href: shareUrl, text: "View session →" },
+        });
+      } catch (e) {
+        console.error(`Nudge HQ email failed for ${s.id}:`, e);
       }
 
-      // HQ heads-up ("from us") — the matching record of exactly what just went
-      // out to customers / teacher / GEM.
-      const teacherGemBits = [s.host_id ? "teacher" : null, s.gem_host_id ? "GEM" : null].filter(Boolean).join(" + ");
-      await notifyHQ({
-        subject: `Almost there: ${s.title} (${count}/${s.min_attendees})`,
-        scheme: "purple",
-        kicker: "Stretchy HQ · Decision in ~2h",
-        heading: `${s.title} — ${count}/${s.min_attendees}`,
-        rows: [
-          `Needs <strong>${needed}</strong> more hold${needed === 1 ? "" : "s"} to lock in.`,
-          `<strong>Nudge just sent to:</strong> ${payingHolderIds.length} holder${payingHolderIds.length === 1 ? "" : "s"}${interestedIds.length ? `, ${interestedIds.length} interested` : ""}${teacherGemBits ? `, ${teacherGemBits}` : ""}.`,
-          `🗓 ${dateStr}`,
-          `📍 ${s.location_name}`,
-          `The 36-hour auto-decision runs in about 2 hours. If it's still short then, it's cancelled and no one is charged.`,
-        ],
-        cta: { href: shareUrl, text: "View session →" },
-      });
-
-      // Mark it nudged so it can't fire again (fail-open: ignored if column absent).
-      await admin.from("sessions").update({ nudge_sent_at: new Date().toISOString() }).eq("id", s.id);
-
-      nudged++;
+      // Self-healing once-only: stamp nudge_sent_at ONLY if the customer sends
+      // actually went through. A failed batch leaves it null so the next hourly
+      // run retries — no silent permanent miss.
+      if (!holderRes.error && !interestedRes.error) {
+        await admin.from("sessions").update({ nudge_sent_at: new Date().toISOString() }).eq("id", s.id);
+        nudged++;
+      } else {
+        console.error(`Nudge sends failed for ${s.id} — leaving unstamped to retry next run:`, holderRes.error, interestedRes.error);
+      }
+    } catch (e) {
+      console.error(`38h nudge error for session ${s.id}:`, e);
     }
-  } catch (e) {
-    console.error("38h nudge block error:", e);
   }
 
   // ── B) 36h DECISION ─────────────────────────────────────────────────────────
