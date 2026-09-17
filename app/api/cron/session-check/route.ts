@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { sendPushToUsers } from "@/lib/push-server";
-import { calculatePrice } from "@/lib/pricing";
 import { sendAttendeeBatch, APP_URL } from "@/lib/stretchy-email";
-import { notifyHostCancelled } from "@/lib/notifyHostScheduled";
-import { notifyHostConfirmed, notifyHostRecruit, notifyHQ } from "@/lib/notifyLifecycle";
-import { buildSessionEmailExtras, isFirstStretchy, movementLabel } from "@/lib/sessionEmailContext";
+import { notifyHostRecruit, notifyHQ } from "@/lib/notifyLifecycle";
+import { buildSessionEmailExtras, movementLabel } from "@/lib/sessionEmailContext";
+import {
+  DecisionSession,
+  getHoldSummary,
+  getAttendees,
+  getInterestedUserIds,
+  firstNameOf,
+  fmtDate,
+  confirmSession,
+  cancelSession,
+  startGrace,
+} from "@/lib/sessionDecision";
 
 /**
  * GET /api/cron/session-check — runs hourly via Vercel Cron.
@@ -44,55 +53,10 @@ function hoursFromNow(now: Date, h: number): string {
   return new Date(now.getTime() + h * 60 * 60 * 1000).toISOString();
 }
 
-function fmtDate(startsAt: string): string {
-  const d = new Date(startsAt);
-  return (
-    d.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
-    " at " +
-    d.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true })
-  );
-}
-
-// Sum active-hold *quantity* (one row can be several spots) and collect the
-// distinct holder auth-user ids, flagging which are comp (gifted) holds.
-async function getHoldSummary(
-  admin: SupabaseClient,
-  sessionId: string
-): Promise<{ count: number; userIds: string[]; compUserIds: Set<string>; spotsByUser: Map<string, number> }> {
-  const { data } = await admin
-    .from("holds")
-    .select("user_id, quantity, is_comp")
-    .eq("session_id", sessionId)
-    .eq("state", "active");
-  const rows = data ?? [];
-  const count = rows.reduce((s, h) => s + (h.quantity ?? 1), 0);
-  const userIds = Array.from(new Set(rows.map((h) => h.user_id).filter(Boolean)));
-  const compUserIds = new Set(rows.filter((h) => h.is_comp && h.user_id).map((h) => h.user_id as string));
-  // Spots per holder — one row can be several spaces (e.g. "bring 4").
-  const spotsByUser = new Map<string, number>();
-  for (const h of rows) {
-    if (!h.user_id) continue;
-    spotsByUser.set(h.user_id, (spotsByUser.get(h.user_id) ?? 0) + (h.quantity ?? 1));
-  }
-  return { count, userIds, compUserIds, spotsByUser };
-}
-
-async function getAttendees(
-  admin: SupabaseClient,
-  userIds: string[]
-): Promise<{ auth_user_id: string; name: string | null; email: string | null }[]> {
-  if (userIds.length === 0) return [];
-  const { data } = await admin.from("attendees").select("auth_user_id, name, email").in("auth_user_id", userIds);
-  return data ?? [];
-}
-
-// User ids of everyone who marked "interested" in a session.
-async function getInterestedUserIds(admin: SupabaseClient, sessionId: string): Promise<string[]> {
-  const { data } = await admin.from("session_interest").select("user_id").eq("session_id", sessionId);
-  return Array.from(new Set((data ?? []).map((r) => r.user_id).filter(Boolean)));
-}
-
-const firstNameOf = (name: string | null) => name?.split(" ")[0] ?? "there";
+// Grace window: a short session at 36h is held (HQ-alerted only), not cancelled.
+// If HQ doesn't override within this long, the next run auto-cancels it. 50 min
+// (not 60) so the very next hourly run always clears the bar even with cron drift.
+const GRACE_MS = 50 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
   // Verify this is called by Vercel Cron (or manually by admin)
@@ -227,157 +191,52 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── B) 36h DECISION ─────────────────────────────────────────────────────────
+  // ── B) 36h DECISION, with a 35h grace window ────────────────────────────────
+  // At ~36h: minimum met → confirm now; still short → open a SILENT grace window
+  // and alert HQ only (no customer emails). ~1h later (the 35h run) if it's still
+  // short and HQ hasn't hit "Keep it alive & confirm", it auto-cancels. Filling
+  // naturally during grace confirms it instead. Grace timing is measured from
+  // grace_started_at (drift-proof), and the wide lower bound means a missed run is
+  // simply caught by the next tick rather than lost.
   const { data: sessions } = await admin
     .from("sessions")
-    .select("id, title, starts_at, ends_at, location_name, min_attendees, max_attendees, cost_base, revenue_target, social_stretch_venue, state, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram")
+    .select("id, title, starts_at, location_name, min_attendees, cost_base, revenue_target, social_stretch_venue, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram, grace_started_at")
     .eq("state", "open")
     .not("is_draft", "is", true)
-    // Fires at the ~36h mark. Half-hour-offset bounds so a whole-hour session
-    // lands MID-window (36h) — otherwise the cron's few-seconds drift lets a
-    // 37h session slip past a whole-hour upper bound and decide an hour early
-    // (which is what made the nudge + cancel land in the same run).
-    .gte("starts_at", hoursFromNow(now, 34.5))
+    .gte("starts_at", hoursFromNow(now, 20))
     .lt("starts_at", hoursFromNow(now, 36.5));
 
   const results: Record<string, unknown>[] = [];
 
-  for (const session of sessions ?? []) {
-    const { count: holds, userIds, compUserIds, spotsByUser } = await getHoldSummary(admin, session.id);
-    const dateStr = fmtDate(session.starts_at);
-    const hostSession = {
-      id: session.id,
-      title: session.title,
-      startsAt: session.starts_at,
-      locationName: session.location_name,
-    };
+  for (const row of sessions ?? []) {
+    const session = row as DecisionSession & { grace_started_at: string | null };
+    // Per-session isolation so one failure can't skip the rest.
+    try {
+      const { count: holds } = await getHoldSummary(admin, session.id);
 
-    if (holds >= session.min_attendees) {
-      // ── GOING AHEAD ──────────────────────────────────────────────────────────
-      await admin.from("sessions").update({ state: "confirmed", confirmed_at: new Date().toISOString() }).eq("id", session.id);
-
-      const finalPrice = `$${calculatePrice(
-        session.cost_base,
-        session.revenue_target,
-        Math.max(holds, session.min_attendees)
-      ).toFixed(2)} incl. GST`;
-
-      // Attendees
-      const emailExtras = await buildSessionEmailExtras(admin, session);
-      const holders = await getAttendees(admin, userIds);
-      const goAheadItems = [];
-      for (const a of holders) {
-        if (!a.email) continue;
-        goAheadItems.push({
-          type: "session_going_ahead" as const,
-          payload: {
-            to: a.email,
-            name: firstNameOf(a.name),
-            sessionTitle: session.title,
-            date: dateStr,
-            price: finalPrice,
-            venue: session.location_name,
-            socialStretchVenue: session.social_stretch_venue ?? "nearby",
-            sessionId: session.id,
-            isComp: compUserIds.has(a.auth_user_id),
-            isFirstStretchy: await isFirstStretchy(admin, a.auth_user_id),
-            spots: spotsByUser.get(a.auth_user_id),
-            ...emailExtras,
-          },
-        });
-      }
-      await sendAttendeeBatch(goAheadItems);
-      sendPushToUsers(userIds, {
-        title: "It's happening! ✅",
-        body: `${session.title} is confirmed. Price may still drop — see you there!`,
-        url: `/notifications/going-ahead?session=${session.id}`,
-        requireInteraction: true,
-      }).catch(console.error);
-
-      // Interested / watching (not already holding) — "it's on, now book".
-      const interestedIds = (await getInterestedUserIds(admin, session.id)).filter((uid) => !userIds.includes(uid));
-      const interested = await getAttendees(admin, interestedIds);
-      await sendAttendeeBatch(interested.map((a) => ({
-        type: "session_confirmed_open" as const,
-        payload: {
-          to: a.email ?? "",
-          name: firstNameOf(a.name),
-          sessionTitle: session.title,
-          date: dateStr,
-          price: finalPrice,
-          venue: session.location_name,
-          socialStretchVenue: session.social_stretch_venue ?? "nearby",
-          sessionId: session.id,
-          ...emailExtras,
-        },
-      })));
-      if (interestedIds.length > 0) {
-        sendPushToUsers(interestedIds, {
-          title: "It's on 🎉",
-          body: `${session.title} is happening — grab a spot before it fills.`,
-          url: `/sessions/${session.id}`,
-        }).catch(console.error);
+      if (holds >= session.min_attendees) {
+        // Minimum met — at the 36h mark, or filled naturally during grace → confirm.
+        const r = await confirmSession(admin, session);
+        results.push({ session: session.title, action: "confirmed", holders: r.holders });
+        continue;
       }
 
-      // Teacher + GEM + HQ
-      const hostDetails = { social: session.social_stretch_venue, teacherHandle: emailExtras.teacherHandle, gemHandle: emailExtras.gemHandle, venueHandle: emailExtras.venueHandle, socialVenueHandle: emailExtras.socialVenueHandle };
-      if (session.host_id) notifyHostConfirmed({ hostId: session.host_id, role: "teacher", session: hostSession, gemName: emailExtras.gemName, style: emailExtras.teacherStyle, details: hostDetails }).catch(console.error);
-      if (session.gem_host_id) notifyHostConfirmed({ hostId: session.gem_host_id, role: "gem", session: hostSession, style: emailExtras.teacherStyle, details: hostDetails }).catch(console.error);
-      await notifyHQ({
-        subject: `Confirmed: ${session.title} (${holds}/${session.min_attendees})`,
-        scheme: "olive",
-        kicker: "Stretchy HQ · Confirmed ✅",
-        heading: `${session.title} is going ahead`,
-        rows: [
-          `<strong>${holds}</strong> holds — minimum met. Teacher and GEM have been notified.`,
-          `🗓 ${dateStr}`,
-          `📍 ${session.location_name}`,
-          `Final price at lock-in (2h before): ${finalPrice}.`,
-        ],
-      });
-
-      results.push({ session: session.title, action: "confirmed", holders });
-    } else {
-      // ── NOT THIS TIME ────────────────────────────────────────────────────────
-      await admin.from("sessions").update({ state: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", session.id);
-      await admin.from("holds").update({ state: "released" }).eq("session_id", session.id).eq("state", "active");
-
-      // Attendees (the ids we captured before releasing)
-      const holders = await getAttendees(admin, userIds);
-      await sendAttendeeBatch(holders.map((a) => ({
-        type: "session_cancelled" as const,
-        payload: {
-          to: a.email ?? "",
-          name: firstNameOf(a.name),
-          sessionTitle: session.title,
-          date: dateStr,
-          sessionId: session.id,
-          spots: spotsByUser.get(a.auth_user_id),
-        },
-      })));
-      sendPushToUsers(userIds, {
-        title: "Not this time 💙",
-        body: `${session.title} didn't reach the minimum. Nothing was charged.`,
-        url: `/notifications/cancelled?session=${session.id}`,
-      }).catch(console.error);
-
-      // Teacher + GEM + HQ (notifyHostCancelled skips the HQ placeholder host)
-      if (session.host_id) notifyHostCancelled({ hostId: session.host_id, role: "teacher", session: hostSession }).catch(console.error);
-      if (session.gem_host_id) notifyHostCancelled({ hostId: session.gem_host_id, role: "gem", session: hostSession }).catch(console.error);
-      await notifyHQ({
-        subject: `Cancelled: ${session.title} (${holds}/${session.min_attendees})`,
-        scheme: "cream",
-        kicker: "Stretchy HQ · Cancelled",
-        heading: `${session.title} didn't reach minimum`,
-        rows: [
-          `Only <strong>${holds}</strong> of ${session.min_attendees} holds — cancelled. All holds released, nothing charged.`,
-          `🗓 ${dateStr}`,
-          `📍 ${session.location_name}`,
-          `Teacher and GEM have been notified.`,
-        ],
-      });
-
-      results.push({ session: session.title, action: "cancelled", holders, needed: session.min_attendees });
+      // Still short of the minimum.
+      if (!session.grace_started_at) {
+        // First sighting at the decision point → open the HQ-only grace window.
+        // No customer emails yet; HQ has ~1h to override before it auto-cancels.
+        await startGrace(admin, session, holds);
+        results.push({ session: session.title, action: "grace_started", holders: holds });
+      } else if (Date.now() - new Date(session.grace_started_at).getTime() >= GRACE_MS) {
+        // Grace hour elapsed and HQ didn't keep it alive → auto-cancel now.
+        const r = await cancelSession(admin, session);
+        results.push({ session: session.title, action: "cancelled", holders: r.holders, needed: session.min_attendees });
+      } else {
+        // Still inside the grace hour — wait for HQ or the next run.
+        results.push({ session: session.title, action: "grace_waiting", holders: holds });
+      }
+    } catch (e) {
+      console.error(`36h decision error for session ${session.id}:`, e);
     }
   }
 

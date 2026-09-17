@@ -123,6 +123,32 @@ export default function AdminSessionsPage() {
     setCancelling(null);
   }
 
+  const [confirming, setConfirming] = useState<string | null>(null);
+
+  // HQ override: force a session to go ahead regardless of the minimum. Fires the
+  // "it's happening" emails to everyone + teacher/GEM confirm — same as the auto
+  // 36h confirm — and takes it out of the grace/auto-cancel path.
+  async function keepAlive(id: string, title: string, holds: number, min: number) {
+    const short = holds < min;
+    const msg = short
+      ? `Confirm "${title}" and run it with ${holds}/${min}? This overrides the auto-cancel and emails everyone it's going ahead.`
+      : `Confirm "${title}" now? This emails everyone it's going ahead.`;
+    if (!confirm(msg)) return;
+    setConfirming(id);
+    try {
+      const res = await fetch(`/api/admin/sessions/${id}/confirm`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setSessions((prev) => prev.map((s) => s.id === id ? { ...s, state: "confirmed" } : s));
+      } else {
+        alert(data.error ?? "Could not confirm this session.");
+      }
+    } catch {
+      alert("Could not confirm this session.");
+    }
+    setConfirming(null);
+  }
+
   const [publishing, setPublishing] = useState<string | null>(null);
 
   async function publishSession(id: string) {
@@ -285,6 +311,8 @@ export default function AdminSessionsPage() {
                   requestingSub={requestingSub === s.id}
                   onPublish={publishSession}
                   publishing={publishing === s.id}
+                  onConfirm={keepAlive}
+                  confirming={confirming === s.id}
                 />
               ))}
             </div>
@@ -311,6 +339,8 @@ export default function AdminSessionsPage() {
                   requestingSub={requestingSub === s.id}
                   onPublish={publishSession}
                   publishing={publishing === s.id}
+                  onConfirm={keepAlive}
+                  confirming={confirming === s.id}
                 />
               ))}
             </div>
@@ -332,6 +362,8 @@ function SessionCard({
   requestingSub,
   onPublish,
   publishing,
+  onConfirm,
+  confirming,
 }: {
   session: Session;
   onCancel: (id: string, title: string) => void;
@@ -340,6 +372,8 @@ function SessionCard({
   requestingSub: boolean;
   onPublish: (id: string) => void;
   publishing: boolean;
+  onConfirm: (id: string, title: string, holds: number, min: number) => void;
+  confirming: boolean;
 }) {
   const typeColor = TYPE_COLORS[s.movement_type] || "#888";
   const stateInfo = STATE_COLORS[s.state] || STATE_COLORS.open;
@@ -538,6 +572,20 @@ function SessionCard({
               }}
             >
               {requestingSub ? "SENDING…" : "NEED SUB"}
+            </button>
+          )}
+          {s.state === "open" && (
+            <button
+              onClick={() => onConfirm(s.id, s.title, s.current_holds, s.min_attendees)}
+              disabled={confirming}
+              title="Force this session to go ahead regardless of the minimum — emails everyone it's happening."
+              style={{
+                padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
+                background: T.olive, color: "#fff",
+                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
+              }}
+            >
+              {confirming ? "CONFIRMING…" : needsMore > 0 ? "KEEP ALIVE & CONFIRM" : "CONFIRM NOW"}
             </button>
           )}
           {s.state === "open" && (
