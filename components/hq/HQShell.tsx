@@ -42,6 +42,7 @@ const NAV_GROUPS = [
 ];
 
 const NAV_TAIL = [
+  { href: "/admin/newsletters", label: "Newsletters" },
   { href: "/admin/suggestions", label: "Community" },
   { href: "/admin/feedback", label: "Feedback" },
 ];
