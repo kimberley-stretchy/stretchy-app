@@ -181,7 +181,7 @@ function bigCount(sc: Scheme, n: number) {
 export function brandFooter(sc: Scheme) {
   return `<div style="max-width:520px;margin:0 auto;padding:26px 26px 34px;text-align:center;">
     <p style="font-size:12px;color:${sc.text};margin:0 0 10px;">Questions? <a href="mailto:${HELLO}" style="color:${sc.text};font-weight:700;text-decoration:none;">${HELLO}</a></p>
-    <p style="font-size:12px;margin:0 0 8px;"><a href="${IG}" style="color:${sc.text};text-decoration:none;font-weight:700;">@stretchy.yoga</a></p>
+    <p style="font-size:12px;margin:0 0 8px;"><a href="${IG}" style="color:${sc.text};text-decoration:none;font-weight:700;">@stretchy.yoga</a> · <a href="https://www.tiktok.com/@stretchy.yoga" style="color:${sc.text};text-decoration:none;font-weight:700;">TikTok</a></p>
     <p style="font-size:11px;color:${sc.text};margin:0 0 8px;">Made with Love by <a href="https://studiodawn.org" style="color:${sc.text};text-decoration:underline;">Studio Dawn</a></p>
     <p style="font-size:12px;margin:0 0 8px;"><a href="https://stretchyyoga.co.nz" style="color:${sc.text};text-decoration:none;">stretchyyoga.co.nz</a></p>
     <p style="font-size:11px;color:${sc.text};margin:0;">Stretchy Social Movement Club · Built in Aotearoa 🌿</p>

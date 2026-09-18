@@ -3,7 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/adminAuth";
 import { calculatePrice } from "@/lib/pricing";
 import { APP_URL } from "@/lib/stretchy-email";
-import { buildNewsletter, NewsletterSession } from "@/lib/newsletterTemplate";
+import { buildNewsletter, NewsletterSession, NLBlock } from "@/lib/newsletterTemplate";
+
+// What the composer sends: a session block carries ids (resolved to live data here).
+type ClientBlock =
+  | { type: "text"; text?: string }
+  | { type: "image"; url?: string; frame?: "black" | "cream" }
+  | { type: "divider" }
+  | { type: "sessions"; sessionIds?: string[] };
 import { sendBroadcast, sendTestNewsletter } from "@/lib/resendBroadcast";
 import { marketingConfigured } from "@/lib/resendAudience";
 
@@ -81,26 +88,34 @@ export async function POST(request: NextRequest) {
   const admin = getAdmin();
 
   const body = await request.json().catch(() => ({}));
-  const { mode, subject, heading, intro, outro, sessionIds, testEmail } = body as {
+  const { mode, subject, scheme, heading, blocks, highlight, testEmail } = body as {
     mode: "preview" | "test" | "send";
-    subject?: string; heading?: string; intro?: string; outro?: string;
-    sessionIds?: string[]; testEmail?: string;
+    subject?: string; scheme?: string; heading?: string; highlight?: boolean;
+    blocks?: ClientBlock[]; testEmail?: string;
   };
 
   if (mode !== "preview" && (!subject || !subject.trim())) {
     return NextResponse.json({ error: "A subject is required." }, { status: 400 });
   }
 
-  // Pull the picked sessions' live data (subset of upcoming, in the chosen order).
+  // Resolve session blocks (which carry sessionIds) into live session data.
   const all = (await upcomingSessions(admin)) as (NewsletterSession & { id: string })[];
-  const picked = (sessionIds ?? []).map((id) => all.find((s) => s.id === id)).filter(Boolean) as NewsletterSession[];
+  const resolved: NLBlock[] = (blocks ?? []).map((b): NLBlock => {
+    if (b.type === "sessions") {
+      const sessions = (b.sessionIds ?? []).map((id) => all.find((s) => s.id === id)).filter(Boolean) as NewsletterSession[];
+      return { type: "sessions", sessions };
+    }
+    if (b.type === "image") return { type: "image", url: b.url ?? "", frame: b.frame === "cream" ? "cream" : "black" };
+    if (b.type === "divider") return { type: "divider" };
+    return { type: "text", text: b.text ?? "" };
+  });
 
   const { subject: subj, html } = buildNewsletter({
     subject: subject ?? "What's on at Stretchy 🌞",
+    scheme,
     heading,
-    intro,
-    outro,
-    sessions: picked,
+    highlight,
+    blocks: resolved,
   });
 
   if (mode === "preview") {

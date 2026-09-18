@@ -1,19 +1,33 @@
-import { page, h1, msg, box, label, row, button, APP_URL, type Scheme } from "@/lib/stretchy-email";
+import { page, h1, msg, box, label, row, button, brandFooter, highlightBlock, APP_URL, SCHEMES, type Scheme } from "@/lib/stretchy-email";
 
 // Branded marketing newsletter ("what's on at Stretchy"), built from the same
-// design system as the transactional emails so it looks like the rest of Stretchy.
-// Phase 2: HQ writes subject + intro and picks sessions to feature; the session
-// figures (who's coming) fill in from live data.
+// design system as the transactional emails. Block-based so HQ can lay out text,
+// imagery (curved frame + brand outline), brand dividers and live session cards
+// in any order, in any brand colour.
 
 export interface NewsletterSession {
   title: string;
   dateStr: string;
   venue?: string | null;
   url: string;
-  going: number;        // spots currently held
-  min: number;          // minimum to go ahead
+  going: number;
+  min: number;
   price?: string | null;
-  confirmed?: boolean;  // already hit minimum
+  confirmed?: boolean;
+}
+
+export type NLBlock =
+  | { type: "text"; text: string }
+  | { type: "image"; url: string; frame?: "black" | "cream" }
+  | { type: "divider" }
+  | { type: "sessions"; sessions: NewsletterSession[] };
+
+export interface NewsletterInput {
+  subject: string;
+  scheme?: string;
+  heading?: string;
+  blocks: NLBlock[];
+  highlight?: boolean; // append the "Welcome to the highlight of your week" panel
 }
 
 function sessionBlock(sc: Scheme, s: NewsletterSession): string {
@@ -31,35 +45,48 @@ function sessionBlock(sc: Scheme, s: NewsletterSession): string {
     ${button(sc, s.url, "Grab a spot →")}`);
 }
 
-export interface NewsletterInput {
-  subject: string;
-  heading?: string;
-  intro?: string;         // free text; \n\n splits paragraphs
-  sessions?: NewsletterSession[];
-  ctaText?: string;
-  ctaUrl?: string;
-  outro?: string;
+function imageBlock(sc: Scheme, url: string, frame: "black" | "cream"): string {
+  const outline = frame === "cream" ? "#F7F0E8" : "#14110F";
+  return `<div style="margin:0 0 18px;"><img src="${url}" alt="Stretchy" style="width:100%;display:block;border-radius:18px;border:3px solid ${outline};" /></div>`;
+}
+
+// Brand divider — olive over yellow, split by a hairline (as on the website).
+function dividerBlock(): string {
+  return `<div style="margin:10px 0 22px;"><div style="height:14px;background:#716F39;"></div><div style="height:2px;background:#14110F;"></div><div style="height:14px;background:#FCBB16;"></div></div>`;
+}
+
+function paras(sc: Scheme, text: string): string {
+  return text
+    .split(/\n\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((t) => msg(sc, t.replace(/\n/g, "<br>")))
+    .join("");
 }
 
 export function buildNewsletter(p: NewsletterInput): { subject: string; html: string } {
-  const paras = (t?: string) =>
-    (t ?? "")
-      .split(/\n\n+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+  const schemeName = p.scheme && SCHEMES[p.scheme] ? p.scheme : "cream";
 
-  const html = page(
-    "cream",
-    (sc) => `
-      ${h1(sc, p.heading ?? "What's on at Stretchy 🌞")}
-      ${paras(p.intro).map((t) => msg(sc, t.replace(/\n/g, "<br>"))).join("")}
-      ${(p.sessions ?? []).map((s) => sessionBlock(sc, s)).join("")}
-      ${p.ctaUrl ? button(sc, p.ctaUrl, p.ctaText ?? "See everything that's on →") : button(sc, `${APP_URL}/sessions`, "See everything that's on →")}
-      ${paras(p.outro).map((t) => msg(sc, t.replace(/\n/g, "<br>"))).join("")}
-      ${msg(sc, "See you on the mat,<br>Stretchy")}
-      <p style="color:${sc.text};font-size:11px;line-height:1.5;margin:18px 0 0;opacity:.7;">You're getting this because you opted in to Stretchy updates. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${sc.text};text-decoration:underline;">Unsubscribe any time</a>.</p>
-    `,
-    { highlight: false }
-  );
+  const inner = (sc: Scheme) => `
+    ${p.heading ? h1(sc, p.heading) : ""}
+    ${(p.blocks ?? [])
+      .map((b) => {
+        if (b.type === "text") return paras(sc, b.text ?? "");
+        if (b.type === "image") return b.url ? imageBlock(sc, b.url, b.frame ?? "black") : "";
+        if (b.type === "divider") return dividerBlock();
+        if (b.type === "sessions") return (b.sessions ?? []).map((s) => sessionBlock(sc, s)).join("");
+        return "";
+      })
+      .join("")}
+    ${button(sc, `${APP_URL}/sessions`, "See everything that's on →")}
+    ${msg(sc, "See you on the mat,<br>Stretchy")}
+    <p style="color:${sc.text};font-size:11px;line-height:1.5;margin:18px 0 0;opacity:.7;">You're getting this because you opted in to Stretchy updates. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${sc.text};text-decoration:underline;">Unsubscribe any time</a>.</p>
+  `;
+
+  // page() already appends the highlight panel (when highlight !== false) + footer.
+  const html = page(schemeName, inner, { highlight: p.highlight !== false });
   return { subject: p.subject, html };
 }
+
+// Kept for callers that referenced these; not otherwise used here.
+export { brandFooter, highlightBlock };
