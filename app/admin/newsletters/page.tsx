@@ -48,29 +48,17 @@ export default function NewslettersPage() {
   const [heading, setHeading] = useState("What's on at Stretchy 🌞");
   const [highlight, setHighlight] = useState(true);
   const [blocks, setBlocks] = useState<Block[]>([{ uid: UID++, type: "text", text: "" }]);
-  const [preview, setPreview] = useState<string | null>(null);
   const [testEmail, setTestEmail] = useState("kimberley@stretchyyoga.co.nz");
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const uploadingFor = useRef<number | null>(null);
-  const previewRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/newsletters").then((r) => r.json()).then((d) => {
       setSessions(d.sessions ?? []); setAudienceReady(!!d.audienceReady);
     });
   }, []);
-
-  // Write the preview HTML straight into the iframe document — more reliable than
-  // srcDoc across webviews/desktop-app frames.
-  useEffect(() => {
-    const doc = previewRef.current?.contentDocument;
-    if (!doc) return;
-    doc.open();
-    doc.write(preview ? preview.replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, "#") : "<body style='font-family:system-ui;color:#888;padding:20px'>Hit PREVIEW to see the branded newsletter here.</body>");
-    doc.close();
-  }, [preview]);
 
   const update = (uid: number, patch: Partial<Block>) =>
     setBlocks((bs) => bs.map((b) => (b.uid === uid ? ({ ...b, ...patch } as Block) : b)));
@@ -126,14 +114,13 @@ export default function NewslettersPage() {
       : { type: "text", text: b.text }),
   });
 
-  async function call(mode: "preview" | "test" | "send") {
+  async function call(mode: "test" | "send") {
     setBusy(mode); setMsg(null);
     try {
       const res = await fetch("/api/admin/newsletters", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload(mode)) });
       const d = await res.json();
       if (!res.ok) setMsg({ ok: false, text: d.error ?? "Something went wrong." });
-      else if (mode === "preview") { setPreview(d.html || ""); if (!d.html) setMsg({ ok: false, text: "Preview came back empty." }); }
-      else if (mode === "test") setMsg({ ok: true, text: `Test sent to ${testEmail}` });
+      else if (mode === "test") setMsg({ ok: true, text: `Test sent to ${testEmail} — check your inbox to preview it.` });
       else setMsg({ ok: true, text: `Newsletter sent${d.sentTo != null ? ` to ${d.sentTo} contacts` : ""} 🎉 — receipt in your inbox.` });
     } catch { setMsg({ ok: false, text: "Request failed." }); }
     setBusy(null);
@@ -151,7 +138,7 @@ export default function NewslettersPage() {
     <HQShell>
       <input ref={fileInput} type="file" accept="image/*" onChange={onFile} style={{ display: "none" }} />
       <main style={{ background: T.cream, minHeight: "100vh", color: T.ink, fontFamily: T.body }}>
-        <div style={{ maxWidth: 1120, padding: "32px 32px 60px", display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 24 }}>
+        <div style={{ maxWidth: 620, padding: "32px 32px 60px" }}>
           {/* Composer */}
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 900, margin: "0 0 4px" }}>Newsletters</h1>
@@ -257,21 +244,13 @@ export default function NewslettersPage() {
               Include the &ldquo;Welcome to the highlight of your week&rdquo; panel at the bottom
             </label>
 
+            <p style={{ fontSize: 12, color: "rgba(20,17,15,.55)", margin: "0 0 8px" }}>Send yourself a test to preview it in a real inbox, then send to the Audience.</p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
-              <button onClick={() => call("preview")} disabled={busy !== null} style={btn("transparent", T.ink)}>{busy === "preview" ? "…" : "PREVIEW"}</button>
-              <input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} style={{ ...field, width: 210, flex: "0 0 auto" }} />
+              <input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} style={{ ...field, width: 220, flex: "0 0 auto" }} />
               <button onClick={() => call("test")} disabled={busy !== null} style={btn(T.yellow, T.ink)}>{busy === "test" ? "…" : "SEND TEST"}</button>
               <button onClick={sendReal} disabled={busy !== null || !audienceReady} style={{ ...btn(T.olive, "#fff"), opacity: audienceReady ? 1 : 0.5 }}>{busy === "send" ? "SENDING…" : "SEND TO AUDIENCE"}</button>
             </div>
             {msg && <p style={{ fontSize: 13, color: msg.ok ? T.olive : T.red }}>{msg.text}</p>}
-          </div>
-
-          {/* Preview */}
-          <div>
-            <label style={mono10}>PREVIEW</label>
-            <div style={{ marginTop: 6, borderRadius: 14, overflow: "hidden", border: `2px solid ${T.ink}`, background: "#fff" }}>
-              <iframe ref={previewRef} title="preview" style={{ width: "100%", height: 720, border: "none", display: "block", background: "#fff" }} />
-            </div>
           </div>
         </div>
       </main>
