@@ -38,7 +38,7 @@ const ASSET_BASE = "https://www.stretchyyoga.co.nz";
 void S_PATH;
 function sLogo(color: string) {
   const light = color.toUpperCase() === "#FFFFFF" || color.toUpperCase() === "#F7F0E8";
-  const file = light ? "s-mark-white.png" : "s-mark-black.png";
+  const file = light ? "s-mark-white-v2.png" : "s-mark-black-v2.png";
   return `<img src="${ASSET_BASE}/${file}" width="30" height="35" alt="Stretchy" style="display:inline-block;vertical-align:middle;border:0;" />`;
 }
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
