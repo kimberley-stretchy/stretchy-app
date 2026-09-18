@@ -11,8 +11,9 @@ type ClientBlock =
   | { type: "image"; url?: string; frame?: "black" | "cream" }
   | { type: "divider" }
   | { type: "sessions"; sessionIds?: string[] };
-import { sendBroadcast, sendTestNewsletter } from "@/lib/resendBroadcast";
+import { sendBroadcast, sendTestNewsletter, getAudienceCount } from "@/lib/resendBroadcast";
 import { marketingConfigured } from "@/lib/resendAudience";
+import { notifyHQ } from "@/lib/notifyLifecycle";
 
 function getAdmin() {
   return createClient(
@@ -134,5 +135,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No Audience configured — set RESEND_AUDIENCE_ID in Vercel first." }, { status: 400 });
   }
   const r = await sendBroadcast({ audienceId, subject: subj, html, name: subj });
-  return r.ok ? NextResponse.json({ ok: true, id: r.id }) : NextResponse.json({ error: r.error }, { status: 500 });
+  if (!r.ok) return NextResponse.json({ error: r.error }, { status: 500 });
+
+  // Send receipt to HQ — topline of what went out and to how many.
+  const count = await getAudienceCount(audienceId);
+  const sentAt = new Date().toLocaleString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
+  const audienceLine = count
+    ? `Sent to <strong>${count.subscribed}</strong> subscribed contact${count.subscribed === 1 ? "" : "s"}${count.total > count.subscribed ? ` (${count.total} in the Audience total)` : ""}.`
+    : `Sent to the marketing Audience.`;
+  await notifyHQ({
+    subject: `📣 Newsletter sent: ${subj}`,
+    scheme: "orange",
+    kicker: "Stretchy HQ · Newsletter receipt",
+    heading: "Your newsletter is on its way 🎉",
+    rows: [
+      `<strong>Subject:</strong> ${subj}`,
+      audienceLine,
+      `🕘 Sent ${sentAt} (NZT).`,
+      `Delivery, opens and unsubscribes are tracked in Resend → Broadcasts.`,
+    ],
+  }).catch(() => {});
+
+  return NextResponse.json({ ok: true, id: r.id, sentTo: count?.subscribed ?? null });
 }

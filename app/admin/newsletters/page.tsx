@@ -123,7 +123,7 @@ export default function NewslettersPage() {
       if (!res.ok) setMsg({ ok: false, text: d.error ?? "Something went wrong." });
       else if (mode === "preview") setPreview(d.html);
       else if (mode === "test") setMsg({ ok: true, text: `Test sent to ${testEmail}` });
-      else setMsg({ ok: true, text: "Newsletter sent to the Audience 🎉" });
+      else setMsg({ ok: true, text: `Newsletter sent${d.sentTo != null ? ` to ${d.sentTo} contacts` : ""} 🎉 — receipt in your inbox.` });
     } catch { setMsg({ ok: false, text: "Request failed." }); }
     setBusy(null);
   }

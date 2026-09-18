@@ -49,6 +49,25 @@ export async function sendBroadcast(opts: {
   }
 }
 
+// Count the Audience so a send receipt can say how many it went to. Broadcasts
+// deliver to SUBSCRIBED contacts, so that's the number that matters.
+export async function getAudienceCount(audienceId: string): Promise<{ total: number; subscribed: number } | null> {
+  const k = key();
+  if (!k) return null;
+  try {
+    const res = await fetch(`${API}/audiences/${audienceId}/contacts`, {
+      headers: { Authorization: `Bearer ${k}` },
+    });
+    if (!res.ok) return null;
+    const body = await res.json().catch(() => ({}));
+    const rows: { unsubscribed?: boolean }[] = body?.data ?? [];
+    const subscribed = rows.filter((r) => !r.unsubscribed).length;
+    return { total: rows.length, subscribed };
+  } catch {
+    return null;
+  }
+}
+
 // Send a one-off test of the newsletter to a single address (a normal email, not
 // a broadcast) so HQ can preview it in a real inbox before sending to everyone.
 export async function sendTestNewsletter(to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
