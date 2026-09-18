@@ -19,7 +19,7 @@ export interface NewsletterSession {
 export type NLBlock =
   | { type: "text"; text: string }
   | { type: "image"; url: string; frame?: "black" | "cream" }
-  | { type: "divider" }
+  | { type: "divider"; line?: "ink" | "cream" }
   | { type: "sessions"; sessions: NewsletterSession[] };
 
 export interface NewsletterInput {
@@ -50,9 +50,10 @@ function imageBlock(sc: Scheme, url: string, frame: "black" | "cream"): string {
   return `<div style="margin:0 0 18px;"><img src="${url}" alt="Stretchy" style="width:100%;display:block;border-radius:18px;border:3px solid ${outline};" /></div>`;
 }
 
-// Brand divider — olive over yellow, split by a hairline (as on the website).
-function dividerBlock(): string {
-  return `<div style="margin:10px 0 22px;"><div style="height:14px;background:#716F39;"></div><div style="height:2px;background:#14110F;"></div><div style="height:14px;background:#FCBB16;"></div></div>`;
+// Simple brand divider — a single black or cream line.
+function dividerBlock(line: "ink" | "cream"): string {
+  const color = line === "cream" ? "#F7F0E8" : "#14110F";
+  return `<div style="border-top:2px solid ${color};margin:18px 0 24px;"></div>`;
 }
 
 function paras(sc: Scheme, text: string): string {
@@ -73,7 +74,7 @@ export function buildNewsletter(p: NewsletterInput): { subject: string; html: st
       .map((b) => {
         if (b.type === "text") return paras(sc, b.text ?? "");
         if (b.type === "image") return b.url ? imageBlock(sc, b.url, b.frame ?? "black") : "";
-        if (b.type === "divider") return dividerBlock();
+        if (b.type === "divider") return dividerBlock(b.line === "cream" ? "cream" : "ink");
         if (b.type === "sessions") return (b.sessions ?? []).map((s) => sessionBlock(sc, s)).join("");
         return "";
       })

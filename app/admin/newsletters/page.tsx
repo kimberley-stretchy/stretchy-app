@@ -24,7 +24,7 @@ type PickSession = { id: string; title: string; dateStr: string; going: number; 
 type Block =
   | { uid: number; type: "text"; text: string }
   | { uid: number; type: "image"; url: string; frame: "black" | "cream"; uploading?: boolean }
-  | { uid: number; type: "divider" }
+  | { uid: number; type: "divider"; line: "ink" | "cream" }
   | { uid: number; type: "sessions"; sessionIds: string[] };
 
 let UID = 1;
@@ -54,12 +54,23 @@ export default function NewslettersPage() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const uploadingFor = useRef<number | null>(null);
+  const previewRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/newsletters").then((r) => r.json()).then((d) => {
       setSessions(d.sessions ?? []); setAudienceReady(!!d.audienceReady);
     });
   }, []);
+
+  // Write the preview HTML straight into the iframe document — more reliable than
+  // srcDoc across webviews/desktop-app frames.
+  useEffect(() => {
+    const doc = previewRef.current?.contentDocument;
+    if (!doc) return;
+    doc.open();
+    doc.write(preview ? preview.replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, "#") : "<body style='font-family:system-ui;color:#888;padding:20px'>Hit PREVIEW to see the branded newsletter here.</body>");
+    doc.close();
+  }, [preview]);
 
   const update = (uid: number, patch: Partial<Block>) =>
     setBlocks((bs) => bs.map((b) => (b.uid === uid ? ({ ...b, ...patch } as Block) : b)));
@@ -78,7 +89,7 @@ export default function NewslettersPage() {
       ...bs,
       type === "text" ? { uid: UID++, type: "text", text: "" }
       : type === "image" ? { uid: UID++, type: "image", url: "", frame: "black" }
-      : type === "divider" ? { uid: UID++, type: "divider" }
+      : type === "divider" ? { uid: UID++, type: "divider", line: "ink" }
       : { uid: UID++, type: "sessions", sessionIds: [] },
     ]);
 
@@ -111,7 +122,7 @@ export default function NewslettersPage() {
     blocks: blocks.map((b) =>
       b.type === "sessions" ? { type: "sessions", sessionIds: b.sessionIds }
       : b.type === "image" ? { type: "image", url: b.url, frame: b.frame }
-      : b.type === "divider" ? { type: "divider" }
+      : b.type === "divider" ? { type: "divider", line: b.line }
       : { type: "text", text: b.text }),
   });
 
@@ -121,7 +132,7 @@ export default function NewslettersPage() {
       const res = await fetch("/api/admin/newsletters", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload(mode)) });
       const d = await res.json();
       if (!res.ok) setMsg({ ok: false, text: d.error ?? "Something went wrong." });
-      else if (mode === "preview") setPreview(d.html);
+      else if (mode === "preview") { setPreview(d.html || ""); if (!d.html) setMsg({ ok: false, text: "Preview came back empty." }); }
       else if (mode === "test") setMsg({ ok: true, text: `Test sent to ${testEmail}` });
       else setMsg({ ok: true, text: `Newsletter sent${d.sentTo != null ? ` to ${d.sentTo} contacts` : ""} 🎉 — receipt in your inbox.` });
     } catch { setMsg({ ok: false, text: "Request failed." }); }
@@ -205,7 +216,14 @@ export default function NewslettersPage() {
                   )}
 
                   {b.type === "divider" && (
-                    <div style={{ margin: "4px 0" }}><div style={{ height: 10, background: T.olive }} /><div style={{ height: 2, background: T.ink }} /><div style={{ height: 10, background: T.yellow }} /></div>
+                    <div>
+                      <div style={{ borderTop: `2px solid ${b.line === "cream" ? "#E1D5C6" : T.ink}`, margin: "6px 0 10px" }} />
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <span style={mono10}>LINE</span>
+                        <button onClick={() => update(b.uid, { line: "ink" } as Partial<Block>)} style={chip(b.line === "ink")}>BLACK</button>
+                        <button onClick={() => update(b.uid, { line: "cream" } as Partial<Block>)} style={chip(b.line === "cream")}>CREAM</button>
+                      </div>
+                    </div>
                   )}
 
                   {b.type === "sessions" && (
@@ -251,12 +269,8 @@ export default function NewslettersPage() {
           {/* Preview */}
           <div>
             <label style={mono10}>PREVIEW</label>
-            <div style={{ marginTop: 6, borderRadius: 14, overflow: "hidden", border: `2px solid ${T.ink}`, background: "#fff", minHeight: 400 }}>
-              {preview ? (
-                <iframe title="preview" srcDoc={preview} style={{ width: "100%", height: 720, border: "none" }} />
-              ) : (
-                <p style={{ padding: 20, fontSize: 13, color: "rgba(20,17,15,.45)" }}>Hit PREVIEW to see the branded newsletter here.</p>
-              )}
+            <div style={{ marginTop: 6, borderRadius: 14, overflow: "hidden", border: `2px solid ${T.ink}`, background: "#fff" }}>
+              <iframe ref={previewRef} title="preview" style={{ width: "100%", height: 720, border: "none", display: "block", background: "#fff" }} />
             </div>
           </div>
         </div>

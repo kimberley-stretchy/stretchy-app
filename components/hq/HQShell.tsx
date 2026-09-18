@@ -145,7 +145,7 @@ function HQShellInner({ children }: { children: React.ReactNode }) {
           ))}
 
           {NAV_GROUPS.map((group) => (
-            <div key={group.heading} style={{ marginTop: 14 }}>
+            <div key={group.heading} style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 2 }}>
               <div style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(245,237,227,0.35)", padding: "0 12px", marginBottom: 4 }}>
                 {group.heading}
               </div>
@@ -160,7 +160,7 @@ function HQShellInner({ children }: { children: React.ReactNode }) {
             </div>
           ))}
 
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 2 }}>
             {NAV_TAIL.map((item) => (
               <NavLink
                 key={item.label + item.href}
