@@ -19,6 +19,7 @@ const NAV_FLAT = [
   { href: "/admin/sessions", label: "Today", skipHighlight: true },
   { href: "/admin/sessions", label: "This week", skipHighlight: true },
   { href: "/admin/sessions", label: "Sessions" },
+  { href: "/admin/customers", label: "Customers / Accounts" },
   { href: "/admin/money", label: "Money" },
   { href: "/admin/venues", label: "Venues" },
 ];
