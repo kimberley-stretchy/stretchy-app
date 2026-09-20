@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/adminAuth";
 import { Resend } from "resend";
 import { buildRemittanceEmail, FROM, REPLY_TO, HQ_EMAIL } from "@/lib/stretchy-email";
+import { buildRemittancePdf } from "@/lib/remittancePdf";
 import { logEmail } from "@/lib/emailLog";
 
 function getAdmin() {
@@ -56,10 +57,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       payeeName: it.name, role: it.role, amount,
       sessionTitle: session.title, dateStr, venue: session.location_name, note,
     });
+    // Attach a branded PDF remittance/statement.
+    let attachments: { filename: string; content: Buffer }[] | undefined;
+    try {
+      const pdf = await buildRemittancePdf({
+        payeeName: it.name, role: it.role, amount: Number(it.amount),
+        sessionTitle: session.title, dateStr, venue: session.location_name, note,
+        reference: `${it.role.slice(0, 3).toUpperCase()}-${id.slice(0, 8)}`,
+      });
+      const safe = `${it.name}-${session.title}`.replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-|-$/g, "");
+      attachments = [{ filename: `stretchy-remittance-${safe}.pdf`, content: Buffer.from(pdf) }];
+    } catch (e) {
+      console.error("Remittance PDF build failed:", e);
+    }
     const { error } = await resend.emails.send({
       from: FROM, to: email, reply_to: REPLY_TO,
       ...(copyHq ? { bcc: HQ_EMAIL } : {}),
       subject, html,
+      ...(attachments ? { attachments } : {}),
     });
     await logEmail({
       sessionId: id, recipient: email,
