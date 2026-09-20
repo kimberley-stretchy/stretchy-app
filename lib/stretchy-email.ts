@@ -403,6 +403,7 @@ export function buildRemittanceEmail(p: {
   dateStr: string;
   venue?: string | null;
   note?: string;
+  invoiceNo?: string;  // the contractor's own invoice number
   forHQ?: boolean;     // the HQ copy summarises rather than addresses the payee
 }): { subject: string; html: string } {
   const roleLc = p.role.toLowerCase();
@@ -417,7 +418,8 @@ export function buildRemittanceEmail(p: {
       ${row(sc, `For: <strong>${p.role}</strong>`)}
       ${row(sc, `Session: <strong>${p.sessionTitle}</strong>`)}
       ${row(sc, `🗓 ${p.dateStr}`)}
-      ${p.venue ? row(sc, `📍 ${p.venue}`) : ""}`)}
+      ${p.venue ? row(sc, `📍 ${p.venue}`) : ""}
+      ${p.invoiceNo ? row(sc, `🧾 Invoice no: <strong>${p.invoiceNo}</strong>`) : ""}`)}
     ${p.note ? msg(sc, p.note) : ""}
     ${msg(sc, p.forHQ ? "Filed for your records." : `Any questions about your ${roleLc} payment, just reply to this email.`)}
     ${signoff(sc, p.forHQ ? "Stretchy HQ" : "Thanks for moving with us")}

@@ -30,6 +30,7 @@ export default function SessionMoneyPage() {
   const [releasing, setReleasing] = useState(false);
   const [sel, setSel] = useState<Set<number>>(new Set());
   const [emails, setEmails] = useState<Record<number, string>>({});
+  const [invoiceNos, setInvoiceNos] = useState<Record<number, string>>({});
   const [copyHq, setCopyHq] = useState(true);
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
@@ -52,7 +53,7 @@ export default function SessionMoneyPage() {
 
   async function sendRemittance() {
     if (!data) return;
-    const items = data.lineItems.map((l, i) => ({ role: l.role, name: l.who, email: emails[i] ?? "", amount: l.amount })).filter((_, i) => sel.has(i));
+    const items = data.lineItems.map((l, i) => ({ role: l.role, name: l.who, email: emails[i] ?? "", amount: l.amount, invoiceNo: invoiceNos[i] ?? "" })).filter((_, i) => sel.has(i));
     if (items.length === 0) { setRemitMsg({ ok: false, text: "Tick who to send to first." }); return; }
     setSending(true); setRemitMsg(null);
     try {
@@ -141,12 +142,21 @@ export default function SessionMoneyPage() {
                       <span style={{ fontFamily: T.mono, fontSize: 14, fontWeight: 700, color: T.ink }}>${l.amount.toFixed(2)}</span>
                     </div>
                     {sel.has(i) && (
-                      <input
-                        value={emails[i] ?? ""}
-                        onChange={(e) => setEmails((m) => ({ ...m, [i]: e.target.value }))}
-                        placeholder={`Email to send ${l.who}'s remittance`}
-                        style={{ marginTop: 8, width: "100%", boxSizing: "border-box", padding: "7px 10px", borderRadius: 8, background: "#fff", border: "1.5px solid rgba(20,17,15,.2)", color: T.ink, fontSize: 13, outline: "none" }}
-                      />
+                      <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                        <input
+                          value={emails[i] ?? ""}
+                          onChange={(e) => setEmails((m) => ({ ...m, [i]: e.target.value }))}
+                          placeholder={`Email for ${l.who}`}
+                          style={{ flex: "2 1 200px", boxSizing: "border-box", padding: "7px 10px", borderRadius: 8, background: "#fff", border: "1.5px solid rgba(20,17,15,.2)", color: T.ink, fontSize: 13, outline: "none" }}
+                        />
+                        <input
+                          value={invoiceNos[i] ?? ""}
+                          onChange={(e) => setInvoiceNos((m) => ({ ...m, [i]: e.target.value }))}
+                          placeholder="Their invoice no."
+                          title="The contractor's own invoice number — appears on the remittance + PDF"
+                          style={{ flex: "1 1 130px", boxSizing: "border-box", padding: "7px 10px", borderRadius: 8, background: "#fff", border: "1.5px solid rgba(20,17,15,.2)", color: T.ink, fontSize: 13, outline: "none" }}
+                        />
+                      </div>
                     )}
                   </div>
                 ))

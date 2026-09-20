@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
   const admin = getAdmin();
   const body = await request.json().catch(() => ({}));
-  const items: { role: string; name: string; email: string; amount: number }[] = Array.isArray(body.items) ? body.items : [];
+  const items: { role: string; name: string; email: string; amount: number; invoiceNo?: string }[] = Array.isArray(body.items) ? body.items : [];
   const copyHq: boolean = !!body.copyHq;
   const note: string | undefined = typeof body.note === "string" && body.note.trim() ? body.note.trim() : undefined;
 
@@ -53,9 +53,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       continue;
     }
     const amount = `$${Number(it.amount).toFixed(2)}`;
+    const invoiceNo = (it.invoiceNo ?? "").trim() || undefined;
     const { subject, html } = buildRemittanceEmail({
       payeeName: it.name, role: it.role, amount,
-      sessionTitle: session.title, dateStr, venue: session.location_name, note,
+      sessionTitle: session.title, dateStr, venue: session.location_name, note, invoiceNo,
     });
     // Attach a branded PDF remittance/statement.
     let attachments: { filename: string; content: Buffer }[] | undefined;
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         payeeName: it.name, role: it.role, amount: Number(it.amount),
         sessionTitle: session.title, dateStr, venue: session.location_name, note,
         reference: `${it.role.slice(0, 3).toUpperCase()}-${id.slice(0, 8)}`,
+        invoiceNo,
       });
       const safe = `${it.name}-${session.title}`.replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-|-$/g, "");
       attachments = [{ filename: `stretchy-remittance-${safe}.pdf`, content: Buffer.from(pdf) }];

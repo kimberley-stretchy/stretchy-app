@@ -7,6 +7,17 @@ const INK = rgb(0.078, 0.067, 0.059);   // #14110F
 const OLIVE = rgb(0.443, 0.435, 0.224); // #716F39
 const MUTE = rgb(0.42, 0.4, 0.38);
 
+// Stretchy S logomark — fetched once from the hosted transparent PNG and cached.
+let _logo: Uint8Array | null | undefined;
+async function logoBytes(): Promise<Uint8Array | null> {
+  if (_logo !== undefined) return _logo;
+  try {
+    const res = await fetch("https://www.stretchyyoga.co.nz/s-mark-black-v2.png");
+    _logo = res.ok ? new Uint8Array(await res.arrayBuffer()) : null;
+  } catch { _logo = null; }
+  return _logo;
+}
+
 export interface RemittancePdfInput {
   payeeName: string;
   role: string;
@@ -15,7 +26,8 @@ export interface RemittancePdfInput {
   dateStr: string;       // session date
   venue?: string | null;
   note?: string;
-  reference?: string;    // e.g. short id
+  reference?: string;    // our internal ref (short id)
+  invoiceNo?: string;    // the contractor's own invoice number
 }
 
 export async function buildRemittancePdf(p: RemittancePdfInput): Promise<Uint8Array> {
@@ -33,8 +45,18 @@ export async function buildRemittancePdf(p: RemittancePdfInput): Promise<Uint8Ar
   const right = (s: string, xr: number, yy: number, size = 11, f = font, color = INK) =>
     page.drawText(s, { x: xr - f.widthOfTextAtSize(s, size), y: yy, size, font: f, color });
 
-  // Header
-  text("STRETCHY", L, y, 22, bold, INK);
+  // Header — S logomark + wordmark
+  let wordmarkX = L;
+  const logo = await logoBytes();
+  if (logo) {
+    try {
+      const png = await doc.embedPng(logo);
+      const lw = 26, lh = (png.height / png.width) * lw;
+      page.drawImage(png, { x: L, y: y - 6, width: lw, height: lh });
+      wordmarkX = L + lw + 10;
+    } catch { /* fall back to wordmark only */ }
+  }
+  text("STRETCHY", wordmarkX, y, 22, bold, INK);
   right("REMITTANCE ADVICE", R, y + 3, 12, bold, OLIVE);
   right("Payment statement", R, y - 12, 9, font, MUTE);
   y -= 40;
@@ -43,8 +65,12 @@ export async function buildRemittancePdf(p: RemittancePdfInput): Promise<Uint8Ar
 
   const issued = new Date().toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "long", year: "numeric" });
   text("Date issued", L, y, 9, bold, MUTE); text(issued, L, y - 14, 11);
-  if (p.reference) { right("Reference", R, y, 9, bold, MUTE); right(p.reference, R, y - 14, 11); }
-  y -= 44;
+  // Right column: the contractor's invoice number (what they asked to reference)
+  // + our internal Stretchy ref beneath it.
+  let ry = y;
+  if (p.invoiceNo) { right("Invoice no. (contractor)", R, ry, 9, bold, MUTE); right(p.invoiceNo, R, ry - 14, 12, bold); ry -= 32; }
+  if (p.reference) { right("Stretchy ref", R, ry, 9, bold, MUTE); right(p.reference, R, ry - 13, 10, font, MUTE); }
+  y -= (p.invoiceNo && p.reference ? 60 : 44);
 
   text("PAID TO", L, y, 9, bold, MUTE);
   text(p.payeeName, L, y - 16, 14, bold);
