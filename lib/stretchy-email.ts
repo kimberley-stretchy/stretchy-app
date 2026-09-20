@@ -393,6 +393,38 @@ export function buildWaitlistEmail(name: string, city?: string): { subject: stri
   return { subject: "You're on the Stretchy waitlist 🌏", html };
 }
 
+// Remittance advice — payout confirmation to a teacher / GEM / venue / supplier /
+// charity for a specific session. HQ pays via bank transfer; this is the receipt.
+export function buildRemittanceEmail(p: {
+  payeeName: string;
+  role: string;
+  amount: string;      // formatted, e.g. "$120.00"
+  sessionTitle: string;
+  dateStr: string;
+  venue?: string | null;
+  note?: string;
+  forHQ?: boolean;     // the HQ copy summarises rather than addresses the payee
+}): { subject: string; html: string } {
+  const roleLc = p.role.toLowerCase();
+  const html = page("olive", (sc) => `
+    ${label(sc, "Stretchy · Remittance advice")}
+    ${h1(sc, p.forHQ ? "Payout sent 💸" : "You've been paid. 💸")}
+    ${msg(sc, p.forHQ
+      ? `A payout of <strong>${p.amount}</strong> to <strong>${p.payeeName}</strong> (${p.role}) has been recorded and a remittance sent.`
+      : `Hi ${p.payeeName.split(" ")[0] || "there"}, here's your payout from Stretchy for the session below. It's on its way to you via bank transfer.`)}
+    ${box(sc, `${label(sc, "Payment")}
+      <p style="font-size:34px;font-weight:900;color:${sc.text};margin:0 0 8px;letter-spacing:-0.02em;">${p.amount}</p>
+      ${row(sc, `For: <strong>${p.role}</strong>`)}
+      ${row(sc, `Session: <strong>${p.sessionTitle}</strong>`)}
+      ${row(sc, `🗓 ${p.dateStr}`)}
+      ${p.venue ? row(sc, `📍 ${p.venue}`) : ""}`)}
+    ${p.note ? msg(sc, p.note) : ""}
+    ${msg(sc, p.forHQ ? "Filed for your records." : `Any questions about your ${roleLc} payment, just reply to this email.`)}
+    ${signoff(sc, p.forHQ ? "Stretchy HQ" : "Thanks for moving with us")}
+  `, { highlight: false });
+  return { subject: p.forHQ ? `Payout sent: ${p.payeeName} — ${p.amount} (${p.sessionTitle})` : `Your Stretchy payout — ${p.amount}`, html };
+}
+
 // ─── BUILD + SEND ─────────────────────────────────────────────────────────────
 
 export type AttendeeEmailType =

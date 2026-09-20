@@ -31,24 +31,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     (() => {
       const ids = [session.host_id, session.gem_host_id].filter(Boolean) as string[];
       return ids.length
-        ? admin.from("hosts").select("id, name").in("id", ids)
-        : Promise.resolve({ data: [] as { id: string; name: string }[] });
+        ? admin.from("hosts").select("id, name, email").in("id", ids)
+        : Promise.resolve({ data: [] as { id: string; name: string; email: string | null }[] });
     })(),
   ]);
 
-  const hostNameById = new Map((hostRows ?? []).map((h) => [h.id, h.name]));
+  const hostById = new Map((hostRows ?? []).map((h) => [h.id, h]));
   const mats = holds?.length ?? 0;
   const collected = (holds ?? []).reduce((sum, h) => sum + (h.amount_charged_nzd ? h.amount_charged_nzd / 100 : 0), 0);
 
   const costLines: { role: string; name: string; amount: number }[] = Array.isArray(session.cost_lines) ? session.cost_lines : [];
-  const lineItems = costLines.map((l) => ({
-    role: l.role,
-    who:
-      l.role === "Teacher" && session.host_id ? hostNameById.get(session.host_id) ?? l.name :
-      l.role === "GEM" && session.gem_host_id ? hostNameById.get(session.gem_host_id) ?? l.name :
-      l.name,
-    amount: l.amount,
-  }));
+  const lineItems = costLines.map((l) => {
+    const host =
+      l.role === "Teacher" && session.host_id ? hostById.get(session.host_id) :
+      l.role === "GEM" && session.gem_host_id ? hostById.get(session.gem_host_id) : undefined;
+    return {
+      role: l.role,
+      who: host?.name ?? l.name,
+      email: host?.email ?? "",   // prefilled for Teacher/GEM; HQ fills the rest
+      amount: l.amount,
+    };
+  });
   const paidOut = lineItems.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
 
   return NextResponse.json({
