@@ -388,7 +388,7 @@ function BuildAStretchyForm() {
           <Section label="THE ROOM">
             <div style={{ background: "rgba(41,171,226,0.14)", border: `2px solid ${T.ink}`, borderRadius: 16, padding: 18 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 10 }}>
-                <NumberField label="MINIMUM MATS" value={minMats} onChange={(v) => setMinMats(Math.max(1, v))} />
+                <NumberField label="MINIMUM MATS" value={minMats} onChange={(v) => { const m = Math.max(1, v); setMinMats(m); if (m > maxMats) setMaxMats(m); }} />
                 <NumberField label="MAXIMUM MATS" value={maxMats} onChange={(v) => setMaxMats(Math.max(minMats, v))} />
                 <NumberField label="OPENING PRICE CAP" value={openingPriceCap} step={0.01} prefix="$" readOnly />
               </div>
@@ -527,6 +527,14 @@ function RateRow({ label, value, onChange, name, onNameChange }: {
 }
 
 function NumberField({ label, value, onChange, step = 1, prefix, readOnly }: { label: string; value: number; onChange?: (v: number) => void; step?: number; prefix?: string; readOnly?: boolean }) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => { setDraft(String(value)); }, [value]);
+  const commit = () => {
+    const n = Number(draft);
+    if (draft.trim() === "" || Number.isNaN(n)) { setDraft(String(value)); return; }
+    onChange?.(n);
+    setDraft(String(value)); // re-synced by the effect if the parent adjusts it
+  };
   return (
     <div>
       <p style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", color: "rgba(20,17,15,.55)", marginBottom: 5 }}>{label}</p>
@@ -540,8 +548,12 @@ function NumberField({ label, value, onChange, step = 1, prefix, readOnly }: { l
           <input
             type="number"
             step={step}
-            value={value}
-            onChange={(e) => onChange!(Number(e.target.value))}
+            value={draft}
+            // Let people type freely (e.g. clear "20" and type "32") — only
+            // check and tidy the number when they leave the box or press Enter.
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
             style={{ border: "none", outline: "none", background: "transparent", fontSize: 14, fontWeight: 700, width: "100%", fontFamily: T.mono }}
           />
         )}
