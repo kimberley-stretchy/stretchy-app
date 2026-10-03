@@ -5,7 +5,9 @@
 @font-face {
   font-family: 'BN Chubb';
   src: url('/fonts/BN-Chubb.otf') format('opentype');
-  font-weight: normal;
+  /* One weight, mapped to every weight — so bold headings use the real
+     Chubb shapes instead of the browser faking a heavier version. */
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
@@ -55,6 +57,13 @@
 }
 
 @layer components {
+  /* ─── DISPLAY FONT ────────────────────────────────────── */
+  /* Chubb only has one weight, so this doesn't change how it looks — but if
+     Chubb fails to load, the Space Grotesk backup shows bold, not regular. */
+  .font-display {
+    font-weight: 700;
+  }
+
   /* ─── BUTTONS ─────────────────────────────────────────── */
   .btn-primary {
     @apply text-white font-semibold px-6 py-3 rounded-pill
