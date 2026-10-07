@@ -352,7 +352,7 @@ export default function SessionDetailPage() {
             )}
           </p>
           <p className="text-xs leading-relaxed" style={{ color: "rgba(247,240,232,.8)" }}>
-            Pay your own way — coffee &amp; food after. Everyone welcome.
+            {s.social_stretch_note || "Pay your own way — coffee & food after. Everyone welcome."}
           </p>
         </div>
       )}

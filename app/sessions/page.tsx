@@ -32,6 +32,7 @@ type DBSession = {
   state: string;
   social_stretch_venue: string | null;
   description: string | null;
+  teacher_name: string | null;
 };
 
 async function getSessions(): Promise<DBSession[]> {
@@ -42,7 +43,7 @@ async function getSessions(): Promise<DBSession[]> {
 
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, title, movement_type, starts_at, duration_mins, location_name, location_address, cost_base, revenue_target, min_attendees, max_attendees, state, social_stretch_venue, description")
+    .select("id, title, movement_type, starts_at, duration_mins, location_name, location_address, cost_base, revenue_target, min_attendees, max_attendees, state, social_stretch_venue, description, hosts!host_id ( name, email )")
     .in("state", ["open", "confirmed"])
     .eq("is_draft", false)
     .gt("starts_at", new Date().toISOString())
@@ -64,10 +65,15 @@ async function getSessions(): Promise<DBSession[]> {
     holdCounts[h.session_id] = (holdCounts[h.session_id] ?? 0) + (h.quantity ?? 1);
   });
 
-  return sessions.map(s => ({
-    ...s,
-    current_holds: holdCounts[s.id] ?? 0,
-  }));
+  return sessions.map(({ hosts, ...s }) => {
+    const host = hosts as unknown as { name: string | null; email: string | null } | null;
+    return {
+      ...s,
+      current_holds: holdCounts[s.id] ?? 0,
+      // Unassigned sessions sit on the HQ placeholder host — don't show that as the teacher.
+      teacher_name: host?.email?.toLowerCase() === "kimberley@stretchyyoga.co.nz" ? null : host?.name?.trim() || null,
+    };
+  });
 }
 
 export default async function SessionsPage() {

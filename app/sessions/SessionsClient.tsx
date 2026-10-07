@@ -30,6 +30,8 @@ type DBSession = {
   max_attendees: number;
   current_holds: number;
   state: string;
+  description?: string | null;
+  teacher_name?: string | null;
 };
 
 function getStatus(s: DBSession) {
@@ -74,7 +76,13 @@ function SessionCard({ s }: { s: DBSession }) {
           <span className="font-mono text-xs font-bold px-2.5 py-1.5 rounded-pill" style={{ backgroundColor: typeColor, color: "#fff" }}>{typeLabel}</span>
         </div>
         <h2 className="font-display font-bold text-ink leading-tight mb-1" style={{ fontSize: "22px" }}>{s.title}</h2>
-        <p className="text-sm text-muted mb-3">{s.location_name}</p>
+        <p className="text-sm text-muted mb-1">{s.location_name}</p>
+        {s.teacher_name && (
+          <p className="text-sm text-ink mb-3">
+            🧘 {s.description ? `${s.description} with ` : "With "}<strong>{s.teacher_name}</strong>
+          </p>
+        )}
+        {!s.teacher_name && <div className="mb-2" />}
         <div className="mb-3">
           <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={typeColor} />
         </div>
