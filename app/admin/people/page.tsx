@@ -38,7 +38,7 @@ function PendingContent() {
   }
 
   const people = data ? (tab === "gems" ? data.gems : data.teachers) : [];
-  const pending = people.filter((p) => p.status === "AWAITING REVIEW");
+  const pending = people.filter((p) => p.status === "AWAITING REVIEW" || p.status === "APPLIED");
 
   return (
     <HQShell>

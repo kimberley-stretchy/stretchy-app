@@ -9,7 +9,10 @@ const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
   BOOKED: { bg: "rgba(20,17,15,0.10)", fg: "#14110F" },
   CONFIRMED: { bg: "rgba(41,171,226,0.18)", fg: "#0000FF" },
   NEW: { bg: "rgba(233,103,9,0.18)", fg: "#E96709" },
+  APPLIED: { bg: "rgba(144,47,138,0.15)", fg: "#902F8A" },
 };
+
+const LOGIN_URL = "https://www.stretchyyoga.co.nz/host/login";
 
 const INK = "#14110F";
 
@@ -105,7 +108,7 @@ export default function PeopleSection({
                       </p>
                     )}
                     {p.bio && (
-                      <p style={{ fontSize: 13, color: "rgba(20,17,15,.75)", margin: 0, lineHeight: 1.5 }}>{p.bio}</p>
+                      <p style={{ fontSize: 13, color: "rgba(20,17,15,.75)", margin: 0, lineHeight: 1.5, whiteSpace: "pre-line" }}>{p.bio}</p>
                     )}
                     {p.practiceTypes && p.practiceTypes.length > 0 && (
                       <p style={{ fontSize: 12, color: "rgba(20,17,15,.55)", margin: 0 }}>
@@ -156,6 +159,22 @@ export default function PeopleSection({
                           );
                         })}
                       </div>
+                    )}
+                  </div>
+                )}
+
+                {p.status === "APPLIED" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <p style={{ fontSize: 12, color: "rgba(20,17,15,.65)", margin: 0, lineHeight: 1.45 }}>
+                      Applied through the form. They need to create their login at /host/login before you can approve them — they&rsquo;ll then show here as Awaiting review.
+                    </p>
+                    {p.email && (
+                      <a
+                        href={`mailto:${p.email}?subject=${encodeURIComponent("Your Stretchy login")}&body=${encodeURIComponent(`Kia ora ${p.name.split(" ")[0]},\n\nThanks for applying! Next step: create your Stretchy login here — ${LOGIN_URL}\n\nSign in with Google or your email, fill in your profile, and I'll approve you from there.\n\nNgā mihi,\nKimberley`)}`}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 34, borderRadius: 999, background: INK, color: "#F7F0E8", fontSize: 12, fontWeight: 700, textDecoration: "none" }}
+                      >
+                        Email them the login link
+                      </a>
                     )}
                   </div>
                 )}

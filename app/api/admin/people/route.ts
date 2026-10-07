@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const admin = getAdmin();
 
-  const [{ data: hosts }, { data: venues }, { data: upcomingSessions }] = await Promise.all([
+  const [{ data: hosts }, { data: venues }, { data: upcomingSessions }, { data: applications }] = await Promise.all([
     admin.from("hosts").select("id, name, email, roles, practice_types, neighbourhood, neighbourhoods, vetting_status, sessions_hosted, application_notes, bio, avatar_url"),
     admin.from("interest_submissions").select("id, name, email, fields, type, created_at").in("type", ["venue", "social_stretch"]),
     admin
@@ -27,6 +27,13 @@ export async function GET(request: NextRequest) {
       .neq("state", "cancelled")
       .gt("starts_at", new Date().toISOString())
       .order("starts_at", { ascending: true }),
+    // "Teach a Stretchy" / "Become a GEM" form entries — people who've
+    // applied but haven't created a host login yet.
+    admin
+      .from("interest_submissions")
+      .select("id, name, email, fields, type, created_at")
+      .in("type", ["teacher", "gem"])
+      .order("created_at", { ascending: false }),
   ]);
 
   const areasOf = (h: { neighbourhood: string; neighbourhoods?: string[] | null }) =>
@@ -72,6 +79,50 @@ export async function GET(request: NextRequest) {
       neighbourhoods: h.neighbourhoods && h.neighbourhoods.length > 0 ? h.neighbourhoods : [h.neighbourhood].filter(Boolean),
       activeSessions: activeSessionsFor(h.id),
     }));
+
+  // Form applicants show as APPLIED until they sign up at /host/login — then
+  // they have a hosts row and appear above as AWAITING REVIEW instead.
+  // Newest entry per email wins, so double-submits show once.
+  const hostEmails = new Set((hosts ?? []).map((h) => h.email?.trim().toLowerCase()).filter(Boolean));
+  const seen = new Set<string>();
+  const applicantsFor = (type: "teacher" | "gem") =>
+    (applications ?? [])
+      .filter((a) => a.type === type)
+      .filter((a) => {
+        const key = `${type}:${a.email?.trim().toLowerCase()}`;
+        if (!a.email || hostEmails.has(a.email.trim().toLowerCase()) || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((a) => {
+        const f = (a.fields ?? {}) as Record<string, unknown>;
+        const list = (v: unknown) => (Array.isArray(v) ? v.filter(Boolean).map(String) : typeof v === "string" && v ? [v] : []);
+        const areas = type === "teacher" ? list(f.location) : list(f.where);
+        const styles = type === "teacher" ? list(f.styles) : [];
+        const when = type === "teacher" ? [...list(f.days), ...list(f.times)] : list(f.when);
+        const extra = [
+          type === "teacher" && f.qualifications ? `Qualifications: ${f.qualifications}` : null,
+          type === "gem" && f.why ? `Why: ${f.why}` : null,
+          when.length ? `Available: ${when.join(", ")}` : null,
+          f.firstAid ? `First aid: ${f.firstAid === true ? "yes" : f.firstAid}` : null,
+        ].filter(Boolean).join("\n");
+        return {
+          id: `application:${a.id}`,
+          name: a.name ?? a.email,
+          email: a.email,
+          meta: [...areas, ...styles].join(", "),
+          status: "APPLIED",
+          note: null,
+          bio: extra || null,
+          avatarUrl: null,
+          practiceTypes: styles,
+          neighbourhoods: areas,
+          activeSessions: [] as ReturnType<typeof activeSessionsFor>,
+        };
+      });
+
+  teachers.push(...applicantsFor("teacher"));
+  gems.push(...applicantsFor("gem"));
 
   const venueRows = (venues ?? []).map((v) => ({
     id: v.id,
