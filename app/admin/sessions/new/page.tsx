@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import HQShell from "@/components/hq/HQShell";
 import { calculatePrice } from "@/lib/pricing";
+import { nzLocalToISO } from "@/lib/nzTime";
 
 function nzDateParts(iso: string) {
   const d = new Date(iso);
@@ -170,7 +171,7 @@ function BuildAStretchyForm() {
     setError(null);
     setSaving(mode);
     try {
-      const startsAt = `${date}T${time}:00+12:00`;
+      const startsAt = nzLocalToISO(date, time);
       const common = {
         title,
         description: movementStyle,

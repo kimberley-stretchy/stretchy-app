@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireHost } from "@/lib/hostAuth";
 import type { MovementType } from "@/types";
+import { nzLocalToISO } from "@/lib/nzTime";
 
 export interface CreateSessionInput {
   sessionType: MovementType;
@@ -48,7 +49,7 @@ export async function createSession(
   const { host } = gate;
 
   // ── 2. Build the starts_at / ends_at timestamps ────────────────────────────
-  const startsAt = new Date(`${input.date}T${input.time}:00`);
+  const startsAt = new Date(nzLocalToISO(input.date, input.time));
   const endsAt = new Date(startsAt.getTime() + input.durationMinutes * 60 * 1000);
 
   // ── 3. Insert session ──────────────────────────────────────────────────────
