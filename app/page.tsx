@@ -79,16 +79,23 @@ async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify
   };
 }
 
-// $10 from every session that actually ran goes into the Stretchy Fund. Counting
-// "locked" + "completed" (not just "confirmed") because that's the same bar the
-// admin Money screen uses for "this session is real, settle it" — see app/admin/money/page.tsx.
+// The Stretchy donation: $10 for every session that actually ran this
+// Stretchy Summer Season, going to Cancer Support NZ at the end of it.
+// "Ran" = went ahead (locked, or completed afterwards) and its start time has
+// passed — so it ticks up by itself after each session, and September's test
+// sessions (before the season) don't count.
+const DONATION_SEASON_START = "2026-10-01T00:00:00+13:00";
+const DONATION_PER_SESSION = 10;
+
 async function getFundTotal(): Promise<number> {
   const admin = getAdmin();
   const { count } = await admin
     .from("sessions")
     .select("id", { count: "exact", head: true })
-    .in("state", ["locked", "completed"]);
-  return (count ?? 0) * 10;
+    .in("state", ["locked", "completed"])
+    .gte("starts_at", DONATION_SEASON_START)
+    .lte("starts_at", new Date().toISOString());
+  return (count ?? 0) * DONATION_PER_SESSION;
 }
 
 async function getTopSuggestions(): Promise<MarketingSuggestion[]> {

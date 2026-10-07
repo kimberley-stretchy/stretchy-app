@@ -42,7 +42,7 @@ export default function TermsPage() {
 
           <div>
             <h2 className="font-bold mb-2">Where your money goes</h2>
-            <p className="text-muted">Every Stretchy price is built from real costs — your teacher, your GEM (the person who makes sure everything runs smoothly on the day), the space we&rsquo;ve hired, a contribution to Stretchy&rsquo;s community fund (currently supporting the Yoga in Prisons Trust), and what it takes to run the tech, the platform, and the team behind it all. Nothing hidden, nothing padded.</p>
+            <p className="text-muted">Every Stretchy price is built from real costs — your teacher, your GEM (the person who makes sure everything runs smoothly on the day), the space we&rsquo;ve hired, a $10 Stretchy donation (currently going to Cancer Support NZ), and what it takes to run the tech, the platform, and the team behind it all. Nothing hidden, nothing padded.</p>
           </div>
 
           <div>
