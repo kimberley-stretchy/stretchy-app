@@ -46,7 +46,7 @@ export type QuickAdd = { name: string; email: string; roles: string[]; neighbour
 
 export default function PeopleSection({
   title, people, applyHref, applyLabel, onDecide, busyId, onCancelSession, onFindCover, sessionActionId,
-  onApproveApplicant, onQuickAdd, defaultRole,
+  onApproveApplicant, onQuickAdd, defaultRole, onDelete,
 }: {
   title: string; people: Person[]; applyHref: string; applyLabel: string;
   onDecide?: (hostId: string, status: "approved" | "declined") => void; busyId?: string | null;
@@ -58,6 +58,7 @@ export default function PeopleSection({
   // HQ adds someone directly. Resolves to an error message, or null on success.
   onQuickAdd?: (data: QuickAdd) => Promise<string | null>;
   defaultRole?: "teacher" | "gem";
+  onDelete?: (person: Person) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const emptyForm: QuickAdd = { name: "", email: "", roles: [defaultRole ?? "teacher"], neighbourhoods: "", practiceTypes: "" };
@@ -100,7 +101,7 @@ export default function PeopleSection({
             const isPending = p.status === "AWAITING REVIEW" && !!onDecide;
             const busy = busyId === p.id;
             const expanded = expandedId === p.id;
-            const hasDetail = !!(p.bio || p.email || (p.practiceTypes && p.practiceTypes.length) || (p.neighbourhoods && p.neighbourhoods.length) || (p.activeSessions && p.activeSessions.length));
+            const hasDetail = !!onDelete || !!(p.bio || p.email || (p.practiceTypes && p.practiceTypes.length) || (p.neighbourhoods && p.neighbourhoods.length) || (p.activeSessions && p.activeSessions.length));
             return (
               <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 10, background: "#fff", border: `2px solid ${INK}`, borderRadius: 14, padding: "10px 14px" }}>
                 <div
@@ -186,6 +187,15 @@ export default function PeopleSection({
                           );
                         })}
                       </div>
+                    )}
+                    {onDelete && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(p); }}
+                        disabled={busy}
+                        style={{ alignSelf: "flex-start", marginTop: 4, background: "transparent", border: "none", padding: 0, cursor: "pointer", color: "#C6362E", fontSize: 12, fontWeight: 700, textDecoration: "underline", opacity: busy ? 0.6 : 1 }}
+                      >
+                        Delete {p.name.split(" ")[0]} from Stretchy
+                      </button>
                     )}
                   </div>
                 )}

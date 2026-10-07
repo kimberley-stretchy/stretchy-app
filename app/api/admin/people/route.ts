@@ -246,3 +246,65 @@ export async function POST(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, hostId: created.id });
 }
+
+// DELETE /api/admin/people?id=… — remove a teacher/GEM from HQ.
+// "application:<id>" removes that person's form applications (every entry
+// for that email + role, so double-submits go too). A host id deletes the
+// host row — but not if they're on any session, rating, feedback or cover
+// request, since deleting would break those records. Their login (if any)
+// isn't touched; they'd just have no host profile.
+export async function DELETE(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
+  const id = request.nextUrl.searchParams.get("id") ?? "";
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  const admin = getAdmin();
+
+  if (id.startsWith("application:")) {
+    const { data: app } = await admin
+      .from("interest_submissions")
+      .select("email, type")
+      .eq("id", id.slice("application:".length))
+      .single();
+    if (!app) return NextResponse.json({ error: "Already removed." }, { status: 404 });
+    const { error } = await admin
+      .from("interest_submissions")
+      .delete()
+      .eq("type", app.type)
+      .ilike("email", app.email);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  const { data: host } = await admin.from("hosts").select("id, email").eq("id", id).single();
+  if (!host) return NextResponse.json({ error: "Already removed." }, { status: 404 });
+  if (host.email?.toLowerCase() === "kimberley@stretchyyoga.co.nz") {
+    return NextResponse.json({ error: "That's the HQ account — it can't be deleted." }, { status: 400 });
+  }
+
+  const { count } = await admin
+    .from("sessions")
+    .select("id", { count: "exact", head: true })
+    .or(`host_id.eq.${id},gem_host_id.eq.${id}`);
+  if (count) {
+    return NextResponse.json(
+      { error: `They're on ${count} session${count === 1 ? "" : "s"} (including past ones). Swap them off those sessions first — or leave them in so the history stays intact.` },
+      { status: 409 }
+    );
+  }
+
+  const { error } = await admin.from("hosts").delete().eq("id", id);
+  if (error) {
+    // FK from ratings / feedback / cover requests.
+    if (error.code === "23503") {
+      return NextResponse.json({ error: "They have ratings, feedback or cover requests on record, so they can't be deleted without losing that history." }, { status: 409 });
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  // Otherwise their old form application would reappear as APPLIED.
+  if (host.email) {
+    await admin.from("interest_submissions").delete().in("type", ["teacher", "gem"]).ilike("email", host.email);
+  }
+  return NextResponse.json({ ok: true });
+}

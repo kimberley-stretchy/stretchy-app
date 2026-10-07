@@ -143,7 +143,7 @@ function BuildAStretchyForm() {
     () => [
       { role: "Teacher", name: teacherName || "Teacher (unassigned)", amount: teacherRate },
       { role: "Venue", name: venueName || "Venue", amount: venueRate },
-      { role: "GEM", name: gemName || "GEM (unassigned)", amount: gemRate },
+      { role: "GEM", name: gemName || "GEM to come", amount: gemRate },
       { role: "Charity", name: charityName || "Charity", amount: charityRate },
       ...extraLines.map((l) => ({ role: "Other", name: l.name || "Cost line", amount: l.amount })),
     ],
@@ -313,7 +313,8 @@ function BuildAStretchyForm() {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <Pill value={socialVenue} onChange={setSocialVenue} placeholder="Venue · style" borderColor={T.orange} />
                 <select value={gemId} onChange={(e) => setGemId(e.target.value)} style={{ ...pillStyle, borderColor: T.orange }}>
-                  <option value="">Pick a GEM…</option>
+                  {/* No GEM yet — saved with no gem_host_id; assign one later by editing. */}
+                  <option value="">GEM to come</option>
                   {gems.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                 </select>
                 <Pill value={socialNote} onChange={setSocialNote} placeholder="Distance · who pays" borderColor={T.orange} />

@@ -219,12 +219,39 @@ export async function PATCH(request: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "Missing session id" }, { status: 400 });
 
-  const { error } = await supabase
+  const { data: before } = await supabase.from("sessions").select("host_id, gem_host_id").eq("id", id).single();
+
+  const { data: after, error } = await supabase
     .from("sessions")
     .update(updates)
-    .eq("id", id);
+    .eq("id", id)
+    .select("title, starts_at, ends_at, location_name, location_address, movement_type, social_stretch_venue, venue_instagram, social_venue_instagram, host_id, gem_host_id, is_draft, state")
+    .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Someone newly put on a live session (e.g. "GEM to come" → a named GEM)
+  // gets the same "you're scheduled" email as on create. Drafts stay quiet.
+  if (after && before && !after.is_draft && after.state !== "cancelled") {
+    const sessionForNotify = {
+      title: after.title,
+      startsAt: after.starts_at,
+      endsAt: after.ends_at,
+      locationName: after.location_name,
+      locationAddress: after.location_address,
+      style: movementLabel(after.movement_type),
+      socialStretchVenue: after.social_stretch_venue || null,
+      venueHandle: after.venue_instagram || null,
+      socialVenueHandle: after.social_venue_instagram || null,
+    };
+    if (after.gem_host_id && after.gem_host_id !== before.gem_host_id) {
+      notifyHostScheduled({ hostId: after.gem_host_id, role: "gem", session: sessionForNotify }).catch((e) => console.error("GEM notify error:", e));
+    }
+    // Only when a real teacher was picked — never the HQ placeholder host.
+    if (updates.host_id && after.host_id !== before.host_id) {
+      notifyHostScheduled({ hostId: after.host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher notify error:", e));
+    }
+  }
 
   return NextResponse.json({ ok: true });
 }

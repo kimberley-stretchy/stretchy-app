@@ -33,6 +33,18 @@ function ProfilesContent() {
     return err;
   }
 
+  async function deletePerson(person: Person) {
+    if (!confirm(`Delete ${person.name} from Stretchy? This can't be undone.`)) return;
+    setBusyApplicant(person.id);
+    const res = await fetch(`/api/admin/people?id=${encodeURIComponent(person.id)}`, { method: "DELETE" }).catch(() => null);
+    setBusyApplicant(null);
+    if (!res || !res.ok) {
+      const d = res ? await res.json().catch(() => ({})) : {};
+      alert(d.error ?? "Couldn't delete them — try again.");
+    }
+    load();
+  }
+
   async function approveApplicant(personId: string) {
     setBusyApplicant(personId);
     const err = await addPersonToHQ({ applicationId: personId.replace(/^application:/, "") });
@@ -87,6 +99,7 @@ function ProfilesContent() {
               applyLabel={tab === "gems" ? "Add a GEM" : "Add a teacher"}
               onQuickAdd={quickAdd}
               onApproveApplicant={approveApplicant}
+              onDelete={deletePerson}
               busyId={busyApplicant}
               defaultRole={tab === "gems" ? "gem" : "teacher"}
               onCancelSession={cancelSession}
