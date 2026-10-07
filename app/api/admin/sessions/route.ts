@@ -188,6 +188,7 @@ export async function POST(request: NextRequest) {
   }
 
   const sessionForNotify = {
+    id: data.id,
     title,
     startsAt: starts_at,
     endsAt: endsDate.toISOString(),
@@ -234,6 +235,7 @@ export async function PATCH(request: NextRequest) {
   // gets the same "you're scheduled" email as on create. Drafts stay quiet.
   if (after && before && !after.is_draft && after.state !== "cancelled") {
     const sessionForNotify = {
+      id,
       title: after.title,
       startsAt: after.starts_at,
       endsAt: after.ends_at,

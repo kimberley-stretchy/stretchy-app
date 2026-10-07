@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
-import { googleCalendarUrl, downloadIcs } from "@/lib/calendar";
+import { googleCalendarUrl, downloadIcs, sessionCalendarEvent } from "@/lib/calendar";
 import { createClient } from "@/lib/supabase/client";
 import { calculatePrice } from "@/lib/pricing";
 
@@ -25,6 +25,10 @@ type Session = {
   state: string;
   social_stretch_venue: string | null;
   social_stretch_note: string | null;
+  description?: string | null;
+  what_to_bring?: string[] | null;
+  teacherName?: string | null;
+  gemName?: string | null;
   my_hold_quantity?: number;
 };
 
@@ -336,26 +340,14 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
         {/* Calendar buttons */}
         <div className="flex gap-3">
           <a
-            href={googleCalendarUrl({
-              title: `Stretchy — ${session.title}`,
-              startISO: session.starts_at,
-              endISO: session.ends_at,
-              location: session.location_address || session.location_name,
-              description: `Your Stretchy session at ${session.location_name}.${session.social_stretch_venue ? ` Social Stretch after at ${session.social_stretch_venue}.` : ""}`,
-            })}
+            href={googleCalendarUrl(sessionCalendarEvent(session, { teacherName: session.teacherName, gemName: session.gemName }))}
             target="_blank" rel="noopener noreferrer"
             className="flex-1 text-center font-mono text-xs font-bold text-ink rounded-pill border border-border py-3 transition-all hover:bg-sand-dark active:scale-[0.98]"
           >
             + Google Cal
           </a>
           <button
-            onClick={() => downloadIcs({
-              title: `Stretchy — ${session.title}`,
-              startISO: session.starts_at,
-              endISO: session.ends_at,
-              location: session.location_address || session.location_name,
-              description: `Your Stretchy session at ${session.location_name}.`,
-            })}
+            onClick={() => downloadIcs(sessionCalendarEvent(session, { teacherName: session.teacherName, gemName: session.gemName, uidSuffix: "attendee" }))}
             className="flex-1 font-mono text-xs font-bold text-ink rounded-pill border border-border py-3 transition-all hover:bg-sand-dark active:scale-[0.98]"
           >
             + Apple Cal

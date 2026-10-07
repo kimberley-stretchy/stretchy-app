@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { buildIcsContent, googleCalendarUrl } from "@/lib/calendar";
+import { buildIcsContent, googleCalendarUrl, sessionCalendarEvent, type CalendarEvent } from "@/lib/calendar";
+import { buildSessionEmailExtras } from "@/lib/sessionEmailContext";
 import { sendPushToUser } from "@/lib/push-server";
 import { REPLY_TO, page, box, label, button, h1, hey, msg, row } from "@/lib/stretchy-email";
 import { logEmail } from "@/lib/emailLog";
@@ -31,6 +32,7 @@ export async function notifyHostScheduled({
   hostId: string;
   role: "teacher" | "gem";
   session: {
+    id?: string;
     title: string;
     startsAt: string;
     endsAt: string;
@@ -52,13 +54,28 @@ export async function notifyHostScheduled({
     const dateStr = fmtDate(session.startsAt);
     const location = session.locationAddress || session.locationName;
 
-    const calendarEvent = {
+    // Full invite (area, address, yoga time, teacher, GEM, notes) when we
+    // know the session; otherwise the basic version.
+    let calendarEvent: CalendarEvent = {
       title: session.title,
       startISO: session.startsAt,
       endISO: session.endsAt,
       location,
       description: `You're ${roleLabel} this one for Stretchy.`,
     };
+    const sessionId = session.id;
+    if (sessionId) {
+      const { data: full } = await admin
+        .from("sessions")
+        .select("id, title, starts_at, ends_at, location_name, location_address, description, getting_there, what_to_bring, social_stretch_venue, social_stretch_note, host_id, gem_host_id, movement_type, duration_mins, venue_instagram, social_venue_instagram")
+        .eq("id", sessionId)
+        .single();
+      if (full) {
+        const extras = await buildSessionEmailExtras(admin, full);
+        const ev = sessionCalendarEvent(full, { teacherName: extras.teacherName, gemName: extras.gemName, uidSuffix: role });
+        calendarEvent = { ...ev, description: `You're ${roleLabel} this one.\n${ev.description}` };
+      }
+    }
     const calUrl = googleCalendarUrl(calendarEvent);
     const icsContent = buildIcsContent(calendarEvent);
 
