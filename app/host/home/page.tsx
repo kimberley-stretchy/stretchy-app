@@ -7,7 +7,12 @@ import SMark from "@/components/SMark";
 import { createClient } from "@/lib/supabase/client";
 
 type Host = { id: string; name: string; roles: string[]; neighbourhood: string; vetting_status: string };
-type MySession = { id: string; title: string; movement_type: string; starts_at: string; location_name: string; host_id: string; gem_host_id: string | null };
+type MySession = {
+  id: string; title: string; style: string | null; startsAt: string; endsAt: string; locationName: string;
+  socialStretchVenue: string | null; state: string; asTeacher: boolean; asGem: boolean;
+  teacherName: string | null; gemName: string | null;
+  held: number; min: number; max: number; priceNow: number; priceFull: number;
+};
 type SubRequest = {
   id: string; role: "teacher" | "gem"; created_at: string;
   sessions: { title: string; starts_at: string; location_name: string } | null;
@@ -57,16 +62,12 @@ export default function HostHomePage() {
         }
       }
 
-      const [{ data: mine }, reqRes] = await Promise.all([
-        supabase
-          .from("sessions")
-          .select("id, title, movement_type, starts_at, location_name, host_id, gem_host_id")
-          .or(`host_id.eq.${hostData.host.id},gem_host_id.eq.${hostData.host.id}`)
-          .gt("starts_at", new Date().toISOString())
-          .order("starts_at", { ascending: true }),
+      const [mineRes, reqRes] = await Promise.all([
+        fetch("/api/host/my-sessions", { headers: { Authorization: `Bearer ${session.access_token}` } }),
         fetch("/api/host/substitute-requests", { headers: { Authorization: `Bearer ${session.access_token}` } }),
       ]);
-      setSessions(mine ?? []);
+      const mine = await mineRes.json().catch(() => ({}));
+      setSessions(mine.sessions ?? []);
       const reqData = await reqRes.json();
       setOpenRequests(reqData.requests ?? []);
       setLoading(false);
@@ -163,18 +164,41 @@ export default function HostHomePage() {
           ) : (
             <div className="flex flex-col gap-2.5">
               {sessions.map((s) => {
-                const asTeacher = s.host_id === host.id;
-                const asGem = s.gem_host_id === host.id;
+                const { asTeacher, asGem } = s;
+                const going = s.held >= s.min;
+                const when = new Date(s.startsAt);
+                const day = when.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" });
+                const t = (iso: string) => new Date(iso).toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).replace(/\s/g, "").toLowerCase();
                 return (
                   <div key={s.id} className="border-2 border-ink rounded-2xl p-4 bg-white">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       {asTeacher && <span className="font-mono text-[9px] font-extrabold px-2 py-1 rounded-pill" style={{ background: "#0000FF", color: "#F7F0E8" }}>TEACHING</span>}
                       {asGem && <span className="font-mono text-[9px] font-extrabold px-2 py-1 rounded-pill" style={{ background: "#716F39", color: "#F7F0E8" }}>GEM</span>}
+                      {going && <span className="font-mono text-[9px] font-extrabold px-2 py-1 rounded-pill" style={{ background: "#FCBB16", color: "#14110F" }}>GOING AHEAD</span>}
                     </div>
                     <div className="font-display text-lg leading-none">{s.title}</div>
                     <p className="text-xs text-ink/65 mt-1.5">
-                      {new Date(s.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" })} · {s.location_name}
+                      {day} · {t(s.startsAt)}–{t(s.endsAt)} · {s.locationName}
                     </p>
+                    <div className="mt-3 text-xs text-ink/75 flex flex-col gap-1">
+                      {!asTeacher && <p>🧘 Teacher: <strong>{s.teacherName ?? "To be confirmed"}</strong></p>}
+                      {!asGem && <p>✨ GEM: <strong>{s.gemName ?? "GEM to come"}</strong></p>}
+                      {s.socialStretchVenue && <p>🌞 Social Stretch: {s.socialStretchVenue}</p>}
+                    </div>
+                    <div className="mt-3 rounded-xl p-3" style={{ background: "#F7F0E8" }}>
+                      <div className="flex items-baseline justify-between">
+                        <span className="font-mono text-[10px] font-extrabold tracking-[0.08em]">
+                          {s.held} BOOKED · {going ? `${s.max - s.held} SPOTS LEFT` : `${s.min - s.held} MORE TO GO AHEAD`}
+                        </span>
+                        <span className="font-mono text-[10px] text-ink/55">MIN {s.min} · MAX {s.max}</span>
+                      </div>
+                      <div className="h-2 rounded-full mt-2 overflow-hidden" style={{ background: "rgba(20,17,15,.1)" }}>
+                        <div className="h-full rounded-full" style={{ width: `${Math.min(100, (s.held / s.max) * 100)}%`, background: going ? "#716F39" : "#E96709" }} />
+                      </div>
+                      <p className="text-xs text-ink/70 mt-2">
+                        Price each now <strong>${s.priceNow.toFixed(2)}</strong> · full room <strong>${s.priceFull.toFixed(2)}</strong>
+                      </p>
+                    </div>
                     <div className="flex gap-2 mt-3">
                       {asTeacher && (
                         <Link

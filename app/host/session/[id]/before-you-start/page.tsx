@@ -171,7 +171,7 @@ export default function BeforeYouStartPage() {
             </div>
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm text-ink/55">GEM on the day</span>
-              <span className="font-mono text-sm font-bold">{session.gemName ?? "—"}</span>
+              <span className="font-mono text-sm font-bold">{session.gemName ?? "GEM to come"}</span>
             </div>
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm text-ink/55">Social Stretch</span>
