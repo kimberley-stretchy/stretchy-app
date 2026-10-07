@@ -3,6 +3,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Resend } from "resend";
+import { claimHostByEmail } from "@/lib/claimHost";
 
 function getAdmin() {
   return createAdminClient(
@@ -35,7 +36,10 @@ export async function GET(request: NextRequest) {
   const user = await getUser(request);
   if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
   const admin = getAdmin();
-  const { data } = await admin.from("hosts").select("*").eq("auth_user_id", user.id).single();
+  let { data } = await admin.from("hosts").select("*").eq("auth_user_id", user.id).single();
+  if (!data && (await claimHostByEmail(admin, user))) {
+    ({ data } = await admin.from("hosts").select("*").eq("auth_user_id", user.id).single());
+  }
   return NextResponse.json({ host: data ?? null });
 }
 
@@ -52,7 +56,11 @@ export async function PATCH(request: NextRequest) {
   }
 
   const admin = getAdmin();
-  const { data: existing } = await admin.from("hosts").select("id").eq("auth_user_id", user.id).single();
+  let { data: existing } = await admin.from("hosts").select("id").eq("auth_user_id", user.id).single();
+  if (!existing) {
+    const claimedId = await claimHostByEmail(admin, user);
+    if (claimedId) existing = { id: claimedId };
+  }
 
   const neighbourhoodList: string[] = Array.isArray(neighbourhoods) ? neighbourhoods : [];
   const updates: Record<string, unknown> = {

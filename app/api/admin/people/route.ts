@@ -175,3 +175,74 @@ export async function PATCH(request: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+
+// POST /api/admin/people — HQ adds a teacher/GEM directly, already approved,
+// so they can be scheduled straight away. Either from scratch
+// ({ name, email, roles, neighbourhoods?, practiceTypes? }) or by approving a
+// form applicant ({ applicationId }). No login needed yet: the row is linked
+// to their account the first time they sign in with this email
+// (lib/claimHost.ts). If a host with this email already exists, they're
+// approved and given the role instead of being duplicated.
+export async function POST(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
+  const admin = getAdmin();
+  const body = await request.json();
+  const list = (v: unknown) =>
+    (Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : [])
+      .map((x) => String(x).trim())
+      .filter(Boolean);
+
+  let name: string = (body.name ?? "").trim();
+  let email: string = (body.email ?? "").trim().toLowerCase();
+  let roles: string[] = list(body.roles).filter((r) => r === "teacher" || r === "gem");
+  let neighbourhoods = list(body.neighbourhoods);
+  let practiceTypes = list(body.practiceTypes);
+
+  if (body.applicationId) {
+    const { data: app } = await admin
+      .from("interest_submissions")
+      .select("name, email, type, fields")
+      .eq("id", body.applicationId)
+      .single();
+    if (!app) return NextResponse.json({ error: "Application not found" }, { status: 404 });
+    const f = (app.fields ?? {}) as Record<string, unknown>;
+    name = name || (app.name ?? "").trim();
+    email = email || (app.email ?? "").trim().toLowerCase();
+    roles = roles.length ? roles : [app.type];
+    neighbourhoods = neighbourhoods.length ? neighbourhoods : list(app.type === "teacher" ? f.location : f.where);
+    practiceTypes = practiceTypes.length ? practiceTypes : app.type === "teacher" ? list(f.styles) : [];
+  }
+
+  if (!name || !/^\S+@\S+\.\S+$/.test(email) || roles.length === 0) {
+    return NextResponse.json({ error: "Name, a valid email and at least one role are needed." }, { status: 400 });
+  }
+
+  const { data: existing } = await admin.from("hosts").select("id, roles").ilike("email", email).limit(1).maybeSingle();
+  if (existing) {
+    const mergedRoles = Array.from(new Set([...(existing.roles ?? []), ...roles]));
+    const { error } = await admin
+      .from("hosts")
+      .update({ roles: mergedRoles, vetting_status: "approved" })
+      .eq("id", existing.id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true, hostId: existing.id, existed: true });
+  }
+
+  const { data: created, error } = await admin
+    .from("hosts")
+    .insert({
+      name,
+      email,
+      roles,
+      neighbourhoods,
+      neighbourhood: neighbourhoods[0] ?? "",
+      practice_types: practiceTypes,
+      vetting_status: "approved",
+    })
+    .select("id")
+    .single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true, hostId: created.id });
+}

@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import HQShell from "@/components/hq/HQShell";
-import PeopleSection, { type Person } from "@/components/hq/PeopleSection";
+import PeopleSection, { type Person, type QuickAdd, addPersonToHQ } from "@/components/hq/PeopleSection";
 
 const T = {
   cream: "#F7F0E8",
@@ -19,12 +19,27 @@ function PendingContent() {
 
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busyApplicant, setBusyApplicant] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   function load() {
     fetch("/api/admin/people").then((r) => r.json()).then((d) => { setData(d); setLoading(false); }).catch(() => setLoading(false));
   }
   useEffect(load, []);
+
+  async function quickAdd(form: QuickAdd) {
+    const err = await addPersonToHQ(form);
+    if (!err) load();
+    return err;
+  }
+
+  async function approveApplicant(personId: string) {
+    setBusyApplicant(personId);
+    const err = await addPersonToHQ({ applicationId: personId.replace(/^application:/, "") });
+    setBusyApplicant(null);
+    if (err) alert(err);
+    load();
+  }
 
   async function decide(hostId: string, vettingStatus: "approved" | "declined") {
     setBusyId(hostId);
@@ -63,8 +78,11 @@ function PendingContent() {
                   : `/host/apply?from=${encodeURIComponent("/admin/people?tab=teachers")}`
               }
               applyLabel={tab === "gems" ? "Add a GEM" : "Add a teacher"}
+              onQuickAdd={quickAdd}
+              onApproveApplicant={approveApplicant}
+              defaultRole={tab === "gems" ? "gem" : "teacher"}
               onDecide={decide}
-              busyId={busyId}
+              busyId={busyId ?? busyApplicant}
             />
           )}
         </div>

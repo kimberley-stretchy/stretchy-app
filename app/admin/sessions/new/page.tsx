@@ -27,7 +27,7 @@ const MOVEMENT_TYPES = ["yoga", "pilates", "breath", "sound", "flow", "run", "hi
 const CURRENCIES = ["NZD", "AUD", "GBP", "USD"];
 const REPEAT_OPTIONS = ["Daily", "Weekly", "Fortnightly", "Monthly", "Quarterly"];
 
-type Person = { id: string; name: string };
+type Person = { id: string; name: string; status?: string };
 
 export default function BuildAStretchyPage() {
   return (
@@ -50,7 +50,7 @@ function BuildAStretchyForm() {
   const [loadingDuplicate, setLoadingDuplicate] = useState(!!loadId);
 
   useEffect(() => {
-    fetch("/api/admin/people").then((r) => r.json()).then((d) => { setTeachers(d.teachers ?? []); setGems(d.gems ?? []); }).catch(() => {});
+    fetch("/api/admin/people").then((r) => r.json()).then((d) => { setTeachers((d.teachers ?? []).filter((t: Person) => t.status !== "APPLIED")); setGems((d.gems ?? []).filter((g: Person) => g.status !== "APPLIED")); }).catch(() => {});
   }, []);
 
   const [neighbourhood, setNeighbourhood] = useState("Herne Bay");

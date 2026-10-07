@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import HQShell from "@/components/hq/HQShell";
-import PeopleSection, { type Person } from "@/components/hq/PeopleSection";
+import PeopleSection, { type Person, type QuickAdd, addPersonToHQ } from "@/components/hq/PeopleSection";
 
 const T = {
   cream: "#F7F0E8",
@@ -19,12 +19,27 @@ function ProfilesContent() {
 
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busyApplicant, setBusyApplicant] = useState<string | null>(null);
   const [sessionActionId, setSessionActionId] = useState<string | null>(null);
 
   function load() {
     fetch("/api/admin/people").then((r) => r.json()).then((d) => { setData(d); setLoading(false); }).catch(() => setLoading(false));
   }
   useEffect(load, []);
+
+  async function quickAdd(form: QuickAdd) {
+    const err = await addPersonToHQ(form);
+    if (!err) load();
+    return err;
+  }
+
+  async function approveApplicant(personId: string) {
+    setBusyApplicant(personId);
+    const err = await addPersonToHQ({ applicationId: personId.replace(/^application:/, "") });
+    setBusyApplicant(null);
+    if (err) alert(err);
+    load();
+  }
 
   async function cancelSession(sessionId: string) {
     if (!confirm("Cancel this session? Attendees will be refunded automatically.")) return;
@@ -70,6 +85,10 @@ function ProfilesContent() {
                   : `/host/apply?from=${encodeURIComponent("/admin/profiles?tab=teachers")}`
               }
               applyLabel={tab === "gems" ? "Add a GEM" : "Add a teacher"}
+              onQuickAdd={quickAdd}
+              onApproveApplicant={approveApplicant}
+              busyId={busyApplicant}
+              defaultRole={tab === "gems" ? "gem" : "teacher"}
               onCancelSession={cancelSession}
               onFindCover={findCover}
               sessionActionId={sessionActionId}

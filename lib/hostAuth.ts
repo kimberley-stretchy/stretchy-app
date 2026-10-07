@@ -3,6 +3,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { checkMfaStatus } from "@/lib/mfaCheck";
+import { claimHostByEmail } from "@/lib/claimHost";
 
 // Every /api/host/* route that touches attendee-facing or session-changing
 // data must call this first. Teacher/GEM is NOT user_metadata.role — it's a
@@ -35,11 +36,10 @@ export async function requireHost(request?: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-  const { data: host } = await admin
-    .from("hosts")
-    .select("id, name, roles, vetting_status")
-    .eq("auth_user_id", user.id)
-    .single();
+  const findHost = () =>
+    admin.from("hosts").select("id, name, roles, vetting_status").eq("auth_user_id", user.id).single();
+  let { data: host } = await findHost();
+  if (!host && (await claimHostByEmail(admin, user))) ({ data: host } = await findHost());
 
   if (!host) {
     return { error: NextResponse.json({ error: "No host profile found", code: "no_host_profile" }, { status: 400 }) } as const;
