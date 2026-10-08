@@ -38,11 +38,26 @@ export async function POST(request: NextRequest) {
   // marketing Audience (best-effort; no-ops until RESEND_AUDIENCE_ID is set). If
   // they already have an attendee account, flag consent there too so it stays in
   // step with the in-app toggle.
-  await syncMarketingContact({ email: cleanEmail, subscribed: true });
+  const sync = await syncMarketingContact({ email: cleanEmail, subscribed: true });
   await admin
     .from("attendees")
     .update({ marketing_consent: true, marketing_consent_at: new Date().toISOString() })
     .eq("email", cleanEmail);
+
+  // If they didn't make it onto the newsletter list, tell HQ so they can be
+  // added by hand — otherwise they'd sit in Supabase and silently miss every
+  // newsletter (which is how three early-September sign-ups went missing).
+  if (!sync.ok && process.env.RESEND_API_KEY) {
+    console.error("Newsletter signup not synced to Resend:", cleanEmail, sync.error ?? (sync.skipped ? "audience not configured" : ""));
+    new Resend(process.env.RESEND_API_KEY).emails
+      .send({
+        from: "Stretchy <hello@stretchy.social>",
+        to: "kimberley@stretchyyoga.co.nz",
+        subject: `⚠️ Sign-up didn't reach the newsletter list — ${cleanEmail}`,
+        text: `${cleanEmail} signed up for Stretchy Updates and is saved in Supabase, but couldn't be added to the Resend newsletter list${sync.skipped ? " (the newsletter list isn't configured — RESEND_AUDIENCE_ID is missing)" : ""}.\n\nAdd them in Resend → Audiences → Stretchy Newsletter, or they won't get newsletters.\n\nDetails: ${String(sync.error ?? "").slice(0, 500)}`,
+      })
+      .catch((e) => console.error("Newsletter sync-failure alert error:", e));
+  }
 
   // Notify HQ and confirm to the signer — new signups only, fire and forget.
   if (!existing && process.env.RESEND_API_KEY) {

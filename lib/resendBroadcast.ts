@@ -90,3 +90,17 @@ export async function sendTestNewsletter(to: string, subject: string, html: stri
     return { ok: false, error: String(error) };
   }
 }
+
+// The Audience's name, so HQ can show which list a send is going to.
+export async function getAudienceName(audienceId: string): Promise<string | null> {
+  const k = key();
+  if (!k) return null;
+  try {
+    const res = await fetch(`${API}/audiences/${audienceId}`, { headers: { Authorization: `Bearer ${k}` } });
+    if (!res.ok) return null;
+    const body = await res.json().catch(() => ({}));
+    return typeof body?.name === "string" ? body.name : null;
+  } catch {
+    return null;
+  }
+}

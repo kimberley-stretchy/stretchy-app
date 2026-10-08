@@ -43,6 +43,8 @@ const chip = (active: boolean): React.CSSProperties => ({
 export default function NewslettersPage() {
   const [sessions, setSessions] = useState<PickSession[]>([]);
   const [audienceReady, setAudienceReady] = useState(false);
+  const [audienceName, setAudienceName] = useState<string | null>(null);
+  const [subscribed, setSubscribed] = useState<number | null>(null);
   const [subject, setSubject] = useState("What's on at Stretchy 🌞");
   const [scheme, setScheme] = useState("cream");
   const [heading, setHeading] = useState("What's on at Stretchy 🌞");
@@ -56,7 +58,7 @@ export default function NewslettersPage() {
 
   useEffect(() => {
     fetch("/api/admin/newsletters").then((r) => r.json()).then((d) => {
-      setSessions(d.sessions ?? []); setAudienceReady(!!d.audienceReady);
+      setSessions(d.sessions ?? []); setAudienceReady(!!d.audienceReady); setAudienceName(d.audienceName ?? null); setSubscribed(typeof d.subscribed === "number" ? d.subscribed : null);
     });
   }, []);
 
@@ -126,7 +128,10 @@ export default function NewslettersPage() {
     setBusy(null);
   }
   async function sendReal() {
-    if (!confirm("Send this newsletter to everyone opted in? This can't be undone.")) return;
+    const who = subscribed !== null
+      ? `${subscribed} subscriber${subscribed === 1 ? "" : "s"}${audienceName ? ` on the "${audienceName}" list` : ""}`
+      : "everyone opted in";
+    if (!confirm(`Send this newsletter to ${who}? This can't be undone.`)) return;
     await call("send");
   }
   const btn = (bg: string, fg: string): React.CSSProperties => ({
@@ -245,10 +250,17 @@ export default function NewslettersPage() {
             </label>
 
             <p style={{ fontSize: 12, color: "rgba(20,17,15,.55)", margin: "0 0 8px" }}>Send yourself a test to preview it in a real inbox, then send to the Audience.</p>
+            {audienceReady && (
+              <p style={{ fontSize: 13, fontWeight: 700, margin: "0 0 8px" }}>
+                {subscribed !== null
+                  ? <>Sending to <strong>{subscribed} subscriber{subscribed === 1 ? "" : "s"}</strong>{audienceName ? <> on the &ldquo;{audienceName}&rdquo; list</> : null}. Unsubscribed people are skipped automatically.</>
+                  : "Couldn't load the subscriber count right now — check Resend before sending."}
+              </p>
+            )}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
               <input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} style={{ ...field, width: 220, flex: "0 0 auto" }} />
               <button onClick={() => call("test")} disabled={busy !== null} style={btn(T.yellow, T.ink)}>{busy === "test" ? "…" : "SEND TEST"}</button>
-              <button onClick={sendReal} disabled={busy !== null || !audienceReady} style={{ ...btn(T.olive, "#fff"), opacity: audienceReady ? 1 : 0.5 }}>{busy === "send" ? "SENDING…" : "SEND TO AUDIENCE"}</button>
+              <button onClick={sendReal} disabled={busy !== null || !audienceReady} style={{ ...btn(T.olive, "#fff"), opacity: audienceReady ? 1 : 0.5 }}>{busy === "send" ? "SENDING…" : subscribed !== null ? `SEND TO ${subscribed}` : "SEND TO AUDIENCE"}</button>
             </div>
             {msg && <p style={{ fontSize: 13, color: msg.ok ? T.olive : T.red }}>{msg.text}</p>}
           </div>

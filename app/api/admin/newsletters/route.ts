@@ -11,7 +11,7 @@ type ClientBlock =
   | { type: "image"; url?: string; frame?: "black" | "cream" }
   | { type: "divider" }
   | { type: "sessions"; sessionIds?: string[] };
-import { sendBroadcast, sendTestNewsletter, getAudienceCount } from "@/lib/resendBroadcast";
+import { sendBroadcast, sendTestNewsletter, getAudienceCount, getAudienceName } from "@/lib/resendBroadcast";
 import { marketingConfigured } from "@/lib/resendAudience";
 import { notifyHQ } from "@/lib/notifyLifecycle";
 
@@ -75,11 +75,19 @@ export async function GET(request: NextRequest) {
   const authed = await requireAdmin(request);
   if ("error" in authed) return authed.error;
   const admin = getAdmin();
-  const sessions = await upcomingSessions(admin);
+  const audienceId = process.env.RESEND_AUDIENCE_ID;
+  const [sessions, count, audienceName] = await Promise.all([
+    upcomingSessions(admin),
+    audienceId ? getAudienceCount(audienceId) : Promise.resolve(null),
+    audienceId ? getAudienceName(audienceId) : Promise.resolve(null),
+  ]);
   return NextResponse.json({
     sessions,
     marketingConfigured: marketingConfigured(),
-    audienceReady: !!process.env.RESEND_AUDIENCE_ID,
+    audienceReady: !!audienceId,
+    // Who a send would reach — shown in HQ before pressing send.
+    audienceName,
+    subscribed: count?.subscribed ?? null,
   });
 }
 
