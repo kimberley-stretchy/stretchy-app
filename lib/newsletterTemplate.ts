@@ -23,6 +23,8 @@ export type NLBlock =
   | { type: "sessions"; sessions: NewsletterSession[] };
 
 export interface NewsletterInput {
+  // Inbox preview line shown after the subject (a hidden "preheader").
+  previewText?: string;
   subject: string;
   scheme?: string;
   heading?: string;
@@ -65,6 +67,16 @@ function paras(sc: Scheme, text: string): string {
     .join("");
 }
 
+// Hidden first line of the email that inboxes show as the preview text after
+// the subject. Padded with invisible spacers so the inbox doesn't pull in the
+// email's body copy after it.
+function preheader(text?: string): string {
+  const t = (text ?? "").trim();
+  if (!t) return "";
+  const safe = t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">${safe}${"&#847;&zwnj;&nbsp;".repeat(90)}</div>`;
+}
+
 export function buildNewsletter(p: NewsletterInput): { subject: string; html: string } {
   const schemeName = p.scheme && SCHEMES[p.scheme] ? p.scheme : "cream";
 
@@ -85,7 +97,7 @@ export function buildNewsletter(p: NewsletterInput): { subject: string; html: st
   `;
 
   // page() already appends the highlight panel (when highlight !== false) + footer.
-  const html = page(schemeName, inner, { highlight: p.highlight !== false });
+  const html = preheader(p.previewText) + page(schemeName, inner, { highlight: p.highlight !== false });
   return { subject: p.subject, html };
 }
 

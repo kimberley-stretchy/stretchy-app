@@ -101,9 +101,9 @@ export async function POST(request: NextRequest) {
   const admin = getAdmin();
 
   const body = await request.json().catch(() => ({}));
-  const { mode, subject, scheme, heading, blocks, highlight, testEmail, scheduleDate, scheduleTime } = body as {
+  const { mode, subject, previewText, scheme, heading, blocks, highlight, testEmail, scheduleDate, scheduleTime } = body as {
     mode: "preview" | "test" | "send" | "schedule";
-    subject?: string; scheme?: string; heading?: string; highlight?: boolean;
+    subject?: string; previewText?: string; scheme?: string; heading?: string; highlight?: boolean;
     blocks?: ClientBlock[]; testEmail?: string;
     scheduleDate?: string; scheduleTime?: string; // NZ wall time, e.g. "2026-10-20", "07:00"
   };
@@ -143,6 +143,7 @@ export async function POST(request: NextRequest) {
 
   const { subject: subj, html } = buildNewsletter({
     subject: subject ?? "What's on at Stretchy 🌞",
+    previewText,
     scheme,
     heading,
     highlight,

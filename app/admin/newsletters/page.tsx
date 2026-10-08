@@ -49,6 +49,7 @@ export default function NewslettersPage() {
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("07:00");
   const [subject, setSubject] = useState("What's on at Stretchy 🌞");
+  const [previewText, setPreviewText] = useState("");
   const [scheme, setScheme] = useState("cream");
   const [heading, setHeading] = useState("What's on at Stretchy 🌞");
   const [highlight, setHighlight] = useState(true);
@@ -115,7 +116,7 @@ export default function NewslettersPage() {
   }
 
   const payload = (mode: string) => ({
-    mode, subject, scheme, heading: heading || undefined, highlight,
+    mode, subject, previewText: previewText || undefined, scheme, heading: heading || undefined, highlight,
     testEmail,
     scheduleDate, scheduleTime,
     blocks: blocks.map((b) =>
@@ -188,6 +189,18 @@ export default function NewslettersPage() {
 
             <label style={mono10}>SUBJECT</label>
             <input value={subject} onChange={(e) => setSubject(e.target.value)} style={{ ...field, margin: "4px 0 14px" }} />
+
+            <label style={mono10}>PREVIEW TEXT</label>
+            <input
+              value={previewText}
+              onChange={(e) => setPreviewText(e.target.value)}
+              placeholder="The line people see after the subject in their inbox"
+              maxLength={150}
+              style={{ ...field, margin: "4px 0 4px" }}
+            />
+            <p style={{ fontSize: 11, color: "rgba(20,17,15,.5)", margin: "0 0 14px" }}>
+              {previewText.length}/150 · aim for 40–90 characters. Leave blank and inboxes show the start of the email instead.
+            </p>
 
             <label style={mono10}>BRAND COLOUR</label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "6px 0 16px" }}>
