@@ -21,15 +21,27 @@ export default function StretchyFundBand({ total }: { total: number }) {
           <h2 className="font-display text-[34px] lg:text-[50px] leading-[.94] lg:leading-[.92] m-0 max-w-[16ch]">
             Good money, going somewhere good.
           </h2>
+          <p className="m-0 text-[15px] lg:text-[17px] leading-[1.45] font-bold lg:max-w-[520px]">
+            $10 from every Stretchy session goes to Cancer Support NZ.
+          </p>
           <p className="m-0 text-sm lg:text-[15px] leading-[1.55] lg:max-w-[520px]">
-            <strong>$10 from every Stretchy session goes to{" "}
-            <a href={CHARITY_URL} target="_blank" rel="noopener noreferrer" className="underline">Cancer Support NZ</a></strong>{" "}
-            and their movement, meditation, connection and yoga nidra programmes for patients &amp; their wider support networks.{" "}
-            <a href={CHARITY_URL} target="_blank" rel="noopener noreferrer" className="underline font-semibold">You can find out more here.</a>
+            Cancer Support New Zealand is a charity that helps people feel better while living with cancer. They offer free
+            wellbeing classes, online and in communities around Aotearoa, for anyone affected by cancer.
           </p>
-          <p className="m-0 text-[15px] leading-[1.45] lg:leading-[1.55] font-bold">
-            You&rsquo;ll know where this good money goes.
+          <p className="m-0 text-sm lg:text-[15px] leading-[1.55] lg:max-w-[520px]">
+            Whether they&rsquo;ve just been diagnosed, are going through treatment, are adjusting to life afterwards, or are
+            caring for someone they love. Their sessions cover the things that often get overlooked: managing fatigue and side
+            effects, coping with changes to skin and hair, easing stress, and rebuilding confidence. Many people also find
+            something just as valuable: a room, real or online, full of people who understand.
           </p>
+          <p className="m-0 text-sm lg:text-[15px] leading-[1.55] lg:max-w-[520px]">
+            Nobody should have to face cancer alone, and $10 from each session helps them keep that support free for whoever
+            needs it. Many members of the Stretchy community also donate their yoga, meditation and wellbeing professional
+            expertise to the Cancer Support NZ programme. Thank you to them for all they do too ❤️
+          </p>
+          <a href={CHARITY_URL} target="_blank" rel="noopener noreferrer" className="self-start text-[15px] font-bold underline">
+            Find out more →
+          </a>
         </div>
 
         {/* Right: tally + where it goes */}
@@ -51,11 +63,12 @@ export default function StretchyFundBand({ total }: { total: number }) {
             href={CHARITY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="block border-2 border-ink rounded-[20px] p-5 lg:p-6 no-underline text-ink"
+            className="block bg-cream border-2 border-ink rounded-[20px] p-5 lg:p-6 no-underline text-ink"
           >
-            <p className="font-mono text-[10px] font-extrabold tracking-[0.1em] text-ink/50 mb-2">GOING TO</p>
-            <p className="text-base font-bold m-0">Cancer Support NZ</p>
-            <p className="text-sm m-0 mt-1 text-ink/75">Movement, meditation, connection &amp; yoga nidra programmes for patients and their wider support networks.</p>
+            <p className="font-mono text-[10px] font-extrabold tracking-[0.1em] text-ink/50 mb-3">GOING TO</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/partners/cancer-support-nz.svg" alt="Cancer Support New Zealand" width={180} height={72} className="block h-auto w-[160px] lg:w-[180px] mb-3" />
+            <p className="text-sm m-0 text-ink/75">Free wellbeing classes for anyone affected by cancer, online and in communities around Aotearoa.</p>
             <p className="font-mono text-[10px] font-extrabold tracking-[0.06em] mt-3 m-0">FIND OUT MORE →</p>
           </a>
         </div>
