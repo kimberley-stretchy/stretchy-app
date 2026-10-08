@@ -205,7 +205,12 @@ export function highlightBlock(sc: Scheme) {
 
 // Page wrapper: colour edge-to-edge, content, THEN the orange highlight block,
 // THEN the footer (highlight sits above the footer).
-export function page(schemeName: string, inner: (sc: Scheme) => string, opts: { highlight?: boolean } = {}) {
+export function page(
+  schemeName: string,
+  inner: (sc: Scheme) => string,
+  // afterFooter: a last line under the footer (newsletters put Unsubscribe here).
+  opts: { highlight?: boolean; afterFooter?: (sc: Scheme) => string } = {}
+) {
   const sc = SCHEMES[schemeName] ?? SCHEMES.cream;
   const showHighlight = opts.highlight !== false;
   return `<div style="background:${sc.bg};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
@@ -215,6 +220,7 @@ export function page(schemeName: string, inner: (sc: Scheme) => string, opts: { 
     </div>
     ${showHighlight ? highlightBlock(sc) : ""}
     ${brandFooter(sc)}
+    ${opts.afterFooter ? opts.afterFooter(sc) : ""}
   </div>`;
 }
 

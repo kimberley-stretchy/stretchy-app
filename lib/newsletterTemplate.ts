@@ -62,13 +62,47 @@ function dividerBlock(line: "ink" | "cream"): string {
   return `<div style="border-top:2px solid ${color};margin:18px 0 24px;"></div>`;
 }
 
+// Text block formatting — simple markers HQ's toolbar inserts (or typed):
+//   **bold**   *italic*   __underline__
+//   ## Heading          (a line on its own → larger bold heading)
+//   - bullet / • bullet (consecutive lines → a bulleted list)
+// Blank line = new paragraph. Everything is HTML-escaped first, so only
+// these markers produce formatting.
+function inline(t: string): string {
+  return t
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/__(.+?)__/g, "<u>$1</u>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*(?!\s)([^*]+?)\*(?!\*)/g, "$1<em>$2</em>");
+}
+
 function paras(sc: Scheme, text: string): string {
-  return text
-    .split(/\n\n+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((t) => msg(sc, t.replace(/\n/g, "<br>")))
-    .join("");
+  const out: string[] = [];
+  for (const chunk of text.split(/\n\s*\n+/)) {
+    const lines = chunk.split("\n").map((l) => l.trimEnd()).filter((l) => l.trim());
+    let para: string[] = [];
+    let list: string[] = [];
+    const flushPara = () => { if (para.length) out.push(msg(sc, para.map(inline).join("<br>"))); para = []; };
+    const flushList = () => {
+      if (list.length) out.push(`<ul style="color:${sc.text};font-size:15px;line-height:1.55;margin:0 0 20px;padding-left:22px;">${list.map((l) => `<li style="margin:0 0 6px;">${inline(l)}</li>`).join("")}</ul>`);
+      list = [];
+    };
+    for (const raw of lines) {
+      const line = raw.trim();
+      const heading = line.match(/^#{1,3}\s+(.*)$/);
+      const bullet = line.match(/^(?:[-•*])\s+(.*)$/);
+      if (heading) {
+        flushPara(); flushList();
+        out.push(`<h2 style="color:${sc.text};font-size:22px;font-weight:900;line-height:1.15;letter-spacing:-0.01em;margin:6px 0 12px;">${inline(heading[1])}</h2>`);
+      } else if (bullet) {
+        flushPara(); list.push(bullet[1]);
+      } else {
+        flushList(); para.push(line);
+      }
+    }
+    flushPara(); flushList();
+  }
+  return out.join("");
 }
 
 const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -117,11 +151,14 @@ export function buildNewsletter(p: NewsletterInput): { subject: string; html: st
       .join("")}
     ${p.closingButton === null ? "" : p.closingButton ? linkButton(sc, p.closingButton.label, p.closingButton.url) : button(sc, `${APP_URL}/sessions`, "See everything that's on →")}
     ${msg(sc, "See you on the mat,<br>Stretchy")}
-    <p style="color:${sc.text};font-size:11px;line-height:1.5;margin:18px 0 0;opacity:.7;">You're getting this because you opted in to Stretchy updates. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${sc.text};text-decoration:underline;">Unsubscribe any time</a>.</p>
   `;
 
   // page() already appends the highlight panel (when highlight !== false) + footer.
-  const html = preheader(p.previewText) + page(schemeName, inner, { highlight: p.highlight !== false });
+  const html = preheader(p.previewText) + page(schemeName, inner, {
+    highlight: p.highlight !== false,
+    // Unsubscribe sits at the very bottom, under the footer.
+    afterFooter: (sc) => `<div style="max-width:520px;margin:0 auto;padding:0 26px 28px;text-align:center;"><p style="color:${sc.text};font-size:11px;line-height:1.5;margin:0;opacity:.7;">You're getting this because you opted in to Stretchy updates. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${sc.text};text-decoration:underline;">Unsubscribe any time</a>.</p></div>`,
+  });
   return { subject: p.subject, html };
 }
 

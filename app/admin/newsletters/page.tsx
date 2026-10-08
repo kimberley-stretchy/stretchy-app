@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import HQShell from "@/components/hq/HQShell";
+import { applyFormat } from "@/lib/textFormat";
 
 const T = {
   ink: "#14110F", cream: "#F7F0E8", olive: "#716F39", red: "#C6362E",
@@ -158,6 +159,18 @@ export default function NewslettersPage() {
   const update = (uid: number, patch: Partial<Block>) =>
     setBlocks((bs) => bs.map((b) => (b.uid === uid ? ({ ...b, ...patch } as Block) : b)));
   const remove = (uid: number) => setBlocks((bs) => bs.filter((b) => b.uid !== uid));
+
+  // Text toolbar: "wrap" puts markers around the selection (bold/italic/
+  // underline); "line" toggles a prefix on each selected line (## heading,
+  // - bullet). Keeps the selection so styles can be stacked.
+  function formatText(uid: number, mode: "wrap" | "line", marker: string) {
+    const ta = document.querySelector<HTMLTextAreaElement>(`textarea[data-text-uid="${uid}"]`);
+    const blk = blocks.find((x) => x.uid === uid);
+    if (!ta || !blk || blk.type !== "text") return;
+    const { text: next, selStart, selEnd } = applyFormat(blk.text, ta.selectionStart, ta.selectionEnd, mode, marker);
+    update(uid, { text: next } as Partial<Block>);
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(selStart, selEnd); });
+  }
   const move = (uid: number, dir: -1 | 1) =>
     setBlocks((bs) => {
       const i = bs.findIndex((b) => b.uid === uid);
@@ -345,7 +358,39 @@ export default function NewslettersPage() {
                   </div>
 
                   {b.type === "text" && (
-                    <textarea value={b.text} onChange={(e) => update(b.uid, { text: e.target.value } as Partial<Block>)} rows={3} placeholder="Write… (blank line = new paragraph)" style={{ ...field, resize: "vertical" }} />
+                    <div>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+                        {[
+                          { k: "b", label: <strong>B</strong>, title: "Bold", run: () => formatText(b.uid, "wrap", "**") },
+                          { k: "i", label: <em>I</em>, title: "Italic", run: () => formatText(b.uid, "wrap", "*") },
+                          { k: "u", label: <u>U</u>, title: "Underline", run: () => formatText(b.uid, "wrap", "__") },
+                          { k: "h", label: <strong>H</strong>, title: "Larger bold heading", run: () => formatText(b.uid, "line", "## ") },
+                          { k: "l", label: <span>• List</span>, title: "Bullet points", run: () => formatText(b.uid, "line", "- ") },
+                        ].map((t) => (
+                          <button
+                            key={t.k}
+                            title={t.title}
+                            // keep the textarea's selection while clicking
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={t.run}
+                            style={{ ...chip(false), padding: "3px 10px", fontFamily: T.body, fontSize: 13, letterSpacing: 0 }}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                      <textarea
+                        data-text-uid={b.uid}
+                        value={b.text}
+                        onChange={(e) => update(b.uid, { text: e.target.value } as Partial<Block>)}
+                        rows={4}
+                        placeholder="Write… (blank line = new paragraph)"
+                        style={{ ...field, resize: "vertical" }}
+                      />
+                      <p style={{ fontSize: 11, color: "rgba(20,17,15,.5)", margin: "4px 0 0" }}>
+                        Select text, then tap a style. Or type: **bold** · *italic* · __underline__ · ## Heading · - bullet
+                      </p>
+                    </div>
                   )}
 
                   {b.type === "image" && (
