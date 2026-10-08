@@ -45,6 +45,9 @@ export default function NewslettersPage() {
   const [audienceReady, setAudienceReady] = useState(false);
   const [audienceName, setAudienceName] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState<number | null>(null);
+  const [scheduled, setScheduled] = useState<{ id: string; name: string; scheduledAt: string }[]>([]);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("07:00");
   const [subject, setSubject] = useState("What's on at Stretchy 🌞");
   const [scheme, setScheme] = useState("cream");
   const [heading, setHeading] = useState("What's on at Stretchy 🌞");
@@ -56,11 +59,16 @@ export default function NewslettersPage() {
   const fileInput = useRef<HTMLInputElement | null>(null);
   const uploadingFor = useRef<number | null>(null);
 
-  useEffect(() => {
+  function loadStatus() {
     fetch("/api/admin/newsletters").then((r) => r.json()).then((d) => {
       setSessions(d.sessions ?? []); setAudienceReady(!!d.audienceReady); setAudienceName(d.audienceName ?? null); setSubscribed(typeof d.subscribed === "number" ? d.subscribed : null);
-    });
-  }, []);
+      setScheduled(Array.isArray(d.scheduled) ? d.scheduled : []);
+    }).catch(() => {});
+  }
+  useEffect(loadStatus, []);
+
+  const nzWhen = (iso: string) =>
+    new Date(iso).toLocaleString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
 
   const update = (uid: number, patch: Partial<Block>) =>
     setBlocks((bs) => bs.map((b) => (b.uid === uid ? ({ ...b, ...patch } as Block) : b)));
@@ -109,6 +117,7 @@ export default function NewslettersPage() {
   const payload = (mode: string) => ({
     mode, subject, scheme, heading: heading || undefined, highlight,
     testEmail,
+    scheduleDate, scheduleTime,
     blocks: blocks.map((b) =>
       b.type === "sessions" ? { type: "sessions", sessionIds: b.sessionIds }
       : b.type === "image" ? { type: "image", url: b.url, frame: b.frame }
@@ -116,17 +125,37 @@ export default function NewslettersPage() {
       : { type: "text", text: b.text }),
   });
 
-  async function call(mode: "test" | "send") {
+  async function call(mode: "test" | "send" | "schedule") {
     setBusy(mode); setMsg(null);
     try {
       const res = await fetch("/api/admin/newsletters", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload(mode)) });
       const d = await res.json();
       if (!res.ok) setMsg({ ok: false, text: d.error ?? "Something went wrong." });
       else if (mode === "test") setMsg({ ok: true, text: `Test sent to ${testEmail} — check your inbox to preview it.` });
+      else if (mode === "schedule") { setMsg({ ok: true, text: `Scheduled for ${nzWhen(d.scheduledAt)} (NZ time) 📅 — receipt in your inbox.` }); loadStatus(); }
       else setMsg({ ok: true, text: `Newsletter sent${d.sentTo != null ? ` to ${d.sentTo} contacts` : ""} 🎉 — receipt in your inbox.` });
     } catch { setMsg({ ok: false, text: "Request failed." }); }
     setBusy(null);
   }
+  async function scheduleReal() {
+    if (!scheduleDate || !scheduleTime) { setMsg({ ok: false, text: "Pick a date and time first." }); return; }
+    const [y, m, d] = scheduleDate.split("-").map(Number);
+    const label = `${new Date(y, m - 1, d).toLocaleDateString("en-NZ", { weekday: "long", day: "numeric", month: "long" })} at ${scheduleTime}`;
+    const who = subscribed !== null ? `the ${audienceName ? `"${audienceName}" ` : ""}list (${subscribed} subscribers right now)` : "everyone opted in";
+    if (!confirm(`Schedule this newsletter to go to ${who} on ${label} NZ time?\n\nWhat you see now is what sends — session prices and spots are as of now.`)) return;
+    await call("schedule");
+  }
+
+  async function cancelScheduled(id: string, name: string) {
+    if (!confirm(`Cancel the scheduled newsletter "${name}"? It won't be sent.`)) return;
+    setBusy("cancel");
+    const res = await fetch(`/api/admin/newsletters?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
+    const d = res ? await res.json().catch(() => ({})) : {};
+    setMsg(res && res.ok ? { ok: true, text: `Cancelled "${name}".` } : { ok: false, text: d.error ?? "Couldn't cancel it — check Resend → Broadcasts." });
+    setBusy(null);
+    loadStatus();
+  }
+
   async function sendReal() {
     const who = subscribed !== null
       ? `${subscribed} subscriber${subscribed === 1 ? "" : "s"}${audienceName ? ` on the "${audienceName}" list` : ""}`
@@ -262,7 +291,36 @@ export default function NewslettersPage() {
               <button onClick={() => call("test")} disabled={busy !== null} style={btn(T.yellow, T.ink)}>{busy === "test" ? "…" : "SEND TEST"}</button>
               <button onClick={sendReal} disabled={busy !== null || !audienceReady} style={{ ...btn(T.olive, "#fff"), opacity: audienceReady ? 1 : 0.5 }}>{busy === "send" ? "SENDING…" : subscribed !== null ? `SEND TO ${subscribed}` : "SEND TO AUDIENCE"}</button>
             </div>
+            {/* Schedule for later */}
+            <label style={mono10}>OR SCHEDULE IT (NZ TIME · UP TO 30 DAYS AHEAD)</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", margin: "4px 0 12px" }}>
+              <input type="date" value={scheduleDate} min={new Date().toLocaleDateString("en-CA", { timeZone: "Pacific/Auckland" })} max={new Date(Date.now() + 29 * 864e5).toLocaleDateString("en-CA", { timeZone: "Pacific/Auckland" })} onChange={(e) => setScheduleDate(e.target.value)} style={{ ...field, width: 170, flex: "0 0 auto" }} />
+              <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} style={{ ...field, width: 120, flex: "0 0 auto" }} />
+              <button onClick={scheduleReal} disabled={busy !== null || !audienceReady || !scheduleDate} style={{ ...btn(T.ink, T.cream), opacity: audienceReady && scheduleDate ? 1 : 0.5 }}>
+                {busy === "schedule" ? "SCHEDULING…" : "SCHEDULE"}
+              </button>
+            </div>
+
             {msg && <p style={{ fontSize: 13, color: msg.ok ? T.olive : T.red }}>{msg.text}</p>}
+
+            {scheduled.length > 0 && (
+              <div style={{ marginTop: 18 }}>
+                <label style={mono10}>SCHEDULED</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
+                  {scheduled.map((b) => (
+                    <div key={b.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 12, padding: "10px 14px" }}>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}</p>
+                        <p style={{ fontSize: 12, color: "rgba(20,17,15,.6)", margin: "2px 0 0" }}>📅 {nzWhen(b.scheduledAt)} NZT</p>
+                      </div>
+                      <button onClick={() => cancelScheduled(b.id, b.name)} disabled={busy !== null} style={{ ...btn("transparent", T.red), border: `1.5px solid ${T.red}`, flexShrink: 0 }}>
+                        CANCEL
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

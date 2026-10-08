@@ -11,12 +11,15 @@ function key(): string | null {
   return process.env.RESEND_API_KEY ?? null;
 }
 
-// Create a broadcast for the Audience, then send it now. Returns the broadcast id.
+// Create a broadcast for the Audience, then send it now — or at scheduledAt
+// (ISO 8601) if given, in which case Resend holds it until then. Returns the
+// broadcast id.
 export async function sendBroadcast(opts: {
   audienceId: string;
   subject: string;
   html: string;
   name?: string;
+  scheduledAt?: string;
 }): Promise<{ ok: boolean; id?: string; error?: string }> {
   const k = key();
   if (!k) return { ok: false, error: "RESEND_API_KEY missing" };
@@ -38,9 +41,15 @@ export async function sendBroadcast(opts: {
     if (!createRes.ok || !created?.id) {
       return { ok: false, error: created?.message || `Create failed (HTTP ${createRes.status})` };
     }
-    const sendRes = await fetch(`${API}/broadcasts/${created.id}/send`, { method: "POST", headers, body: "{}" });
+    const sendRes = await fetch(`${API}/broadcasts/${created.id}/send`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(opts.scheduledAt ? { scheduled_at: opts.scheduledAt } : {}),
+    });
     if (!sendRes.ok) {
       const e = await sendRes.json().catch(() => ({}));
+      // Don't leave an orphaned draft behind if scheduling/sending was refused.
+      await fetch(`${API}/broadcasts/${created.id}`, { method: "DELETE", headers }).catch(() => {});
       return { ok: false, id: created.id, error: e?.message || `Send failed (HTTP ${sendRes.status})` };
     }
     return { ok: true, id: created.id };
@@ -102,5 +111,48 @@ export async function getAudienceName(audienceId: string): Promise<string | null
     return typeof body?.name === "string" ? body.name : null;
   } catch {
     return null;
+  }
+}
+
+export type ScheduledBroadcast = { id: string; name: string; scheduledAt: string };
+
+// Resend returns Postgres-style times ("2026-10-19 18:00:00+00"), which Safari
+// can't parse — normalise to ISO 8601.
+function toIso(t: string): string {
+  const d = new Date(t.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00"));
+  return isNaN(d.getTime()) ? t : d.toISOString();
+}
+
+// Broadcasts queued for later (not yet sent), soonest first.
+export async function listScheduledBroadcasts(): Promise<ScheduledBroadcast[] | null> {
+  const k = key();
+  if (!k) return null;
+  try {
+    const res = await fetch(`${API}/broadcasts`, { headers: { Authorization: `Bearer ${k}` } });
+    if (!res.ok) return null;
+    const body = await res.json().catch(() => ({}));
+    const rows: { id: string; name?: string; status?: string; scheduled_at?: string | null; sent_at?: string | null }[] = body?.data ?? [];
+    return rows
+      .filter((b) => b.status === "queued" || b.status === "scheduled" || (!!b.scheduled_at && !b.sent_at && b.status !== "sent" && b.status !== "draft"))
+      .filter((b) => !!b.scheduled_at)
+      .map((b) => ({ id: b.id, name: b.name ?? "Newsletter", scheduledAt: toIso(b.scheduled_at as string) }))
+      .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+  } catch {
+    return null;
+  }
+}
+
+// Cancel a scheduled broadcast. Resend only deletes not-yet-sent broadcasts,
+// and deleting a scheduled one cancels its delivery.
+export async function cancelBroadcast(id: string): Promise<{ ok: boolean; error?: string }> {
+  const k = key();
+  if (!k) return { ok: false, error: "RESEND_API_KEY missing" };
+  try {
+    const res = await fetch(`${API}/broadcasts/${encodeURIComponent(id)}`, { method: "DELETE", headers: { Authorization: `Bearer ${k}` } });
+    if (res.ok) return { ok: true };
+    const e = await res.json().catch(() => ({}));
+    return { ok: false, error: e?.message || `Cancel failed (HTTP ${res.status})` };
+  } catch (error) {
+    return { ok: false, error: String(error) };
   }
 }

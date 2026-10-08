@@ -11,7 +11,8 @@ type ClientBlock =
   | { type: "image"; url?: string; frame?: "black" | "cream" }
   | { type: "divider" }
   | { type: "sessions"; sessionIds?: string[] };
-import { sendBroadcast, sendTestNewsletter, getAudienceCount, getAudienceName } from "@/lib/resendBroadcast";
+import { sendBroadcast, sendTestNewsletter, getAudienceCount, getAudienceName, listScheduledBroadcasts, cancelBroadcast } from "@/lib/resendBroadcast";
+import { nzLocalToISO } from "@/lib/nzTime";
 import { marketingConfigured } from "@/lib/resendAudience";
 import { notifyHQ } from "@/lib/notifyLifecycle";
 
@@ -76,10 +77,11 @@ export async function GET(request: NextRequest) {
   if ("error" in authed) return authed.error;
   const admin = getAdmin();
   const audienceId = process.env.RESEND_AUDIENCE_ID;
-  const [sessions, count, audienceName] = await Promise.all([
+  const [sessions, count, audienceName, scheduled] = await Promise.all([
     upcomingSessions(admin),
     audienceId ? getAudienceCount(audienceId) : Promise.resolve(null),
     audienceId ? getAudienceName(audienceId) : Promise.resolve(null),
+    audienceId ? listScheduledBroadcasts() : Promise.resolve(null),
   ]);
   return NextResponse.json({
     sessions,
@@ -88,6 +90,8 @@ export async function GET(request: NextRequest) {
     // Who a send would reach — shown in HQ before pressing send.
     audienceName,
     subscribed: count?.subscribed ?? null,
+    // Newsletters queued for later, soonest first.
+    scheduled: scheduled ?? [],
   });
 }
 
@@ -97,11 +101,29 @@ export async function POST(request: NextRequest) {
   const admin = getAdmin();
 
   const body = await request.json().catch(() => ({}));
-  const { mode, subject, scheme, heading, blocks, highlight, testEmail } = body as {
-    mode: "preview" | "test" | "send";
+  const { mode, subject, scheme, heading, blocks, highlight, testEmail, scheduleDate, scheduleTime } = body as {
+    mode: "preview" | "test" | "send" | "schedule";
     subject?: string; scheme?: string; heading?: string; highlight?: boolean;
     blocks?: ClientBlock[]; testEmail?: string;
+    scheduleDate?: string; scheduleTime?: string; // NZ wall time, e.g. "2026-10-20", "07:00"
   };
+
+  // Scheduling: resolve NZ date + time to a real instant up front, so a bad
+  // or past time is refused before anything is built or sent.
+  let scheduledAt: string | undefined;
+  if (mode === "schedule") {
+    if (!scheduleDate || !/^\d{4}-\d{2}-\d{2}$/.test(scheduleDate) || !scheduleTime || !/^\d{2}:\d{2}$/.test(scheduleTime)) {
+      return NextResponse.json({ error: "Pick a date and time to schedule it for." }, { status: 400 });
+    }
+    scheduledAt = nzLocalToISO(scheduleDate, scheduleTime);
+    if (new Date(scheduledAt).getTime() < Date.now() + 5 * 60 * 1000) {
+      return NextResponse.json({ error: "Pick a time at least 5 minutes from now." }, { status: 400 });
+    }
+    // Resend won't hold a broadcast more than 30 days out.
+    if (new Date(scheduledAt).getTime() > Date.now() + 30 * 24 * 60 * 60 * 1000) {
+      return NextResponse.json({ error: "Resend can only schedule up to 30 days ahead — pick an earlier date." }, { status: 400 });
+    }
+  }
 
   if (mode !== "preview" && (!subject || !subject.trim())) {
     return NextResponse.json({ error: "A subject is required." }, { status: 400 });
@@ -137,13 +159,31 @@ export async function POST(request: NextRequest) {
     return r.ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: r.error }, { status: 500 });
   }
 
-  // mode === "send" — real broadcast to the Audience.
+  // mode === "send" (now) or "schedule" (later) — real broadcast to the Audience.
   const audienceId = process.env.RESEND_AUDIENCE_ID;
   if (!audienceId) {
     return NextResponse.json({ error: "No Audience configured — set RESEND_AUDIENCE_ID in Vercel first." }, { status: 400 });
   }
-  const r = await sendBroadcast({ audienceId, subject: subj, html, name: subj });
+  const r = await sendBroadcast({ audienceId, subject: subj, html, name: subj, scheduledAt });
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: 500 });
+
+  if (scheduledAt) {
+    const when = new Date(scheduledAt).toLocaleString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", hour12: true });
+    const count = await getAudienceCount(audienceId);
+    await notifyHQ({
+      subject: `📅 Newsletter scheduled: ${subj}`,
+      scheme: "orange",
+      kicker: "Stretchy HQ · Newsletter scheduled",
+      heading: "It's in the queue 📅",
+      rows: [
+        `<strong>Subject:</strong> ${subj}`,
+        `🕘 Goes out <strong>${when}</strong> (NZT).`,
+        count ? `To the subscribed contacts on the list at that time — ${count.subscribed} right now.` : `To the subscribed contacts on the list at that time.`,
+        `Changed your mind? Cancel it in HQ → Newsletters → Scheduled.`,
+      ],
+    }).catch(() => {});
+    return NextResponse.json({ ok: true, id: r.id, scheduledAt });
+  }
 
   // Send receipt to HQ — topline of what went out and to how many.
   const count = await getAudienceCount(audienceId);
@@ -165,4 +205,14 @@ export async function POST(request: NextRequest) {
   }).catch(() => {});
 
   return NextResponse.json({ ok: true, id: r.id, sentTo: count?.subscribed ?? null });
+}
+
+// DELETE /api/admin/newsletters?id=… — cancel a scheduled newsletter.
+export async function DELETE(request: NextRequest) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  const r = await cancelBroadcast(id);
+  return r.ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: r.error }, { status: 500 });
 }
