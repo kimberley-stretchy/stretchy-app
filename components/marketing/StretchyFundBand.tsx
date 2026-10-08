@@ -1,3 +1,5 @@
+import MatchHeadlineWidth from "@/components/marketing/MatchHeadlineWidth";
+
 function formatWholeDollars(amount: number): string {
   return new Intl.NumberFormat("en-NZ", {
     style: "currency",
@@ -16,11 +18,14 @@ export default function StretchyFundBand({ total }: { total: number }) {
         {/* Left: headline, then the logo + tally box under it */}
         <div className="flex flex-col gap-3.5 lg:gap-[18px]">
           <div className="font-mono text-[9px] lg:text-[11px] font-extrabold tracking-[0.14em] lg:tracking-[0.16em]">GOOD MONEY, GOING SOMEWHERE GOOD.</div>
-          <h2 className="font-display text-[34px] lg:text-[50px] leading-[.94] lg:leading-[.92] m-0">
-            $10 from every Stretchy session goes to Cancer Support NZ.
-          </h2>
-
-          {/* Logo + tally, all black straight on the yellow */}
+          <MatchHeadlineWidth
+            headline={
+              <h2 className="font-display text-[34px] lg:text-[50px] leading-[.94] lg:leading-[.92] m-0">
+                $10 from every Stretchy session goes to Cancer Support NZ.
+              </h2>
+            }
+          >
+          {/* Logo + tally, all black straight on the yellow — as wide as the headline */}
           <div className="w-full border-2 border-ink rounded-[20px] p-5 lg:p-7 text-ink mt-2 lg:mt-4">
             <div className="flex items-center gap-4 lg:gap-6 mb-4">
               <a href={CHARITY_URL} target="_blank" rel="noopener noreferrer" aria-label="Cancer Support New Zealand" className="block flex-1 min-w-0 max-w-[230px]">
@@ -36,6 +41,7 @@ export default function StretchyFundBand({ total }: { total: number }) {
               To be donated to Cancer Support NZ at the end of the Summer Season 2027.
             </p>
           </div>
+          </MatchHeadlineWidth>
         </div>
 
         {/* Right: the copy */}
