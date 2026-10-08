@@ -20,11 +20,15 @@ export type NLBlock =
   | { type: "text"; text: string }
   | { type: "image"; url: string; frame?: "black" | "cream" }
   | { type: "divider"; line?: "ink" | "cream" }
+  | { type: "button"; label: string; url: string }
   | { type: "sessions"; sessions: NewsletterSession[] };
 
 export interface NewsletterInput {
   // Inbox preview line shown after the subject (a hidden "preheader").
   previewText?: string;
+  // The button above the sign-off. Omitted = the default "See everything
+  // that's on →" to /sessions; null = no button.
+  closingButton?: { label: string; url: string } | null;
   subject: string;
   scheme?: string;
   heading?: string;
@@ -67,6 +71,25 @@ function paras(sc: Scheme, text: string): string {
     .join("");
 }
 
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+// Only real web/email links; bare domains get https:// added. Anything else
+// (javascript:, typos) renders no button rather than a broken one.
+export function cleanLink(raw: string): string | null {
+  const u = (raw ?? "").trim();
+  if (!u) return null;
+  if (/^mailto:[^\s@]+@[^\s@]+$/i.test(u)) return u;
+  const withScheme = /^https?:\/\//i.test(u) ? u : /^[\w-]+(\.[\w-]+)+(\/|$)/.test(u) ? `https://${u}` : u.startsWith("/") ? `${APP_URL}${u}` : null;
+  if (!withScheme) return null;
+  try { return new URL(withScheme).toString(); } catch { return null; }
+}
+
+function linkButton(sc: Scheme, label: string, url: string): string {
+  const href = cleanLink(url);
+  const text = (label ?? "").trim();
+  return href && text ? button(sc, esc(href), esc(text)) : "";
+}
+
 // Hidden first line of the email that inboxes show as the preview text after
 // the subject. Padded with invisible spacers so the inbox doesn't pull in the
 // email's body copy after it.
@@ -87,11 +110,12 @@ export function buildNewsletter(p: NewsletterInput): { subject: string; html: st
         if (b.type === "text") return paras(sc, b.text ?? "");
         if (b.type === "image") return b.url ? imageBlock(sc, b.url, b.frame ?? "black") : "";
         if (b.type === "divider") return dividerBlock(b.line === "cream" ? "cream" : "ink");
+        if (b.type === "button") return linkButton(sc, b.label, b.url);
         if (b.type === "sessions") return (b.sessions ?? []).map((s) => sessionBlock(sc, s)).join("");
         return "";
       })
       .join("")}
-    ${button(sc, `${APP_URL}/sessions`, "See everything that's on →")}
+    ${p.closingButton === null ? "" : p.closingButton ? linkButton(sc, p.closingButton.label, p.closingButton.url) : button(sc, `${APP_URL}/sessions`, "See everything that's on →")}
     ${msg(sc, "See you on the mat,<br>Stretchy")}
     <p style="color:${sc.text};font-size:11px;line-height:1.5;margin:18px 0 0;opacity:.7;">You're getting this because you opted in to Stretchy updates. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${sc.text};text-decoration:underline;">Unsubscribe any time</a>.</p>
   `;

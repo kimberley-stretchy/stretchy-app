@@ -25,6 +25,7 @@ type Block =
   | { uid: number; type: "text"; text: string }
   | { uid: number; type: "image"; url: string; frame: "black" | "cream"; uploading?: boolean }
   | { uid: number; type: "divider"; line: "ink" | "cream" }
+  | { uid: number; type: "button"; label: string; url: string }
   | { uid: number; type: "sessions"; sessionIds: string[] };
 
 let UID = 1;
@@ -50,6 +51,10 @@ export default function NewslettersPage() {
   const [scheduleTime, setScheduleTime] = useState("07:00");
   const [subject, setSubject] = useState("What's on at Stretchy 🌞");
   const [previewText, setPreviewText] = useState("");
+  // The button above the sign-off — editable, or switched off.
+  const [closingOn, setClosingOn] = useState(true);
+  const [closingLabel, setClosingLabel] = useState("See everything that's on →");
+  const [closingUrl, setClosingUrl] = useState("https://www.stretchyyoga.co.nz/sessions");
   const [scheme, setScheme] = useState("cream");
   const [heading, setHeading] = useState("What's on at Stretchy 🌞");
   const [highlight, setHighlight] = useState(true);
@@ -89,6 +94,7 @@ export default function NewslettersPage() {
       type === "text" ? { uid: UID++, type: "text", text: "" }
       : type === "image" ? { uid: UID++, type: "image", url: "", frame: "black" }
       : type === "divider" ? { uid: UID++, type: "divider", line: "ink" }
+      : type === "button" ? { uid: UID++, type: "button", label: "", url: "" }
       : { uid: UID++, type: "sessions", sessionIds: [] },
     ]);
 
@@ -116,13 +122,16 @@ export default function NewslettersPage() {
   }
 
   const payload = (mode: string) => ({
-    mode, subject, previewText: previewText || undefined, scheme, heading: heading || undefined, highlight,
+    mode, subject, previewText: previewText || undefined,
+    closingButton: closingOn ? { label: closingLabel, url: closingUrl } : null,
+    scheme, heading: heading || undefined, highlight,
     testEmail,
     scheduleDate, scheduleTime,
     blocks: blocks.map((b) =>
       b.type === "sessions" ? { type: "sessions", sessionIds: b.sessionIds }
       : b.type === "image" ? { type: "image", url: b.url, frame: b.frame }
       : b.type === "divider" ? { type: "divider", line: b.line }
+      : b.type === "button" ? { type: "button", label: b.label, url: b.url }
       : { type: "text", text: b.text }),
   });
 
@@ -260,6 +269,14 @@ export default function NewslettersPage() {
                     </div>
                   )}
 
+                  {b.type === "button" && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <input value={b.label} onChange={(e) => update(b.uid, { label: e.target.value } as Partial<Block>)} placeholder="Button text, e.g. Hold your spot →" maxLength={60} style={field} />
+                      <input value={b.url} onChange={(e) => update(b.uid, { url: e.target.value } as Partial<Block>)} placeholder="Link, e.g. stretchyyoga.co.nz/sessions or mailto:hello@…" style={field} />
+                      {(!b.label.trim() || !b.url.trim()) && <p style={{ fontSize: 11, color: "rgba(20,17,15,.5)", margin: 0 }}>Needs both text and a link to show in the email.</p>}
+                    </div>
+                  )}
+
                   {b.type === "sessions" && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {sessions.length === 0 && <p style={{ fontSize: 13, color: "rgba(20,17,15,.5)" }}>No upcoming sessions.</p>}
@@ -283,7 +300,22 @@ export default function NewslettersPage() {
               <button onClick={() => add("text")} style={chip(false)}>+ TEXT</button>
               <button onClick={() => add("image")} style={chip(false)}>+ IMAGE</button>
               <button onClick={() => add("divider")} style={chip(false)}>+ DIVIDER</button>
+              <button onClick={() => add("button")} style={chip(false)}>+ BUTTON</button>
               <button onClick={() => add("sessions")} style={chip(false)}>+ SESSIONS</button>
+            </div>
+
+            {/* Closing button (above "See you on the mat") */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", marginBottom: 6 }}>
+                <input type="checkbox" checked={closingOn} onChange={(e) => setClosingOn(e.target.checked)} style={{ accentColor: T.purple }} />
+                End with a button
+              </label>
+              {closingOn && (
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <input value={closingLabel} onChange={(e) => setClosingLabel(e.target.value)} placeholder="Button text" maxLength={60} style={{ ...field, flex: "1 1 200px" }} />
+                  <input value={closingUrl} onChange={(e) => setClosingUrl(e.target.value)} placeholder="Link" style={{ ...field, flex: "1 1 240px" }} />
+                </div>
+              )}
             </div>
 
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 18, cursor: "pointer" }}>

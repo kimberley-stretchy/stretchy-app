@@ -9,7 +9,8 @@ import { buildNewsletter, NewsletterSession, NLBlock } from "@/lib/newsletterTem
 type ClientBlock =
   | { type: "text"; text?: string }
   | { type: "image"; url?: string; frame?: "black" | "cream" }
-  | { type: "divider" }
+  | { type: "divider"; line?: "ink" | "cream" }
+  | { type: "button"; label?: string; url?: string }
   | { type: "sessions"; sessionIds?: string[] };
 import { sendBroadcast, sendTestNewsletter, getAudienceCount, getAudienceName, listScheduledBroadcasts, cancelBroadcast } from "@/lib/resendBroadcast";
 import { nzLocalToISO } from "@/lib/nzTime";
@@ -101,9 +102,9 @@ export async function POST(request: NextRequest) {
   const admin = getAdmin();
 
   const body = await request.json().catch(() => ({}));
-  const { mode, subject, previewText, scheme, heading, blocks, highlight, testEmail, scheduleDate, scheduleTime } = body as {
+  const { mode, subject, previewText, closingButton, scheme, heading, blocks, highlight, testEmail, scheduleDate, scheduleTime } = body as {
     mode: "preview" | "test" | "send" | "schedule";
-    subject?: string; previewText?: string; scheme?: string; heading?: string; highlight?: boolean;
+    subject?: string; previewText?: string; closingButton?: { label?: string; url?: string } | null; scheme?: string; heading?: string; highlight?: boolean;
     blocks?: ClientBlock[]; testEmail?: string;
     scheduleDate?: string; scheduleTime?: string; // NZ wall time, e.g. "2026-10-20", "07:00"
   };
@@ -137,13 +138,15 @@ export async function POST(request: NextRequest) {
       return { type: "sessions", sessions };
     }
     if (b.type === "image") return { type: "image", url: b.url ?? "", frame: b.frame === "cream" ? "cream" : "black" };
-    if (b.type === "divider") return { type: "divider" };
+    if (b.type === "divider") return { type: "divider", line: b.line === "cream" ? "cream" : "ink" };
+    if (b.type === "button") return { type: "button", label: b.label ?? "", url: b.url ?? "" };
     return { type: "text", text: b.text ?? "" };
   });
 
   const { subject: subj, html } = buildNewsletter({
     subject: subject ?? "What's on at Stretchy 🌞",
     previewText,
+    closingButton: closingButton === null ? null : closingButton ? { label: closingButton.label ?? "", url: closingButton.url ?? "" } : undefined,
     scheme,
     heading,
     highlight,
