@@ -65,6 +65,85 @@ export default function NewslettersPage() {
   const fileInput = useRef<HTMLInputElement | null>(null);
   const uploadingFor = useRef<number | null>(null);
 
+  // ── Drafts ────────────────────────────────────────────────────────────
+  type DraftMeta = { id: string; subject: string; updatedAt: string };
+  const [drafts, setDrafts] = useState<DraftMeta[]>([]);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [savedSnap, setSavedSnap] = useState<string | null>(null);
+
+  // Everything the composer holds, as saved in a draft.
+  const snapshot = () => ({
+    subject, previewText, closingOn, closingLabel, closingUrl, scheme, heading, highlight,
+    blocks: blocks.map((b) => (b.type === "image" ? { ...b, uploading: false } : b)),
+  });
+  const snapJson = JSON.stringify(snapshot());
+  const unsaved = savedSnap !== null ? snapJson !== savedSnap : false;
+
+  function loadDrafts() {
+    fetch("/api/admin/newsletters/drafts").then((r) => r.json()).then((d) => setDrafts(Array.isArray(d.drafts) ? d.drafts : [])).catch(() => {});
+  }
+  useEffect(loadDrafts, []);
+
+  // Browser warns before leaving/closing with unsaved draft changes.
+  useEffect(() => {
+    if (!unsaved) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [unsaved]);
+
+  async function saveDraft() {
+    setBusy("draft"); setMsg(null);
+    try {
+      const res = await fetch("/api/admin/newsletters/drafts", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: draftId ?? undefined, subject, data: snapshot() }),
+      });
+      const d = await res.json();
+      if (!res.ok) setMsg({ ok: false, text: d.error ?? "Couldn't save the draft." });
+      else { setDraftId(d.id); setSavedSnap(snapJson); setMsg({ ok: true, text: `Draft saved ${nzWhen(d.updatedAt)}.` }); loadDrafts(); }
+    } catch { setMsg({ ok: false, text: "Couldn't save the draft." }); }
+    setBusy(null);
+  }
+
+  async function openDraft(id: string) {
+    if (unsaved && !confirm("You have unsaved changes. Open this draft anyway and lose them?")) return;
+    setBusy("open"); setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/newsletters/drafts?id=${encodeURIComponent(id)}`);
+      const d = await res.json();
+      if (!res.ok || !d.draft?.data) { setMsg({ ok: false, text: d.error ?? "Couldn't open that draft." }); setBusy(null); return; }
+      const x = d.draft.data;
+      setSubject(x.subject ?? ""); setPreviewText(x.previewText ?? "");
+      setClosingOn(x.closingOn !== false); setClosingLabel(x.closingLabel ?? "See everything that's on →"); setClosingUrl(x.closingUrl ?? "https://www.stretchyyoga.co.nz/sessions");
+      setScheme(x.scheme ?? "cream"); setHeading(x.heading ?? ""); setHighlight(x.highlight !== false);
+      // Fresh uids so new blocks added after loading never clash.
+      const loaded: Block[] = (Array.isArray(x.blocks) ? x.blocks : []).map((b: Block) => ({ ...b, uid: UID++ }));
+      setBlocks(loaded.length ? loaded : [{ uid: UID++, type: "text", text: "" }]);
+      setDraftId(id);
+      setSavedSnap(JSON.stringify({ ...x, blocks: loaded.map((b) => (b.type === "image" ? { ...b, uploading: false } : b)) }));
+      setMsg({ ok: true, text: `Opened "${d.draft.subject}". Session cards for sessions that have since passed are dropped automatically.` });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch { setMsg({ ok: false, text: "Couldn't open that draft." }); }
+    setBusy(null);
+  }
+
+  async function deleteDraft(id: string, name: string) {
+    if (!confirm(`Delete the draft "${name}"? This can't be undone.`)) return;
+    await fetch(`/api/admin/newsletters/drafts?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
+    if (id === draftId) { setDraftId(null); setSavedSnap(null); }
+    loadDrafts();
+  }
+
+  function newNewsletter() {
+    if (unsaved && !confirm("You have unsaved changes. Start a new newsletter and lose them?")) return;
+    setSubject("What's on at Stretchy 🌞"); setPreviewText("");
+    setClosingOn(true); setClosingLabel("See everything that's on →"); setClosingUrl("https://www.stretchyyoga.co.nz/sessions");
+    setScheme("cream"); setHeading("What's on at Stretchy 🌞"); setHighlight(true);
+    setBlocks([{ uid: UID++, type: "text", text: "" }]);
+    setDraftId(null); setSavedSnap(null); setMsg(null);
+  }
+
   function loadStatus() {
     fetch("/api/admin/newsletters").then((r) => r.json()).then((d) => {
       setSessions(d.sessions ?? []); setAudienceReady(!!d.audienceReady); setAudienceName(d.audienceName ?? null); setSubscribed(typeof d.subscribed === "number" ? d.subscribed : null);
@@ -189,6 +268,35 @@ export default function NewslettersPage() {
             <p style={{ fontSize: 14, color: "rgba(20,17,15,.6)", margin: "0 0 16px" }}>
               Build it in blocks — text, imagery, dividers, live session cards — pick a brand colour, preview, test, send.
             </p>
+
+            {/* Drafts bar */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+              <button onClick={saveDraft} disabled={busy !== null} style={btn(T.ink, T.cream)}>{busy === "draft" ? "SAVING…" : draftId ? "SAVE DRAFT" : "SAVE AS DRAFT"}</button>
+              <button onClick={newNewsletter} disabled={busy !== null} style={{ ...btn("transparent", T.ink), border: `1.5px solid ${T.ink}` }}>+ NEW</button>
+              <span style={{ fontSize: 12, color: unsaved ? T.red : "rgba(20,17,15,.5)" }}>
+                {draftId ? (unsaved ? "Unsaved changes" : "All changes saved") : "Not saved yet"}
+              </span>
+            </div>
+
+            {drafts.length > 0 && (
+              <details style={{ marginBottom: 16 }} open={!draftId}>
+                <summary style={{ ...mono10, cursor: "pointer" }}>DRAFTS · {drafts.length}</summary>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                  {drafts.map((d) => (
+                    <div key={d.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: d.id === draftId ? "rgba(144,47,138,.08)" : "#fff", border: `1.5px solid ${T.ink}`, borderRadius: 10, padding: "8px 12px" }}>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.subject}{d.id === draftId ? " · open" : ""}</p>
+                        <p style={{ fontSize: 11, color: "rgba(20,17,15,.55)", margin: "2px 0 0" }}>Saved {nzWhen(d.updatedAt)}</p>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                        <button onClick={() => openDraft(d.id)} disabled={busy !== null || d.id === draftId} style={{ ...chip(false), padding: "4px 10px", opacity: d.id === draftId ? 0.4 : 1 }}>OPEN</button>
+                        <button onClick={() => deleteDraft(d.id, d.subject)} disabled={busy !== null} style={{ ...chip(false), padding: "4px 10px", color: T.red, borderColor: T.red }}>DELETE</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
 
             {!audienceReady && (
               <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 10, background: "rgba(198,54,46,.10)", border: `1.5px solid ${T.red}`, color: T.red, fontSize: 13 }}>
