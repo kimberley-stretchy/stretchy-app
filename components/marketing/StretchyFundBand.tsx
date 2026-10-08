@@ -67,7 +67,7 @@ export default function StretchyFundBand({ total }: { total: number }) {
           >
             <p className="font-mono text-[10px] font-extrabold tracking-[0.1em] text-ink/50 mb-3">GOING TO</p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/partners/cancer-support-nz.svg" alt="Cancer Support New Zealand" width={180} height={72} className="block h-auto w-[160px] lg:w-[180px] mb-3" />
+            <img src="/partners/cancer-support-nz-black.png" alt="Cancer Support New Zealand" width={1000} height={398} className="block h-auto w-[160px] lg:w-[180px] mb-3" />
             <p className="text-sm m-0 text-ink/75">Free wellbeing classes for anyone affected by cancer, online and in communities around Aotearoa.</p>
             <p className="font-mono text-[10px] font-extrabold tracking-[0.06em] mt-3 m-0">FIND OUT MORE →</p>
           </a>
