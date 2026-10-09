@@ -17,14 +17,15 @@ export async function GET(request: NextRequest) {
   if ("error" in authed) return authed.error;
   const admin = getAdmin();
 
-  const [locs, people, links, agreements, acceptances] = await Promise.all([
+  const [locs, people, links, agreements, acceptances, hosts] = await Promise.all([
     admin.from("portal_locations").select("*").order("sort_order").order("name"),
     admin.from("portal_people").select("*").order("sort_order").order("name"),
     admin.from("portal_location_people").select("location_id, person_id"),
     admin.from("portal_agreements").select("*").order("version", { ascending: false }),
     admin.from("portal_agreement_acceptances").select("agreement_id, email, name, accepted_at").order("accepted_at", { ascending: false }),
+    admin.from("hosts").select("id, name, email, roles, instagram, tiktok, website").eq("vetting_status", "approved").order("name"),
   ]);
-  const err = locs.error ?? people.error ?? links.error ?? agreements.error ?? acceptances.error;
+  const err = locs.error ?? people.error ?? links.error ?? agreements.error ?? acceptances.error ?? hosts.error;
   if (err) return NextResponse.json({ error: err.message }, { status: 500 });
 
   const withLocations: PortalPerson[] = (people.data ?? []).map((p) => ({
@@ -40,6 +41,8 @@ export async function GET(request: NextRequest) {
     locations: locs.data ?? [],
     people: withLocations,
     agreement: { published, draft },
+    // Approved teacher/GEM profiles — teachers & GEMs in the portal must be one of these.
+    profiles: (hosts.data ?? []).filter((h) => (h.roles ?? []).some((r: string) => r === "teacher" || r === "gem")),
     acceptances: published ? (acceptances.data ?? []).filter((a) => a.agreement_id === published.id) : [],
   });
 }
@@ -82,6 +85,20 @@ export async function POST(request: NextRequest) {
       const fields = pick(p, PERSON_FIELDS);
       if (typeof fields.email === "string") fields.email = fields.email.toLowerCase();
       if (!p.id && !fields.name) return fail("Person needs a name");
+
+      // Teachers & GEMs must match an existing approved profile — that's what
+      // gives them a login, and so access to the portal.
+      if (fields.role === "teacher" || fields.role === "gem") {
+        if (!fields.email) return fail("Pick their teacher/GEM profile first");
+        const { data: host } = await admin
+          .from("hosts")
+          .select("roles, vetting_status")
+          .ilike("email", String(fields.email).replace(/[\\%_]/g, (c) => `\\${c}`))
+          .maybeSingle();
+        if (!host || host.vetting_status !== "approved" || !(host.roles ?? []).includes(fields.role)) {
+          return fail(`${fields.email} isn't an approved ${fields.role === "gem" ? "GEM" : "teacher"} profile. Approve them in HQ first.`);
+        }
+      }
       if ("name" in fields && !fields.name) return fail("Person needs a name");
 
       let id = p.id as string | undefined;

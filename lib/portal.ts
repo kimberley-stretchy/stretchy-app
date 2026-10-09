@@ -61,6 +61,17 @@ export type PortalAgreement = {
   updated_at?: string;
 };
 
+// An approved teacher/GEM profile (public.hosts) that a portal person links to by email.
+export type HostProfile = {
+  id: string;
+  name: string;
+  email: string;
+  roles: string[];
+  instagram: string | null;
+  tiktok: string | null;
+  website: string | null;
+};
+
 export const ROLE_LABELS: Record<PortalPerson["role"], string> = {
   owner: "Owner",
   hq: "HQ",
