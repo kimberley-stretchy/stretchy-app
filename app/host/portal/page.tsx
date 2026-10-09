@@ -93,7 +93,7 @@ export default function TeamPortalPage() {
           <section className="border-2 border-ink rounded-2xl p-4" style={{ background: "#FCBB16" }}>
             <div className="font-mono text-[10px] font-extrabold tracking-[0.12em] mb-1">PLEASE READ & ACCEPT</div>
             <h2 className="font-display text-xl leading-none">{data.agreement.title}</h2>
-            <div className="mt-3 max-h-96 overflow-y-auto bg-white border-2 border-ink rounded-xl p-4">
+            <div className="mt-3">
               <AgreementView agreement={data.agreement} role={data.myRole} showAll={seeAllSections} />
             </div>
             <label className="flex items-start gap-2 mt-3 text-sm">
