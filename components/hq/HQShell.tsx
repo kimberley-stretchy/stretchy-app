@@ -22,6 +22,7 @@ const NAV_FLAT = [
   { href: "/admin/customers", label: "Customers / Accounts" },
   { href: "/admin/money", label: "Money" },
   { href: "/admin/venues", label: "Venues" },
+  { href: "/admin/portal", label: "Team portal" },
 ];
 
 const NAV_GROUPS = [

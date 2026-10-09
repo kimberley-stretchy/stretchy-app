@@ -106,7 +106,7 @@ function para(sc: Scheme, text: string) {
 }
 
 // Merged "Your Stretchy" card — session details AND who's on, in one box.
-function stretchyCard(sc: Scheme, p: AttendeeEmailPayload, tag: string) {
+function stretchyCard(sc: Scheme, p: AttendeeEmailPayload, tag: string, byo = true) {
   const parts: string[] = [
     label(sc, tag),
     `<p style="color:${sc.text};font-size:20px;font-weight:800;margin:0 0 8px;letter-spacing:-0.01em;">${p.sessionTitle}</p>`,
@@ -124,7 +124,9 @@ function stretchyCard(sc: Scheme, p: AttendeeEmailPayload, tag: string) {
   if (p.socialStretchVenue)
     foot.push(`<p style="color:${sc.text};font-size:13px;margin:0 0 6px;">🌞 Social Stretch after at ${p.socialStretchVenue}${p.socialVenueHandle ? ` · ${p.socialVenueHandle}` : ""}</p>`);
   if (p.directions)
-    foot.push(`<p style="color:${sc.text};font-size:13px;margin:0;">🚗 Getting there / parking: ${p.directions}</p>`);
+    foot.push(`<p style="color:${sc.text};font-size:13px;margin:0 0 6px;">🚗 Getting there / parking: ${p.directions}</p>`);
+  if (byo)
+    foot.push(`<p style="color:${sc.text};font-size:13px;margin:0;">🎒 BYO yoga mat & a stretchy mindset.</p>`);
   if (foot.length)
     parts.push(`<div style="margin:10px 0 0;padding-top:10px;border-top:2px solid ${sc.text};">${foot.join("")}</div>`);
   return box(sc, parts.join(""), 20);
@@ -317,7 +319,7 @@ function sessionCancelledEmail(p: AttendeeEmailPayload) {
     ${h1(sc, "Not this time. 💛")}
     ${hey(sc, p.name)}
     ${msg(sc, `Unfortunately this one didn't get enough holds to go ahead. Nothing was charged. Let's get the next session running — tell your mates, a random, a date, your flatmates. 💛`)}
-    ${stretchyCard(sc, p, "Didn't go ahead")}
+    ${stretchyCard(sc, p, "Didn't go ahead", false)}
     ${para(sc, "The more people who move together, the better the price gets for everyone — and the more sessions go ahead. Keep an eye out for what's next. 🌞")}
     ${button(sc, url, "See what's next →")}
     ${signoff(sc, "Hope to see you soon")}
@@ -354,7 +356,7 @@ function holdCancelledEmail(p: AttendeeEmailPayload) {
     ${h1(sc, "Hold cancelled. 👋")}
     ${hey(sc, p.name)}
     ${msg(sc, `Your hold's been cancelled. Nothing was charged — your card authorisation's been released.`)}
-    ${stretchyCard(sc, p, "Cancelled")}
+    ${stretchyCard(sc, p, "Cancelled", false)}
     ${p.sessionGoingAhead ? "" : para(sc, "Changed your mind? There's still time to grab a spot. 🧘")}
     ${button(sc, `${APP_URL}/sessions`, "Browse sessions →")}
     ${signoff(sc, "Hope to see you soon")}

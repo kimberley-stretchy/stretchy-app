@@ -6,22 +6,17 @@ const PROTECTED_PREFIXES: string[] = [];
 
 const ADMIN_PREFIXES = ["/admin"];
 
-// Site-wide beta gate — while testing, nothing past this cookie check is
-// reachable without the shared code entered at /access. Only /access itself
-// is exempt (api/* is already outside the matcher below, same as before).
-const ACCESS_COOKIE = "stretchy_access";
+// The site-wide beta gate (/access + stretchy_access cookie) is retired —
+// the site is public. Old /access links just bounce to where they were headed.
 const ACCESS_GATE_PATH = "/access";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname !== ACCESS_GATE_PATH) {
-    const hasAccess = request.cookies.get(ACCESS_COOKIE)?.value === "granted";
-    if (!hasAccess) {
-      const gateUrl = new URL(ACCESS_GATE_PATH, request.url);
-      gateUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(gateUrl);
-    }
+  if (pathname === ACCESS_GATE_PATH) {
+    const next = request.nextUrl.searchParams.get("next");
+    const dest = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
   // Let public routes through immediately. /admin also needs the auth+role

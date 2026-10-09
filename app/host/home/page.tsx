@@ -119,6 +119,18 @@ export default function HostHomePage() {
         </div>
 
         <Link
+          href="/host/portal"
+          className="flex items-center gap-3 border-2 border-ink rounded-2xl p-4 bg-white"
+        >
+          <span className="text-2xl flex-shrink-0">🗝</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm leading-tight">Team portal</p>
+            <p className="text-xs text-ink/65 mt-0.5">Your venues, contacts, access codes &amp; weekly run info.</p>
+          </div>
+          <span className="text-lg flex-shrink-0">→</span>
+        </Link>
+
+        <Link
           href="/host/feedback"
           className="flex items-center gap-3 border-2 border-ink rounded-2xl p-4"
           style={{ background: "#902F8A", color: "#F7F0E8" }}
