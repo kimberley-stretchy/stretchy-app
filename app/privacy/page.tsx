@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           <h1 className="font-display font-bold text-ink mb-1" style={{ fontSize: "36px", letterSpacing: "-0.03em" }}>
             Privacy policy
           </h1>
-          <p className="font-mono text-xs text-muted uppercase tracking-widest">NZ Privacy Act 2020 · Last updated September 2026</p>
+          <p className="font-mono text-xs text-muted uppercase tracking-widest">NZ Privacy Act 2020 · Last updated October 2026</p>
         </div>
 
         <div className="bg-white rounded-card border-2 border-ink p-5 space-y-4 text-sm text-ink leading-relaxed">
@@ -64,9 +64,19 @@ export default function PrivacyPage() {
             <p className="text-muted">Anything you share with us under &ldquo;moving with care&rdquo; is treated as sensitive. It&rsquo;s visible to your teacher and the GEM running your session, and Stretchy HQ can also see it at our discretion — for example, to help resolve a safety concern. It&rsquo;s protected by database-level access controls, and you can edit or remove it at any time. We are not a medical service, and this note isn&rsquo;t medical advice. It&rsquo;s ultimately up to you to move within your own limits, and to seek professional medical, health or wellness advice where you need it.</p>
           </div>
 
-          <div>
-            <h2 className="font-bold mb-2">Cookies</h2>
-            <p className="text-muted">We use session cookies to keep you logged in and local storage to remember your saved sessions. We don&rsquo;t currently use analytics or marketing cookies — if that changes, we&rsquo;ll update this section.</p>
+          <div id="cookies" className="scroll-mt-6">
+            <h2 className="font-bold mb-2">Cookies 🍪</h2>
+            <p className="text-muted">The short version: we only use the essentials. No ads, no analytics, no following you around the internet.</p>
+            <p className="text-muted mt-2">Cookies are tiny files a website pops on your device so it can remember you. Here&rsquo;s everything Stretchy uses:</p>
+            <ul className="text-muted space-y-1 list-disc pl-4 mt-2">
+              <li><strong>Keeping you logged in</strong> — when you sign in, a cookie remembers it&rsquo;s you so you don&rsquo;t have to log in on every page. It&rsquo;s cleared when you log out.</li>
+              <li><strong>Keeping payments safe</strong> — when you hold a spot or add a card, our payment provider Stripe sets its own cookies to process your payment securely and help stop fraud (stripe.com/privacy).</li>
+              <li><strong>Remembering little things</strong> — your browser&rsquo;s local storage notes that you&rsquo;ve closed a pop-up or this cookie note, and which Stretchy suggestions you&rsquo;ve voted for. This stays on your device and isn&rsquo;t sent to us.</li>
+              <li><strong>Signing in with Google</strong> — only if you choose that option, Google sets its own cookies while it signs you in.</li>
+              <li><strong>Fonts</strong> — our typefaces load from Google Fonts. That means Google sees your device&rsquo;s IP address to deliver them, but no cookies are set.</li>
+            </ul>
+            <p className="text-muted mt-2"><strong>What we don&rsquo;t use:</strong> analytics cookies, advertising cookies, or social media tracking pixels.</p>
+            <p className="text-muted mt-2"><strong>Your choices:</strong> you can block or delete cookies any time in your browser settings. If you block the essential ones, logging in and booking won&rsquo;t work — but you can still browse what&rsquo;s on. Because everything we use is needed to run Stretchy, there&rsquo;s nothing to opt in or out of. If we ever add analytics or marketing cookies, we&rsquo;ll ask you first and update this section.</p>
           </div>
 
           <div>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import CookieNotice from "@/components/CookieNotice";
 
 // Without this, some Android browsers (Chrome/Samsung Internet's "force dark
 // theme" setting) auto-invert the whole page to a dark palette on devices
@@ -49,6 +50,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-dvh bg-cream antialiased flex flex-col">
         <main className="flex-1">{children}</main>
+        <CookieNotice />
         <footer className="py-4 text-center text-xs text-gray-400">
           Made with love{" "}
           <a
