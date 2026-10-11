@@ -95,7 +95,7 @@ export async function PATCH(request: NextRequest) {
       : roles.includes("teacher") ? "teacher" : "GEM";
     resend.emails
       .send({
-        from: "Stretchy <hello@stretchy.social>",
+        from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",
         subject: `New ${roleLabel} application — ${name}`,
         text: `${name} just applied to be a ${roleLabel}.\n\nReview it: ${appUrl}/admin/people?tab=${roles.includes("teacher") ? "teachers" : "gems"}`,

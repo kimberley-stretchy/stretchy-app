@@ -164,7 +164,7 @@ export async function PATCH(request: NextRequest) {
     const firstName = host.name?.split(" ")[0] ?? "there";
     resend.emails
       .send({
-        from: "Stretchy HQ <hello@stretchy.social>",
+        from: "Stretchy HQ <hello@stretchyyoga.co.nz>",
         to: host.email,
         subject: "You're approved to host with Stretchy",
         text: `Hi ${firstName},\n\nYou're approved — you can now see your sessions and get to work. Head to your dashboard: ${appUrl}/host/home\n\nStretchy HQ`,

@@ -6,7 +6,7 @@ import { sendPushToUser } from "@/lib/push-server";
 import { REPLY_TO, page, box, label, button, h1, hey, msg, row } from "@/lib/stretchy-email";
 import { logEmail } from "@/lib/emailLog";
 
-const HQ_FROM = "Stretchy HQ <hello@stretchy.social>";
+const HQ_FROM = "Stretchy HQ <hello@stretchyyoga.co.nz>";
 const HQ_EMAIL = "kimberley@stretchyyoga.co.nz";
 
 function getAdmin() {

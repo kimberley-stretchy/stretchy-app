@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     console.error("Newsletter signup not synced to Resend:", cleanEmail, sync.error ?? (sync.skipped ? "audience not configured" : ""));
     new Resend(process.env.RESEND_API_KEY).emails
       .send({
-        from: "Stretchy <hello@stretchy.social>",
+        from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",
         subject: `⚠️ Sign-up didn't reach the newsletter list — ${cleanEmail}`,
         text: `${cleanEmail} signed up for Stretchy Updates and is saved in Supabase, but couldn't be added to the Resend newsletter list${sync.skipped ? " (the newsletter list isn't configured — RESEND_AUDIENCE_ID is missing)" : ""}.\n\nAdd them in Resend → Audiences → Stretchy Newsletter, or they won't get newsletters.\n\nDetails: ${String(sync.error ?? "").slice(0, 500)}`,
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     resend.emails
       .send({
-        from: "Stretchy <hello@stretchy.social>",
+        from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",
         subject: `New Stretchy Updates signup — ${cleanEmail}`,
         text: `${cleanEmail} just signed up for Stretchy Updates.`,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     resend.emails
       .send({
-        from: "Stretchy <hello@stretchy.social>",
+        from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: cleanEmail,
         reply_to: "kimberley@stretchyyoga.co.nz",
         subject: "You're on the list. 🙌",

@@ -318,7 +318,7 @@ export async function DELETE(request: NextRequest) {
         : `Your hold for ${session.title} (${dateStr}) has been cancelled. Nothing was charged — your card authorisation has been released.`;
       const resend = new Resend(process.env.RESEND_API_KEY);
       resend.emails.send({
-        from: "Stretchy <hello@stretchy.social>",
+        from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: attendeeData.email,
         bcc: "kimberley@stretchyyoga.co.nz",
         reply_to: "kimberley@stretchyyoga.co.nz",
@@ -539,7 +539,7 @@ export async function PATCH(request: NextRequest) {
         if (age !== null && age < 18 && process.env.RESEND_API_KEY) {
           const resend = new Resend(process.env.RESEND_API_KEY);
           await resend.emails.send({
-            from: "Stretchy HQ <hello@stretchy.social>",
+            from: "Stretchy HQ <hello@stretchyyoga.co.nz>",
             to: "kimberley@stretchyyoga.co.nz",
             subject: `⚠️ Under-18 booking — ${attendeeData.name ?? attendeeData.email}`,
             text: `${attendeeData.name ?? "A member"} (${attendeeData.email}), age ${age}, just held a place for ${sessionData.title} (${dateStr}). Flagging for HQ — they were allowed to book.`,

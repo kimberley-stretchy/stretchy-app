@@ -36,7 +36,7 @@ function hostSessionBox(
 // time"), HQ "starting soon" = orange (like the 2h email). Fire-and-forget.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const HQ_FROM = "Stretchy HQ <hello@stretchy.social>";
+const HQ_FROM = "Stretchy HQ <hello@stretchyyoga.co.nz>";
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);

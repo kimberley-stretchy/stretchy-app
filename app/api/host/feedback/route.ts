@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.stretchyyoga.co.nz";
     resend.emails
       .send({
-        from: "Stretchy <hello@stretchy.social>",
+        from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",
         subject: `Feedback from ${me.name}${category ? ` — ${category}` : ""}`,
         text: `${me.name} sent feedback${area ? ` (${area})` : ""}:\n\n${message.trim()}${sessionContext ? `\n\nSession: ${sessionContext}` : ""}\n\nReview it: ${appUrl}/admin/feedback`,

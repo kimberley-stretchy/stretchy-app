@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     await Promise.allSettled(
       eligible.map((h) =>
         resend.emails.send({
-          from: "Stretchy HQ <hello@stretchy.social>",
+          from: "Stretchy HQ <hello@stretchyyoga.co.nz>",
           to: h.email,
           subject: `Can you cover ${session.title}? — ${roleLabel} needed`,
           text: `Hi ${h.name?.split(" ")[0] ?? "there"},\n\n${session.title} (${dateStr}, ${session.location_name}) needs ${roleLabel} — the original one can't make it.\n\nFirst to say yes gets it: ${claimUrl}\n\nStretchy HQ`,

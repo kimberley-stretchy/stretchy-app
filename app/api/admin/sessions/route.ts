@@ -365,7 +365,7 @@ export async function DELETE(request: NextRequest) {
       if (!a.email) continue;
       const firstName = a.name?.split(" ")[0] ?? "there";
       resend.emails.send({
-        from: "Stretchy <hello@stretchy.social>",
+        from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: a.email,
         bcc: "kimberley@stretchyyoga.co.nz",
         reply_to: "kimberley@stretchyyoga.co.nz",

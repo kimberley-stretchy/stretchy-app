@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const summary = [session_type.replace(/_/g, " "), neighbourhood, preferred_time].filter(Boolean).join(" · ");
     resend.emails
       .send({
-        from: "Stretchy <hello@stretchy.social>",
+        from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",
         subject: `New Stretchy suggestion — ${summary}`,
         text: `${summary}${notes ? `\n\n${notes}` : ""}\n\nView the board: https://stretchyyoga.co.nz/admin/suggestions`,

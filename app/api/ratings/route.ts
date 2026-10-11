@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
     resend.emails.send({
-      from: "Stretchy <hello@stretchy.social>",
+      from: "Stretchy <hello@stretchyyoga.co.nz>",
       to: "kimberley@stretchyyoga.co.nz",
       subject: `New session suggestion from a Stretchy member`,
       text: `Session: ${session?.title ?? session_id}\nFrom: ${authorName}\n\nSuggestion:\n${suggestion}`,
