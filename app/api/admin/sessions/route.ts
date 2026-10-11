@@ -200,10 +200,10 @@ export async function POST(request: NextRequest) {
     socialVenueHandle: social_venue_instagram || null,
   };
   if (realHostAssigned) {
-    notifyHostScheduled({ hostId: host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher notify error:", e));
+    await notifyHostScheduled({ hostId: host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher notify error:", e));
   }
   if (gem_host_id) {
-    notifyHostScheduled({ hostId: gem_host_id, role: "gem", session: sessionForNotify }).catch((e) => console.error("GEM notify error:", e));
+    await notifyHostScheduled({ hostId: gem_host_id, role: "gem", session: sessionForNotify }).catch((e) => console.error("GEM notify error:", e));
   }
 
   return NextResponse.json({ id: data.id }, { status: 201 });
@@ -247,11 +247,11 @@ export async function PATCH(request: NextRequest) {
       socialVenueHandle: after.social_venue_instagram || null,
     };
     if (after.gem_host_id && after.gem_host_id !== before.gem_host_id) {
-      notifyHostScheduled({ hostId: after.gem_host_id, role: "gem", session: sessionForNotify }).catch((e) => console.error("GEM notify error:", e));
+      await notifyHostScheduled({ hostId: after.gem_host_id, role: "gem", session: sessionForNotify }).catch((e) => console.error("GEM notify error:", e));
     }
     // Only when a real teacher was picked — never the HQ placeholder host.
     if (updates.host_id && after.host_id !== before.host_id) {
-      notifyHostScheduled({ hostId: after.host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher notify error:", e));
+      await notifyHostScheduled({ hostId: after.host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher notify error:", e));
     }
   }
 
@@ -341,11 +341,11 @@ export async function DELETE(request: NextRequest) {
   if (session.host_id) {
     const { data: teacherHost } = await supabase.from("hosts").select("email").eq("id", session.host_id).single();
     if (teacherHost?.email !== KIMBERLEY_EMAIL) {
-      notifyHostCancelled({ hostId: session.host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher cancel-notify error:", e));
+      await notifyHostCancelled({ hostId: session.host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher cancel-notify error:", e));
     }
   }
   if (session.gem_host_id) {
-    notifyHostCancelled({ hostId: session.gem_host_id, role: "gem", session: sessionForNotify }).catch((e) => console.error("GEM cancel-notify error:", e));
+    await notifyHostCancelled({ hostId: session.gem_host_id, role: "gem", session: sessionForNotify }).catch((e) => console.error("GEM cancel-notify error:", e));
   }
 
   // Email every affected attendee — fire and forget, don't block the response.
@@ -364,7 +364,7 @@ export async function DELETE(request: NextRequest) {
     for (const a of attendees ?? []) {
       if (!a.email) continue;
       const firstName = a.name?.split(" ")[0] ?? "there";
-      resend.emails.send({
+      await resend.emails.send({
         from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: a.email,
         bcc: "kimberley@stretchyyoga.co.nz",

@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   if (process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const summary = [session_type.replace(/_/g, " "), neighbourhood, preferred_time].filter(Boolean).join(" · ");
-    resend.emails
+    await resend.emails
       .send({
         from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",

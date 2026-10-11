@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   // newsletter (which is how three early-September sign-ups went missing).
   if (!sync.ok && process.env.RESEND_API_KEY) {
     console.error("Newsletter signup not synced to Resend:", cleanEmail, sync.error ?? (sync.skipped ? "audience not configured" : ""));
-    new Resend(process.env.RESEND_API_KEY).emails
+    await new Resend(process.env.RESEND_API_KEY).emails
       .send({
         from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   // Notify HQ and confirm to the signer — new signups only, fire and forget.
   if (!existing && process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    resend.emails
+    await resend.emails
       .send({
         from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       })
       .catch((e) => console.error("Newsletter notify email error:", e));
 
-    resend.emails
+    await resend.emails
       .send({
         from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: cleanEmail,

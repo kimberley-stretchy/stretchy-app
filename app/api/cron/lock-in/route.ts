@@ -227,7 +227,7 @@ export async function GET(request: NextRequest) {
 
     // Send push notifications to all holders
     const holderUserIds = holds.filter(h => !unpaidHoldIds.has(h.id)).map(h => h.user_id);
-    sendPushToUsers(holderUserIds, {
+    await sendPushToUsers(holderUserIds, {
       title: "Price locked 🔒",
       body: `${session.title} — $${finalPrice.toFixed(2)} charged. See you in 2 hours!`,
       url: `/sessions/${session.id}`,
@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
 
     // 2-hour heads-up for HQ only — teacher and GEM don't need a 2h email
     // (they got the confirm + calendar invite when it locked in at 36h).
-    notifyHQ({
+    await notifyHQ({
       subject: `${failed ? "⚠️ Payment failed · " : ""}Starting in ~2h: ${session.title}`,
       scheme: "orange",
       kicker: "Stretchy HQ · Starting soon",

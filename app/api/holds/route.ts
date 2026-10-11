@@ -350,7 +350,7 @@ export async function DELETE(request: NextRequest) {
         ? `${cancelQty} spot${cancelQty === 1 ? "" : "s"} cancelled for ${session.title} (${dateStr}). You still have ${remainingQty} spot${remainingQty === 1 ? "" : "s"} held — nothing extra was charged.`
         : `Your hold for ${session.title} (${dateStr}) has been cancelled. Nothing was charged — your card authorisation has been released.`;
       const resend = new Resend(process.env.RESEND_API_KEY);
-      resend.emails.send({
+      await resend.emails.send({
         from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: attendeeData.email,
         bcc: "kimberley@stretchyyoga.co.nz",

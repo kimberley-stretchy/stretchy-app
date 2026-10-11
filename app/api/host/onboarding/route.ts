@@ -93,7 +93,7 @@ export async function PATCH(request: NextRequest) {
     const roleLabel = roles.includes("teacher") && roles.includes("gem")
       ? "teacher & GEM"
       : roles.includes("teacher") ? "teacher" : "GEM";
-    resend.emails
+    await resend.emails
       .send({
         from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",

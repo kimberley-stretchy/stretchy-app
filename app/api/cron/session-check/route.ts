@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
       })));
 
       // Push to holders + interested (best-effort, never blocks).
-      sendPushToUsers([...userIds, ...interestedIds], {
+      await sendPushToUsers([...userIds, ...interestedIds], {
         title: needed <= 1 ? "1 more and it's on 👀" : `${needed} more and it's on 👀`,
         body: `${s.title} needs ${needed} more to lock in. Tell your mates!`,
         url: shareUrl,

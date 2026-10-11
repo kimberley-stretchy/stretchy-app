@@ -162,7 +162,7 @@ export async function PATCH(request: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.stretchyyoga.co.nz";
     const firstName = host.name?.split(" ")[0] ?? "there";
-    resend.emails
+    await resend.emails
       .send({
         from: "Stretchy HQ <hello@stretchyyoga.co.nz>",
         to: host.email,

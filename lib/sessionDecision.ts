@@ -126,7 +126,7 @@ export async function confirmSession(
     });
   }
   await sendAttendeeBatch(goAheadItems);
-  sendPushToUsers(userIds, {
+  await sendPushToUsers(userIds, {
     title: "It's happening! ✅",
     body: `${session.title} is confirmed. Price may still drop — see you there!`,
     url: `/notifications/going-ahead?session=${session.id}`,
@@ -152,7 +152,7 @@ export async function confirmSession(
     }))
   );
   if (interestedIds.length > 0) {
-    sendPushToUsers(interestedIds, {
+    await sendPushToUsers(interestedIds, {
       title: "It's on 🎉",
       body: `${session.title} is happening — grab a spot before it fills.`,
       url: `/sessions/${session.id}`,
@@ -206,7 +206,7 @@ export async function cancelSession(
       },
     }))
   );
-  sendPushToUsers(userIds, {
+  await sendPushToUsers(userIds, {
     title: "Not this time 💙",
     body: `${session.title} didn't reach the minimum. Nothing was charged.`,
     url: `/notifications/cancelled?session=${session.id}`,

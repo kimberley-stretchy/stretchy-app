@@ -154,7 +154,7 @@ export async function notifyHostConfirmed({
     `);
     await sendHostEmail(host.email, `It's on: ${session.title}`, html, HQ_EMAIL, { emailType: `host_confirmed_${role}`, sessionId: session.id });
     if (host.auth_user_id) {
-      sendPushToUser(host.auth_user_id, {
+      await sendPushToUser(host.auth_user_id, {
         title: "It's on ✅",
         body: `${session.title} is confirmed — you're ${role === "teacher" ? "teaching" : "on GEM"}.`,
         url: "/host/home",
@@ -204,7 +204,7 @@ export async function notifyHostRecruit({
     `);
     await sendHostEmail(host.email, `Nearly there: ${session.title} needs ${needed} more`, html, undefined, { emailType: `host_recruit_${role}`, sessionId: session.id });
     if (host.auth_user_id) {
-      sendPushToUser(host.auth_user_id, {
+      await sendPushToUser(host.auth_user_id, {
         title: `${needed} more and it's on`,
         body: `${session.title} — share it, decision in ~2h.`,
         url: "/host/home",

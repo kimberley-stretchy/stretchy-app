@@ -119,7 +119,7 @@ export async function notifyHostScheduled({
     }
 
     if (host.auth_user_id) {
-      sendPushToUser(host.auth_user_id, {
+      await sendPushToUser(host.auth_user_id, {
         title: "You're scheduled",
         body: `${session.title} — ${dateStr}`,
         url: "/host/home",
@@ -175,7 +175,7 @@ export async function notifyHostCancelled({
     }
 
     if (host.auth_user_id) {
-      sendPushToUser(host.auth_user_id, {
+      await sendPushToUser(host.auth_user_id, {
         title: "Session cancelled",
         body: `${session.title} — ${dateStr} — no longer happening`,
         url: "/host/home",
