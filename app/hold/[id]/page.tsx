@@ -28,7 +28,12 @@ type Session = {
   description?: string | null;
   what_to_bring?: string[] | null;
   teacherName?: string | null;
+  teacherStyle?: string | null;
+  teacherHandle?: string | null;
   gemName?: string | null;
+  gemHandle?: string | null;
+  venueHandle?: string | null;
+  socialVenueHandle?: string | null;
   my_hold_quantity?: number;
 };
 
@@ -231,7 +236,24 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
             </div>
           </div>
           <h2 className="font-display font-bold text-ink leading-tight mb-0.5" style={{ fontSize: "24px" }}>{session.title}</h2>
-          <p className="text-sm text-muted mb-3">{session.location_name}</p>
+          {/* Same details, same wording, as the "Your Stretchy" card in the
+              confirmation email (lib/stretchy-email.ts → stretchyCard). Social
+              Stretch and getting-there have their own cards further down. */}
+          <div className="text-sm text-ink leading-relaxed mb-3 space-y-0.5">
+            <p>🗓 {fullDateStr} at {timeStr.toLowerCase()}</p>
+            <p>📍 {session.location_name}{session.venueHandle ? ` · ${session.venueHandle}` : ""}</p>
+            {(session.teacherName || session.teacherStyle) && (
+              <p>
+                🧘 {session.teacherStyle ?? "Movement"}
+                {session.teacherName ? ` with ${session.teacherName}` : ""}
+                {session.teacherHandle ? ` · ${session.teacherHandle}` : ""}
+              </p>
+            )}
+            {session.gemName && (
+              <p>💫 GEM on the day: {session.gemName}{session.gemHandle ? ` · ${session.gemHandle}` : ""}</p>
+            )}
+            <p>🎒 BYO yoga mat &amp; a stretchy mindset.</p>
+          </div>
           <div className="flex items-center justify-between px-3 py-2.5 rounded-card" style={{ backgroundColor: "#E8F3FF", border: "2px solid #14110F" }}>
             <p className="text-sm leading-snug" style={{ color: "#1A4A80" }}>
               No charge yet — you can cancel any time up to 36 hrs out when the session is confirmed. The price can still get cheaper as more people join up to 2 hrs out. Your card is charged at that point, at that price.
@@ -329,7 +351,7 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
             </div>
             <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] mb-2" style={{ color: "rgba(255,255,255,0.65)" }}>Social Stretch 🤙</p>
             <p className="text-white font-semibold leading-snug mb-1" style={{ fontSize: "15px" }}>
-              {session.social_stretch_venue}
+              {session.social_stretch_venue}{session.socialVenueHandle ? ` · ${session.socialVenueHandle}` : ""}
             </p>
             {session.social_stretch_note && (
               <p className="text-sm" style={{ color: "rgba(255,255,255,0.60)" }}>{session.social_stretch_note}</p>
