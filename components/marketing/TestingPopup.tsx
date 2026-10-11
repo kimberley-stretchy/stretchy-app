@@ -69,13 +69,13 @@ export default function TestingPopup() {
         {status === "done" ? (
           <>
             <h2 className="font-display text-[26px] leading-none mb-2">You&rsquo;re on the list.</h2>
-            <p className="text-sm text-ink/70 leading-relaxed">We&rsquo;ll be in touch as things come together. Thanks for being early.</p>
+            <p className="text-sm text-ink/70 leading-relaxed">We&rsquo;ll keep you posted on all things Stretchy.</p>
           </>
         ) : (
           <>
-            <h2 className="font-display text-[26px] leading-none mb-2">Something new is stretching into shape.</h2>
+            <h2 className="font-display text-[26px] leading-none mb-2">Keep up to date on all things Stretchy.</h2>
             <p className="text-sm text-ink/70 leading-relaxed mb-5">
-              We&rsquo;re in testing for a new Stretchy model. More to come soon — enter your email below for (near) future updates.
+              Enter your email below for new sessions, locations and news.
             </p>
             <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
               <input
