@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "Stretchy — A Social Movement",
   description:
     "Community movement classes where the price drops as more people join. Yoga, pilates, breathwork and more across Auckland.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://stretchyyoga.co.nz"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.stretchyyoga.co.nz"),
   openGraph: {
     title: "Stretchy — A Social Movement",
     description: "Move together. Pay less together.",

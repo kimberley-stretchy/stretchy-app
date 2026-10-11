@@ -17,7 +17,7 @@ import { logEmail, logEmails } from "@/lib/emailLog";
 export const FROM = "Stretchy <hello@stretchy.social>";
 export const REPLY_TO = "kimberley@stretchyyoga.co.nz";
 export const HQ_EMAIL = "kimberley@stretchyyoga.co.nz";
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchyyoga.co.nz";
+export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.stretchyyoga.co.nz";
 
 // ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 

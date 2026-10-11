@@ -34,7 +34,9 @@ export default function SubstituteClaimPage() {
       setAccessToken(session.access_token);
 
       try {
-        const res = await fetch(`/api/host/substitute-requests/${params.id}`);
+        const res = await fetch(`/api/host/substitute-requests/${params.id}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
         if (res.ok) {
           const { request } = await res.json();
           setDetail(request as RequestDetail);

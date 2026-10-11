@@ -73,12 +73,12 @@ export default async function SessionLayout({
       price: price.toFixed(2),
       priceCurrency: "NZD",
       availability: "https://schema.org/InStock",
-      url: `${process.env.NEXT_PUBLIC_APP_URL || "https://stretchyyoga.co.nz"}/sessions/${s.id}`,
+      url: `${process.env.NEXT_PUBLIC_APP_URL || "https://www.stretchyyoga.co.nz"}/sessions/${s.id}`,
     },
     organizer: {
       "@type": "Organization",
       name: "Stretchy",
-      url: process.env.NEXT_PUBLIC_APP_URL || "https://stretchyyoga.co.nz",
+      url: process.env.NEXT_PUBLIC_APP_URL || "https://www.stretchyyoga.co.nz",
     },
   };
 

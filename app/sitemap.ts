@@ -10,7 +10,7 @@ function getAdmin() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = process.env.NEXT_PUBLIC_APP_URL || "https://stretchyyoga.co.nz";
+  const base = process.env.NEXT_PUBLIC_APP_URL || "https://www.stretchyyoga.co.nz";
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/`, changeFrequency: "weekly" as const, priority: 1 },

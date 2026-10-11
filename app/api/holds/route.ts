@@ -511,7 +511,7 @@ export async function PATCH(request: NextRequest) {
       const perSpot = finalPi.amount / 100 / combinedQuantity;
       const priceDisplay = `$${perSpot.toFixed(2)} incl. GST`;
       const totalDisplay = `$${(finalPi.amount / 100).toFixed(2)} incl. GST`;
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchyyoga.co.nz";
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.stretchyyoga.co.nz";
 
       const [extras, firstTimer] = await Promise.all([
         buildSessionEmailExtras(admin, sessionData),

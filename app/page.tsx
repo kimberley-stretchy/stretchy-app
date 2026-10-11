@@ -186,7 +186,7 @@ export default async function HomePage() {
     "@type": "Organization",
     name: "Stretchy",
     description: "A social movement community in Tāmaki Makaurau / Auckland — community-led yoga and movement sessions, priced by the room.",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://stretchyyoga.co.nz",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://www.stretchyyoga.co.nz",
     email: "kimberley@stretchyyoga.co.nz",
     sameAs: [
       "https://www.instagram.com/stretchy.yoga/",

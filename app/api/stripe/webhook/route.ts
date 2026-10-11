@@ -46,7 +46,10 @@ export async function POST(request: NextRequest) {
 
     case "payment_intent.canceled":
       console.log(`❌ Payment cancelled for session ${sessionId}, attendee ${attendeeId}`);
-      // TODO: Update holds table → status = 'cancelled'
+      // Deliberately log-only. Stripe also fires this when a hold's card
+      // authorisation simply lapses (~7 days), and that hold is still valid —
+      // /api/cron/lock-in charges the saved card instead. Do NOT release the
+      // hold from here.
       break;
 
     case "payment_intent.payment_failed":

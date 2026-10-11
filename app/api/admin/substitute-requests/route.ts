@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     return practiceTypes.length === 0 || practiceTypes.includes(session.movement_type);
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://stretchyyoga.co.nz";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.stretchyyoga.co.nz";
   const startDate = new Date(session.starts_at);
   const dateStr =
     startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
