@@ -30,6 +30,39 @@ function getAdmin() {
   );
 }
 
+// GET /api/holds — the signed-in user's own holds, newest first, each with its
+// session. Served with the service role (filtered to this user) because the
+// sessions table isn't readable from the browser: a direct client-side join
+// came back with the session missing, so the hold silently vanished from
+// "Your sessions".
+export async function GET(request: NextRequest) {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  let { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    const token = request.headers.get("Authorization")?.replace("Bearer ", "");
+    if (token) { const { data } = await supabase.auth.getUser(token); user = data.user; }
+  }
+  if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+
+  const { data, error } = await getAdmin()
+    .from("holds")
+    .select(`
+      id, state, created_at, quantity,
+      sessions(id, title, starts_at, movement_type, state, cost_base, revenue_target, min_attendees, max_attendees, location_name)
+    `)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ holds: data ?? [] });
+}
+
 // POST /api/holds — step 1: create Stripe PaymentIntent, return clientSecret
 // Body: { sessionId }
 export async function POST(request: NextRequest) {

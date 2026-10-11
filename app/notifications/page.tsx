@@ -50,17 +50,19 @@ export default function NotificationsPage() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!session) { router.push("/login"); return; }
 
-      const { data } = await supabase
-        .from("holds")
-        .select(`
-          id, state, created_at, quantity,
-          sessions(id, title, starts_at, movement_type, state, cost_base, revenue_target, min_attendees, max_attendees, location_name)
-        `)
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (data) setHolds(data as unknown as HoldWithSession[]);
+      // Via the API (not a direct table read) — see GET /api/holds for why.
+      try {
+        const res = await fetch("/api/holds", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const { holds: rows } = await res.json();
+          setHolds((rows ?? []) as HoldWithSession[]);
+        }
+      } catch {
+        // leave the list empty — the page shows its empty state
+      }
       setLoading(false);
     });
     return () => subscription.unsubscribe();
