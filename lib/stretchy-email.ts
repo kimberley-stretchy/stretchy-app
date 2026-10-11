@@ -524,7 +524,6 @@ export async function sendAttendeeEmail(
       subject,
       html,
       text: toPlainText(html),
-      headers: { "X-Priority": "1", "X-MSMail-Priority": "High", "Importance": "High" },
     });
     await logEmail({
       sessionId: payload.sessionId,
@@ -570,7 +569,6 @@ export async function sendAttendeeBatch(
       subject,
       html,
       text: toPlainText(html),
-      headers: { "X-Priority": "1", "Importance": "High" },
     };
   });
   let sent = 0;

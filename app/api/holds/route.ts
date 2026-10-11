@@ -323,7 +323,6 @@ export async function DELETE(request: NextRequest) {
         bcc: "kimberley@stretchyyoga.co.nz",
         reply_to: "kimberley@stretchyyoga.co.nz",
         subject,
-        headers: { "X-Priority": "1", "Importance": "High" },
         text: `Hi ${firstName},\n\n${bodyLine}\n\nBrowse sessions: https://stretchyyoga.co.nz/sessions\n\nStretchy`,
         html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#F7F0E8;padding:32px;border-radius:16px;"><h1 style="font-size:26px;font-weight:900;color:#14110F;margin:0 0 8px;">${isPartial ? "Booking updated." : "Hold cancelled."} 👋</h1><p style="color:#555;font-size:15px;margin:0 0 20px;">Hi ${firstName} — ${bodyLine}</p><a href="https://stretchyyoga.co.nz/sessions" style="display:inline-block;background:#14110F;color:#F7F0E8;text-decoration:none;font-size:13px;font-weight:700;padding:12px 22px;border-radius:8px;">Browse sessions →</a><p style="font-size:11px;color:#AAA;text-align:center;margin:24px 0 0;">Made with Love by <a href="https://studiodawn.org" style="color:#AAA;">Studio Dawn</a></p></div>`,
       }).catch(console.error);
