@@ -21,7 +21,7 @@ type Suggestion = {
   notes: string | null;
   vote_count: number;
   created_at: string;
-  contacts?: { name: string | null; email: string; notify: boolean }[];
+  contacts?: { name: string | null; email: string; notify: boolean; kind?: string }[];
 };
 
 export default function AdminSuggestionsPage() {
@@ -71,7 +71,7 @@ export default function AdminSuggestionsPage() {
                   <p key={c.email} style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 6, color: T.ink }}>
                     ✉️ {c.name ? `${c.name} · ` : ""}
                     <a href={`mailto:${c.email}`} style={{ color: T.purple, fontWeight: 700 }}>{c.email}</a>
-                    {c.notify ? " — wants to hear if it goes ahead" : ""}
+                    {" — "}{c.kind === "me_too" ? "said me too" : "suggested it"}{c.notify ? ", wants to hear if it goes ahead" : ""}
                   </p>
                 ))}
                 <p style={{ fontFamily: T.mono, fontSize: 10, color: "rgba(20,17,15,.4)" }}>

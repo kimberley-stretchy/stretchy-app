@@ -28,14 +28,14 @@ export async function GET(request: NextRequest) {
   // Tolerate the contacts table not existing yet (migration not run).
   const { data: contacts, error: contactsErr } = await admin
     .from("suggestion_contacts")
-    .select("suggestion_id, name, email, notify, created_at")
+    .select("*")
     .order("created_at", { ascending: true });
   if (contactsErr) console.error("Suggestion contacts read error:", contactsErr);
 
-  const bySuggestion = new Map<string, { name: string | null; email: string; notify: boolean }[]>();
+  const bySuggestion = new Map<string, { name: string | null; email: string; notify: boolean; kind: string }[]>();
   for (const c of contacts ?? []) {
     const list = bySuggestion.get(c.suggestion_id) ?? [];
-    list.push({ name: c.name, email: c.email, notify: c.notify });
+    list.push({ name: c.name, email: c.email, notify: c.notify, kind: c.kind ?? "suggester" });
     bySuggestion.set(c.suggestion_id, list);
   }
 

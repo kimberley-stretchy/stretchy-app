@@ -1,3 +1,5 @@
+import MeTooContact from "@/components/suggest/MeTooContact";
+
 export type BoardSuggestion = {
   id: string;
   session_type: string;
@@ -57,12 +59,15 @@ export default function SuggestionCard({
           Becoming a session
         </div>
       ) : voted ? (
-        <div
-          className="mt-auto h-11 rounded-pill flex items-center justify-center gap-2 text-[13px] font-bold"
-          style={{ background: "#14110F", border: "2px solid #14110F", color: "#F7F0E8" }}
-        >
-          <span className="w-[7px] h-[7px] rounded-pill bg-current" />
-          You said me too
+        <div className="mt-auto flex flex-col gap-3">
+          <div
+            className="h-11 rounded-pill flex items-center justify-center gap-2 text-[13px] font-bold"
+            style={{ background: "#14110F", border: "2px solid #14110F", color: "#F7F0E8" }}
+          >
+            <span className="w-[7px] h-[7px] rounded-pill bg-current" />
+            You said me too
+          </div>
+          {!s.isPlaceholder && <MeTooContact suggestionId={s.id} olive={olive} />}
         </div>
       ) : (
         <button

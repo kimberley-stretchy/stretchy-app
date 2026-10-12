@@ -15,3 +15,12 @@ create table if not exists public.suggestion_contacts (
 create index if not exists suggestion_contacts_suggestion_idx on public.suggestion_contacts (suggestion_id);
 
 alter table public.suggestion_contacts enable row level security;
+
+-- Who left the details: the person who made the suggestion, or someone who
+-- said "me too" on the board.
+alter table public.suggestion_contacts
+  add column if not exists kind text not null default 'suggester';   -- 'suggester' | 'me_too'
+
+-- One row per person per suggestion.
+create unique index if not exists suggestion_contacts_unique_person
+  on public.suggestion_contacts (suggestion_id, lower(email));

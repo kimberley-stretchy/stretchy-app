@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { suggestionTitle, type BoardSuggestion } from "@/components/suggest/SuggestionCard";
+import MeTooContact from "@/components/suggest/MeTooContact";
 
 export type MarketingSuggestion = BoardSuggestion;
 
@@ -62,6 +63,9 @@ export default function SuggestBand({ suggestions }: { suggestions: MarketingSug
   const [items] = useState(suggestions);
   const [voted, setVoted] = useState<Set<string>>(new Set());
   const [errorId, setErrorId] = useState<string | null>(null);
+  // The suggestion someone just voted for in this visit — they're offered an
+  // email field so HQ can tell them if it becomes a session.
+  const [askEmailFor, setAskEmailFor] = useState<string | null>(null);
 
   // Persisted per-browser so a reload doesn't let the same person vote again —
   // a real server-side one-vote-per-person system (with signed-in + anonymous
@@ -85,6 +89,7 @@ export default function SuggestBand({ suggestions }: { suggestions: MarketingSug
         body: JSON.stringify({ id }),
       });
       if (!res.ok) throw new Error();
+      setAskEmailFor(id);
     } catch {
       const reverted = new Set(voted);
       reverted.delete(id);
@@ -133,7 +138,14 @@ export default function SuggestBand({ suggestions }: { suggestions: MarketingSug
           {board.length > 0 && (
             <div className="grid grid-cols-1 gap-[9px] items-start">
               {board.map((s) => (
-                <SuggestionRow key={s.id} s={s} voted={voted.has(s.id)} onVote={handleVote} />
+                <div key={s.id} className="flex flex-col gap-2">
+                  <SuggestionRow s={s} voted={voted.has(s.id)} onVote={handleVote} />
+                  {askEmailFor === s.id && (
+                    <div className="px-1 pb-1">
+                      <MeTooContact suggestionId={s.id} olive />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
