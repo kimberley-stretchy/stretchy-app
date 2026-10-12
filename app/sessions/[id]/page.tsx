@@ -4,20 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
-import HowToStretchy from "@/components/HowToStretchy";
 import HoldModal from "@/components/HoldModal";
-import CapacityPips from "@/components/CapacityPips";
+import SessionView, { sessionStatus } from "@/components/sessions/SessionView";
 import { createClient } from "@/lib/supabase/client";
-import { calculatePrice, formatPrice } from "@/lib/pricing";
-
-const TYPE_COLORS: Record<string, string> = {
-  yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
-  sound: "#716F39", flow: "#FCBB16", run: "#E96709", hiit: "#902F8A",
-};
-const TYPE_LABELS: Record<string, string> = {
-  yoga: "YOGA", pilates: "PILATES", breath: "BREATH",
-  sound: "SOUND", flow: "FLOW", run: "RUN", hiit: "HIIT",
-};
 
 type Session = {
   id: string;
@@ -49,29 +38,6 @@ type Session = {
   venueHandle?: string | null;
   socialVenueHandle?: string | null;
 };
-
-function handleHref(v?: string | null): string | null {
-  if (!v) return null;
-  return v.startsWith("http") ? v : `https://www.instagram.com/${v.replace(/^@+/, "")}/`;
-}
-function Handle({ value }: { value?: string | null }) {
-  const href = handleHref(value);
-  if (!href) return null;
-  return <a href={href} target="_blank" rel="noreferrer" className="underline" style={{ color: "#902F8A" }}>{value}</a>;
-}
-
-// Price ladder — a short list of evenly-stepped rows, not a continuous curve,
-// per the design system's pricing component (10-pricing-component.png).
-function ladderRows(min: number, max: number, costBase: number, revenueTarget: number) {
-  const range = Math.max(1, max - min);
-  const step = Math.max(1, Math.round(range / 8));
-  const rows: { n: number; price: number }[] = [];
-  for (let n = min; n < max; n += step) {
-    rows.push({ n, price: calculatePrice(costBase, revenueTarget, n) });
-  }
-  rows.push({ n: max, price: calculatePrice(costBase, revenueTarget, max) });
-  return rows.filter((r, i, arr) => arr.findIndex((x) => x.n === r.n) === i);
-}
 
 export default function SessionDetailPage() {
   const params = useParams<{ id: string }>();
@@ -206,7 +172,7 @@ export default function SessionDetailPage() {
         <h1 className="font-display font-bold text-ink mb-2" style={{ fontSize: "36px", letterSpacing: "-0.03em" }}>
           This one&rsquo;s not going ahead.
         </h1>
-        <p className="text-sm text-muted leading-relaxed mb-8">{session.title} has been cancelled. If you were holding a spot, you&rsquo;ll have had an email — nothing was charged.</p>
+        <p className="text-sm text-muted leading-relaxed mb-8">{session.title} has been called off. If you were holding a place, you pay nothing, and you&rsquo;ll have had an email.</p>
         <Link href="/sessions" className="font-semibold text-cream rounded-pill px-8 py-4 transition-all" style={{ backgroundColor: "#14110F", fontSize: "15px" }}>
           Browse other sessions →
         </Link>
@@ -215,33 +181,57 @@ export default function SessionDetailPage() {
   }
 
   const s = session;
-  const typeColor = TYPE_COLORS[s.movement_type] ?? "#888";
-  const typeLabel = TYPE_LABELS[s.movement_type] ?? s.movement_type.toUpperCase();
-  const holds = s.current_holds || 0;
-  const confirmed = holds >= s.min_attendees;
-  const currentN = Math.min(Math.max(holds, s.min_attendees), s.max_attendees);
-  const currentPrice = calculatePrice(s.cost_base, s.revenue_target, currentN);
-  const floorPrice = calculatePrice(s.cost_base, s.revenue_target, s.max_attendees);
-  const spotsToMin = Math.max(0, s.min_attendees - holds);
-  const rows = ladderRows(s.min_attendees, s.max_attendees, s.cost_base, s.revenue_target);
+  const { joiningClosed, full } = sessionStatus(s);
+  const myPlaces = s.my_hold_quantity ?? 0;
 
-  const startDate = new Date(s.starts_at);
-  const weekdayStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short" }).toUpperCase();
-  const timeStr = startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
-  const durationLabel = s.duration_mins >= 60 ? `${s.duration_mins / 60}HR` : `${s.duration_mins} MIN`;
+  const action = (
+    <>
+          {myPlaces > 0 ? (
+            <Link
+              href={`/hold/${params.id}`}
+              className="block w-full text-center rounded-pill py-[13px] px-[18px] font-bold text-[15px]"
+              style={{ background: "#716F39", color: "#F7F0E8" }}
+            >
+              {myPlaces === 1 ? "Your place is held" : `Your ${myPlaces} places are held`} · Manage my booking
+            </Link>
+          ) : joiningClosed ? (
+            <p className="m-0 w-full text-center rounded-pill py-[13px] px-[18px] font-bold text-[15px] border-2 border-ink/40 text-ink/60">
+              Joining has closed for this one
+            </p>
+          ) : full ? (
+            <p className="m-0 w-full text-center rounded-pill py-[13px] px-[18px] font-bold text-[15px] border-2 border-ink/40 text-ink/60">
+              This one&rsquo;s full
+            </p>
+          ) : !accessToken ? (
+            <Link
+              href={`/login?next=/sessions/${params.id}`}
+              className="block w-full text-center rounded-pill py-[13px] px-[18px] font-bold text-[15px]"
+              style={{ background: "#14110F", color: "#F7F0E8" }}
+            >
+              Hold my place
+            </Link>
+          ) : (
+            <button
+              onClick={handleHold}
+              disabled={holding || held}
+              className="block w-full rounded-pill py-[13px] px-[18px] font-bold text-[15px] disabled:opacity-60"
+              style={{ background: "#14110F", color: "#F7F0E8" }}
+            >
+              {holding ? "Holding your place…" : held ? "Held ✓" : "Hold my place"}
+            </button>
+          )}
+    </>
+  );
 
   return (
-    <main className="min-h-screen bg-cream pb-36 max-w-lg mx-auto">
-      <nav className="flex items-center justify-between px-4 py-4">
-        <Link href="/sessions" className="text-ink"><SMark size={28} /></Link>
-        <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-pill" style={{ background: "#E6F5EC", color: "#2E7A52" }}>
-          ✓ Vetted host
-        </span>
+    <main className="min-h-screen bg-cream pb-16 max-w-lg mx-auto">
+      <nav className="flex items-center justify-between px-[18px] py-4">
+        <Link href="/sessions" className="text-ink" aria-label="Back to What's on"><SMark size={28} /></Link>
         <button
           onClick={toggleInterest}
           disabled={interestBusy}
           aria-pressed={interested}
-          title={interested ? "You're interested — tap to remove" : "I'm interested — notify me about this one"}
+          title={interested ? "You're interested — tap to remove" : "I'm interested — tell me about this one"}
           className="w-10 h-10 rounded-full border-2 flex items-center justify-center text-base transition-colors"
           style={interested
             ? { background: "#902F8A", color: "#F7F0E8", borderColor: "#902F8A" }
@@ -251,171 +241,7 @@ export default function SessionDetailPage() {
         </button>
       </nav>
 
-      <div className="px-4">
-        <div className="flex flex-wrap gap-2 mb-3">
-          <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-pill border-2 border-ink text-ink">
-            {weekdayStr} · {timeStr}
-          </span>
-          <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-pill border-2 border-ink text-ink">
-            {durationLabel}
-          </span>
-          <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-pill border-2" style={{ color: typeColor, borderColor: typeColor }}>
-            {typeLabel}
-          </span>
-        </div>
-        <h1 className="font-display font-bold text-ink mb-2" style={{ fontSize: "clamp(32px, 9vw, 44px)", letterSpacing: "-0.03em", lineHeight: 0.95 }}>
-          {s.title}
-        </h1>
-        <p className="text-sm text-muted mb-3">{s.location_name}</p>
-        {s.description && <p className="text-sm text-ink/75 leading-relaxed">{s.description}</p>}
-        {(s.teacherName || s.gemName || s.teacherStyle) && (
-          <div className="mt-3 flex flex-col gap-1 text-sm text-ink/75">
-            {(s.teacherStyle || s.teacherName) && (
-              <p>🧘 {s.teacherStyle ?? "Movement"}{s.teacherName ? ` with ${s.teacherName}` : ""} {s.teacherHandle && <>· <Handle value={s.teacherHandle} /></>}</p>
-            )}
-            {s.gemName && <p>💫 GEM on the day: {s.gemName} {s.gemHandle && <>· <Handle value={s.gemHandle} /></>}</p>}
-          </div>
-        )}
-      </div>
-
-      {/* Pricing card — cream + purple accent, price ladder not a curve */}
-      <div className="mx-4 my-5 bg-white rounded-card border-2 border-ink p-5">
-        <p className="font-mono text-xs font-bold mb-3" style={{ color: confirmed ? "#716F39" : "#E96709" }}>
-          {confirmed ? `● Going ahead · ${holds} holding` : `○ ${spotsToMin} more ${spotsToMin === 1 ? "person" : "people"} to confirm`}
-        </p>
-
-        <div className="mb-4">
-          <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent="#902F8A" />
-        </div>
-
-        <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-1">
-          {confirmed ? "Price now" : "Max you'll pay"}
-        </p>
-        <div className="flex items-baseline gap-2 mb-1">
-          <span className="font-mono font-extrabold text-ink" style={{ fontSize: 54, lineHeight: 1 }}>{formatPrice(currentPrice)}</span>
-          <span className="font-mono text-xs font-bold text-muted">incl. GST</span>
-        </div>
-        {!confirmed && (
-          <p className="font-mono text-[11px] font-bold text-muted mb-4">
-            Price drops as the session fills — lowest {formatPrice(floorPrice)}
-          </p>
-        )}
-
-        <div className="border-t-2 pt-4 mt-3" style={{ borderColor: "#E1D5C6" }}>
-          <div className="flex justify-between font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-2.5">
-            <span>People</span>
-            <span>Price each</span>
-          </div>
-          <div className="flex flex-col gap-2">
-            {rows.map((r) => {
-              const isCurrent = r.n === currentN;
-              const barWidth = 8 + ((r.n - s.min_attendees) / Math.max(1, s.max_attendees - s.min_attendees)) * 92;
-              return (
-                <div key={r.n} className="flex items-center gap-2.5">
-                  <span className="font-mono text-[11px] text-ink/55 w-12 flex-shrink-0">
-                    {r.n === s.min_attendees ? `${r.n} min` : r.n === s.max_attendees ? `${r.n} max` : r.n}
-                  </span>
-                  <div className="flex-1 h-2 rounded-pill overflow-hidden" style={{ background: "#F0E9E0" }}>
-                    <div
-                      className="h-full rounded-pill"
-                      style={{ width: `${barWidth}%`, background: isCurrent ? "#902F8A" : "#E1D5C6" }}
-                    />
-                  </div>
-                  <span className={`font-mono text-sm ${isCurrent ? "font-extrabold" : "font-bold text-ink/55"}`} style={isCurrent ? { color: "#902F8A" } : undefined}>
-                    {formatPrice(r.price)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Where */}
-      <div className="mx-4 mb-5 rounded-card border-2 border-ink p-5" style={{ background: "#FCBB16" }}>
-        <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/50 mb-2.5">Where</p>
-        <p className="font-bold text-sm text-ink mb-1">{s.location_name} {s.venueHandle && <>· <Handle value={s.venueHandle} /></>}</p>
-        {s.location_address && <p className="text-xs text-ink/65 mb-2">{s.location_address}</p>}
-        {s.getting_there && <p className="text-xs text-ink/65 leading-relaxed">{s.getting_there}</p>}
-      </div>
-
-      {/* Social Stretch */}
-      {s.social_stretch_venue && (
-        <div className="mx-4 mb-5 rounded-card border-2 border-ink p-5" style={{ background: "#902F8A" }}>
-          <p className="font-mono text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "rgba(247,240,232,.55)" }}>
-            Social Stretch after
-          </p>
-          <p className="text-sm font-bold text-cream mb-1.5">
-            {s.social_stretch_venue}
-            {s.socialVenueHandle && (
-              <>{" · "}<a href={handleHref(s.socialVenueHandle) ?? "#"} target="_blank" rel="noreferrer" className="underline" style={{ color: "#F7F0E8" }}>{s.socialVenueHandle}</a></>
-            )}
-          </p>
-          <p className="text-xs leading-relaxed" style={{ color: "rgba(247,240,232,.8)" }}>
-            {s.social_stretch_note || "Pay your own way — coffee & food after. Everyone welcome."}
-          </p>
-        </div>
-      )}
-
-      {/* What to bring */}
-      {s.what_to_bring && s.what_to_bring.length > 0 && (
-        <div className="mx-4 mb-5 bg-white rounded-card border-2 border-ink p-5">
-          <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted mb-2.5">Bring</p>
-          <div className="flex flex-wrap gap-2">
-            {s.what_to_bring.map((item) => (
-              <span key={item} className="px-3 py-1.5 rounded-pill font-mono text-[11px] font-bold text-ink" style={{ background: "rgba(20,17,15,.06)" }}>
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mx-4 mb-6">
-        <HowToStretchy />
-      </div>
-
-      {/* Sticky hold CTA */}
-      <div className="fixed bottom-0 left-0 right-0 border-t-2 border-ink px-5 pt-4 pb-6 flex flex-col gap-2" style={{ background: "rgba(247,240,232,.97)", backdropFilter: "blur(12px)" }}>
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <span className="font-mono font-extrabold text-ink" style={{ fontSize: 26 }}>{formatPrice(currentPrice)}</span>
-            <span className="font-mono text-[10px] text-muted ml-1.5">incl. GST</span>
-          </div>
-          <span className="font-mono text-[10px] font-bold" style={{ color: confirmed ? "#716F39" : "#E96709" }}>
-            {confirmed ? `${holds} HELD · GOING AHEAD` : `${spotsToMin} MORE TO CONFIRM`}
-          </span>
-        </div>
-        {!accessToken ? (
-          <Link
-            href={`/login?next=/sessions/${params.id}`}
-            className="w-full text-center rounded-pill py-4 font-semibold"
-            style={{ background: "#14110F", color: "#F7F0E8", fontSize: 16 }}
-          >
-            Log in to hold your place
-          </Link>
-        ) : s.my_hold_quantity && s.my_hold_quantity > 0 ? (
-          <Link
-            href={`/hold/${params.id}`}
-            className="w-full text-center rounded-pill py-4 font-semibold"
-            style={{ background: "#716F39", color: "#F7F0E8", fontSize: 16 }}
-          >
-            ✓ You&rsquo;re in — view your hold
-          </Link>
-        ) : (
-          <button
-            onClick={handleHold}
-            disabled={holding || held}
-            className="w-full rounded-pill py-4 font-semibold disabled:opacity-60"
-            style={{ background: holding ? "rgba(20,17,15,.4)" : "#14110F", color: "#F7F0E8", fontSize: 16 }}
-          >
-            {holding ? "Saving your spot…" : held ? "✓ Held!" : "Hold my place — no charge yet"}
-          </button>
-        )}
-        <p className="text-center font-mono text-[10px] font-bold text-muted">
-          NO CHARGE YET · CANCEL ANY TIME UP TO 36H OUT
-        </p>
-      </div>
+      <SessionView s={s} action={action} />
 
       {showHoldModal && session && accessToken && (
         <HoldModal
