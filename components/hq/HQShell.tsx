@@ -42,11 +42,14 @@ const NAV_GROUPS = [
   },
 ];
 
-const NAV_TAIL = [
-  { href: "/admin/newsletters", label: "Newsletters" },
-  { href: "/admin/suggestions", label: "Community" },
-  { href: "/admin/feedback", label: "Feedback" },
-];
+const NAV_TAIL_GROUP = {
+  heading: "COMMUNITY",
+  items: [
+    { href: "/admin/newsletters", label: "Newsletters" },
+    { href: "/admin/suggestions", label: "Future sessions" },
+    { href: "/admin/feedback", label: "Feedback" },
+  ],
+};
 
 // A link is active on pathname match; if it also carries a ?tab= param
 // (Profiles/Pending share the "Teachers"/"GEMs" labels but point at
@@ -162,7 +165,10 @@ function HQShellInner({ children }: { children: React.ReactNode }) {
           ))}
 
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 2 }}>
-            {NAV_TAIL.map((item) => (
+            <div style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(245,237,227,0.35)", padding: "0 12px", marginBottom: 4 }}>
+              {NAV_TAIL_GROUP.heading}
+            </div>
+            {NAV_TAIL_GROUP.items.map((item) => (
               <NavLink
                 key={item.label + item.href}
                 href={item.href}

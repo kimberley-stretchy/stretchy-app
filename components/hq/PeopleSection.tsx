@@ -29,6 +29,7 @@ export type Person = {
   name: string;
   meta: string;
   status: string;
+  appliedAt?: string | null;
   note?: string | null;
   email?: string | null;
   bio?: string | null;
@@ -203,7 +204,11 @@ export default function PeopleSection({
                 {p.status === "APPLIED" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <p style={{ fontSize: 12, color: "rgba(20,17,15,.65)", margin: 0, lineHeight: 1.45 }}>
-                      Applied through the form. Approve to add them straight away — you can schedule them now, and their login links up when they first sign in with this email.
+                      Applied through the form
+                      {p.appliedAt
+                        ? ` on ${new Date(p.appliedAt).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short", year: "numeric" })}`
+                        : ""}
+                      . Approve to add them straight away — you can schedule them now, and their login links up when they first sign in with this email.
                     </p>
                     {onApproveApplicant && (
                       <button

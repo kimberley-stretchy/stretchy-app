@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
           email: a.email,
           meta: [...areas, ...styles].join(", "),
           status: "APPLIED",
+          appliedAt: a.created_at as string,
           note: null,
           bio: extra || null,
           avatarUrl: null,

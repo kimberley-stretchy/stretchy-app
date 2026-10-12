@@ -41,7 +41,7 @@ export default function AdminSuggestionsPage() {
     <HQShell>
       <main style={{ background: T.cream, minHeight: "100vh", color: T.ink, fontFamily: T.body }}>
         <div style={{ maxWidth: 760, padding: "32px 32px 60px" }}>
-          <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: T.purple, letterSpacing: "0.12em", marginBottom: 6 }}>COMMUNITY</p>
+          <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: T.purple, letterSpacing: "0.12em", marginBottom: 6 }}>FUTURE SESSIONS</p>
           <h1 style={{ fontFamily: T.display, fontWeight: 700, fontSize: "clamp(32px,8vw,44px)", letterSpacing: "-0.02em", lineHeight: 1, textTransform: "uppercase", margin: "0 0 24px" }}>
             {loading ? "Loading…" : `${items.length} on the board.`}
           </h1>
