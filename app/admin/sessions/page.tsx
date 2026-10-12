@@ -58,6 +58,7 @@ type Session = {
   current_holds: number;
   state: string;
   is_draft: boolean;
+  keep_alive_at?: string | null;
 };
 
 export default function AdminSessionsPage() {
@@ -164,26 +165,32 @@ export default function AdminSessionsPage() {
 
   const [confirming, setConfirming] = useState<string | null>(null);
 
-  // HQ override: force a session to go ahead regardless of the minimum. Fires the
-  // "it's happening" emails to everyone + teacher/GEM confirm — same as the auto
-  // 36h confirm — and takes it out of the grace/auto-cancel path.
+  // HQ "Keep alive": this session goes ahead at 36 hrs out whatever the numbers.
+  // Nothing is sent when it's pressed — everyone hears at 36 hrs out as normal.
+  // Pressing it again on a kept-alive session undoes it.
   async function keepAlive(id: string, title: string, holds: number, min: number) {
-    const short = holds < min;
-    const msg = short
-      ? `Confirm "${title}" and run it with ${holds}/${min}? This overrides the auto-cancel and emails everyone it's going ahead.`
-      : `Confirm "${title}" now? This emails everyone it's going ahead.`;
+    const target = sessions.find((s) => s.id === id);
+    const undo = !!target?.keep_alive_at;
+    const msg = undo
+      ? `Undo "Keep alive" for "${title}"? It will go back to needing ${min} people to go ahead.`
+      : `Keep "${title}" alive with ${holds}/${min}? Nothing is sent now. At 36 hours out it's confirmed and everyone gets the "it's going ahead" email.`;
     if (!confirm(msg)) return;
     setConfirming(id);
     try {
-      const res = await fetch(`/api/admin/sessions/${id}/confirm`, { method: "POST" });
+      const res = await fetch(`/api/admin/sessions/${id}/confirm`, { method: undo ? "DELETE" : "POST" });
       const data = await res.json();
-      if (res.ok) {
-        setSessions((prev) => prev.map((s) => s.id === id ? { ...s, state: "confirmed" } : s));
+      if (!res.ok) {
+        alert(data.error ?? "Could not update this session.");
+      } else if (undo) {
+        setSessions((prev) => prev.map((s) => s.id === id ? { ...s, keep_alive_at: null } : s));
+      } else if (data.keptAlive) {
+        setSessions((prev) => prev.map((s) => s.id === id ? { ...s, keep_alive_at: data.keepAliveAt ?? new Date().toISOString() } : s));
       } else {
-        alert(data.error ?? "Could not confirm this session.");
+        // Already inside 36 hrs with the session still open: confirmed on the spot.
+        setSessions((prev) => prev.map((s) => s.id === id ? { ...s, state: "confirmed" } : s));
       }
     } catch {
-      alert("Could not confirm this session.");
+      alert("Could not update this session.");
     }
     setConfirming(null);
   }
@@ -741,14 +748,20 @@ function SessionCard({
             <button
               onClick={() => onConfirm(s.id, s.title, s.current_holds, s.min_attendees)}
               disabled={confirming}
-              title="Force this session to go ahead regardless of the minimum — emails everyone it's happening."
+              title={
+                s.keep_alive_at
+                  ? "Kept alive: this goes ahead at 36 hours out whatever the numbers. Click to undo."
+                  : "Go ahead at 36 hours out even if it's under the minimum. Nothing is sent now — everyone is told at 36 hours out."
+              }
               style={{
-                padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
-                background: T.olive, color: "#fff",
+                padding: "7px 14px", borderRadius: 999, cursor: "pointer",
+                border: `2px solid ${T.olive}`,
+                background: s.keep_alive_at ? "transparent" : T.olive,
+                color: s.keep_alive_at ? T.olive : "#fff",
                 fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
               }}
             >
-              {confirming ? "CONFIRMING…" : needsMore > 0 ? "KEEP ALIVE & CONFIRM" : "CONFIRM NOW"}
+              {confirming ? "SAVING…" : s.keep_alive_at ? "KEPT ALIVE ✓ · UNDO" : "KEEP ALIVE"}
             </button>
           )}
           {s.state === "open" && (

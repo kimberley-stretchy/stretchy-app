@@ -15,31 +15,31 @@ import {
   cancelSession,
   startGrace,
 } from "@/lib/sessionDecision";
+import { stepsDue, hoursUntil, NUDGE_HOURS, HQ_WINDOW_HOURS, DECISION_HOURS } from "@/lib/sessionSchedule";
 
 /**
- * GET /api/cron/session-check — runs hourly via Vercel Cron.
+ * GET /api/cron/session-check — runs every 15 minutes via Vercel Cron.
  *
- * Two time windows, evaluated newest-first so a session is only ever in one:
+ * The countdown rules live in lib/sessionSchedule.ts (tested on their own).
+ * This file only fetches the sessions and carries out each step:
  *
- *  A) ~38h out (2h before the decision) — RECRUIT NUDGE
- *     For still-open sessions under their minimum: email + push the holders a
- *     "so close, tell your mates" nudge (with a share link) that doubles as the
- *     cancellation-window reminder, and send HQ a "decision in ~2h" heads-up.
+ *  38 hrs out — "SO CLOSE" NUDGE (only if under the minimum)
+ *     Email + push everyone holding or interested, tell the teacher + GEM, and
+ *     give HQ a heads-up that its window opens in an hour.
  *
- *  B) ~36h out — THE DECISION
- *     - minimum met  → confirm, email/push all holders "it's happening",
- *                       notify the teacher + GEM + HQ it's going ahead.
- *     - minimum short → cancel, release holds, email/push all holders
- *                       "not this time", notify the teacher + GEM + HQ.
+ *  37 hrs out — HQ-ONLY WINDOW (only if still under the minimum)
+ *     HQ alone is told it will be called off at 36 hrs unless they press
+ *     "Keep alive". No customer emails.
+ *
+ *  36 hrs out — THE YES / NO
+ *     - minimum met, or HQ kept it alive → confirm; everyone told it's going ahead.
+ *     - otherwise → cancel, release holds; everyone told it's not this time.
+ *     Free cancelling closes at this same moment (app/api/holds), so what people
+ *     are told is true the instant they're told it. There is no grace after it.
  *
  * Emails are sent straight through Resend (lib/stretchy-email) — NOT via the
  * admin-gated /api/email route, which was silently 401-ing every cron send.
  */
-
-// ── Tunables ────────────────────────────────────────────────────────────────
-// Only nudge sessions with at least this many holds at the 38h mark. Raise this
-// (or switch to a fraction of min_attendees) to nudge only when genuinely close.
-const NUDGE_MIN_HOLDS = 1;
 
 function getAdmin() {
   return createClient(
@@ -53,10 +53,15 @@ function hoursFromNow(now: Date, h: number): string {
   return new Date(now.getTime() + h * 60 * 60 * 1000).toISOString();
 }
 
-// Grace window: a short session at 36h is held (HQ-alerted only), not cancelled.
-// If HQ doesn't override within this long, the next run auto-cancels it. 50 min
-// (not 60) so the very next hourly run always clears the bar even with cron drift.
-const GRACE_MS = 50 * 60 * 1000;
+// Which of these sessions HQ has pressed "Keep alive" on. Read separately and
+// tolerantly: if the keep_alive_at column hasn't been added yet, this is simply
+// "none" rather than breaking the whole run.
+async function keptAliveIds(admin: ReturnType<typeof getAdmin>, ids: string[]): Promise<Set<string>> {
+  if (ids.length === 0) return new Set();
+  const { data, error } = await admin.from("sessions").select("id").in("id", ids).not("keep_alive_at", "is", null);
+  if (error) return new Set();
+  return new Set((data ?? []).map((r) => r.id as string));
+}
 
 export async function GET(request: NextRequest) {
   // Verify this is called by Vercel Cron (or manually by admin)
@@ -68,23 +73,21 @@ export async function GET(request: NextRequest) {
   const admin = getAdmin();
   const now = new Date();
 
-  // ── A) 38h RECRUIT NUDGE ────────────────────────────────────────────────────
-  // Wrapped so a nudge failure can never stop the 36h decision below.
+  // ── A) 38h "SO CLOSE" NUDGE ─────────────────────────────────────────────────
+  // Wrapped so a nudge failure can never stop the steps below.
   let nudged = 0;
-  // Catch-up band, not a single window. The nudge belongs at ~38h, but if that
-  // one hourly run fails (a throw, a transient Resend error, the session still a
-  // draft at that minute), a fixed 37.5–38.5h window would lose it forever. Here
-  // any still-open, under-min session in [36.5h, 39h) is eligible every hourly
-  // run until it's actually nudged — so a miss is retried on the next tick. The
-  // lower bound stays strictly ABOVE the decision's 36.5h upper bound, so a nudge
-  // and the go/cancel decision can never land in the same run.
+  // Any still-open session between 38 and 36 hrs out is looked at on every run
+  // until it's actually been nudged — so one failed run (a throw, a transient
+  // Resend error, the session still a draft at that minute) is retried on the
+  // next tick, not lost. lib/sessionSchedule.ts decides whether a nudge is due.
   const { data: nudgeSessions } = await admin
     .from("sessions")
     .select("id, title, starts_at, location_name, min_attendees, social_stretch_venue, host_id, gem_host_id, movement_type, venue_instagram, social_venue_instagram, nudge_sent_at")
     .eq("state", "open")
     .not("is_draft", "is", true)
-    .gte("starts_at", hoursFromNow(now, 36.5))
-    .lt("starts_at", hoursFromNow(now, 39));
+    .gt("starts_at", hoursFromNow(now, DECISION_HOURS))
+    .lte("starts_at", hoursFromNow(now, NUDGE_HOURS));
+  const nudgeKeptAlive = await keptAliveIds(admin, (nudgeSessions ?? []).map((s) => s.id));
 
   for (const s of nudgeSessions ?? []) {
     // Per-session isolation: one session's failure must never skip the rest, and
@@ -93,8 +96,15 @@ export async function GET(request: NextRequest) {
       if (s.nudge_sent_at) continue; // once-only, but only stamped after a send succeeds (below)
 
       const { count, userIds, compUserIds, spotsByUser } = await getHoldSummary(admin, s.id);
-      if (count >= s.min_attendees) continue; // already there — it'll confirm at 36h
-      if (count < NUDGE_MIN_HOLDS) continue; // too empty to bother nudging
+      const due = stepsDue({
+        hoursUntil: hoursUntil(s.starts_at, now),
+        held: count,
+        min: s.min_attendees,
+        nudgeSent: false,
+        hqAlerted: true, // not this block's concern
+        keptAlive: nudgeKeptAlive.has(s.id),
+      });
+      if (!due.includes("nudge")) continue; // already at the minimum, kept alive, or too empty to be "so close"
 
       const needed = s.min_attendees - count;
       const dateStr = fmtDate(s.starts_at);
@@ -143,7 +153,7 @@ export async function GET(request: NextRequest) {
       // Push to holders + interested (best-effort, never blocks).
       await sendPushToUsers([...userIds, ...interestedIds], {
         title: needed <= 1 ? "1 more and it's on 👀" : `${needed} more and it's on 👀`,
-        body: `${s.title} needs ${needed} more to lock in. Tell your mates!`,
+        body: `${s.title} needs ${needed} more to go ahead. Know someone who'd love it?`,
         url: shareUrl,
       }).catch(console.error);
 
@@ -162,15 +172,15 @@ export async function GET(request: NextRequest) {
         await notifyHQ({
           subject: `Almost there: ${s.title} (${count}/${s.min_attendees})`,
           scheme: "purple",
-          kicker: "Stretchy HQ · Decision in ~2h",
+          kicker: "Stretchy HQ · Decision at 36 hrs out",
           heading: `${s.title} — ${count}/${s.min_attendees}`,
           sessionId: s.id,
           rows: [
-            `Needs <strong>${needed}</strong> more hold${needed === 1 ? "" : "s"} to lock in.`,
+            `Needs <strong>${needed}</strong> more to go ahead.`,
             `<strong>Nudge just sent to:</strong> ${holders.length} holder${holders.length === 1 ? "" : "s"}${interestedIds.length ? `, ${interestedIds.length} interested` : ""}${teacherGemBits ? `, ${teacherGemBits}` : ""}.`,
             `🗓 ${dateStr}`,
             `📍 ${s.location_name}`,
-            `The 36-hour auto-decision runs in about 2 hours. If it's still short then, it's cancelled and no one is charged.`,
+            `If it's still short at 37 hours out, you'll get a "your call" email with one hour to keep it alive. The yes / no goes to everyone at 36 hours out.`,
           ],
           cta: { href: shareUrl, text: "View session →" },
         });
@@ -192,49 +202,78 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ── B) 36h DECISION, with a 35h grace window ────────────────────────────────
-  // At ~36h: minimum met → confirm now; still short → open a SILENT grace window
-  // and alert HQ only (no customer emails). ~1h later (the 35h run) if it's still
-  // short and HQ hasn't hit "Keep it alive & confirm", it auto-cancels. Filling
-  // naturally during grace confirms it instead. Grace timing is measured from
-  // grace_started_at (drift-proof), and the wide lower bound means a missed run is
-  // simply caught by the next tick rather than lost.
+  const sessionCols = "id, title, starts_at, location_name, min_attendees, cost_base, revenue_target, social_stretch_venue, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram, grace_started_at";
+  const results: Record<string, unknown>[] = [];
+
+  // ── B) 37h HQ-ONLY WINDOW ───────────────────────────────────────────────────
+  // Still short between 37 and 36 hrs out → tell HQ, and only HQ, once. They
+  // have until 36 hrs to press "Keep alive". grace_started_at is the "HQ has
+  // been alerted" stamp. Checked every run in the window, so a late cancellation
+  // that drops a session under its minimum still raises the alert.
+  const { data: windowSessions } = await admin
+    .from("sessions")
+    .select(sessionCols)
+    .eq("state", "open")
+    .not("is_draft", "is", true)
+    .gt("starts_at", hoursFromNow(now, DECISION_HOURS))
+    .lte("starts_at", hoursFromNow(now, HQ_WINDOW_HOURS));
+  const windowKeptAlive = await keptAliveIds(admin, (windowSessions ?? []).map((s) => s.id));
+
+  for (const row of windowSessions ?? []) {
+    const session = row as DecisionSession & { grace_started_at: string | null };
+    try {
+      const { count: holds } = await getHoldSummary(admin, session.id);
+      const due = stepsDue({
+        hoursUntil: hoursUntil(session.starts_at, now),
+        held: holds,
+        min: session.min_attendees,
+        nudgeSent: true, // handled in block A
+        hqAlerted: !!session.grace_started_at,
+        keptAlive: windowKeptAlive.has(session.id),
+      });
+      if (due.includes("hq_alert")) {
+        await startGrace(admin, session, holds);
+        results.push({ session: session.title, action: "hq_alerted", holders: holds });
+      }
+    } catch (e) {
+      console.error(`37h HQ window error for session ${session.id}:`, e);
+    }
+  }
+
+  // ── C) 36h YES / NO ─────────────────────────────────────────────────────────
+  // At 36 hrs out (or the next run after it): minimum met, or HQ kept it alive →
+  // confirm. Otherwise → cancel. One decision, told to everyone now. The wide
+  // lower bound means a missed run is caught by the next tick rather than lost.
   const { data: sessions } = await admin
     .from("sessions")
-    .select("id, title, starts_at, location_name, min_attendees, cost_base, revenue_target, social_stretch_venue, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram, grace_started_at")
+    .select(sessionCols)
     .eq("state", "open")
     .not("is_draft", "is", true)
     .gte("starts_at", hoursFromNow(now, 20))
-    .lt("starts_at", hoursFromNow(now, 36.5));
-
-  const results: Record<string, unknown>[] = [];
+    .lte("starts_at", hoursFromNow(now, DECISION_HOURS));
+  const decisionKeptAlive = await keptAliveIds(admin, (sessions ?? []).map((s) => s.id));
 
   for (const row of sessions ?? []) {
     const session = row as DecisionSession & { grace_started_at: string | null };
     // Per-session isolation so one failure can't skip the rest.
     try {
       const { count: holds } = await getHoldSummary(admin, session.id);
+      const keptAlive = decisionKeptAlive.has(session.id);
+      const [step] = stepsDue({
+        hoursUntil: hoursUntil(session.starts_at, now),
+        held: holds,
+        min: session.min_attendees,
+        nudgeSent: true,
+        hqAlerted: true,
+        keptAlive,
+      });
 
-      if (holds >= session.min_attendees) {
-        // Minimum met — at the 36h mark, or filled naturally during grace → confirm.
-        const r = await confirmSession(admin, session);
-        results.push({ session: session.title, action: "confirmed", holders: r.holders });
-        continue;
-      }
-
-      // Still short of the minimum.
-      if (!session.grace_started_at) {
-        // First sighting at the decision point → open the HQ-only grace window.
-        // No customer emails yet; HQ has ~1h to override before it auto-cancels.
-        await startGrace(admin, session, holds);
-        results.push({ session: session.title, action: "grace_started", holders: holds });
-      } else if (Date.now() - new Date(session.grace_started_at).getTime() >= GRACE_MS) {
-        // Grace hour elapsed and HQ didn't keep it alive → auto-cancel now.
+      if (step === "confirm") {
+        const r = await confirmSession(admin, session, { keptAlive: keptAlive && holds < session.min_attendees });
+        results.push({ session: session.title, action: "confirmed", holders: r.holders, keptAlive });
+      } else if (step === "cancel") {
         const r = await cancelSession(admin, session);
         results.push({ session: session.title, action: "cancelled", holders: r.holders, needed: session.min_attendees });
-      } else {
-        // Still inside the grace hour — wait for HQ or the next run.
-        results.push({ session: session.title, action: "grace_waiting", holders: holds });
       }
     } catch (e) {
       console.error(`36h decision error for session ${session.id}:`, e);

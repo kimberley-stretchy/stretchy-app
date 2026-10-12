@@ -93,9 +93,24 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // Which sessions HQ has pressed "Keep alive" on. Read separately so a missing
+  // keep_alive_at column (migration not run yet) can't break the whole list.
+  const keptAlive: Record<string, string> = {};
+  if (sessionIds.length > 0) {
+    const { data: kept } = await supabase
+      .from("sessions")
+      .select("id, keep_alive_at")
+      .in("id", sessionIds)
+      .not("keep_alive_at", "is", null);
+    (kept || []).forEach((k: { id: string; keep_alive_at: string | null }) => {
+      if (k.keep_alive_at) keptAlive[k.id] = k.keep_alive_at;
+    });
+  }
+
   const sessions = (data || []).map((s) => ({
     ...s,
     current_holds: holdCounts[s.id] || 0,
+    keep_alive_at: keptAlive[s.id] ?? null,
   }));
 
   return NextResponse.json(sessions);
