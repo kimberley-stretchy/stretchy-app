@@ -38,7 +38,9 @@ type DBSession = {
 async function getSessions(): Promise<DBSession[]> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    // Always read live numbers — never a cached copy of the holds count.
+    { global: { fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }) } }
   );
 
   const { data: sessions } = await supabase

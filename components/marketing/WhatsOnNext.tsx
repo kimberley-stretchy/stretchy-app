@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { calculatePrice, formatPrice } from "@/lib/pricing";
+import { calculatePrice, formatPrice, maxPriceToPromise } from "@/lib/pricing";
 import CapacityPips from "@/components/CapacityPips";
+import { roomLabel } from "@/lib/places";
+import { phase, formatDay, formatTimeRange } from "@/lib/sessionTimes";
 
 export type MarketingSession = {
   id: string;
@@ -18,6 +20,7 @@ export type MarketingSession = {
   social_stretch_venue: string | null;
   social_stretch_note: string | null;
   teacher_name?: string | null;
+  state?: string;
   isPlaceholder?: boolean;
 };
 
@@ -53,9 +56,13 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
   const durationLabel = s.duration_mins ? `${s.duration_mins} MIN` : "";
 
   const holds = s.current_holds ?? 0;
-  const goingAhead = holds >= s.min_attendees;
-  const price = calculatePrice(s.cost_base, s.revenue_target, Math.max(holds, s.min_attendees));
-  const spotsNeeded = Math.max(0, s.min_attendees - holds);
+  // "Going ahead ✓" only once the session is actually confirmed (36 hrs out,
+  // or HQ kept it alive) — reaching the minimum earlier isn't a promise yet.
+  const confirmed = s.state === "confirmed";
+  const label = roomLabel(holds, s.min_attendees, s.max_attendees, confirmed).toUpperCase();
+  // The big price is the most this person can pay: the at-minimum price until
+  // 36 hrs out, the current price after (lib/pricing.ts → maxPriceToPromise).
+  const price = maxPriceToPromise(s.cost_base, s.revenue_target, s.min_attendees, holds, phase(s.starts_at, s.state) === "before36");
   const openingPrice = calculatePrice(s.cost_base, s.revenue_target, s.min_attendees);
   const floorPrice = calculatePrice(s.cost_base, s.revenue_target, s.max_attendees);
 
@@ -89,29 +96,12 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
         <div className="font-mono text-[10px] lg:text-[11px] font-extrabold text-ink/55">{monthShort}</div>
       </div>
       <div className="absolute top-3 right-3 lg:top-4 lg:right-4 flex flex-col lg:flex-row gap-[5px] lg:gap-1.5 items-end lg:items-center">
-        {goingAhead ? (
-          <>
-            <span
-              className="text-cream rounded-pill px-[11px] lg:px-3.5 py-1.5 lg:py-2 font-mono text-[9px] lg:text-[11px] font-extrabold whitespace-nowrap"
-              style={{ backgroundColor: accent }}
-            >
-              GOING AHEAD
-            </span>
-            <span
-              className="bg-cream rounded-pill px-[11px] lg:px-3.5 py-1 lg:py-1.5 font-mono text-[9px] lg:text-[11px] font-extrabold border-2 whitespace-nowrap"
-              style={{ color: accent, borderColor: accent }}
-            >
-              PRICE BETTER-ING
-            </span>
-          </>
-        ) : (
-          <span
-            className="text-cream rounded-pill px-[11px] lg:px-3.5 py-1.5 lg:py-2 font-mono text-[9px] lg:text-[11px] font-extrabold whitespace-nowrap"
-            style={{ backgroundColor: accent }}
-          >
-            {spotsNeeded} SPOTS TO GO AHEAD
-          </span>
-        )}
+        <span
+          className="text-cream rounded-pill px-[11px] lg:px-3.5 py-1.5 lg:py-2 font-mono text-[9px] lg:text-[11px] font-extrabold whitespace-nowrap"
+          style={{ backgroundColor: accent }}
+        >
+          {label}
+        </span>
       </div>
 
       <div className="p-4 pb-[18px] lg:p-[24px_26px_26px] flex flex-col gap-[13px] lg:gap-4 flex-1">
@@ -119,7 +109,7 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
           <div className="font-display text-[26px] lg:text-[34px] leading-[.98] lg:leading-[.95]">
             {s.location_name.toUpperCase()} <span className="text-ink/30">|</span> {timeOfDay(s.starts_at)}
           </div>
-          <div className="font-mono text-[10px] lg:text-[11px] font-extrabold tracking-[0.09em] lg:tracking-[0.1em] text-ink/55 mt-1.5 lg:mt-2">
+          <div className="font-mono text-[12.5px] lg:text-[14px] font-extrabold tracking-[0.09em] lg:tracking-[0.1em] text-ink/75 mt-1.5 lg:mt-2">
             {timeRange.toUpperCase()}{durationLabel ? ` · ${durationLabel}` : ""} &middot; ALL LEVELS
           </div>
         </div>
@@ -148,22 +138,22 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
         <div className="flex items-end justify-between gap-3.5">
           <div>
             <div className="font-mono text-[32px] lg:text-[42px] font-extrabold leading-none">{formatPrice(price)}</div>
-            <div className="text-[11px] lg:text-xs font-semibold text-ink/55 mt-1">per person &middot; incl. GST</div>
+            <div className="text-[11px] lg:text-xs font-semibold text-ink/55 mt-1">max per person &middot; incl. GST</div>
           </div>
           <Link
             href={s.isPlaceholder ? "/sessions" : `/sessions/${s.id}`}
             className="inline-flex items-center justify-center bg-ink text-cream rounded-pill h-11 px-[26px] text-[14px] lg:text-[15px] font-bold whitespace-nowrap"
           >
-            Hold a place
+            Hold my place
           </Link>
         </div>
 
         <div className="mt-auto">
           <div className="flex justify-between gap-2.5 font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em] text-ink/50 mb-1.5">
-            <span>{goingAhead ? "GOING AHEAD" : `${spotsNeeded} SPOTS TO MINIMUM`}</span>
+            <span>{label}</span>
             <span>{s.max_attendees} MAX</span>
           </div>
-          <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={accent} />
+          <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={accent} showMinLine />
           <div className="flex justify-between gap-2.5 font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em] text-ink/50 mt-1.5">
             <span>{formatPrice(openingPrice)}</span>
             <span>{formatPrice(floorPrice)}</span>
@@ -199,22 +189,30 @@ export default function WhatsOnNext({
       )}
 
       {notifySession && (
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-5 border-2 border-dashed border-ink/30 rounded-[18px] lg:rounded-[20px] p-[18px] lg:p-[20px_24px]">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-5 border-2 border-dashed border-ink/75 rounded-[18px] lg:rounded-[20px] p-[18px] lg:p-[20px_24px] text-ink/75">
           <div className="lg:min-w-[280px]">
-            <div className="font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em] text-ink/50">
-              {new Date(notifySession.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase()} &middot; NOT OPEN YET
+            <div className="font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em]">ALSO COMING UP</div>
+            <div className="font-display text-[22px] lg:text-[23px] leading-none mt-1.5">
+              {(notifySession.title ?? `${notifySession.location_name} | ${timeOfDay(notifySession.starts_at)}`).toUpperCase()}
             </div>
-            <div className="font-display text-[22px] lg:text-[23px] leading-none mt-1.5 text-ink/80">
-              {notifySession.location_name.toUpperCase()} | {timeOfDay(notifySession.starts_at)}
+            <div className="flex flex-wrap gap-1.5 mt-2.5">
+              <span className="font-mono text-[10px] lg:text-[11px] font-extrabold tracking-[0.06em] uppercase border-2 border-ink/75 rounded-pill px-2.5 py-1">
+                {formatDay(notifySession.starts_at)}
+              </span>
+              <span className="font-mono text-[10px] lg:text-[11px] font-extrabold tracking-[0.06em] uppercase border-2 border-ink/75 rounded-pill px-2.5 py-1">
+                {formatTimeRange(notifySession.starts_at, notifySession.duration_mins)}
+              </span>
             </div>
-            <div className="text-xs lg:text-[13px] text-ink/60 mt-1.5">Places open 36 hours before</div>
+            <div className="text-xs lg:text-[13px] font-semibold mt-2.5">
+              {formatPrice(calculatePrice(notifySession.cost_base, notifySession.revenue_target, notifySession.min_attendees))} max &middot; {notifySession.min_attendees} needed
+            </div>
           </div>
-          <button
-            className="w-full lg:w-auto inline-flex items-center justify-center h-11 px-6 bg-transparent text-ink border-2 border-ink rounded-pill text-sm font-bold"
-            type="button"
+          <Link
+            href={`/sessions/${notifySession.id}`}
+            className="w-full lg:w-auto inline-flex items-center justify-center h-11 px-6 bg-ink/75 text-cream rounded-pill text-sm font-bold whitespace-nowrap"
           >
-            Notify me
-          </button>
+            Hold my place
+          </Link>
         </div>
       )}
 

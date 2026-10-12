@@ -71,6 +71,7 @@ async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify
     social_stretch_venue: s.social_stretch_venue,
     social_stretch_note: s.social_stretch_note,
     teacher_name: (s.hosts as unknown as { name: string } | null)?.name ?? null,
+    state: s.state,
   }));
 
   return {
@@ -179,7 +180,7 @@ export default async function HomePage() {
   // session is currently featured first, rather than hardcoding Herne Bay's
   // figures — falls back to the reference Herne Bay | Morning values when
   // there's no real session live yet.
-  const pricingSource = open[0] ?? { cost_base: 201.25, revenue_target: 200, min_attendees: 14, max_attendees: 32 };
+  const pricingSource = open[0] ?? { cost_base: 199.49, revenue_target: 120, min_attendees: 14, max_attendees: 30 };
 
   const jsonLd = {
     "@context": "https://schema.org",

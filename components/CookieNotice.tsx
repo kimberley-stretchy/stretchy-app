@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { POPUP_DISMISSED_KEY, POPUP_CLOSED_EVENT, POPUP_PATH } from "@/lib/popupKeys";
+
 const OK_KEY = "stretchy-cookie-notice-ok";
 
 // A notice, not a consent form: Stretchy only sets essential cookies (login +
@@ -19,7 +21,22 @@ export default function CookieNotice() {
     } catch {
       // localStorage unavailable — show anyway
     }
-    setVisible(true);
+    // Never on screen at the same time as the homepage sign-up pop-up. If that
+    // pop-up is about to show (we're on its page and it hasn't been dismissed
+    // before), wait until it's closed. Everywhere else, show straight away.
+    let popupPending = false;
+    try {
+      popupPending = window.location.pathname === POPUP_PATH && !localStorage.getItem(POPUP_DISMISSED_KEY);
+    } catch {
+      popupPending = false;
+    }
+    if (!popupPending) {
+      setVisible(true);
+      return;
+    }
+    const show = () => setVisible(true);
+    window.addEventListener(POPUP_CLOSED_EVENT, show, { once: true });
+    return () => window.removeEventListener(POPUP_CLOSED_EVENT, show);
   }, []);
 
   function dismiss() {

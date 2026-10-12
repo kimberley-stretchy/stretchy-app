@@ -71,3 +71,20 @@ export function moreToGoAhead(held: number, min: number): string | null {
 export function inAndRoom(held: number): string {
   return `${held} in · still room to join`;
 }
+
+/**
+ * The one-line "how's the room doing" label used on every card, above the dots:
+ *   under the minimum            → "10 more to go ahead"
+ *   confirmed (36 hrs out or HQ) → "Going ahead ✓ · still room to join"
+ *   minimum reached, not yet 36  → "17 in · still room to join"
+ *   every place taken            → "Full" / "Going ahead ✓ · full"
+ * "Going ahead ✓" is only ever said once the session is actually confirmed —
+ * before 36 hrs out people can still cancel for free, so reaching the minimum
+ * isn't a promise yet.
+ */
+export function roomLabel(held: number, min: number, max: number, confirmed: boolean): string {
+  const full = held >= max;
+  if (confirmed) return full ? "Going ahead ✓ · full" : "Going ahead ✓ · still room to join";
+  if (full) return "Full";
+  return moreToGoAhead(held, min) ?? inAndRoom(held);
+}

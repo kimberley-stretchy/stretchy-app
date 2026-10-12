@@ -6,7 +6,10 @@ import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
 import { MenuDrawer } from "@/components/MenuDrawer";
 import CapacityPips from "@/components/CapacityPips";
-import { calculatePrice } from "@/lib/pricing";
+import { maxPriceToPromise } from "@/lib/pricing";
+import { roomLabel } from "@/lib/places";
+import { phase } from "@/lib/sessionTimes";
+import { NewTabLink, HOW_IT_WORKS_HREF } from "@/components/PolicyLinks";
 
 const TYPE_COLORS: Record<string, string> = {
   yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
@@ -34,18 +37,17 @@ type DBSession = {
   teacher_name?: string | null;
 };
 
+// Same label language as the homepage cards (lib/places.ts → roomLabel).
 function getStatus(s: DBSession) {
   const holds = s.current_holds || 0;
-  const confirmed = holds >= s.min_attendees || s.state === "confirmed";
-  const currentPrice = calculatePrice(s.cost_base, s.revenue_target, Math.max(holds, s.min_attendees));
-
-  if (confirmed) {
-    const fillPct = holds / s.max_attendees;
-    if (fillPct >= 0.8) return { label: "⚡ ALMOST FULL", color: "#0000FF", price: currentPrice };
-    return { label: "PRICE BETTER-ING", color: "#FCBB16", price: currentPrice };
-  }
-  const need = s.min_attendees - holds;
-  return { label: `${need} MORE TO GO AHEAD`, color: "#E96709", price: currentPrice };
+  const confirmed = s.state === "confirmed";
+  const short = holds < s.min_attendees;
+  return {
+    label: roomLabel(holds, s.min_attendees, s.max_attendees, confirmed).toUpperCase(),
+    color: confirmed ? "#716F39" : short ? "#E96709" : "#14110F",
+    // The most this person can pay: at-minimum price until 36 hrs out, current after.
+    price: maxPriceToPromise(s.cost_base, s.revenue_target, s.min_attendees, holds, phase(s.starts_at, s.state) === "before36"),
+  };
 }
 
 function SessionCard({ s }: { s: DBSession }) {
@@ -57,7 +59,7 @@ function SessionCard({ s }: { s: DBSession }) {
   const startDate = new Date(s.starts_at);
   const dayStr    = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase();
   const timeStr   = startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
-  const confirmed = holds >= s.min_attendees || s.state === "confirmed";
+  const confirmed = s.state === "confirmed";
 
   return (
     <Link href={`/sessions/${s.id}`} className="block group">
@@ -84,14 +86,14 @@ function SessionCard({ s }: { s: DBSession }) {
         )}
         {!s.teacher_name && <div className="mb-2" />}
         <div className="mb-3">
-          <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={typeColor} />
+          <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={typeColor} showMinLine />
         </div>
         <div className="flex items-center justify-between">
           <p className="font-mono text-xs font-bold uppercase tracking-wide" style={{ color: status.color }}>
-            {holds}/{s.min_attendees} HELD · {status.label}
+            {status.label}
           </p>
           <div className="font-mono font-bold text-sm px-3 py-1.5 rounded-pill text-white flex-shrink-0 flex items-baseline gap-0.5" style={{ backgroundColor: typeColor }}>
-            <span className="text-xs font-semibold">$</span><span>{status.price.toFixed(2)}</span>
+            <span className="text-xs font-semibold">$</span><span>{status.price.toFixed(2)}</span><span className="text-xs font-semibold ml-1">max</span>
           </div>
         </div>
       </div>
@@ -122,6 +124,9 @@ export default function SessionsClient({ sessions }: { sessions: DBSession[] }) 
           {sessions.length === 0
             ? "No sessions yet — check back soon."
             : `${sessions.length} session${sessions.length !== 1 ? "s" : ""} coming up.`}
+        </p>
+        <p className="text-sm mt-1.5">
+          <NewTabLink href={HOW_IT_WORKS_HREF} className="text-ink font-semibold underline underline-offset-2">How it works</NewTabLink>
         </p>
       </section>
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import SMark from "@/components/SMark";
 
-const DISMISSED_KEY = "stretchy-testing-popup-dismissed";
+import { POPUP_DISMISSED_KEY as DISMISSED_KEY, POPUP_CLOSED_EVENT } from "@/lib/popupKeys";
 
 export default function TestingPopup() {
   const [visible, setVisible] = useState(false);
@@ -20,8 +20,11 @@ export default function TestingPopup() {
     return () => clearTimeout(t);
   }, []);
 
+  // Closing by any route (×, "Maybe later", or × after signing up) tells the
+  // cookie notice it can now appear — the two are never shown together.
   function dismiss() {
     setVisible(false);
+    window.dispatchEvent(new Event(POPUP_CLOSED_EVENT));
     try {
       localStorage.setItem(DISMISSED_KEY, "1");
     } catch {
