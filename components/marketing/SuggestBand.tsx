@@ -29,8 +29,8 @@ function HeartIcon({ voted }: { voted: boolean }) {
     <svg viewBox="0 0 24 22" width="20" height="18" className="lg:w-[22px] lg:h-5" aria-hidden>
       <path
         d="M12 20.2 3.6 12A5.3 5.3 0 0 1 12 5.4a5.3 5.3 0 0 1 8.4 6.6Z"
-        fill={voted ? "#FCBB16" : "none"}
-        stroke={voted ? "#FCBB16" : "#F7F0E8"}
+        fill={voted ? "#F7F0E8" : "none"}
+        stroke="#F7F0E8"
         strokeWidth={2.2}
         strokeLinejoin="round"
       />
