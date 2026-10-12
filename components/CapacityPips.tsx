@@ -21,8 +21,12 @@ export default function CapacityPips({
   accent,
   showMinLine = false,
   mine = 0,
-  pipClassName = "flex-1 h-[14px] lg:h-[18px] rounded-pill border-[1.5px]",
-  gapClassName = "flex gap-[2px] lg:gap-[3px]",
+  // Always a true circle: width and height locked 1:1, capped at the old pip
+  // height so they shrink on narrow screens but never stretch into ovals on
+  // wide ones. `justify-between` keeps the first and last dot lined up with
+  // the labels above and the prices below.
+  pipClassName = "flex-1 self-center aspect-square max-w-[14px] lg:max-w-[18px] rounded-full border-[1.5px]",
+  gapClassName = "flex items-center justify-between gap-[2px] lg:gap-[3px]",
 }: {
   min: number;
   max: number;
@@ -60,7 +64,7 @@ export default function CapacityPips({
               <span
                 aria-hidden
                 className="flex-none self-stretch"
-                style={{ width: 0, borderLeft: "2px dashed #14110F", margin: "-4px 2px" }}
+                style={{ width: 0, borderLeft: "2px dashed #14110F", margin: "-4px 1px" }}
               />
             )}
           </Fragment>

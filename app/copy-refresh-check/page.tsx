@@ -88,8 +88,8 @@ export default function CopyRefreshCheckPage() {
                 <strong>${promise.toFixed(2)}</strong>
                 <span className="block text-ink/60">
                   {before36
-                    ? `Before 36 hrs out this is always the price at the minimum ($${startingPrice(COST, TARGET, MIN).toFixed(2)}), even with ${ex.held} in.`
-                    : `After 36 hrs out nobody can cancel, so this is the current price with ${ex.held} in.`}
+                    ? "Before 36 hrs out, this is the price at the minimum."
+                    : "After 36 hrs out, this is the current price. It can only drop from here."}
                 </span>
               </Row>
               <Row label="Bring with you">
