@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 import { createClient } from "@/lib/supabase/client";
+import { rememberNext } from "@/lib/authReturn";
 
 type WaitlistRole = "mover" | "host" | "both";
 
@@ -24,6 +25,7 @@ function LoginContent() {
   async function signInWithGoogle() {
     setLoading("google");
     setAuthError(null);
+    rememberNext(next); // in case the sign-in comes back to the wrong page
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
@@ -36,6 +38,7 @@ function LoginContent() {
     if (!email.trim()) return;
     setLoading("email");
     setAuthError(null);
+    rememberNext(next); // in case the sign-in link comes back to the wrong page
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },

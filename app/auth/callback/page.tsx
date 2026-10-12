@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Suspense } from "react";
+import { takeNext, peekNext } from "@/lib/authReturn";
 
 function CallbackHandler() {
   const router = useRouter();
@@ -23,7 +24,11 @@ function CallbackHandler() {
       return;
     }
 
-    const next = searchParams.get("next") ?? "/sessions";
+    // Where to send them: the address on the sign-in link, else the place we
+    // remembered when they started signing in, else What's on.
+    const fromLink = searchParams.get("next");
+    const next = (fromLink && fromLink.startsWith("/") && !fromLink.startsWith("//") ? fromLink : null) ?? peekNext() ?? "/sessions";
+    const leave = () => { takeNext(); window.location.href = next; };
     const supabase = createClient();
 
     // Listen for the auth state to change — Supabase detects the
@@ -36,7 +41,7 @@ function CallbackHandler() {
           // fresh on every request, and a client-side push can fire before
           // the just-set auth cookies finish propagating, bouncing admin/
           // host routes back to /login in a race that a full reload avoids.
-          window.location.href = next;
+          leave();
         }
       }
     );
@@ -45,7 +50,7 @@ function CallbackHandler() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setStatus("Signed in! Taking you there…");
-        window.location.href = next;
+        leave();
       }
     });
 
