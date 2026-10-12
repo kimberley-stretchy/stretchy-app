@@ -1,15 +1,26 @@
-// Shared room-capacity indicator — one pip per spot in the whole room (max
+import { Fragment } from "react";
+
+// Shared room-capacity indicator — one pip per place in the whole room (max
 // capacity), not just up to the minimum. Three visual states per pip:
-//   filled        — someone's holding that spot (the card's accent colour)
-//   priority zone — still-empty spot within the minimum needed to go ahead
-//                   (light grey block — "cover these first")
-//   bonus zone    — still-empty spot beyond the minimum (faint outline only,
+//   filled        — someone's holding that place (the card's accent colour)
+//   priority zone — still-empty place within the minimum needed to go ahead
+//                   (sand block — "cover these first")
+//   bonus zone    — still-empty place beyond the minimum (faint outline only,
 //                   de-emphasised since the session already works without it)
+//
+// Two optional extras (COPY_REFRESH_HANDOVER.md section 1):
+//   showMinLine — a dashed vertical ink line after the last minimum pip, so
+//                 "this many and we're on" is visible at a glance
+//   mine        — how many places the signed-in person holds; those pips (the
+//                 last `mine` of the filled ones) get a thin ink outline so
+//                 they can see themselves in the room
 export default function CapacityPips({
   min,
   max,
   held,
   accent,
+  showMinLine = false,
+  mine = 0,
   pipClassName = "flex-1 h-[14px] lg:h-[18px] rounded-pill border-[1.5px]",
   gapClassName = "flex gap-[2px] lg:gap-[3px]",
 }: {
@@ -17,20 +28,43 @@ export default function CapacityPips({
   max: number;
   held: number;
   accent: string;
+  showMinLine?: boolean;
+  mine?: number;
   pipClassName?: string;
   gapClassName?: string;
 }) {
+  // Never outline more pips than are actually filled.
+  const mineCount = Math.max(0, Math.min(mine, held, max));
+  // The line only means something when the minimum sits inside the room.
+  const lineAfter = showMinLine && min > 0 && min < max ? min - 1 : -1;
+
   return (
     <div className={gapClassName}>
       {Array.from({ length: max }).map((_, i) => {
         const filled = i < held;
         const withinMin = i < min;
-        const style = filled
+        const isMine = filled && i >= held - mineCount;
+        const style: React.CSSProperties = filled
           ? { backgroundColor: accent, borderColor: accent }
           : withinMin
           ? { backgroundColor: "#E1D5C6", borderColor: "#E1D5C6" }
           : { backgroundColor: "transparent", borderColor: "rgba(20,17,15,.15)" };
-        return <div key={i} className={pipClassName} style={style} />;
+        if (isMine) {
+          style.outline = "1.5px solid #14110F";
+          style.outlineOffset = "1px";
+        }
+        return (
+          <Fragment key={i}>
+            <div className={pipClassName} style={style} />
+            {i === lineAfter && (
+              <span
+                aria-hidden
+                className="flex-none self-stretch"
+                style={{ width: 0, borderLeft: "2px dashed #14110F", margin: "-4px 2px" }}
+              />
+            )}
+          </Fragment>
+        );
       })}
     </div>
   );

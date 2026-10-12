@@ -66,6 +66,29 @@ export function nextPrice(
 }
 
 /**
+ * The X in "never more than $X" — the most a person can be told they'll pay.
+ *
+ * - Before 36 hrs out: always the price AT THE MINIMUM. People can still cancel
+ *   for free, which can push the current price back up, so we never promise a
+ *   lower ceiling than that.
+ * - From 36 hrs out: nobody can cancel, so the price can only drop from here
+ *   and the current price is the ceiling.
+ *
+ * `beforeGoNoGo` should come from lib/sessionTimes.ts (phase === "before36").
+ */
+export function maxPriceToPromise(
+  costBase: number,
+  revenueTarget: number,
+  minimumMats: number,
+  peopleHolding: number,
+  beforeGoNoGo: boolean
+): number {
+  const atMinimum = startingPrice(costBase, revenueTarget, minimumMats);
+  if (beforeGoNoGo) return atMinimum;
+  return calculatePrice(costBase, revenueTarget, Math.max(peopleHolding, minimumMats));
+}
+
+/**
  * Full pricing state for a session — everything the UI needs.
  */
 export function getPricingState(
