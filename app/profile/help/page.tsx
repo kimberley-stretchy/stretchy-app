@@ -36,28 +36,28 @@ const SOCIAL_LINKS = [
 
 const FAQS = [
   {
-    q: "What is a hold — am I charged straight away?",
-    a: "Nope. A hold reserves your place with no charge. Think of it like holding a spot in a queue. Your card is only charged once the session is confirmed and the final price locks — two hours before it starts.",
+    q: "What is a hold? Am I charged straight away?",
+    a: "No. When you hold your place we save your card and show you the most you'll pay. Nothing is charged yet. Your bank may show a pending amount. That's a hold, not a payment.",
   },
   {
     q: "When does my card actually get charged?",
-    a: "Two hours out — that's when the doors close, the final price locks, and everyone pays at the same time. Until then, your hold sits on your card but nothing is taken.",
+    a: "2 hours before the session, at the final price. Joining closes at the same time, and everyone pays the same.",
   },
   {
     q: "How does the price drop?",
-    a: "Sessions start at a max price. The more people who hold a spot, the lower the price drops for everyone. Once the minimum is met (36 hours out), the session is confirmed and the price keeps dropping as more people join — right up until two hours before.",
+    a: "Every session shows a max price, the most you'll pay. Once enough people are in, it's on, and everyone who joins after makes it cheaper for the whole room, right up to 2 hours before.",
   },
   {
     q: "What happens if the minimum isn't met?",
-    a: "If not enough people hold by the 36-hour mark, the session doesn't go ahead. Your hold is released and nothing is charged. Simple.",
+    a: "It's called off at 36 hours before and you pay nothing.",
   },
   {
     q: "Can I cancel my hold?",
-    a: "Yes — up to 12 hours before the session. Cancel before then and your hold is released with no charge. After that window closes, your place is locked in — someone else may have joined because of you, which helped drop the price.",
+    a: "Yes, free up to 36 hours before. No charge, no questions.",
   },
   {
-    q: "Can I cancel once the session is confirmed?",
-    a: "Once confirmed (36 hours out), cancellations close. The session is going ahead and the price is live. No cancellations from this point.",
+    q: "Can I cancel after 36 hours?",
+    a: "Free cancelling closes 36 hours before. After that the session is going ahead and the price stands. Something serious come up? Get in touch.",
   },
   {
     q: "What is a Social Stretch?",
