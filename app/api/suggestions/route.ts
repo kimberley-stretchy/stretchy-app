@@ -31,6 +31,15 @@ export async function POST(request: NextRequest) {
 
   if (!session_type) return NextResponse.json({ error: "Missing session_type" }, { status: 400 });
 
+  // Optional contact — only sent when the person opted in to hear if this one
+  // goes ahead. Never stored on the public `suggestions` row.
+  const contactName = typeof body.contact?.name === "string" ? body.contact.name.trim().slice(0, 120) : "";
+  const contactEmail = typeof body.contact?.email === "string" ? body.contact.email.trim().toLowerCase().slice(0, 200) : "";
+  const wantsNotify = body.contact?.notify === true;
+  if (wantsNotify && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+    return NextResponse.json({ error: "Pop in a valid email so we can tell you if it happens." }, { status: 400 });
+  }
+
   // Note: the public /suggest form also sends a `details` object (movement,
   // days, neighbourhoods, etc.) but the suggestions table has no such column
   // — every real submission was failing outright before this was dropped
@@ -49,7 +58,21 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Notify HQ — fire and forget, never seen before this.
+  // Private contact row (service-role only table). A failure here must not
+  // lose the suggestion itself — it's flagged in the HQ email instead.
+  let contactSaved = false;
+  if (wantsNotify && contactEmail) {
+    const { error: contactErr } = await admin.from("suggestion_contacts").insert({
+      suggestion_id: data.id,
+      name: contactName || null,
+      email: contactEmail,
+      notify: true,
+    });
+    if (contactErr) console.error("Suggestion contact save error:", contactErr);
+    contactSaved = !contactErr;
+  }
+
+  // Notify HQ.
   if (process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const summary = [session_type.replace(/_/g, " "), neighbourhood, preferred_time].filter(Boolean).join(" · ");
@@ -58,7 +81,12 @@ export async function POST(request: NextRequest) {
         from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",
         subject: `New Stretchy suggestion — ${summary}`,
-        text: `${summary}${notes ? `\n\n${notes}` : ""}\n\nView the board: https://stretchyyoga.co.nz/admin/suggestions`,
+        text:
+          `${summary}${notes ? `\n\n${notes}` : ""}\n\n` +
+          (wantsNotify
+            ? `From: ${contactName ? `${contactName} · ` : ""}${contactEmail}\nOpted in: wants to hear if this one goes ahead.${contactSaved ? "" : "\n⚠️ Their details did NOT save to HQ — keep this email."}`
+            : "No contact details left (didn't opt in).") +
+          `\n\nView the board: https://www.stretchyyoga.co.nz/admin/suggestions`,
       })
       .catch((e) => console.error("Suggestion notify email error:", e));
   }

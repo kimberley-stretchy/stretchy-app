@@ -40,6 +40,8 @@ export default function SuggestPage() {
   const [socialAfter, setSocialAfter] = useState("");
   const [anythingElse, setAnythingElse] = useState("");
   const [notifyMe, setNotifyMe] = useState(true);
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -76,6 +78,10 @@ export default function SuggestPage() {
       setFormError("Tell us what kind of movement you're after.");
       return;
     }
+    if (notifyMe && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim())) {
+      setFormError("Pop in your email so we can tell you if it happens — or switch that off.");
+      return;
+    }
     setFormError(null);
     setSubmitting(true);
 
@@ -109,6 +115,8 @@ export default function SuggestPage() {
         anythingElse,
         notifyMe,
       },
+      // Private — goes to HQ only, never onto the public board.
+      contact: notifyMe ? { name: contactName.trim(), email: contactEmail.trim(), notify: true } : null,
     };
 
     try {
@@ -157,7 +165,10 @@ export default function SuggestPage() {
               <div className="py-16 text-center">
                 <p className="text-3xl mb-3">🙌</p>
                 <h1 className="font-display text-[28px] leading-none mb-2">On the board.</h1>
-                <p className="text-sm leading-[1.5]">Thanks — the more &ldquo;me too&rdquo;s it gets, the sooner it happens.</p>
+                <p className="text-sm leading-[1.5]">
+                  Thanks — the more &ldquo;me too&rdquo;s it gets, the sooner it happens.
+                  {notifyMe && contactEmail ? " We’ll email you if it goes ahead." : ""}
+                </p>
               </div>
             ) : (
               <>
@@ -268,8 +279,32 @@ export default function SuggestPage() {
                       <span className="absolute top-0.5 w-5 h-5 rounded-pill transition-all" style={{ left: notifyMe ? "20px" : "2px", background: "#FCBB16" }} />
                     </span>
                     <input type="checkbox" checked={notifyMe} onChange={(e) => setNotifyMe(e.target.checked)} className="sr-only" />
-                    <span className="text-xs leading-[1.4]">Tell me first if this one happens. You&rsquo;re on the list automatically.</span>
+                    <span className="text-xs leading-[1.4]">Tell me first if this one happens.</span>
                   </label>
+
+                  {notifyMe && (
+                    <div className="flex flex-col gap-2">
+                      <div className="font-mono text-[10px] font-extrabold tracking-[0.12em]">WHERE SHOULD WE TELL YOU</div>
+                      <input
+                        value={contactName}
+                        onChange={(e) => setContactName(e.target.value)}
+                        placeholder="First name (optional)"
+                        autoComplete="given-name"
+                        className="w-full h-11 border-2 border-ink rounded-pill px-[15px] text-xs bg-cream text-ink placeholder:text-ink/50 outline-none"
+                      />
+                      <input
+                        type="email"
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
+                        placeholder="you@email.com"
+                        autoComplete="email"
+                        className="w-full h-11 border-2 border-ink rounded-pill px-[15px] text-xs bg-cream text-ink placeholder:text-ink/50 outline-none"
+                      />
+                      <p className="text-[11px] leading-[1.4] opacity-80">
+                        We&rsquo;ll only email you about this suggestion. Your details go to Stretchy HQ and never appear on the board.
+                      </p>
+                    </div>
+                  )}
 
                   {formError && <p className="text-xs font-semibold" style={{ color: "#FCBB16" }}>{formError}</p>}
 
@@ -282,7 +317,7 @@ export default function SuggestPage() {
                     {submitting ? "Sending…" : "Suggest it"}
                   </button>
                   <p className="text-[11px] leading-[1.4] text-center opacity-80">
-                    Anonymous. Takes a minute. Others can say &ldquo;me too&rdquo; to push it up the board.
+                    Anonymous on the board. Takes a minute. Others can say &ldquo;me too&rdquo; to push it up.
                   </p>
                 </form>
               </>

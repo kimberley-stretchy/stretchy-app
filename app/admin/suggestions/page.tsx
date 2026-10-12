@@ -21,6 +21,7 @@ type Suggestion = {
   notes: string | null;
   vote_count: number;
   created_at: string;
+  contacts?: { name: string | null; email: string; notify: boolean }[];
 };
 
 export default function AdminSuggestionsPage() {
@@ -28,11 +29,10 @@ export default function AdminSuggestionsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Suggestions are anonymous by design (no host/attendee identity attached),
-    // so this reuses the same public read the /suggest board itself uses.
-    fetch("/api/suggestions")
+    // HQ-only route: the public board data plus who suggested each one.
+    fetch("/api/admin/suggestions")
       .then((r) => r.json())
-      .then((d) => setItems(Array.isArray(d) ? d : []))
+      .then((d) => setItems(Array.isArray(d?.items) ? d.items : []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -67,6 +67,13 @@ export default function AdminSuggestionsPage() {
                   </span>
                 </div>
                 {s.notes && <p style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 8, color: T.ink }}>{s.notes}</p>}
+                {(s.contacts ?? []).map((c) => (
+                  <p key={c.email} style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 6, color: T.ink }}>
+                    ✉️ {c.name ? `${c.name} · ` : ""}
+                    <a href={`mailto:${c.email}`} style={{ color: T.purple, fontWeight: 700 }}>{c.email}</a>
+                    {c.notify ? " — wants to hear if it goes ahead" : ""}
+                  </p>
+                ))}
                 <p style={{ fontFamily: T.mono, fontSize: 10, color: "rgba(20,17,15,.4)" }}>
                   {new Date(s.created_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "short", year: "numeric" })}
                 </p>
