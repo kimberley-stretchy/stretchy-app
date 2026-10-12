@@ -5,6 +5,7 @@ import { notifyHostCancelled } from "@/lib/notifyHostScheduled";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
 import { calculatePrice } from "@/lib/pricing";
 import { sendPushToUsers } from "@/lib/push-server";
+import { goNoGo, formatDayTime, formatTime } from "@/lib/sessionTimes";
 
 // The go/cancel decision lives here — NOT inline in the cron — so the hourly
 // automation and HQ's manual "Keep it alive & confirm" override run the exact
@@ -83,7 +84,8 @@ export async function getInterestedUserIds(admin: SupabaseClient, sessionId: str
 // on state=open). Used by both the 36h auto-decision and the HQ override button.
 export async function confirmSession(
   admin: SupabaseClient,
-  session: DecisionSession
+  session: DecisionSession,
+  opts: { keptAlive?: boolean } = {}
 ): Promise<{ action: "confirmed"; holders: number }> {
   // Critical state change first, on its own — so it can't be blocked by the
   // grace column being absent (migration gap). Clearing grace is best-effort.
@@ -170,7 +172,9 @@ export async function confirmSession(
     heading: `${session.title} is going ahead`,
     sessionId: session.id,
     rows: [
-      `<strong>${holds}</strong> holds — minimum met. Teacher and GEM have been notified.`,
+      opts.keptAlive
+        ? `<strong>${holds}</strong> of ${session.min_attendees} holds — under the minimum, going ahead because HQ kept it alive. Teacher and GEM have been notified.`
+        : `<strong>${holds}</strong> holds — minimum met. Teacher and GEM have been notified.`,
       `🗓 ${dateStr}`,
       `📍 ${session.location_name ?? "TBC"}`,
       `Final price at lock-in (2h before): ${finalPrice}.`,
@@ -232,10 +236,12 @@ export async function cancelSession(
   return { action: "cancelled", holders: holds };
 }
 
-// ── START GRACE ───────────────────────────────────────────────────────────────
-// At the 36h mark a still-short session does NOT cancel. It enters a silent grace
-// window (invisible to customers) and HQ ONLY is alerted, with ~1 hour to hit
-// "Keep it alive & confirm" before the 35h run auto-cancels it.
+// ── HQ WINDOW ─────────────────────────────────────────────────────────────────
+// At 37 hrs out a still-short session opens a one-hour, HQ-ONLY window: nobody
+// else is told anything. HQ can press "Keep alive" before 36 hrs out; if they
+// don't, the 36 hr yes / no calls it off. grace_started_at records that the
+// alert has gone, so it's sent once. (The name is historical — this used to be
+// a grace hour AFTER the 36 hr mark.)
 export async function startGrace(
   admin: SupabaseClient,
   session: DecisionSession,
@@ -244,18 +250,20 @@ export async function startGrace(
   await admin.from("sessions").update({ grace_started_at: new Date().toISOString() }).eq("id", session.id);
   const needed = session.min_attendees - holds;
   const dateStr = fmtDate(session.starts_at);
+  const decisionAt = formatDayTime(goNoGo(session.starts_at));
   await notifyHQ({
-    subject: `⚠️ Decide now: ${session.title} auto-cancels in ~1h (${holds}/${session.min_attendees})`,
+    subject: `⚠️ Your call by ${formatTime(goNoGo(session.starts_at))}: ${session.title} is ${needed} short (${holds}/${session.min_attendees})`,
     scheme: "purple",
-    kicker: "Stretchy HQ · Your call — grace window open",
+    kicker: "Stretchy HQ · Your call — one hour to decide",
     heading: `${session.title} is ${needed} short`,
     sessionId: session.id,
     rows: [
-      `It has <strong>${holds}</strong> of ${session.min_attendees} holds. Left alone, it <strong>auto-cancels at the 35-hour mark (about 1 hour from now)</strong> and everyone's told.`,
-      `To run it anyway, hit <strong>Keep it alive &amp; confirm</strong> before then — that locks it in and sends everyone the "it's happening" email.`,
+      `It has <strong>${holds}</strong> of ${session.min_attendees}. Left alone, it's <strong>called off at 36 hours out (${decisionAt})</strong> and everyone's told then.`,
+      `To run it anyway, press <strong>Keep alive</strong> in HQ before then. Nothing is sent straight away — at ${formatTime(goNoGo(session.starts_at))} everyone gets the "it's going ahead" email as normal.`,
+      `If it reaches ${session.min_attendees} by itself before then, it goes ahead without you doing anything.`,
       `🗓 ${dateStr}`,
       `📍 ${session.location_name ?? "TBC"}`,
-      `No customer emails have gone out yet — this alert is HQ-only.`,
+      `No customer emails have gone out about this — this alert is HQ-only.`,
     ],
     cta: { href: `${APP_URL}/admin/sessions`, text: "Open HQ to decide →" },
   });

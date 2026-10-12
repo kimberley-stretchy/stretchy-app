@@ -7,6 +7,20 @@
 
 ---
 
+## Changes since sign-off (decided by Kimberley, 13 Oct 2026)
+
+These override anything below that says otherwise.
+
+1. **No outline on a person's own dots.** The `mine` prop on `CapacityPips`, the "thin ink outline" row in the multi-place table, and the `mine` argument to the email `peopleDots` are all dropped. Every held place looks the same.
+2. **Dots are always true circles** at every screen width.
+3. **The countdown is 38 / 37 / 36 hours, and the job runs every 15 minutes** so each step lands exactly on time (rules in `lib/sessionSchedule.ts`):
+   - **38 hrs out:** "So close" nudge to people holding or interested, plus teacher, GEM and HQ. Only if under the minimum.
+   - **37 hrs out:** HQ-only window. If still short, HQ alone is alerted and has one hour to press **Keep alive**. Pressing it sends nothing; it records the decision (`sessions.keep_alive_at`, migration `2026-10-13_keep_alive.sql`).
+   - **36 hrs out:** the yes / no. Minimum met or kept alive → going ahead; otherwise called off. Everyone is told now, and free cancelling closes at the same moment. There is no grace hour after 36.
+4. **"Going ahead ✓" wording depends on the session being confirmed**, not only on the clock.
+
+---
+
 ## 0. How to work
 
 - Kimberley is new to coding. Explain each step in plain language before doing it.

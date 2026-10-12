@@ -103,7 +103,7 @@ export default function CopyRefreshCheckPage() {
                   <span>{need ? need : "Going ahead ✓ · still room to join"}</span>
                   <span>{MAX} max</span>
                 </div>
-                <CapacityPips min={MIN} max={MAX} held={ex.held} accent="#902F8A" showMinLine mine={ex.mine} />
+                <CapacityPips min={MIN} max={MAX} held={ex.held} accent="#902F8A" showMinLine />
                 <div className="flex justify-between font-mono text-[11px] font-bold mt-2">
                   <span>${startingPrice(COST, TARGET, MIN).toFixed(2)}</span>
                   <span>${floorPrice(COST, TARGET, MAX).toFixed(2)}</span>
