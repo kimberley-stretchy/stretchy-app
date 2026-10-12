@@ -22,6 +22,31 @@ const CARDS = [
   },
 ];
 
+// Second row — three matching dashed boxes (no fill), below the four cards.
+const MORE = [
+  {
+    title: "Brand & community partnerships",
+    short: "Good people, good brands, good ideas — from community partnerships and events to aligned brands and venues.",
+    body: "Good people, good brands, good ideas. We’re always open to collaborations that help us bring more movement, connection and good energy into the world — from community partnerships and events to aligned brands, venues, organisations and creative ideas.",
+    cta: "Let’s make something good →",
+    href: "/partner",
+  },
+  {
+    title: "Business & investment opportunities",
+    short: "A new economic model for movement communities. Partner, back, license or collaborate.",
+    body: "We’re creating a new economic model for movement communities, with the tech, systems and brand to match. Get in touch about partnering, backing, building, licensing or collaborating — whether that’s growing Stretchy or exploring what we’ve built for your own movement community.",
+    cta: "Start a conversation →",
+    href: "/partner",
+  },
+  {
+    title: "Feedback on Stretchy",
+    short: "Been to a Stretchy, or just got thoughts? Tell us what worked, what didn’t, and what you’d change.",
+    body: "Been to a Stretchy, or just got thoughts? Tell us what worked, what didn’t, and what you’d change. It’s how this gets better.",
+    cta: "Tell us more",
+    href: "mailto:kimberley@stretchyyoga.co.nz?subject=Feedback on Stretchy",
+  },
+];
+
 export default function OpportunitiesBand() {
   return (
     <div id="opportunities" className="bg-cream border-t-2 border-ink text-ink px-[18px] py-[26px] lg:p-[60px_44px] flex flex-col gap-3.5 lg:gap-[30px]">
@@ -49,26 +74,18 @@ export default function OpportunitiesBand() {
             <span className="text-lg flex-shrink-0">›</span>
           </a>
         ))}
-        <div className="bg-purple text-cream border-2 border-ink rounded-2xl p-[18px]">
-          <div className="font-display text-[22px] leading-none">Brand &amp; community partnerships</div>
-          <p className="m-0 mt-2 text-[13px] leading-[1.5]">Good people, good brands, good ideas — from community partnerships and events to aligned brands and venues.</p>
-          <a
-            href="/partner"
-            className="w-full mt-3 inline-flex items-center justify-center h-11 bg-transparent text-cream border-2 border-cream rounded-pill text-[13px] font-bold"
-          >
-            Let&rsquo;s make something good &rarr;
-          </a>
-        </div>
-        <div className="bg-purple text-cream border-2 border-ink rounded-2xl p-[18px]">
-          <div className="font-display text-[22px] leading-none">Business &amp; investment opportunities</div>
-          <p className="m-0 mt-2 text-[13px] leading-[1.5]">A new economic model for movement communities. Partner, back, license or collaborate.</p>
-          <a
-            href="/partner"
-            className="w-full mt-3 inline-flex items-center justify-center h-11 bg-transparent text-cream border-2 border-cream rounded-pill text-[13px] font-bold"
-          >
-            Start a conversation &rarr;
-          </a>
-        </div>
+        {MORE.map((m) => (
+          <div key={m.title} className="border-2 border-dashed border-ink/35 rounded-2xl p-[18px]">
+            <div className="font-display text-[22px] leading-none">{m.title}</div>
+            <p className="m-0 mt-2 text-[13px] leading-[1.5] text-ink/75">{m.short}</p>
+            <a
+              href={m.href}
+              className="w-full mt-3 inline-flex items-center justify-center h-11 bg-transparent text-ink border-2 border-ink rounded-pill text-[13px] font-bold"
+            >
+              {m.cta}
+            </a>
+          </div>
+        ))}
       </div>
 
       {/* Desktop: full cards */}
@@ -97,43 +114,19 @@ export default function OpportunitiesBand() {
         </a>
       </div>
 
-      <div className="hidden lg:grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4 items-stretch">
-        <div className="bg-purple border-t-2 border-ink text-cream rounded-[20px] p-7 flex flex-col gap-3.5">
-          <div className="font-display text-[29px] leading-none">Brand &amp; community partnerships</div>
-          <p className="m-0 text-[13px] leading-[1.55]">Good people, good brands, good ideas. We&rsquo;re always open to collaborations that help us bring more movement, connection and good energy into the world — from community partnerships and events to aligned brands, venues, organisations and creative ideas.</p>
-          <a
-            href="/partner"
-            className="mt-auto self-start inline-flex items-center justify-center h-11 px-[26px] bg-transparent text-cream border-2 border-cream rounded-pill text-[15px] font-bold"
-          >
-            Let&rsquo;s make something good &rarr;
-          </a>
-        </div>
-        <div className="bg-purple border-t-2 border-ink text-cream rounded-[20px] p-7 flex flex-col gap-3.5">
-          <div className="font-display text-[29px] leading-none">Business &amp; investment opportunities</div>
-          <p className="m-0 text-[13px] leading-[1.55]">We&rsquo;re creating a new economic model for movement communities, with the tech, systems and brand to match. Get in touch about partnering, backing, building, licensing or collaborating — whether that&rsquo;s growing Stretchy or exploring what we&rsquo;ve built for your own movement community.</p>
-          <a
-            href="/partner"
-            className="mt-auto self-start inline-flex items-center justify-center h-11 px-[26px] bg-transparent text-cream border-2 border-cream rounded-pill text-[15px] font-bold"
-          >
-            Start a conversation &rarr;
-          </a>
-        </div>
-      </div>
-
-      <div className="hidden lg:flex items-center justify-between gap-5 border-2 border-dashed border-ink/35 rounded-[20px] p-[24px_28px]">
-        <div className="min-w-[300px] max-w-[640px]">
-          <div className="font-mono text-[10px] font-extrabold tracking-[0.13em]">FEEDBACK ON STRETCHY</div>
-          <p className="mt-2 mb-0 text-[13px] leading-[1.5] text-ink/75">
-            Been to a Stretchy, or just got thoughts? Tell us what worked, what didn&rsquo;t, and what you&rsquo;d change. It&rsquo;s how this gets better. Or email{" "}
-            <a href="mailto:kimberley@stretchyyoga.co.nz" className="text-ink font-bold underline">kimberley@stretchyyoga.co.nz</a>.
-          </p>
-        </div>
-        <a
-          href="mailto:kimberley@stretchyyoga.co.nz?subject=Feedback on Stretchy"
-          className="inline-flex items-center justify-center h-11 px-[26px] bg-transparent text-ink border-2 border-ink rounded-pill text-[15px] font-bold whitespace-nowrap"
-        >
-          Tell us more
-        </a>
+      <div className="hidden lg:grid grid-cols-3 gap-4 items-stretch">
+        {MORE.map((m) => (
+          <div key={m.title} className="border-2 border-dashed border-ink/35 rounded-[20px] p-6 flex flex-col gap-3">
+            <div className="font-display text-[23px] leading-none">{m.title}</div>
+            <p className="m-0 text-[13px] leading-[1.5] text-ink/70">{m.body}</p>
+            <a
+              href={m.href}
+              className="mt-auto self-start inline-flex items-center justify-center h-11 px-[26px] bg-transparent text-ink border-2 border-ink rounded-pill text-sm font-bold"
+            >
+              {m.cta}
+            </a>
+          </div>
+        ))}
       </div>
 
       <p className="m-0 text-xs text-ink/50 leading-[1.5]">
