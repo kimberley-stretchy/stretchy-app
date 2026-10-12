@@ -50,14 +50,14 @@ function GoingAheadContent() {
       <nav className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
         <Link href="/sessions"><SMark size={28} className="text-white" /></Link>
         <p className="font-mono text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.7)" }}>
-          Notification · 36H Confirmed
+          36 hrs out · Going ahead
         </p>
         <Link href="/sessions" className="text-2xl font-light leading-none" style={{ color: "rgba(255,255,255,0.7)" }} aria-label="Dismiss">×</Link>
       </nav>
 
       <div className="px-4 max-w-lg mx-auto">
         <p className="font-mono text-xs font-bold uppercase tracking-[0.20em] mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
-          It&apos;s happening
+          It&rsquo;s on
         </p>
 
         <h1 className="font-display font-bold mb-5 text-white" style={{ fontSize: "clamp(60px, 16vw, 76px)", letterSpacing: "-0.04em", lineHeight: "0.88" }}>
@@ -65,17 +65,17 @@ function GoingAheadContent() {
         </h1>
 
         <p className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.85)" }}>
-          <strong className="text-white">{title}</strong> is confirmed. The price can still drop as more people join — right up to 2 hours before. Your card is charged at that final price.
+          <strong className="text-white">{title}</strong> hit its minimum, so it&rsquo;s going ahead and your place is confirmed. More people can still join and the price keeps dropping. No free cancelling from here.
         </p>
 
         {/* Price card */}
         <div className="bg-white rounded-card border-2 border-ink p-5 mb-4">
-          <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-1">Current price</p>
+          <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted mb-1">Price now</p>
           <div className="flex items-baseline gap-2 mb-1">
             <span className="font-display font-bold text-ink" style={{ fontSize: "52px", letterSpacing: "-0.03em" }}>${currentPrice.toFixed(2)}</span>
-            <span className="font-mono text-sm font-bold text-muted">incl. GST</span>
+            <span className="font-mono text-sm font-bold text-muted">max per person · incl. GST</span>
           </div>
-          <p className="text-xs text-muted">May still drop before 2h lock-in · {holds} people holding</p>
+          <p className="text-xs text-muted">{holds} in · still room to join. Final price charged 2 hours before, never more than this.</p>
         </div>
 
         {/* Session details */}
@@ -91,15 +91,15 @@ function GoingAheadContent() {
         {session?.social_stretch_venue && (
           <div className="rounded-card p-5 mb-4" style={{ backgroundColor: "#902F8A", border: "2px solid #14110F" }}>
             <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] mb-2" style={{ color: "rgba(245,237,227,0.6)" }}>
-              Social Stretch after 🤙
+              Social Stretch after
             </p>
             <p className="font-bold text-white">{session.social_stretch_venue}</p>
             {session.social_stretch_note && <p className="text-sm mt-1" style={{ color: "rgba(245,237,227,0.8)" }}>{session.social_stretch_note}</p>}
           </div>
         )}
 
-        <Link href={`/sessions/${sessionId}`} className="block text-center font-semibold rounded-pill py-4 transition-all" style={{ backgroundColor: "#14110F", color: "#F7F0E8", fontSize: "15px" }}>
-          View my booking →
+        <Link href={`/hold/${sessionId}`} className="block text-center font-semibold rounded-pill py-4 transition-all" style={{ backgroundColor: "#14110F", color: "#F7F0E8", fontSize: "15px" }}>
+          Manage my booking
         </Link>
       </div>
     </main>

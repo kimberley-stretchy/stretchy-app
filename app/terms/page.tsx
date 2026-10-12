@@ -17,27 +17,31 @@ export default function TermsPage() {
           <h1 className="font-display font-bold text-ink mb-1" style={{ fontSize: "36px", letterSpacing: "-0.03em" }}>
             Terms &amp; conditions
           </h1>
-          <p className="font-mono text-xs text-muted uppercase tracking-widest">Last updated September 2026</p>
+          <p className="font-mono text-xs text-muted uppercase tracking-widest">Last updated October 2026</p>
         </div>
 
         <div className="bg-white rounded-card border-2 border-ink p-5 space-y-4 text-sm text-ink leading-relaxed">
           <div>
             <h2 className="font-bold mb-2">The short version</h2>
-            <p className="text-muted">Stretchy connects people who want to move with people who teach. You hold a place, the price drops as the room fills, and everyone pays the same final price once it&rsquo;s locked in at the 36-hour mark. If a session doesn&rsquo;t reach its minimum, it doesn&rsquo;t go ahead, and you&rsquo;re not charged.</p>
+            <p className="text-muted">Stretchy connects people who want to move with people who teach. You hold a place, the price drops as the room fills, and everyone pays the same final price, charged 2 hours before the session. If a session doesn&rsquo;t reach its minimum by 36 hours before, it&rsquo;s called off and you pay nothing.</p>
           </div>
 
-          <div>
+          {/* Every "Cancellation policy ↗" link on the site and in emails lands here.
+              Wording matches the site and emails (STRETCHY_WORDS.md). The policy
+              itself is unchanged; point 6 and "Your rights" still need a lawyer's review. */}
+          <div id="cancellation" className="scroll-mt-6">
             <h2 className="font-bold mb-2">Payment &amp; cancellation</h2>
-            <p className="text-muted mb-2">Every Stretchy is priced by the community, not against it — the more people who come together, the lower the price gets for everyone. Here&rsquo;s exactly how payment and cancellation work.</p>
-            <ul className="text-muted space-y-1.5 list-disc pl-4">
-              <li>You add a card at booking. Nothing is charged yet. You&rsquo;re holding a spot at the current starting price — the most you could ever pay for this session.</li>
-              <li>36 hours before the session, your spot locks in. If the minimum number of people needed has been reached, the session is confirmed and your card is committed. The price you see at this point is your ceiling — it can still drop from here, never rise.</li>
-              <li>2 hours before the session, the final price is set and your card is charged. Whatever the price has dropped to by then is what you pay. You&rsquo;ll get a receipt.</li>
-              <li>If you cancel before the 36-hour lock-in, it&rsquo;s free — no charge, no questions.</li>
-              <li>If you cancel after the 36-hour lock-in because you simply can&rsquo;t make it, the price stands. We don&rsquo;t refund change-of-mind cancellations after this point — by then we&rsquo;ve committed to your teacher, your GEM, and your venue, and this is what keeps the pricing fair and workable for everyone who does show up. (This doesn&rsquo;t affect your legal rights — see below.)</li>
-              <li>If Stretchy, your teacher, or your venue has to cancel after lock-in, you&rsquo;re refunded in full, automatically or via Stretchy HQ. Every time, no exceptions. Refunds are processed back through Stripe, to the card you paid with.</li>
-              <li>If something genuinely comes up — illness, an emergency, life — flick us a message. We look at these case by case; we&rsquo;re a community, not a vending machine.</li>
-            </ul>
+            <p className="text-muted mb-2">Every Stretchy is priced by the community, not against it. The more people who come together, the lower the price gets for everyone. Here&rsquo;s exactly how payment and cancellation work.</p>
+            <ol className="text-muted space-y-1.5 list-decimal pl-5">
+              <li><strong className="text-ink">Hold your place.</strong> We save your card and show you the most you&rsquo;ll pay. Nothing is charged yet. Your bank may show a pending amount for a few days. That&rsquo;s a hold, not a payment.</li>
+              <li><strong className="text-ink">Up to 36 hours before: free to cancel.</strong> No charge, no questions.</li>
+              <li><strong className="text-ink">36 hours before: going ahead, or not.</strong> If we have the minimum number of people, we&rsquo;re on. If not, it&rsquo;s called off and you pay nothing. Free cancelling ends here.</li>
+              <li><strong className="text-ink">36 to 2 hours before: still room to join.</strong> More people can join and the price keeps dropping for everyone. If you join in this window, it&rsquo;s already going ahead, so there&rsquo;s no free cancelling.</li>
+              <li><strong className="text-ink">2 hours before: final price charged.</strong> Joining closes and we charge your card the final price. It&rsquo;s never more than the max price shown. You&rsquo;ll get a receipt.</li>
+              <li><strong className="text-ink">Can&rsquo;t make it after 36 hours?</strong> The price stands. We don&rsquo;t refund change-of-mind cancellations after this point, because by then we&rsquo;ve committed to your teacher, your GEM and your venue. That&rsquo;s what keeps the pricing fair for everyone who shows up. (This doesn&rsquo;t affect your legal rights. See below.)</li>
+              <li><strong className="text-ink">If we cancel, you don&rsquo;t pay.</strong> If you&rsquo;ve already been charged, we refund you in full, back to the card you paid with.</li>
+              <li><strong className="text-ink">Something serious come up?</strong> Illness, an emergency, life. Get in touch and we&rsquo;ll look at it case by case.</li>
+            </ol>
           </div>
 
           <div>

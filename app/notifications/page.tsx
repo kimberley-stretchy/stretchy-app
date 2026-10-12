@@ -33,9 +33,9 @@ type HoldWithSession = {
 };
 
 function statusInfo(sessionState: string, holdState: string) {
-  if (holdState === "charged") return { label: "CHARGED · LOCKED IN", color: "#716F39", bg: "rgba(76,175,130,0.10)" };
+  if (holdState === "charged") return { label: "FINAL PRICE CHARGED", color: "#716F39", bg: "rgba(76,175,130,0.10)" };
   if (holdState === "released") return { label: "RELEASED · $0 CHARGED", color: "#888", bg: "rgba(26,26,26,0.06)" };
-  if (sessionState === "cancelled") return { label: "SESSION CANCELLED", color: "#888", bg: "rgba(26,26,26,0.06)" };
+  if (sessionState === "cancelled") return { label: "CALLED OFF", color: "#888", bg: "rgba(26,26,26,0.06)" };
   if (sessionState === "confirmed" || sessionState === "locked") return { label: "GOING AHEAD ✓", color: "#716F39", bg: "rgba(76,175,130,0.10)" };
   return { label: "HOLDING", color: "#FCBB16", bg: "rgba(255,209,102,0.15)" };
 }
@@ -109,7 +109,7 @@ export default function NotificationsPage() {
           <div className="bg-white rounded-card border-2 border-ink p-8 text-center">
             <p className="text-3xl mb-3">🧘</p>
             <p className="font-bold text-ink mb-2">No holds yet</p>
-            <p className="text-sm text-muted mb-5">Browse sessions and hold your first spot — it's free until the session is confirmed.</p>
+            <p className="text-sm text-muted mb-5">Browse sessions and hold your first place. It's free to cancel up to 36 hours out, and nothing's charged until 2 hours before.</p>
             <Link href="/sessions" className="font-semibold px-6 py-3 rounded-pill" style={{ backgroundColor: "#14110F", color: "#F7F0E8" }}>
               Browse sessions →
             </Link>
@@ -171,12 +171,12 @@ function HoldCard({ hold: h, currentHolds }: { hold: HoldWithSession; currentHol
             </span>
             {h.quantity > 1 && (
               <span className="font-mono text-xs font-bold px-2 py-1 rounded-pill" style={{ background: "rgba(144,47,138,0.1)", color: "#902F8A" }}>
-                {h.quantity} SPOTS
+                {h.quantity} PLACES
               </span>
             )}
             {h.state === "active" && isFuture && (
               <span className="font-mono text-xs font-bold" style={{ color: "#FCBB16" }}>
-                ${currentPrice.toFixed(2)}{h.quantity > 1 ? ` / spot` : ""}
+                ${currentPrice.toFixed(2)}{h.quantity > 1 ? ` each` : ""}
               </span>
             )}
           </div>

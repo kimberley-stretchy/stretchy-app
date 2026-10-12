@@ -79,6 +79,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
   }
 
+  // HQ's "Bring with you" lines. Read separately so a missing column
+  // (migration not run yet) can't take the whole session page down.
+  const { data: bring } = await admin.from("sessions").select("bring_title, bring_note").eq("id", id).maybeSingle();
+
   // Teacher / GEM names + handles, venue handles, style (skips HQ placeholder).
   const extras = await buildSessionEmailExtras(admin, session);
 
@@ -87,6 +91,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     current_holds: currentHolds,
     my_hold_quantity: myHoldQuantity,
     im_interested: imInterested,
+    bring_title: bring?.bring_title ?? null,
+    bring_note: bring?.bring_note ?? null,
     teacherName: extras.teacherName ?? null,
     teacherStyle: extras.teacherStyle ?? null,
     gemName: extras.gemName ?? null,

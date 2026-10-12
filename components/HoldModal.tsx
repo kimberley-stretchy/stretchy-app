@@ -28,6 +28,7 @@ function CardForm({
   priceNZD,
   quantity,
   accessToken,
+  late,
   onClose,
 }: {
   sessionId: string;
@@ -37,6 +38,7 @@ function CardForm({
   priceNZD: number;
   quantity: number;
   accessToken: string;
+  late: boolean;
   onClose: () => void;
 }) {
   const stripe = useStripe();
@@ -97,7 +99,7 @@ function CardForm({
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 13, color: "rgba(26,26,26,0.6)" }}>
-            {quantity > 1 ? `${quantity} spots × $${priceNZD.toFixed(2)}` : "Max you'll pay"}
+            {quantity > 1 ? `Max for your ${quantity} places` : "Max per person"}
           </span>
           <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: "#FCBB16" }}>
             ${(priceNZD * quantity).toFixed(2)} <span style={{ fontSize: 11, color: "rgba(26,26,26,0.4)" }}>incl. GST</span>
@@ -105,7 +107,7 @@ function CardForm({
         </div>
         {quantity > 1 && (
           <p style={{ fontSize: 11, color: "rgba(26,26,26,0.45)", marginTop: 4 }}>
-            ${priceNZD.toFixed(2)} per person — may drop as more people join
+            ${priceNZD.toFixed(2)} max per person. Drops as more people join.
           </p>
         )}
       </div>
@@ -123,7 +125,7 @@ function CardForm({
           color: T.cream, border: "none", cursor: loading ? "not-allowed" : "pointer",
           fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 16, fontWeight: 700,
         }}>
-          {loading ? "Saving your spot…" : "Hold my place — no charge yet"}
+          {loading ? "Holding your place…" : "Hold my place"}
         </button>
         <button type="button" onClick={onClose} disabled={loading} style={{
           width: "100%", padding: "14px", borderRadius: 999,
@@ -140,7 +142,10 @@ function CardForm({
         fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
         color: "rgba(26,26,26,0.35)", letterSpacing: "0.1em",
       }}>
-        NO CHARGE YET · CANCEL ANY TIME UP TO 36H OUT
+        {late ? "ALREADY GOING AHEAD · NO FREE CANCELLING FROM HERE" : "FREE TO CANCEL UP TO 36 HOURS OUT"}
+      </p>
+      <p style={{ marginTop: 6, textAlign: "center", fontSize: 12, color: "rgba(26,26,26,0.5)", lineHeight: 1.45 }}>
+        We save your card. That&rsquo;s a hold, not a payment.
       </p>
     </form>
   );
@@ -150,11 +155,14 @@ export default function HoldModal({
   sessionId,
   sessionTitle,
   accessToken,
+  late = false,
   onClose,
 }: {
   sessionId: string;
   sessionTitle: string;
   accessToken: string;
+  /** Inside 36 hrs out: joining is still open but there's no free cancelling. */
+  late?: boolean;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -215,13 +223,13 @@ export default function HoldModal({
           background: "rgba(26,26,26,0.15)", margin: "0 auto 20px",
         }} />
         <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: T.black, marginBottom: 4 }}>
-          Hold your spot
+          Hold your place
         </h2>
         <p style={{ fontSize: 13, color: "rgba(26,26,26,0.55)", marginBottom: 16 }}>{sessionTitle}</p>
 
         {/* Quantity selector */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: T.black }}>Spots</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: T.black }}>Places</span>
           <div style={{ display: "flex", alignItems: "center", gap: 0, background: "rgba(26,26,26,0.06)", borderRadius: 999, padding: "4px" }}>
             {[1, 2, 3, 4, 5, 6].map(n => (
               <button
@@ -240,7 +248,7 @@ export default function HoldModal({
               </button>
             ))}
           </div>
-          {quantity > 1 && <span style={{ fontSize: 12, color: "rgba(26,26,26,0.5)" }}>spots for you & your mates</span>}
+          {quantity > 1 && <span style={{ fontSize: 12, color: "rgba(26,26,26,0.5)" }}>for you and your crew</span>}
         </div>
 
         {step === "loading" && (
@@ -291,6 +299,7 @@ export default function HoldModal({
               priceNZD={priceNZD}
               quantity={quantity}
               accessToken={accessToken}
+              late={late}
               onClose={onClose}
             />
           </Elements>

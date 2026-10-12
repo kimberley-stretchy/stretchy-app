@@ -252,7 +252,7 @@ export function getSessionStatusDisplay(
   phase: SessionPhase
 ): { label: string; color: "pink" | "yellow" | "deep-yellow" | "hot-pink" | "green" | "grey" } {
   if (phase === "CANCELLED") return { label: "Cancelled", color: "grey" };
-  if (phase === "LOCKED" || phase === "COMPLETED") return { label: "Locked in", color: "green" };
+  if (phase === "LOCKED" || phase === "COMPLETED") return { label: "Final price charged", color: "green" };
 
   const fillPercent = peopleHolding / maximumMats;
 

@@ -5,6 +5,7 @@ import Stripe from "stripe";
 import { Resend } from "resend";
 import { cookies } from "next/headers";
 import { calculatePrice } from "@/lib/pricing";
+import { goNoGo, finalCharge, formatDayTime } from "@/lib/sessionTimes";
 import { sendAttendeeEmail } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
 
@@ -253,8 +254,9 @@ export async function DELETE(request: NextRequest) {
   // cancellations exactly the same as cancelling the whole hold.
   const hoursUntil = (new Date(session.starts_at).getTime() - Date.now()) / (1000 * 60 * 60);
   if (hoursUntil <= 36) {
+    // The one place the real dates for these two moments are shown.
     return NextResponse.json({
-      error: "Cancellation window has closed. You are locked in and will be charged 2 hours before the session."
+      error: `Free cancelling closed 36 hours out (${formatDayTime(goNoGo(session.starts_at))}). Your place is confirmed and the final price is charged 2 hours before (${formatDayTime(finalCharge(session.starts_at))}). Something serious come up? Get in touch.`
     }, { status: 400 });
   }
 

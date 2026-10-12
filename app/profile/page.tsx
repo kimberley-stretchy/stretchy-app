@@ -171,7 +171,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-card border-2 border-ink p-6 text-center">
             <p className="text-2xl mb-2">🧘</p>
             <p className="font-bold text-ink mb-1">No upcoming sessions</p>
-            <p className="text-sm text-muted mb-4">Browse what's on and hold your first spot.</p>
+            <p className="text-sm text-muted mb-4">Browse what's on and hold your first place.</p>
             <Link href="/sessions" className="font-semibold text-sm px-6 py-3 rounded-pill transition-all" style={{ backgroundColor: "#14110F", color: "#F7F0E8" }}>
               Browse sessions →
             </Link>

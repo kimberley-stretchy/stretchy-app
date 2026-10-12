@@ -463,7 +463,7 @@ const EMAIL_LABELS: Record<string, string> = {
   session_going_ahead: "36h — it's happening",
   session_confirmed_open: "It's on (interested)",
   session_cancelled: "Cancelled",
-  price_locked: "2h — locked in",
+  price_locked: "2h — final price charged",
   hold_cancelled: "Hold cancelled",
   comp_hold_confirmed: "Comp — on us",
   hq_digest: "HQ digest",

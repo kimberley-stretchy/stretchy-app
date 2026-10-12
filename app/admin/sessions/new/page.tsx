@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
+import { bringDefaults } from "@/lib/bringDefaults";
 import { useRouter, useSearchParams } from "next/navigation";
 import HQShell from "@/components/hq/HQShell";
 import { calculatePrice } from "@/lib/pricing";
@@ -67,6 +68,19 @@ function BuildAStretchyForm() {
   const [venueName, setVenueName] = useState("Bayfield School Hall");
   const [venueAddress, setVenueAddress] = useState("");
   const [gettingThere, setGettingThere] = useState("");
+  // "Bring with you" — two lines shown on Manage my booking and in emails.
+  // Pre-filled from the movement type on a NEW session until HQ types in them.
+  const [bringTitle, setBringTitle] = useState(() => (loadId ? "" : bringDefaults("yoga").title));
+  const [bringNote, setBringNote] = useState(() => (loadId ? "" : bringDefaults("yoga").note));
+  const [bringEdited, setBringEdited] = useState(!!loadId);
+  function changeMovementType(next: string) {
+    setMovementType(next);
+    if (!bringEdited) {
+      const d = bringDefaults(next);
+      setBringTitle(d.title);
+      setBringNote(d.note);
+    }
+  }
   const [venueRate, setVenueRate] = useState(69.75);
   const [socialVenue, setSocialVenue] = useState("Honey Sundays · café");
   const [socialNote, setSocialNote] = useState("3 min walk · pay your own");
@@ -107,6 +121,10 @@ function BuildAStretchyForm() {
         setVenueName(s.location_name ?? "");
         setVenueAddress(s.location_address ?? "");
         setGettingThere(s.getting_there ?? "");
+        // Editing or duplicating: carry the saved lines across as they are.
+        setBringTitle(s.bring_title ?? "");
+        setBringNote(s.bring_note ?? "");
+        setBringEdited(true);
         setSocialVenue(s.social_stretch_venue ?? "");
         setSocialNote(s.social_stretch_note ?? "");
         setVenueInstagram(s.venue_instagram ?? "");
@@ -181,6 +199,8 @@ function BuildAStretchyForm() {
         location_name: venueName,
         location_address: venueAddress,
         getting_there: gettingThere,
+        bring_title: bringTitle.trim() || null,
+        bring_note: bringNote.trim() || null,
         revenue_target: revenueTarget,
         currency,
         min_attendees: minMats,
@@ -299,7 +319,7 @@ function BuildAStretchyForm() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
             <Section label="MOVEMENT" labelColor={T.blue}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <select value={movementType} onChange={(e) => setMovementType(e.target.value)} style={{ ...pillStyle, borderColor: T.blue }}>
+                <select value={movementType} onChange={(e) => changeMovementType(e.target.value)} style={{ ...pillStyle, borderColor: T.blue }}>
                   {MOVEMENT_TYPES.map((m) => <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
                 </select>
                 <Pill value={movementStyle} onChange={setMovementStyle} placeholder="Style · level" borderColor={T.blue} />
@@ -337,6 +357,24 @@ function BuildAStretchyForm() {
               rows={3}
               style={{ ...pillStyle, borderRadius: 14, marginTop: 10, resize: "vertical", fontFamily: "inherit" }}
             />
+          </Section>
+
+          <Section label="BRING WITH YOU">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <Pill
+                value={bringTitle}
+                onChange={(v: string) => { setBringTitle(v); setBringEdited(true); }}
+                placeholder="Bold line, e.g. Your mat & water"
+              />
+              <Pill
+                value={bringNote}
+                onChange={(v: string) => { setBringNote(v); setBringEdited(true); }}
+                placeholder="Grey line, e.g. Plus any props you like, and $$ for coffee after."
+              />
+            </div>
+            <p style={{ fontSize: 12, color: "rgba(20,17,15,.55)", margin: "8px 2px 0", lineHeight: 1.45 }}>
+              Shown on Manage my booking and in the emails. Starts from the movement type; change it to suit. Leave both empty to hide the row.
+            </p>
           </Section>
 
           <Section label="RATES & CURRENCY">

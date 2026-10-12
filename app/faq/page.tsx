@@ -14,19 +14,31 @@ export const metadata: Metadata = {
 const FAQS = [
   {
     q: "How does Stretchy's pricing actually work?",
-    a: "Every session sets a minimum number of mats. Once that minimum is reached, the session is going ahead, and every extra person who joins lowers the price for everyone in the room — including the people who already booked. The price only ever moves down, never up.",
+    a: "Every Stretchy needs a certain number of people to go ahead. Once we've got them, it's on, and everyone who joins after makes it cheaper for the whole room, including the people already holding a place. You're always shown the most you'll pay.",
   },
   {
     q: "When do I get charged?",
-    a: "You add a card when you hold your place, but nothing is charged yet. 36 hours before the session, if the minimum has been met, your spot locks in — the price at that point is the most you'll ever pay. 2 hours before the session, we charge your card the final price, which is often lower than you started at and never higher.",
+    a: "2 hours before the session, at the final price. When you hold your place we save your card, and your bank may show a pending amount. That's a hold, not a payment.",
   },
   {
     q: "What if I need to cancel?",
-    a: "Free any time before the 36-hour lock-in — no charge, no questions. After that, the price stands, because by then we've committed to your teacher, your GEM, and your venue. If something genuinely comes up, message us — we look at these case by case.",
+    a: "Free up to 36 hours before. After that, the price stands. Something serious come up? Get in touch.",
   },
   {
-    q: "What happens if a session doesn't reach its minimum?",
-    a: "It doesn't go ahead, and nobody is charged. If Stretchy ever has to cancel a session after lock-in for any other reason, you're refunded in full, automatically.",
+    q: "Can I still join after 36 hours?",
+    a: "Yes, up to 2 hours before, if there's room. It's already going ahead, so there's no free cancelling once you join.",
+  },
+  {
+    q: "What if a session doesn't reach its minimum?",
+    a: "It's called off at 36 hours before and you pay nothing.",
+  },
+  {
+    q: "Why is there a pending amount on my bank?",
+    a: "It's a temporary hold for the most you'll pay. It isn't a payment and it drops off on its own. You're only charged the final price, 2 hours before.",
+  },
+  {
+    q: "I'm holding more than one place. How does that work?",
+    a: "Everything works the same, per place. You can change or cancel places for free up to 36 hours before.",
   },
   {
     q: "What's a Social Stretch?",

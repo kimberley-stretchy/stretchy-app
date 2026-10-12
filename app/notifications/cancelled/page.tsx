@@ -35,7 +35,7 @@ function CancelledContent() {
       <nav className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
         <Link href="/sessions" className="text-ink"><SMark size={28} /></Link>
         <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
-          Notification · 36H Check
+          36 hrs out · Not this time
         </p>
         <Link href="/sessions" className="text-muted hover:text-ink text-2xl font-light transition-colors leading-none" aria-label="Dismiss">×</Link>
       </nav>
@@ -50,15 +50,15 @@ function CancelledContent() {
         </h1>
 
         <p className="text-sm text-ink leading-relaxed mb-6">
-          <strong>{title}</strong> didn&apos;t have enough people to go ahead.
-          Your hold has been released. <strong>Nothing has been charged.</strong> We hope to see you at the next one.
+          <strong>{title}</strong> didn&rsquo;t reach its minimum, so it&rsquo;s not going ahead this time.{" "}
+          <strong>You pay nothing.</strong> If your bank shows a pending amount, it&rsquo;ll drop off in a few days. We&rsquo;d love to see you at the next one.
         </p>
 
         {/* Receipt */}
         <div className="bg-white rounded-card border-2 border-ink mb-4 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
             <span className="text-sm text-ink">{title}{dateStr ? ` · ${dateStr}` : ""}</span>
-            <span className="font-mono text-xs font-bold text-muted tracking-wide">HOLD</span>
+            <span className="font-mono text-xs font-bold text-muted tracking-wide">CALLED OFF</span>
           </div>
           <div className="flex items-center justify-between px-4 py-3.5">
             <span className="text-sm text-muted">Charged to card</span>
@@ -83,7 +83,7 @@ function CancelledContent() {
         </div>
 
         <Link href="/sessions" className="block text-center font-semibold rounded-pill py-4 transition-all" style={{ backgroundColor: "#14110F", color: "#F7F0E8", fontSize: "15px" }}>
-          Browse what&apos;s still on →
+          See what&rsquo;s next
         </Link>
       </div>
     </main>

@@ -93,6 +93,16 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // "Bring with you" lines. Read separately so a missing column (migration not
+  // run yet) can't break the whole list.
+  const bring: Record<string, { bring_title: string | null; bring_note: string | null }> = {};
+  if (sessionIds.length > 0) {
+    const { data: rows } = await supabase.from("sessions").select("id, bring_title, bring_note").in("id", sessionIds);
+    (rows || []).forEach((r: { id: string; bring_title: string | null; bring_note: string | null }) => {
+      bring[r.id] = { bring_title: r.bring_title, bring_note: r.bring_note };
+    });
+  }
+
   // Which sessions HQ has pressed "Keep alive" on. Read separately so a missing
   // keep_alive_at column (migration not run yet) can't break the whole list.
   const keptAlive: Record<string, string> = {};
@@ -111,6 +121,8 @@ export async function GET(request: NextRequest) {
     ...s,
     current_holds: holdCounts[s.id] || 0,
     keep_alive_at: keptAlive[s.id] ?? null,
+    bring_title: bring[s.id]?.bring_title ?? null,
+    bring_note: bring[s.id]?.bring_note ?? null,
   }));
 
   return NextResponse.json(sessions);
@@ -133,6 +145,8 @@ export async function POST(request: NextRequest) {
     location_name,
     location_address,
     getting_there,
+    bring_title,
+    bring_note,
     revenue_target,
     currency,
     min_attendees,
@@ -164,9 +178,7 @@ export async function POST(request: NextRequest) {
   const startsDate = new Date(starts_at);
   const endsDate = new Date(startsDate.getTime() + (duration_mins || 60) * 60 * 1000);
 
-  const { data, error } = await supabase
-    .from("sessions")
-    .insert({
+  const newSession = {
       host_id,
       gem_host_id: gem_host_id || null,
       title,
@@ -193,13 +205,19 @@ export async function POST(request: NextRequest) {
       is_draft: !!is_draft,
       is_repeat: !!is_repeat,
       repeat_frequency: is_repeat ? repeat_frequency || null : null,
-    })
-    .select("id")
-    .single();
+    };
+  const bringFields = { bring_title: (bring_title ?? "").trim() || null, bring_note: (bring_note ?? "").trim() || null };
 
-  if (error) {
+  let { data, error } = await supabase.from("sessions").insert({ ...newSession, ...bringFields }).select("id").single();
+  // The "Bring with you" columns may not exist yet (migration not run) — the
+  // session must still save without them.
+  if (error && /bring_(title|note)/.test(error.message)) {
+    ({ data, error } = await supabase.from("sessions").insert(newSession).select("id").single());
+  }
+
+  if (error || !data) {
     console.error("Create session error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error?.message ?? "Could not create the session." }, { status: 500 });
   }
 
   const sessionForNotify = {
@@ -237,12 +255,15 @@ export async function PATCH(request: NextRequest) {
 
   const { data: before } = await supabase.from("sessions").select("host_id, gem_host_id").eq("id", id).single();
 
-  const { data: after, error } = await supabase
-    .from("sessions")
-    .update(updates)
-    .eq("id", id)
-    .select("title, starts_at, ends_at, location_name, location_address, movement_type, social_stretch_venue, venue_instagram, social_venue_instagram, host_id, gem_host_id, is_draft, state")
-    .single();
+  const afterCols = "title, starts_at, ends_at, location_name, location_address, movement_type, social_stretch_venue, venue_instagram, social_venue_instagram, host_id, gem_host_id, is_draft, state";
+  let { data: after, error } = await supabase.from("sessions").update(updates).eq("id", id).select(afterCols).single();
+  // The "Bring with you" columns may not exist yet (migration not run) — save
+  // everything else rather than failing the whole edit.
+  if (error && /bring_(title|note)/.test(error.message)) {
+    const { bring_title: _t, bring_note: _n, ...withoutBring } = updates as Record<string, unknown>;
+    void _t; void _n;
+    ({ data: after, error } = await supabase.from("sessions").update(withoutBring).eq("id", id).select(afterCols).single());
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

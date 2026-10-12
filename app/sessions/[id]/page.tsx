@@ -248,6 +248,7 @@ export default function SessionDetailPage() {
           sessionId={session.id}
           sessionTitle={session.title}
           accessToken={accessToken}
+          late={!sessionStatus(session).before36}
           onClose={() => setShowHoldModal(false)}
         />
       )}

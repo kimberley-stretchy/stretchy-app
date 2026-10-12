@@ -123,20 +123,27 @@ function SetupForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div style={{ background: "#FCBB16", border: "2px solid #14110F", borderRadius: 20, padding: "20px" }}>
         <div className="font-mono text-[10px] font-extrabold tracking-[0.12em] mb-2.5" style={{ color: "rgba(20,17,15,.6)" }}>HOW YOU&rsquo;LL PAY</div>
+        {/* Same five points, same words, as Terms → Payment & cancellation (points 1–5). */}
         <p className="text-xs leading-[1.6] mb-2.5" style={{ color: "#14110F" }}>
-          We&rsquo;ll save your card now. You won&rsquo;t be charged yet.
+          <strong>Hold your place.</strong> We save your card and show you the most you&rsquo;ll pay. Nothing is charged yet. Your bank may show a pending amount for a few days. That&rsquo;s a hold, not a payment.
         </p>
         <p className="text-xs leading-[1.6] mb-2.5" style={{ color: "#14110F" }}>
-          <strong>36 hours before your session</strong> — if enough people have joined, your spot is confirmed. The price at that point is the most you&rsquo;ll ever pay — it can still drop as more people book in.
+          <strong>Up to 36 hours before: free to cancel.</strong> No charge, no questions.
         </p>
         <p className="text-xs leading-[1.6] mb-2.5" style={{ color: "#14110F" }}>
-          <strong>2 hours before your session</strong> — we charge your card the final price. Often lower than you started at, never higher.
+          <strong>36 hours before: going ahead, or not.</strong> If we have the minimum number of people, we&rsquo;re on. If not, it&rsquo;s called off and you pay nothing. Free cancelling ends here.
         </p>
         <p className="text-xs leading-[1.6] mb-2.5" style={{ color: "#14110F" }}>
-          Free to cancel any time before the 36-hour mark. After that, your spot&rsquo;s confirmed and the price applies — that&rsquo;s what keeps this fair for everyone else coming. If we ever have to cancel your session after this point, you&rsquo;ll always get a full refund.
+          <strong>36 to 2 hours before: still room to join.</strong> More people can join and the price keeps dropping for everyone.
+        </p>
+        <p className="text-xs leading-[1.6] mb-2.5" style={{ color: "#14110F" }}>
+          <strong>2 hours before: final price charged.</strong> Joining closes and we charge your card the final price. It&rsquo;s never more than the max price shown.
         </p>
         <p className="text-xs leading-[1.6]" style={{ color: "#14110F" }}>
-          Something serious come up? Get in touch.
+          If we ever cancel, you don&rsquo;t pay. Something serious come up? Get in touch.{" "}
+          <a href="/terms#cancellation" target="_blank" rel="noopener noreferrer" className="font-bold underline underline-offset-2 whitespace-nowrap">
+            Cancellation policy <span aria-hidden>↗</span>
+          </a>
         </p>
       </div>
 
