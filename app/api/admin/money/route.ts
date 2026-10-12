@@ -10,6 +10,10 @@ function getAdmin() {
   );
 }
 
+// The books start at go-live. Everything before this was test sessions run on
+// Stripe test cards — no real money moved, so it's left out of the totals.
+const BOOKS_START = new Date("2026-10-11T00:00:00+13:00").getTime();
+
 // GET /api/admin/money — revenue overview: total incoming, and per session what was
 // collected, what's owed out, and whether it's been settled.
 export async function GET(request: NextRequest) {
@@ -28,10 +32,16 @@ export async function GET(request: NextRequest) {
     collectedBy.set(h.session_id, (collectedBy.get(h.session_id) ?? 0) + (h.amount_charged_nzd ? h.amount_charged_nzd / 100 : 0));
   }
 
-  const rows = (sessions ?? []).map((s) => {
+  const now = Date.now();
+  const rows = (sessions ?? []).filter((s) => new Date(s.starts_at).getTime() >= BOOKS_START).map((s) => {
     const collected = collectedBy.get(s.id) ?? 0;
     const costLines: { amount: number }[] = Array.isArray(s.cost_lines) ? s.cost_lines : [];
-    const paidOut = costLines.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
+    const plannedCosts = costLines.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
+    // Costs are only owed once a session has actually run. A session still to
+    // come, or one that was cancelled, owes nothing — unless HQ has already
+    // marked it paid, in which case that money did go out.
+    const ran = new Date(s.starts_at).getTime() <= now && s.state !== "cancelled";
+    const paidOut = ran || s.host_paid_at ? plannedCosts : 0;
     return {
       id: s.id,
       title: s.title,

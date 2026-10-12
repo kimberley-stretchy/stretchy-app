@@ -19,6 +19,17 @@ const T = {
   display: "'BN Chubb', 'Space Grotesk', sans-serif",
 };
 
+// Stretchy locations HQ can filter the list by. A session belongs to a location
+// when its title ("Herne Bay | Morning"), venue name or address mentions it.
+const AREAS = ["Herne Bay", "Ponsonby", "St Heliers", "Orakei"];
+const norm = (v?: string | null) => (v ?? "").toLowerCase().replace(/ō/g, "o").replace(/[.’']/g, "");
+function areaOf(s: { title: string; location_name: string; location_address?: string | null }): string {
+  const hay = norm(`${s.title} ${s.location_name} ${s.location_address ?? ""}`);
+  // Title first, so "Ponsonby | Evening" held at a Herne Bay address still files under Ponsonby.
+  const title = norm(s.title);
+  return AREAS.find((a) => title.includes(norm(a))) ?? AREAS.find((a) => hay.includes(norm(a))) ?? "Other";
+}
+
 const TYPE_COLORS: Record<string, string> = {
   yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
   sound: "#716F39", flow: "#FCBB16", run: "#E96709", hiit: "#902F8A",
@@ -39,6 +50,7 @@ type Session = {
   starts_at: string;
   duration_mins: number;
   location_name: string;
+  location_address?: string | null;
   cost_base: number;
   revenue_target: number;
   min_attendees: number;
@@ -219,8 +231,13 @@ export default function AdminSessionsPage() {
   // past first. Upcoming = still to come and not cancelled.
   const nowMs = Date.now();
   const hasHappened = (s: Session) => new Date(s.starts_at).getTime() < nowMs || s.state === "cancelled";
-  const upcoming = sessions.filter((s) => !hasHappened(s));
-  const past     = sessions.filter(hasHappened).sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+  const [area, setArea] = useState<string>("All");
+  const inArea = (s: Session) => area === "All" || areaOf(s) === area;
+  const upcomingAll = sessions.filter((s) => !hasHappened(s));
+  const areaTabs = ["All", ...AREAS, ...(upcomingAll.some((s) => areaOf(s) === "Other") ? ["Other"] : [])];
+  const upcomingCount = (a: string) => (a === "All" ? upcomingAll.length : upcomingAll.filter((s) => areaOf(s) === a).length);
+  const upcoming = upcomingAll.filter(inArea);
+  const past     = sessions.filter(hasHappened).filter(inArea).sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
 
   return (
     <HQShell>
@@ -321,6 +338,38 @@ export default function AdminSessionsPage() {
               Create first session →
             </Link>
           </div>
+        )}
+
+        {/* Location filter — applies to both lists below */}
+        {sessions.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+            {areaTabs.map((a) => {
+              const on = area === a;
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setArea(a)}
+                  aria-pressed={on}
+                  style={{
+                    fontFamily: T.mono, fontSize: 11, fontWeight: 800, letterSpacing: "0.08em",
+                    padding: "9px 16px", borderRadius: 999, cursor: "pointer",
+                    border: `2px solid ${T.ink}`,
+                    background: on ? T.ink : "transparent",
+                    color: on ? T.cream : T.ink,
+                  }}
+                >
+                  {a.toUpperCase()} · {upcomingCount(a)}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {area !== "All" && upcoming.length === 0 && (
+          <p style={{ fontFamily: T.body, fontSize: 14, color: "rgba(20,17,15,.55)", margin: "0 0 28px" }}>
+            No upcoming sessions in {area} yet.
+          </p>
         )}
 
         {/* Upcoming sessions */}
