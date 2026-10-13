@@ -130,10 +130,11 @@ function priceBlock(sc: Scheme, o: { big: string; caption: string; leftLabel: st
 }
 
 /**
- * The session-page timing rows, with no dates. The whole block is one 75% tint:
- * labels, both lines of text, and every dividing line including the last.
+ * The session-page timing rows, with no dates. The whole block is one 50% tint
+ * — labels, both lines of text, every dividing line including the last, and the
+ * two links below it — on every colour (black text and white text alike).
  */
-const TINT = 0.75;
+const TINT = 0.5;
 function greyRows(sc: Scheme, list: (Row | null | false | undefined)[]) {
   const html = rows(sc.text, list, { flat: true });
   return html ? `<div style="margin:0 0 16px;border-bottom:2px solid ${sc.text};opacity:${TINT};">${html}</div>` : "";
@@ -151,7 +152,7 @@ function outlineButton(sc: Scheme, href: string, text: string) {
 function links(sc: Scheme) {
   const a = (href: string, text: string) =>
     `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:${sc.text};font-weight:700;text-decoration:underline;">${text} ↗</a>`;
-  // Same 75% tint as the timing rows above them.
+  // Same tint as the timing rows above them.
   return `<p style="font-size:13px;color:${sc.text};margin:6px 0 4px;opacity:${TINT};">${a(`${APP_URL}/#how-it-works`, "How it works")} &nbsp;&nbsp; ${a(`${APP_URL}/terms#cancellation`, "Cancellation policy")}</p>`;
 }
 
