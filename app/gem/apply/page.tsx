@@ -57,7 +57,7 @@ function GemApplyForm() {
         <div className="py-10 text-center">
           <p className="text-3xl mb-3">✨</p>
           <h1 className="font-display text-[28px] leading-none mb-2">Good energy received.</h1>
-          <p className="text-sm leading-[1.5]">Thanks {name.split(" ")[0] || "there"} — we&rsquo;ll be in touch about becoming a GEM.</p>
+          <p className="text-sm leading-[1.5]">Thanks {name.split(" ")[0] || "there"} — we&rsquo;ll be in touch within 5 working days about becoming a GEM. We&rsquo;ve emailed you a confirmation.</p>
         </div>
       </FormShell>
     );

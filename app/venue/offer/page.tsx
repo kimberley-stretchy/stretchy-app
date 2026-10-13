@@ -59,7 +59,7 @@ function VenueOfferForm() {
         <div className="py-10 text-center">
           <p className="text-3xl mb-3">🏠</p>
           <h1 className="font-display text-[28px] leading-none mb-2">Space offered.</h1>
-          <p className="text-sm leading-[1.5]">Thanks {name.split(" ")[0] || "there"} — we&rsquo;ll be in touch about your venue.</p>
+          <p className="text-sm leading-[1.5]">Thanks {name.split(" ")[0] || "there"} — we&rsquo;ll be in touch within 5 working days about your venue. We&rsquo;ve emailed you a confirmation.</p>
         </div>
       </FormShell>
     );
