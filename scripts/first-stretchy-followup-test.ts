@@ -20,6 +20,6 @@ check("a week and a bit later → too late, never sent", !at("2026-10-31T21:00:0
 
 const e = renderAttendeeEmail("first_stretchy_followup", { to: "you@example.com", name: "Amelia", sessionTitle: "Herne Bay | Morning", date: "", sessionId: "preview" });
 writeFileSync("docs/follow-up-email/how-was-your-first-stretchy.html", e.html);
-check(`renders: "${e.subject}"`, e.html.includes("/rate/preview") && e.html.includes("Tell ya mates"));
+check(`renders: "${e.subject}"`, e.html.includes("/suggest") && e.html.includes("tell ya mates") && !e.html.includes("/rate/"));
 console.log(fail ? `\n${fail} FAILED` : "\nall passed");
 process.exit(fail ? 1 : 0);

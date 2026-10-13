@@ -437,19 +437,18 @@ function cardPlaceReleased(p: AttendeeEmailPayload, c: Ctx) {
 }
 
 // 14 — How was your first Stretchy? (two days after someone's first session)
+// No form: people simply reply to the email (replies go to Kimberley).
 function firstStretchyFollowUp(p: AttendeeEmailPayload) {
-  const rateUrl = p.sessionId ? `${APP_URL}/rate/${p.sessionId}` : `${APP_URL}/sessions`;
   const html = page("purple", (sc) => `
-    ${h1(sc, "How was your first Stretchy? 💛")}
+    ${h1(sc, "How was your first Stretchy? ☀️☕🍷")}
     ${hey(sc, esc(p.name))}
-    ${msg(sc, `You came along to <strong>${esc(p.sessionTitle)}</strong> the other day, and we’d love to know how it went.`)}
-    ${msg(sc, "Stretchy is brand new, so what you tell us shapes it: the session itself, how holding a place and the pricing worked for you, and the whole idea. It takes about a minute, and honest is best.")}
-    ${filledButton(sc, rateUrl, "Tell us how it went")}
-    ${msg(sc, "<strong>Enjoyed it? Tell ya mates.</strong> The more people who come along, the lower the price gets for everyone.")}
-    ${outlineButton(sc, `${APP_URL}/sessions`, "See what’s on")}
-    <p style="color:${sc.text};font-size:15px;line-height:1.55;margin:0 0 22px;">See you there,<br>The Stretchy team</p>
+    ${msg(sc, "Thanks for coming to Stretchy. We’d love to hear how it went.")}
+    ${msg(sc, `Please feel free to email us back here with any feedback you may have (on the session, the experience, the booking system or whatever you like). You can also <a href="${APP_URL}/suggest" style="color:${sc.text};font-weight:700;">suggest where and how we show up next</a>.`)}
+    ${msg(sc, "And if you really enjoyed it, tell ya mates and help us grow the Stretchy community.")}
+    ${filledButton(sc, `${APP_URL}/sessions`, "See what’s on next")}
+    <p style="color:${sc.text};font-size:15px;line-height:1.55;margin:0 0 22px;">With gratitude,<br>The Stretchy team</p>
   `, { highlight: false });
-  return { subject: "How was your first Stretchy? 💛", html };
+  return { subject: "How was your first Stretchy? ☀️☕🍷", html };
 }
 
 export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject: string; html: string } {

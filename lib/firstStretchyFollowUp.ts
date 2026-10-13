@@ -3,8 +3,8 @@ import { sendAttendeeEmail } from "@/lib/stretchy-email";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // "How was your first Stretchy?" — one email, two days after someone's FIRST
-// session, asking how it went (the session, the idea, how booking and pricing
-// work) and nudging them to tell their mates.
+// session, asking how it went and nudging them to tell their mates. There's no
+// form: they just reply to the email, which goes to Kimberley.
 //
 //   • Only ever once per person (checked against the email log).
 //   • Only first-timers: this was the only session they've been charged for.
