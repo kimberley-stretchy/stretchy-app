@@ -81,11 +81,44 @@ function NavLink({ href, label, isActive }: { href: string; label: string; isAct
   );
 }
 
+// HQ was laid out for a wide screen. Under 820px (phones, small tablets) the
+// side menu becomes a drawer behind a top bar, and every HQ page gets phone
+// spacing: tighter edges, side-by-side columns stacked, wide tables scrollable,
+// and form fields at 16px so iPhones don't zoom in when you tap one.
+// The pages themselves use inline styles, hence the !important overrides.
+const HQ_MOBILE_CSS = `
+.hq-topbar, .hq-scrim { display: none; }
+@media (max-width: 820px) {
+  .hq-shell { display: block !important; }
+  .hq-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 40;
+    padding: 10px 14px; background: #14110F;
+    border-bottom: 1px solid rgba(245,237,227,0.12);
+  }
+  .hq-scrim { display: block; position: fixed; inset: 0; z-index: 45; background: rgba(0,0,0,0.5); }
+  .hq-aside {
+    position: fixed !important; top: 0 !important; left: 0; bottom: 0; z-index: 50;
+    width: min(82vw, 300px) !important; height: 100dvh !important;
+    overflow-y: auto; transform: translateX(-102%); transition: transform .2s ease;
+    padding-bottom: 32px !important;
+  }
+  .hq-aside.is-open { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,.5); }
+  .hq-aside a { padding-top: 12px !important; padding-bottom: 12px !important; font-size: 15px !important; }
+  .hq-content main[style*="padding"] { padding: 16px !important; }
+  .hq-content main > div { max-width: 100% !important; }
+  .hq-content main > div[style*="padding"] { padding-left: 16px !important; padding-right: 16px !important; padding-top: 20px !important; }
+  .hq-content [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+  .hq-content table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .hq-content input, .hq-content select, .hq-content textarea { font-size: 16px !important; min-width: 0 !important; max-width: 100%; }
+  .hq-content button, .hq-content a[role="button"] { min-height: 40px; }
+  .hq-content h1 { font-size: clamp(26px, 8vw, 34px) !important; line-height: 1.05 !important; }
+}
+`;
+
 function HQShellInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab");
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
@@ -112,10 +145,44 @@ function HQShellInner({ children }: { children: React.ReactNode }) {
   if (!checked) {
     return <main style={{ background: T.black, minHeight: "100vh" }} />;
   }
+  return <HQFrame>{children}</HQFrame>;
+}
+
+// The HQ layout itself: side menu (a drawer on phones) + the page.
+export function HQFrame({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const currentTab = useSearchParams().get("tab");
+  // On a phone the side menu is a drawer, opened from the top bar.
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => { setMenuOpen(false); }, [pathname, currentTab]);
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: T.black, fontFamily: T.body }}>
+    <div className="hq-shell" style={{ display: "flex", minHeight: "100vh", background: T.black, fontFamily: T.body }}>
+      <style dangerouslySetInnerHTML={{ __html: HQ_MOBILE_CSS }} />
+
+      {/* Phone only: a slim top bar with the menu button. */}
+      <header className="hq-topbar">
+        <Link href="/admin/sessions" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+          <div style={{ width: 28, height: 28, background: T.cream, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ color: T.black }}><SMark size={16} /></div>
+          </div>
+          <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 800, color: T.cream, letterSpacing: "0.04em" }}>STRETCHY HQ</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-expanded={menuOpen}
+          aria-controls="hq-menu"
+          style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", color: T.black, background: T.yellow, border: "none", borderRadius: 999, padding: "10px 16px", cursor: "pointer" }}
+        >
+          {menuOpen ? "✕ CLOSE" : "≡ MENU"}
+        </button>
+      </header>
+      {menuOpen && <div className="hq-scrim" onClick={() => setMenuOpen(false)} aria-hidden />}
+
       <aside
+        id="hq-menu"
+        className={`hq-aside${menuOpen ? " is-open" : ""}`}
         style={{
           width: 200,
           flexShrink: 0,
@@ -186,7 +253,7 @@ function HQShellInner({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+      <div className="hq-content" style={{ flex: 1, minWidth: 0 }}>{children}</div>
     </div>
   );
 }
