@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { sendPushToUsers } from "@/lib/push-server";
 import { calculatePrice } from "@/lib/pricing";
 import { settlePaymentIntent } from "@/lib/lockInCharge";
+import { headcountForPrice } from "@/lib/authoriseAtConfirm";
 import { notifyHQ } from "@/lib/notifyLifecycle";
 import { sendAttendeeBatch } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
@@ -18,6 +19,10 @@ import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailCont
  *  - Marks session as "locked"
  *  - Sends "price locked — you're charged" email to each attendee
  */
+
+// Confirming cards and sending emails for a full room takes a while; give the
+// job a minute rather than the short default.
+export const maxDuration = 60;
 
 function getAdmin() {
   return createClient(
@@ -46,7 +51,7 @@ export async function GET(request: NextRequest) {
   // Find confirmed sessions starting in the 2h window
   const { data: sessions } = await admin
     .from("sessions")
-    .select("id, title, starts_at, location_name, cost_base, revenue_target, min_attendees, max_attendees, social_stretch_venue, state, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram")
+    .select("id, title, starts_at, location_name, cost_base, revenue_target, min_attendees, max_attendees, social_stretch_venue, state, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram, confirmed_headcount")
     .eq("state", "confirmed")
     .gte("starts_at", windowStart.toISOString())
     .lte("starts_at", windowEnd.toISOString());
@@ -71,8 +76,10 @@ export async function GET(request: NextRequest) {
     // (price, charge amount, "N people" copy).
     const qtyOf = (h: { quantity: number | null }) => h.quantity ?? 1;
     const totalHolds = holds.reduce((s, h) => s + qtyOf(h), 0);
-    // Final price never rises above the opening price at min_attendees — floor it at the minimum
-    const finalPrice = calculatePrice(session.cost_base, session.revenue_target, Math.max(totalHolds, session.min_attendees));
+    // Final price never rises above the opening price at the minimum, nor above
+    // the price at the headcount it was confirmed at (a place released after
+    // 36 hrs out never puts anyone else's price up).
+    const finalPrice = calculatePrice(session.cost_base, session.revenue_target, headcountForPrice(totalHolds, session.min_attendees, session.confirmed_headcount));
     const finalAmountCents = Math.round(finalPrice * 100);
 
     const startDate = new Date(session.starts_at);

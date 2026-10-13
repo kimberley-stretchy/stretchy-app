@@ -19,8 +19,13 @@ const WINDOW_MS = 30 * 60 * 1000;
 
 /** The bank's reason, in plain words. Never the raw code. */
 export function friendlyDecline(err?: Stripe.PaymentIntent.LastPaymentError | null): string {
-  const code = err?.decline_code ?? err?.code ?? "";
-  switch (code) {
+  return friendlyDeclineCode(err?.decline_code ?? err?.code ?? "");
+}
+
+export function friendlyDeclineCode(code?: string | null): string {
+  switch (code ?? "") {
+    case "no_saved_card":
+      return "We don’t have a card saved for you any more.";
     case "insufficient_funds":
       return "Your bank told us there weren’t enough funds available.";
     case "expired_card":

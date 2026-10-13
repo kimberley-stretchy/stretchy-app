@@ -55,6 +55,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // spot here — the hold page otherwise always shows "Hold my place" even
   // for someone who's already in.
   let myHoldQuantity = 0;
+  let myCardFailed = false; // their card couldn't be confirmed at 36 hrs out
   let imInterested = false;
   const token = request.headers.get("Authorization")?.replace("Bearer ", "");
   if (token) {
@@ -62,12 +63,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (user) {
       const { data: myHold } = await admin
         .from("holds")
-        .select("quantity")
+        .select("quantity, card_failed_at")
         .eq("session_id", id)
         .eq("user_id", user.id)
         .eq("state", "active")
         .maybeSingle();
       myHoldQuantity = myHold?.quantity ?? 0;
+      myCardFailed = !!myHold?.card_failed_at;
 
       const { data: myInterest } = await admin
         .from("session_interest")
@@ -90,6 +92,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     ...session,
     current_holds: currentHolds,
     my_hold_quantity: myHoldQuantity,
+    my_card_failed: myCardFailed,
     im_interested: imInterested,
     bring_title: bring?.bring_title ?? null,
     bring_note: bring?.bring_note ?? null,

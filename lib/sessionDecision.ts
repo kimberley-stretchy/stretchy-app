@@ -6,6 +6,9 @@ import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailCont
 import { calculatePrice } from "@/lib/pricing";
 import { sendPushToUsers } from "@/lib/push-server";
 import { goNoGo, formatDayTime, formatTime } from "@/lib/sessionTimes";
+import { confirmCards, type CardOutcome } from "@/lib/confirmCards";
+import { cardDeadline } from "@/lib/authoriseAtConfirm";
+import { friendlyDeclineCode } from "@/lib/cardFailed";
 
 // The go/cancel decision lives here — NOT inline in the cron — so the hourly
 // automation and HQ's manual "Keep it alive & confirm" override run the exact
@@ -103,12 +106,47 @@ export async function confirmSession(
     Math.max(holds, session.min_attendees)
   ).toFixed(2)} incl. GST`;
 
+  // The headcount it was confirmed at. Nobody pays more than the price at this
+  // number, even if a place is released later. Best-effort.
+  await admin.from("sessions").update({ confirmed_headcount: holds }).eq("id", session.id).then(undefined, () => {});
+
+  // Confirm every card now, 36 hours out: a fresh authorisation wherever the one
+  // from booking won't last until the charge. A failure here must never stop the
+  // "it's going ahead" emails, so it's fully contained.
+  const unitCents = Math.round(calculatePrice(session.cost_base, session.revenue_target, Math.max(holds, session.min_attendees)) * 100);
+  let cards: { ran: boolean; outcomes: CardOutcome[] } = { ran: false, outcomes: [] };
+  try {
+    cards = await confirmCards(admin, session, unitCents);
+  } catch (e) {
+    console.error(`confirmCards failed for session ${session.id}:`, e);
+  }
+  const failedCodeByUser = new Map(cards.outcomes.filter((o) => o.status === "failed").map((o) => [o.userId, o.code]));
+  const deadlineStr = formatDayTime(cardDeadline(session.starts_at));
+
   const emailExtras = await buildSessionEmailExtras(admin, session, session.id);
 
   const holders = await getAttendees(admin, userIds);
   const goAheadItems = [];
   for (const a of holders) {
     if (!a.email) continue;
+    // Their card couldn't be confirmed: they get that email instead, and the
+    // "it's going ahead" one once they've fixed it.
+    if (failedCodeByUser.has(a.auth_user_id)) {
+      goAheadItems.push({
+        type: "card_confirm_failed" as const,
+        payload: {
+          to: a.email,
+          name: firstNameOf(a.name),
+          sessionTitle: session.title,
+          date: dateStr,
+          sessionId: session.id,
+          spots: spotsByUser.get(a.auth_user_id),
+          declineReason: friendlyDeclineCode(failedCodeByUser.get(a.auth_user_id)),
+          cardDeadline: deadlineStr,
+        },
+      });
+      continue;
+    }
     goAheadItems.push({
       type: "session_going_ahead" as const,
       payload: {
@@ -128,7 +166,16 @@ export async function confirmSession(
     });
   }
   await sendAttendeeBatch(goAheadItems);
-  await sendPushToUsers(userIds, {
+  const failedUserIds = Array.from(failedCodeByUser.keys());
+  if (failedUserIds.length > 0) {
+    await sendPushToUsers(failedUserIds, {
+      title: "We couldn't confirm your card",
+      body: `${session.title} is going ahead. Update your card by ${deadlineStr} to keep your place.`,
+      url: `/hold/${session.id}/card`,
+      requireInteraction: true,
+    }).catch(console.error);
+  }
+  await sendPushToUsers(userIds.filter((u) => !failedCodeByUser.has(u)), {
     title: "It's going ahead 🎉",
     body: `${session.title} is on. There's still room to join, and the price keeps dropping.`,
     url: `/notifications/going-ahead?session=${session.id}`,
@@ -178,10 +225,28 @@ export async function confirmSession(
       `🗓 ${dateStr}`,
       `📍 ${session.location_name ?? "TBC"}`,
       `Final price at lock-in (2h before): ${finalPrice}.`,
+      cardSummaryRow(cards, holders, deadlineStr),
     ],
   });
 
   return { action: "confirmed", holders: holds };
+}
+
+// One line for HQ's "Confirmed" email: did every card check out?
+function cardSummaryRow(
+  cards: { ran: boolean; outcomes: CardOutcome[] },
+  holders: { auth_user_id: string; name: string | null; email: string | null }[],
+  deadlineStr: string
+): string {
+  if (!cards.ran) return `<strong>Cards were not checked</strong> (the card step didn't run). Have a look in Stripe.`;
+  const failed = cards.outcomes.filter((o) => o.status === "failed");
+  const ok = cards.outcomes.length - failed.length;
+  if (failed.length === 0) return `💳 <strong>All ${ok} card${ok === 1 ? "" : "s"} confirmed.</strong> Nothing for you to do.`;
+  const who = failed.map((o) => {
+    const a = holders.find((h) => h.auth_user_id === o.userId);
+    return `${a?.name ?? "Unknown"} (${a?.email ?? "no email"}) · ${o.quantity} place${o.quantity === 1 ? "" : "s"} · ${friendlyDeclineCode(o.code)}`;
+  });
+  return `💳 ${ok} card${ok === 1 ? "" : "s"} confirmed · <strong>${failed.length} couldn't be confirmed:</strong><br>${who.join("<br>")}<br>They've been emailed a link to update their card, and have until ${deadlineStr}. You'll get an email when they fix it, or when their place is released.`;
 }
 
 // ── CANCEL ────────────────────────────────────────────────────────────────────

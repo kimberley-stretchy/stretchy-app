@@ -167,6 +167,17 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
 
   const cancelArea = (
     <>
+        {session.my_card_failed && (
+          <div className="border-2 rounded-[22px] p-4 flex flex-col gap-3" style={{ borderColor: INK, background: "#FFFFFF" }}>
+            <p className="m-0 font-bold text-sm">We couldn&rsquo;t confirm your card.</p>
+            <p className="m-0 text-sm" style={{ color: "rgba(20,17,15,.7)" }}>
+              Nothing has been charged. Update your card to keep {myQty === 1 ? "your place" : "your places"}. We&rsquo;ve emailed you the details.
+            </p>
+            <Link href={`/hold/${params.id}/card`} className="rounded-pill py-3 font-bold text-sm text-center" style={{ background: INK, color: YELLOW }}>
+              Update my card
+            </Link>
+          </div>
+        )}
         {cancelMsg && <p className="m-0 text-center text-sm font-bold">{cancelMsg}</p>}
 
         {canCancel && (
