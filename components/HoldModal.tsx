@@ -191,7 +191,7 @@ function CardForm({
           what this card can be charged for. */}
       <PaymentElement options={{ layout: "tabs", terms: { card: "never" } }} />
       <p style={{ marginTop: 12, fontSize: 13, color: "rgba(26,26,26,0.6)", lineHeight: 1.5 }}>
-        By saving your card, you agree Stretchy can charge it for this booking only: the final price,
+        By saving your card, you agree Stretchy can charge it for this booking: the final price,
         2 hours before the session, and never more than ${(priceNZD * quantity).toFixed(2)}
         {quantity > 1 ? ` for your ${quantity} places` : ""}.
         {late ? "" : " Not enough people? You pay nothing."}{" "}
