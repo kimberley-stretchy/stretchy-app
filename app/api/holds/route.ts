@@ -4,8 +4,8 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { cookies } from "next/headers";
-import { calculatePrice } from "@/lib/pricing";
-import { goNoGo, finalCharge, formatDayTime } from "@/lib/sessionTimes";
+import { maxPriceToPromise } from "@/lib/pricing";
+import { goNoGo, finalCharge, formatDayTime, phase } from "@/lib/sessionTimes";
 import { sendAttendeeEmail } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
 
@@ -102,7 +102,13 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (sErr || !session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
-  if (session.state === "cancelled") return NextResponse.json({ error: "Session is cancelled" }, { status: 400 });
+  if (session.state === "cancelled") return NextResponse.json({ error: "This one’s been called off, so there’s nothing to hold." }, { status: 400 });
+
+  // Joining closes 2 hours before the session, when the final price is charged.
+  const timePhase = phase(session.starts_at, session.state);
+  if (timePhase === "after2" || session.state === "locked") {
+    return NextResponse.json({ error: "Joining has closed for this one. It closes 2 hours before the session starts." }, { status: 400 });
+  }
 
   // Count current holds to calculate price — sum quantity, not row count,
   // since one hold row can now represent more than one spot.
@@ -113,10 +119,29 @@ export async function POST(request: NextRequest) {
     .eq("state", "active");
 
   const holdCount = (activeHolds ?? []).reduce((sum, h) => sum + (h.quantity ?? 1), 0);
-  const currentHolds = holdCount + quantity; // +quantity spots will be added
-  const effectiveSpots = Math.max(currentHolds, session.min_attendees);
-  const priceWithGST = calculatePrice(session.cost_base, session.revenue_target, effectiveSpots);
-  const amountCents = Math.round(priceWithGST * 100) * quantity; // total for all spots
+
+  // Never more people than the room holds.
+  const placesLeft = session.max_attendees - holdCount;
+  if (placesLeft <= 0) {
+    return NextResponse.json({ error: "This one’s full. Have a look at what else is on." }, { status: 400 });
+  }
+  if (quantity > placesLeft) {
+    return NextResponse.json({ error: `Only ${placesLeft === 1 ? "1 place is" : `${placesLeft} places are`} left for this one.` }, { status: 400 });
+  }
+
+  const currentHolds = holdCount + quantity; // +quantity places will be added
+  // Authorise exactly what the person is shown as "the most you'll pay": the
+  // price at the minimum until 36 hrs out (cancellations can still push the
+  // price back up to that), the current price after. The final charge can then
+  // never be more than was authorised.
+  const priceWithGST = maxPriceToPromise(
+    session.cost_base,
+    session.revenue_target,
+    session.min_attendees,
+    currentHolds,
+    timePhase === "before36"
+  );
+  const amountCents = Math.round(priceWithGST * 100) * quantity; // total for all places
 
   // Get or create attendee record
   let { data: attendee } = await admin
@@ -318,8 +343,9 @@ export async function DELETE(request: NextRequest) {
         .eq("state", "active");
       const totalAfter = (allActive ?? []).reduce((sum, h) => sum + (h.quantity ?? 1), 0) - cancelQty!;
 
-      const effectiveSpots = Math.max(totalAfter, session.min_attendees);
-      const pricePerSpot = calculatePrice(session.cost_base, session.revenue_target, effectiveSpots);
+      // Changing places is only possible before 36 hrs out, where the most
+      // anyone can pay is the price at the minimum — authorise that.
+      const pricePerSpot = maxPriceToPromise(session.cost_base, session.revenue_target, session.min_attendees, totalAfter, true);
       const newAmountCents = Math.round(pricePerSpot * 100) * remainingQty;
 
       await stripe.paymentIntents.cancel(hold.stripe_pi_id).catch((e) => console.error("Cancel old PI error:", e));
@@ -463,7 +489,7 @@ export async function PATCH(request: NextRequest) {
     try {
       const { data: session } = await admin
         .from("sessions")
-        .select("cost_base, revenue_target, min_attendees, title")
+        .select("cost_base, revenue_target, min_attendees, title, starts_at, state")
         .eq("id", sessionId)
         .single();
       const { data: attendee } = await admin
@@ -480,8 +506,14 @@ export async function PATCH(request: NextRequest) {
         .eq("session_id", sessionId)
         .eq("state", "active");
       const totalAfter = (allActive ?? []).reduce((sum, h) => sum + (h.quantity ?? 1), 0) - existing.quantity + combinedQuantity;
-      const effectiveSpots = Math.max(totalAfter, session.min_attendees);
-      const pricePerSpot = calculatePrice(session.cost_base, session.revenue_target, effectiveSpots);
+      // Same rule as a first booking: authorise the most they can be asked to pay.
+      const pricePerSpot = maxPriceToPromise(
+        session.cost_base,
+        session.revenue_target,
+        session.min_attendees,
+        totalAfter,
+        phase(session.starts_at, session.state) === "before36"
+      );
       const newAmountCents = Math.round(pricePerSpot * 100) * combinedQuantity;
 
       await stripe.paymentIntents.cancel(existing.stripe_pi_id).catch((e) => console.error("Cancel prior PI error:", e));

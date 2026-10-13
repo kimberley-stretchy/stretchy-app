@@ -104,7 +104,8 @@ export default function BookingView({
   // "Bring with you": HQ's two lines once they exist; until then, the first
   // item from the older what-to-bring list. Hidden if there's nothing at all.
   const bringTitle = (session.bring_title ?? "").trim() || (session.what_to_bring ?? []).filter(Boolean)[0] || "";
-  const bringGrey = bringNote(session.bring_note, myQty);
+  const hasBring = !!bringTitle || !!(session.bring_note ?? "").trim();
+  const bringGrey = hasBring ? bringNote(session.bring_note, myQty) : null;
   const meet = meetLine(session.teacherName, session.gemName);
   const whereGrey = [session.location_address, session.getting_there].map((v) => (v ?? "").trim()).filter(Boolean).join(". ").replace(/\.\./g, ".");
 
@@ -143,7 +144,7 @@ export default function BookingView({
             ruleColor={INK}
             labelWidth={76}
             rows={[
-              (bringTitle || bringGrey) && { label: "Bring with you", bold: bringTitle || "For the day", grey: bringGrey ?? undefined },
+              hasBring && { label: "Bring with you", bold: bringTitle || "For the day", grey: bringGrey ?? undefined },
               (session.location_name || whereGrey) && {
                 label: t.parkTime,
                 bold: `Arrive at ${session.location_name}`,

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { createClient } from "@supabase/supabase-js";
 import { buildAttendeeEmail, type AttendeeEmailPayload, type AttendeeEmailType } from "@/lib/stretchy-email";
+import { buildSessionEmailExtras } from "@/lib/sessionEmailContext";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TEMPORARY — copy refresh sign-off page for the emails. Renders every attendee
@@ -47,7 +49,7 @@ function base(hoursOut: number, over: Partial<AttendeeEmailPayload> = {}): Atten
 const FAR = 24 * 8;  // 8 days out
 const NEAR = 20;     // 20 hours out — inside 36 hrs
 
-const EMAILS: { n: string; note?: string; type: AttendeeEmailType; p: AttendeeEmailPayload }[] = [
+const EXAMPLES: { n: string; note?: string; type: AttendeeEmailType; p: AttendeeEmailPayload }[] = [
   { n: "1 · Place held (more than 36 hrs out)", type: "hold_confirmed", p: base(FAR) },
   { n: "1c · Place held · holding 3 places", type: "hold_confirmed", p: base(FAR, { spots: 3, held: 6 }) },
   { n: "1b · You’re in (joined 36 → 2 hrs out)", note: "No free cancelling offered.", type: "hold_confirmed", p: base(NEAR, { held: 17, sessionState: "confirmed" }) },
@@ -66,7 +68,39 @@ const EMAILS: { n: string; note?: string; type: AttendeeEmailType; p: AttendeeEm
   { n: "Evening session · place held", note: "Times and “tonight” follow the session.", type: "hold_confirmed", p: base(FAR + 12.5, { sessionTitle: "Ponsonby | Evening", venue: "Johnny Mitchell Hall", locationAddress: "20 Ponsonby Terrace, Ponsonby, Auckland 1011", directions: "Street parking on Ponsonby Terrace.", socialStretchVenue: "Freida Margolis · bar", gemName: undefined, styleLine: "Yin yoga", level: "beginners welcome" }) },
 ];
 
-export default function CopyRefreshEmailsPage() {
+// ?session=<id> — draw the emails from a REAL session's details instead of the
+// examples (read-only: nothing is sent or changed). A dry run of exactly what the
+// automated jobs will send for that session.
+async function realFacts(sessionId: string): Promise<Partial<AttendeeEmailPayload> | null> {
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    global: { fetch: (u, o) => fetch(u, { ...o, cache: "no-store" }) },
+  });
+  const { data: session } = await admin
+    .from("sessions")
+    .select("title, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram, location_name, social_stretch_venue")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (!session) return null;
+  return {
+    sessionTitle: session.title,
+    sessionId,
+    venue: session.location_name ?? undefined,
+    socialStretchVenue: session.social_stretch_venue ?? undefined,
+    ...(await buildSessionEmailExtras(admin, session, sessionId)),
+  };
+}
+
+export default async function CopyRefreshEmailsPage({ searchParams }: { searchParams: { session?: string } }) {
+  const real = searchParams.session ? await realFacts(searchParams.session) : null;
+  const blank: Partial<AttendeeEmailPayload> = { teacherName: undefined, gemName: undefined, styleLine: undefined, level: undefined, bringTitle: undefined, bringNote: undefined, directions: undefined, locationAddress: undefined, socialStretchVenue: undefined };
+  const EMAILS = real
+    ? EXAMPLES.filter((e) => !e.n.startsWith("Evening")).map((e) => ({
+        ...e,
+        // Keep the example's scenario (who it's for, how many places) but take
+        // every session detail from the real session.
+        p: { ...e.p, ...blank, ...real, ...(e.p.attendeeCount != null ? { attendeeCount: e.p.attendeeCount } : {}) },
+      }))
+    : EXAMPLES;
   return (
     <main className="min-h-screen bg-cream text-ink px-4 py-8">
       <div className="max-w-[1180px] mx-auto flex flex-col gap-8">
@@ -77,6 +111,11 @@ export default function CopyRefreshEmailsPage() {
             Every attendee email, drawn from example data exactly as it would be sent. Nothing is sent from this page.
             Dates here are relative to today, so the “more than 36 hours out” and “inside 36 hours” versions both show.
           </p>
+          {real && (
+            <p className="text-sm font-bold mt-2 mb-0">
+              Dry run from the real session “{real.sessionTitle}”: every detail below is read from it. Nothing is sent.
+            </p>
+          )}
         </div>
 
         <div className="grid gap-8 md:grid-cols-2 items-start">

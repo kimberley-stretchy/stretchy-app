@@ -164,14 +164,15 @@ function dayBox(sc: Scheme, p: AttendeeEmailPayload, c: Ctx, extra?: { row: Row;
   const t = c.t;
   const venue = venueLine({ location_name: p.venue, location_address: p.locationAddress, title: p.sessionTitle });
   const bringTitle = (p.bringTitle ?? "").trim();
-  const bringSecond = bringNote(p.bringNote, c.n);
+  const hasBring = !!bringTitle || !!(p.bringNote ?? "").trim();
+  const bringSecond = hasBring ? bringNote(p.bringNote, c.n) : null;
   const where = [p.locationAddress, p.directions].map((v) => (v ?? "").trim()).filter(Boolean).join(". ").replace(/\.\./g, ".");
   const meet = meetLine(p.teacherName, p.gemName);
   const classTitle = [p.styleLine ?? p.teacherStyle, p.level].filter(Boolean).join(", ");
   const social = (p.socialStretchVenue ?? "").split("·")[0].trim();
 
   const list: (Row | null | false | undefined)[] = [
-    (bringTitle || bringSecond) && { label: "Bring with you", bold: esc(bringTitle || "For the day"), second: bringSecond ? esc(bringSecond) : null },
+    hasBring && { label: "Bring with you", bold: esc(bringTitle || "For the day"), second: bringSecond ? esc(bringSecond) : null },
     t && (p.venue || where) && { label: t.parkTime, bold: `Arrive at ${esc(p.venue ?? "the venue")}`, second: where ? esc(where) : null },
     t && meet && { label: t.arriveTime, bold: "Say kia ora", second: esc(meet) },
     t && classTitle && { label: t.startTime, bold: esc(classTitle), second: `${p.durationMins || 60} minutes. Go at your own pace.` },

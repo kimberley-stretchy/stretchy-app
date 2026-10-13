@@ -72,7 +72,8 @@ export async function buildSessionEmailExtras(
         locationAddress: row.location_address ?? undefined,
         styleLine: style,
         level: level ?? undefined,
-        bringTitle: row.bring_title ?? undefined,
+        // HQ's new bold line; until a session has one, its older what-to-bring text.
+        bringTitle: (row.bring_title ?? "").trim() || (Array.isArray(row.what_to_bring) ? row.what_to_bring.filter(Boolean)[0] : undefined) || undefined,
         bringNote: row.bring_note ?? undefined,
         held: (holds ?? []).reduce((sum: number, h: { quantity: number | null }) => sum + (h.quantity ?? 1), 0),
       } satisfies Partial<AttendeeEmailPayload>);

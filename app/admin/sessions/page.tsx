@@ -104,8 +104,9 @@ export default function AdminSessionsPage() {
         date: firstSession ? new Date(firstSession.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) + " at 9:00 AM" : "Sunday 6 July at 9:00 AM",
         price: "$28 incl. GST",
         venue: firstSession?.location_name ?? "Grey Lynn Community Centre",
-        socialStretchVenue: "nearby",
-        cancelUrl: `https://stretchyyoga.co.nz/hold/${firstSession?.id ?? ""}`,
+        cancelUrl: `https://www.stretchyyoga.co.nz/hold/${firstSession?.id ?? ""}`,
+        // The server fills in the real details (times, venue, dots, price) from this session.
+        sessionId: firstSession?.id,
       }),
     });
     const data = await res.json();
