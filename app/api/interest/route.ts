@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { sendApplicantConfirmation } from "@/lib/applicantEmail";
 
 const VALID_TYPES = ["social_stretch", "teacher", "gem", "venue", "partner"];
 
@@ -75,6 +76,9 @@ export async function POST(request: NextRequest) {
       })
       .catch((e) => console.error("Interest notify email error:", e));
   }
+
+  // Tell the applicant we've got it, and when they'll hear back.
+  await sendApplicantConfirmation(type, name, email);
 
   return NextResponse.json({ ok: true });
 }
