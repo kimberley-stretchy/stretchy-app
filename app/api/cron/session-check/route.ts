@@ -15,6 +15,7 @@ import {
   cancelSession,
   startGrace,
 } from "@/lib/sessionDecision";
+import { followUpFailedCards, nightBeforeCardSummary } from "@/lib/confirmCards";
 import { stepsDue, hoursUntil, NUDGE_HOURS, HQ_WINDOW_HOURS, DECISION_HOURS } from "@/lib/sessionSchedule";
 
 /**
@@ -36,10 +37,18 @@ import { stepsDue, hoursUntil, NUDGE_HOURS, HQ_WINDOW_HOURS, DECISION_HOURS } fr
  *     - otherwise → cancel, release holds; everyone told it's not this time.
  *     Free cancelling closes at this same moment (app/api/holds), so what people
  *     are told is true the instant they're told it. There is no grace after it.
+ *     Confirming also checks every card (lib/confirmCards.ts).
+ *
+ *  20 / 12 hrs out — CARDS THAT COULDN'T BE CONFIRMED
+ *     One reminder, then the place is released. Nothing is charged.
  *
  * Emails are sent straight through Resend (lib/stretchy-email) — NOT via the
  * admin-gated /api/email route, which was silently 401-ing every cron send.
  */
+
+// Confirming cards and sending emails for a full room takes a while; give the
+// job a minute rather than the short default.
+export const maxDuration = 60;
 
 function getAdmin() {
   return createClient(
@@ -284,5 +293,17 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ nudged, checked: (sessions ?? []).length, results });
+  // ── D) CARDS THAT COULDN'T BE CONFIRMED AT 36 HRS ───────────────────────────
+  // One reminder at 20 hrs out; at 12 hrs out the place is released and the
+  // person and HQ are told. Contained, so it can never affect the steps above.
+  let cards = { reminded: 0, released: 0 };
+  try {
+    cards = await followUpFailedCards(admin, now);
+    // …then HQ's night-before "are all cards sorted?" email, 12 hrs out.
+    await nightBeforeCardSummary(admin, now);
+  } catch (e) {
+    console.error("Card follow-up error:", e);
+  }
+
+  return NextResponse.json({ nudged, checked: (sessions ?? []).length, results, cards });
 }

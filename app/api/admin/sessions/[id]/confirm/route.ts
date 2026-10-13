@@ -5,6 +5,10 @@ import { confirmSession, getHoldSummary, DecisionSession } from "@/lib/sessionDe
 import { goNoGo, formatDayTime } from "@/lib/sessionTimes";
 import { hoursUntil, DECISION_HOURS } from "@/lib/sessionSchedule";
 
+// Confirming cards and sending emails for a full room takes a while; give the
+// job a minute rather than the short default.
+export const maxDuration = 60;
+
 function getAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

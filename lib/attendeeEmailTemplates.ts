@@ -389,6 +389,53 @@ function cardFailed(p: AttendeeEmailPayload, c: Ctx) {
   return { subject: `Your card didn’t go through — ${p.sessionTitle}`, html };
 }
 
+// 11 — We couldn't confirm your card (36 hrs out: it's going ahead, their card said no)
+function cardConfirmFailed(p: AttendeeEmailPayload, c: Ctx) {
+  const places = c.n === 1 ? "your place" : `your ${c.n} places`;
+  const by = p.cardDeadline ? `by <strong>${esc(p.cardDeadline)}</strong>` : "at least 12 hours before it starts";
+  const html = page("cream", (sc) => `
+    ${h1(sc, "We couldn’t confirm your card.")}
+    ${intro(sc, p, [
+      `Good news first: <strong>${esc(p.sessionTitle)}</strong> is going ahead. 🎉 But when we went to confirm your card for ${places}, it didn’t go through. ${esc(p.declineReason ?? "Your bank declined it.")}`,
+      `<strong>Nothing has been charged, and ${places === "your place" ? "your place is" : `${places} are`} still held for now.</strong> To keep ${c.n === 1 ? "it" : "them"}, update your card ${by}. It only takes a minute, and a different card works too.`,
+      `If we don’t have a working card by then, ${c.n === 1 ? "your place goes" : "your places go"} back to the group.`,
+    ])}
+    ${filledButton(sc, `${c.manageUrl}/card`, "Update my card")}
+    ${links(sc)}
+  `, { highlight: false });
+  return { subject: `Action needed: we couldn’t confirm your card — ${p.sessionTitle}`, html };
+}
+
+// 12 — Reminder: still no working card
+function cardConfirmReminder(p: AttendeeEmailPayload, c: Ctx) {
+  const places = c.n === 1 ? "your place" : `your ${c.n} places`;
+  const by = p.cardDeadline ? `by <strong>${esc(p.cardDeadline)}</strong>` : "at least 12 hours before it starts";
+  const html = page("cream", (sc) => `
+    ${h1(sc, "Your place still needs a card.")}
+    ${intro(sc, p, [
+      `A quick reminder: we still couldn’t confirm your card for <strong>${esc(p.sessionTitle)}</strong>. Update it ${by} to keep ${places}.`,
+      `After that, ${c.n === 1 ? "your place goes" : "your places go"} back to the group.`,
+    ])}
+    ${filledButton(sc, `${c.manageUrl}/card`, "Update my card")}
+    ${links(sc)}
+  `, { highlight: false });
+  return { subject: `Reminder: your place needs a card — ${p.sessionTitle}`, html };
+}
+
+// 13 — Your place has been released (no working card by the deadline)
+function cardPlaceReleased(p: AttendeeEmailPayload, c: Ctx) {
+  const html = page("cream", (sc) => `
+    ${h1(sc, c.n === 1 ? "Your place has been released." : "Your places have been released.")}
+    ${intro(sc, p, [
+      `We couldn’t confirm a card for <strong>${esc(p.sessionTitle)}</strong> in time, so ${c.n === 1 ? "your place has" : `your ${c.n} places have`} gone back to the group.`,
+      "Still keen? If there’s still room, you can join again up to 2 hours before it starts.",
+    ])}
+    ${filledButton(sc, c.sessionUrl, "Hold my place")}
+    ${links(sc)}
+  `, { highlight: false });
+  return { subject: `Your place has been released — ${p.sessionTitle}`, html };
+}
+
 export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject: string; html: string } {
   const c = context(p);
   switch (type) {
@@ -401,5 +448,8 @@ export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPay
     case "hold_cancelled": return holdCancelled(p);
     case "comp_hold_confirmed": return placeOnUs(p, c);
     case "booking_card_failed": return cardFailed(p, c);
+    case "card_confirm_failed": return cardConfirmFailed(p, c);
+    case "card_confirm_reminder": return cardConfirmReminder(p, c);
+    case "card_place_released": return cardPlaceReleased(p, c);
   }
 }

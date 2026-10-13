@@ -209,7 +209,10 @@ export type AttendeeEmailType =
   | "almost_there"
   | "comp_hold_confirmed"
   | "session_confirmed_open"
-  | "booking_card_failed";
+  | "booking_card_failed"
+  | "card_confirm_failed"
+  | "card_confirm_reminder"
+  | "card_place_released";
 
 export interface AttendeeEmailPayload {
   to: string;
@@ -256,6 +259,7 @@ export interface AttendeeEmailPayload {
   bringNote?: string;         // …and grey line
   unitPriceCents?: number;    // exact per-place amount charged (final price email)
   declineReason?: string;     // card-didn't-go-through email: the bank's reason, in plain words
+  cardDeadline?: string;      // card-couldn't-be-confirmed emails: "6:15pm Thu 22 Oct"
   calledOffByHQ?: boolean;    // session cancelled by HQ, not for missing the minimum
   cancelledSpots?: number;    // hold-cancelled email: places just cancelled…
   remainingSpots?: number;    // …and places still held (0 = whole hold cancelled)

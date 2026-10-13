@@ -43,6 +43,7 @@ export type BookingSession = {
   teacherName?: string | null;
   gemName?: string | null;
   my_hold_quantity?: number;
+  my_card_failed?: boolean;
 };
 
 export const BOOKING_INK = "#14110F";
