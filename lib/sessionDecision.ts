@@ -6,6 +6,7 @@ import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailCont
 import { calculatePrice } from "@/lib/pricing";
 import { sendPushToUsers } from "@/lib/push-server";
 import { goNoGo, formatDayTime, formatTime } from "@/lib/sessionTimes";
+import { notifyVenues } from "@/lib/notifyVenue";
 import { confirmCards, type CardOutcome } from "@/lib/confirmCards";
 import { cardDeadline } from "@/lib/authoriseAtConfirm";
 import { friendlyDeclineCode } from "@/lib/cardFailed";
@@ -212,6 +213,8 @@ export async function confirmSession(
   const hostDetails = { social: session.social_stretch_venue, teacherHandle: emailExtras.teacherHandle, gemHandle: emailExtras.gemHandle, venueHandle: emailExtras.venueHandle, socialVenueHandle: emailExtras.socialVenueHandle };
   if (session.host_id) notifyHostConfirmed({ hostId: session.host_id, role: "teacher", session: hostSession, gemName: emailExtras.gemName, style: emailExtras.teacherStyle, details: hostDetails }).catch(console.error);
   if (session.gem_host_id) notifyHostConfirmed({ hostId: session.gem_host_id, role: "gem", session: hostSession, style: emailExtras.teacherStyle, details: hostDetails }).catch(console.error);
+  // Both venues hear it's on, with the numbers so far.
+  await notifyVenues(admin, session.id, "confirmed", holds);
   await notifyHQ({
     subject: `Confirmed: ${session.title} (${holds}/${session.min_attendees})`,
     scheme: "olive",
@@ -290,6 +293,7 @@ export async function cancelSession(
   const hostSession = { id: session.id, title: session.title, startsAt: session.starts_at, locationName: session.location_name ?? "" };
   if (session.host_id) notifyHostCancelled({ hostId: session.host_id, role: "teacher", session: hostSession }).catch(console.error);
   if (session.gem_host_id) notifyHostCancelled({ hostId: session.gem_host_id, role: "gem", session: hostSession }).catch(console.error);
+  await notifyVenues(admin, session.id, "cancelled");
   await notifyHQ({
     subject: `Cancelled: ${session.title} (${holds}/${session.min_attendees})`,
     scheme: "cream",
