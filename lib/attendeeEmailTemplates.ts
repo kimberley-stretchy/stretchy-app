@@ -61,17 +61,18 @@ function intro(sc: Scheme, p: AttendeeEmailPayload, paragraphs: string[]) {
 type Row = { label: string; bold: string; second?: string | null };
 
 /** Rows: mono label left; bold value + a quieter second line right. */
-function rows(color: string, list: (Row | null | false | undefined)[], opts: { opacity?: number; rule?: string } = {}) {
+function rows(color: string, list: (Row | null | false | undefined)[], opts: { rule?: string; flat?: boolean } = {}) {
   const shown = list.filter(Boolean) as Row[];
   if (shown.length === 0) return "";
   const rule = opts.rule ?? color;
-  const o = opts.opacity ?? 1;
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;${o < 1 ? `opacity:${o};` : ""}">
+  // flat: the caller tints the whole block, so the second line isn't dimmed again.
+  const secondOpacity = opts.flat ? 1 : 0.75;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
     ${shown.map((r) => `<tr>
       <td valign="top" width="88" style="padding:10px 10px 10px 0;border-top:2px solid ${rule};font-family:${MONO};font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;line-height:1.35;color:${color};">${r.label}</td>
       <td valign="top" style="padding:10px 0;border-top:2px solid ${rule};font-size:14px;line-height:1.4;color:${color};">
         <strong style="display:block;font-size:14px;color:${color};">${r.bold}</strong>
-        ${r.second ? `<span style="display:block;font-size:13px;color:${color};opacity:.75;">${r.second}</span>` : ""}
+        ${r.second ? `<span style="display:block;font-size:13px;color:${color};opacity:${secondOpacity};">${r.second}</span>` : ""}
       </td>
     </tr>`).join("")}
   </table>`;
@@ -128,10 +129,14 @@ function priceBlock(sc: Scheme, o: { big: string; caption: string; leftLabel: st
   </div>`;
 }
 
-/** The session-page timing rows, quieter (75%), with no dates. */
+/**
+ * The session-page timing rows, with no dates. The whole block is one 75% tint:
+ * labels, both lines of text, and every dividing line including the last.
+ */
+const TINT = 0.75;
 function greyRows(sc: Scheme, list: (Row | null | false | undefined)[]) {
-  const html = rows(sc.text, list, { opacity: 0.75 });
-  return html ? `<div style="margin:0 0 16px;border-bottom:2px solid ${sc.text};opacity:1;">${html}</div>` : "";
+  const html = rows(sc.text, list, { flat: true });
+  return html ? `<div style="margin:0 0 16px;border-bottom:2px solid ${sc.text};opacity:${TINT};">${html}</div>` : "";
 }
 
 /** Filled main button: the email's text colour, with text in its background colour. */
@@ -146,7 +151,8 @@ function outlineButton(sc: Scheme, href: string, text: string) {
 function links(sc: Scheme) {
   const a = (href: string, text: string) =>
     `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:${sc.text};font-weight:700;text-decoration:underline;">${text} ↗</a>`;
-  return `<p style="font-size:13px;color:${sc.text};margin:6px 0 4px;">${a(`${APP_URL}/#how-it-works`, "How it works")} &nbsp;&nbsp; ${a(`${APP_URL}/terms#cancellation`, "Cancellation policy")}</p>`;
+  // Same 75% tint as the timing rows above them.
+  return `<p style="font-size:13px;color:${sc.text};margin:6px 0 4px;opacity:${TINT};">${a(`${APP_URL}/#how-it-works`, "How it works")} &nbsp;&nbsp; ${a(`${APP_URL}/terms#cancellation`, "Cancellation policy")}</p>`;
 }
 
 /**

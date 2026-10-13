@@ -115,10 +115,14 @@ export function brandFooter(sc: Scheme) {
 }
 
 export function highlightBlock(sc: Scheme) {
-  return `<div style="background:${sc.bg};padding:34px 24px 40px;text-align:center;border-top:2px solid ${sc.text};">
+  // The dividing line sits inside the same 520px column as the content above, so
+  // it's the same width as every other line in the email — not edge to edge.
+  return `<div style="background:${sc.bg};text-align:center;">
+    <div style="max-width:520px;margin:0 auto;padding:0 26px;"><div style="border-top:2px solid ${sc.text};font-size:0;line-height:0;height:0;">&nbsp;</div></div>
+    <div style="padding:34px 24px 40px;">
     ${sLogo(sc.text)}
     <h2 style="font-family:${CHUBB};font-weight:900;font-size:32px;line-height:1;color:${sc.text};text-transform:uppercase;letter-spacing:-0.01em;margin:14px auto 0;max-width:340px;">Welcome to the highlight of your week.</h2>
-  </div>`;
+  </div></div>`;
 }
 
 // Page wrapper: colour edge-to-edge, content, THEN the orange highlight block,
