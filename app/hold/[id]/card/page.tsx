@@ -58,7 +58,7 @@ function CardForm({ sessionId, start, accessToken, onDone }: { sessionId: string
     <form onSubmit={submit} className="flex flex-col gap-4">
       <PaymentElement options={{ layout: "tabs", terms: { card: "never" } }} />
       <p className="m-0 text-[13px] leading-normal" style={{ color: "rgba(20,17,15,.6)" }}>
-        By saving your card, you agree Stretchy can charge it for this booking only: the final price,
+        By saving your card, you agree Stretchy can charge it for this booking: the final price,
         2 hours before the session, and never more than ${start.maxTotal.toFixed(2)}
         {start.quantity > 1 ? ` for your ${start.quantity} places` : ""}.{" "}
         <NewTabLink href={CANCELLATION_POLICY_HREF}>Cancellation policy</NewTabLink>
@@ -128,7 +128,7 @@ export default function UpdateCardPage({ params }: { params: { id: string } }) {
   </>);
   if (start.status === "no_hold" || start.status === "closed") return shell(<>
     {title("This place isn’t held any more.")}
-    <p className="text-sm text-muted leading-relaxed">Nothing was charged. If there&rsquo;s still room, you can join again up to 2 hours before it starts.</p>
+    <p className="text-sm text-muted leading-relaxed">If there&rsquo;s still room, you can join again up to 2 hours before it starts.</p>
     {back(`/sessions/${params.id}`, "See the session")}
   </>);
 

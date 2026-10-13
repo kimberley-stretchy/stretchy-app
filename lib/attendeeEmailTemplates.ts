@@ -398,7 +398,7 @@ function cardConfirmFailed(p: AttendeeEmailPayload, c: Ctx) {
     ${intro(sc, p, [
       `Good news first: <strong>${esc(p.sessionTitle)}</strong> is going ahead. 🎉 But when we went to confirm your card for ${places}, it didn’t go through. ${esc(p.declineReason ?? "Your bank declined it.")}`,
       `<strong>Nothing has been charged, and ${places === "your place" ? "your place is" : `${places} are`} still held for now.</strong> To keep ${c.n === 1 ? "it" : "them"}, update your card ${by}. It only takes a minute, and a different card works too.`,
-      `If we don’t have a working card by then, ${c.n === 1 ? "your place goes" : "your places go"} back to the group and you pay nothing.`,
+      `If we don’t have a working card by then, ${c.n === 1 ? "your place goes" : "your places go"} back to the group.`,
     ])}
     ${filledButton(sc, `${c.manageUrl}/card`, "Update my card")}
     ${links(sc)}
@@ -414,7 +414,7 @@ function cardConfirmReminder(p: AttendeeEmailPayload, c: Ctx) {
     ${h1(sc, "Your place still needs a card.")}
     ${intro(sc, p, [
       `A quick reminder: we still couldn’t confirm your card for <strong>${esc(p.sessionTitle)}</strong>. Update it ${by} to keep ${places}.`,
-      `After that, ${c.n === 1 ? "your place goes" : "your places go"} back to the group and you pay nothing.`,
+      `After that, ${c.n === 1 ? "your place goes" : "your places go"} back to the group.`,
     ])}
     ${filledButton(sc, `${c.manageUrl}/card`, "Update my card")}
     ${links(sc)}
@@ -427,7 +427,7 @@ function cardPlaceReleased(p: AttendeeEmailPayload, c: Ctx) {
   const html = page("cream", (sc) => `
     ${h1(sc, c.n === 1 ? "Your place has been released." : "Your places have been released.")}
     ${intro(sc, p, [
-      `We couldn’t confirm a card for <strong>${esc(p.sessionTitle)}</strong> in time, so ${c.n === 1 ? "your place has" : `your ${c.n} places have`} gone back to the group. <strong>Nothing was charged.</strong>`,
+      `We couldn’t confirm a card for <strong>${esc(p.sessionTitle)}</strong> in time, so ${c.n === 1 ? "your place has" : `your ${c.n} places have`} gone back to the group.`,
       "Still keen? If there’s still room, you can join again up to 2 hours before it starts.",
     ])}
     ${filledButton(sc, c.sessionUrl, "Hold my place")}

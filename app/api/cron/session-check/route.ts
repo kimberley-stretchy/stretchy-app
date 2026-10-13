@@ -15,7 +15,7 @@ import {
   cancelSession,
   startGrace,
 } from "@/lib/sessionDecision";
-import { followUpFailedCards } from "@/lib/confirmCards";
+import { followUpFailedCards, nightBeforeCardSummary } from "@/lib/confirmCards";
 import { stepsDue, hoursUntil, NUDGE_HOURS, HQ_WINDOW_HOURS, DECISION_HOURS } from "@/lib/sessionSchedule";
 
 /**
@@ -299,6 +299,8 @@ export async function GET(request: NextRequest) {
   let cards = { reminded: 0, released: 0 };
   try {
     cards = await followUpFailedCards(admin, now);
+    // …then HQ's night-before "are all cards sorted?" email, 12 hrs out.
+    await nightBeforeCardSummary(admin, now);
   } catch (e) {
     console.error("Card follow-up error:", e);
   }

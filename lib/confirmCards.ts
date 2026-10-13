@@ -169,7 +169,7 @@ export async function followUpFailedCards(
       if (a?.email) await sendAttendeeEmail("card_place_released", common);
       await sendPushToUsers([h.user_id as string], {
         title: "Your place has been released",
-        body: `We couldn't confirm a card for ${s.title} in time. Nothing was charged.`,
+        body: `We couldn't confirm a card for ${s.title} in time, so it's gone back to the group.`,
         url: `/sessions/${s.id}`,
       }).catch(console.error);
       await notifyHQ({
@@ -190,4 +190,80 @@ export async function followUpFailedCards(
     }
   }
   return { reminded, released };
+}
+
+// ── The night-before card summary, for HQ ────────────────────────────────────
+// At 12 hours out (6:15pm the evening before a 6:15am session), once any
+// unfixed places have been released, HQ gets ONE email: either "all cards
+// confirmed, nothing to do tonight" or who needs a look. Sent once per session
+// (checked against the email log).
+//
+// Kimberley asked for this as a one-off for the first session (Fri 23 Oct 2026).
+// To keep it for every session, remove the SUMMARY_ONLY_BEFORE check.
+const SUMMARY_ONLY_BEFORE = "2026-10-24T00:00:00Z";
+const SUMMARY_SUBJECT = "Night before";
+
+export async function nightBeforeCardSummary(admin: SupabaseClient, now: Date = new Date()): Promise<number> {
+  let sent = 0;
+  const inHours = (h: number) => new Date(now.getTime() + h * 3600 * 1000).toISOString();
+  const { data: sessions } = await admin
+    .from("sessions")
+    .select("id, title, starts_at, min_attendees")
+    .eq("state", "confirmed")
+    .gt("starts_at", inHours(2.5))
+    .lte("starts_at", inHours(12))
+    .lt("starts_at", SUMMARY_ONLY_BEFORE);
+
+  for (const s of sessions ?? []) {
+    try {
+      const { data: already } = await admin
+        .from("email_log")
+        .select("id")
+        .eq("session_id", s.id)
+        .eq("email_type", "hq_digest")
+        .like("subject", `${SUMMARY_SUBJECT}%`)
+        .limit(1);
+      if (already && already.length > 0) continue;
+
+      const { data: holds } = await admin
+        .from("holds")
+        .select("user_id, quantity, is_comp, state, card_failed_at")
+        .eq("session_id", s.id)
+        .or("state.eq.active,card_failed_at.not.is.null");
+      const rows = holds ?? [];
+      const ids = Array.from(new Set(rows.map((h) => h.user_id).filter(Boolean)));
+      const { data: people } = ids.length ? await admin.from("attendees").select("auth_user_id, name, email").in("auth_user_id", ids) : { data: [] };
+      const who = (uid: string) => {
+        const a = (people ?? []).find((p) => p.auth_user_id === uid);
+        return `${a?.name && !a.name.includes("@") ? `${a.name} · ` : ""}${a?.email ?? "unknown"}`;
+      };
+
+      const active = rows.filter((h) => h.state === "active");
+      const unfixed = active.filter((h) => h.card_failed_at);
+      const released = rows.filter((h) => h.state === "released" && h.card_failed_at);
+      const places = active.reduce((n, h) => n + (h.quantity ?? 1), 0);
+      const allGood = unfixed.length === 0;
+
+      await notifyHQ({
+        subject: `${SUMMARY_SUBJECT}: ${allGood ? "all cards confirmed ✅" : `${unfixed.length} card${unfixed.length === 1 ? "" : "s"} need a look ⚠️`} — ${s.title}`,
+        scheme: allGood ? "olive" : "orange",
+        kicker: "Stretchy HQ · Night before",
+        heading: allGood ? "All cards confirmed" : "A card needs a look tonight",
+        sessionId: s.id,
+        rows: [
+          allGood
+            ? `<strong>Nothing for you to do tonight.</strong> Every booking for ${s.title} has a confirmed card, and the final price is charged by itself 2 hours before.`
+            : `<strong>These bookings still don't have a working card:</strong><br>${unfixed.map((h) => who(h.user_id as string)).join("<br>")}<br>Worth a message tonight.`,
+          `<strong>${places}</strong> place${places === 1 ? "" : "s"} held (minimum ${s.min_attendees}).`,
+          ...active.map((h) => `${who(h.user_id as string)} · ${h.quantity ?? 1} place${(h.quantity ?? 1) === 1 ? "" : "s"} · ${h.is_comp ? "on us" : h.card_failed_at ? "<strong>card not confirmed</strong>" : "card confirmed"}`),
+          ...(released.length ? [`Released (no working card in time): ${released.map((h) => who(h.user_id as string)).join(", ")}`] : []),
+          `You'll still get the usual "Starting in ~2h" email in the early hours. It can wait until after the session unless it's marked ⚠️.`,
+        ],
+      });
+      sent++;
+    } catch (e) {
+      console.error(`nightBeforeCardSummary: session ${s.id} errored`, e);
+    }
+  }
+  return sent;
 }
