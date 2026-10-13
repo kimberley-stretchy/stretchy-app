@@ -88,7 +88,7 @@ export async function confirmCards(
               quantity: String(quantity),
               ...(h.stripe_pi_id ? { replaces_pi: h.stripe_pi_id } : {}),
             },
-            idempotencyKey: `confirm-auth-${h.id}`,
+            idempotencyKey: `confirm-auth-${h.id}-${unitCents * quantity}`,
           })
         : { ok: false, code: "no_saved_card", message: "No Stripe customer on file." };
 
