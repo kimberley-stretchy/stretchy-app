@@ -66,6 +66,7 @@ function NavLink({ href, label, isActive }: { href: string; label: string; isAct
   return (
     <Link
       href={href}
+      className={isActive ? "hq-link is-active" : "hq-link"}
       style={{
         padding: "9px 12px",
         borderRadius: 10,
@@ -81,30 +82,36 @@ function NavLink({ href, label, isActive }: { href: string; label: string; isAct
   );
 }
 
-// HQ was laid out for a wide screen. Under 820px (phones, small tablets) the
-// side menu becomes a drawer behind a top bar, and every HQ page gets phone
+// HQ was laid out for a wide screen. Under 820px (phones, small tablets) it
+// takes on the look of the app itself (cream, ink outlines, the same MENU pill):
+// the side menu becomes a drawer behind a top bar, and every HQ page gets phone
 // spacing: tighter edges, side-by-side columns stacked, wide tables scrollable,
 // and form fields at 16px so iPhones don't zoom in when you tap one.
 // The pages themselves use inline styles, hence the !important overrides.
 const HQ_MOBILE_CSS = `
 .hq-topbar, .hq-scrim { display: none; }
 @media (max-width: 820px) {
-  .hq-shell { display: block !important; }
+  .hq-shell { display: block !important; background: #F7F0E8 !important; }
   .hq-topbar {
     display: flex; align-items: center; justify-content: space-between;
     position: sticky; top: 0; z-index: 40;
-    padding: 10px 14px; background: #14110F;
-    border-bottom: 1px solid rgba(245,237,227,0.12);
+    padding: 12px 16px; background: #F7F0E8;
+    border-bottom: 2px solid #14110F;
   }
-  .hq-scrim { display: block; position: fixed; inset: 0; z-index: 45; background: rgba(0,0,0,0.5); }
+  .hq-scrim { display: block; position: fixed; inset: 0; z-index: 45; background: rgba(20,17,15,0.45); }
   .hq-aside {
     position: fixed !important; top: 0 !important; left: 0; bottom: 0; z-index: 50;
-    width: min(82vw, 300px) !important; height: 100dvh !important;
+    width: min(84vw, 320px) !important; height: 100dvh !important;
     overflow-y: auto; transform: translateX(-102%); transition: transform .2s ease;
     padding-bottom: 32px !important;
+    background: #F7F0E8 !important; border-right: 2px solid #14110F !important;
   }
-  .hq-aside.is-open { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,.5); }
-  .hq-aside a { padding-top: 12px !important; padding-bottom: 12px !important; font-size: 15px !important; }
+  .hq-aside.is-open { transform: translateX(0); }
+  .hq-aside .hq-ink { color: #14110F !important; }
+  .hq-aside .hq-link { padding: 13px 14px !important; font-size: 15px !important; font-weight: 600 !important; color: #14110F !important; border-radius: 14px !important; }
+  .hq-aside .hq-link.is-active { background: #14110F !important; color: #F7F0E8 !important; }
+  .hq-aside .hq-nav-heading { color: rgba(20,17,15,0.45) !important; font-size: 10px !important; margin-top: 6px; }
+  .hq-aside .hq-back { color: rgba(20,17,15,0.55) !important; display: inline-block; padding: 16px 12px 0; }
   .hq-content main[style*="padding"] { padding: 16px !important; }
   .hq-content main > div { max-width: 100% !important; }
   .hq-content main > div[style*="padding"] { padding-left: 16px !important; padding-right: 16px !important; padding-top: 20px !important; }
@@ -112,7 +119,7 @@ const HQ_MOBILE_CSS = `
   .hq-content table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .hq-content input, .hq-content select, .hq-content textarea { font-size: 16px !important; min-width: 0 !important; max-width: 100%; }
   .hq-content button, .hq-content a[role="button"] { min-height: 40px; }
-  .hq-content h1 { font-size: clamp(26px, 8vw, 34px) !important; line-height: 1.05 !important; }
+  .hq-content h1 { font-family: 'BN Chubb', 'Space Grotesk', sans-serif !important; font-size: clamp(30px, 9vw, 40px) !important; line-height: 1 !important; letter-spacing: -0.02em !important; }
 }
 `;
 
@@ -162,18 +169,16 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
 
       {/* Phone only: a slim top bar with the menu button. */}
       <header className="hq-topbar">
-        <Link href="/admin/sessions" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <div style={{ width: 28, height: 28, background: T.cream, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ color: T.black }}><SMark size={16} /></div>
-          </div>
-          <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 800, color: T.cream, letterSpacing: "0.04em" }}>STRETCHY HQ</span>
+        <Link href="/admin/sessions" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: T.black }}>
+          <SMark size={30} />
+          <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 800, color: T.black, letterSpacing: "0.12em" }}>HQ</span>
         </Link>
         <button
           type="button"
           onClick={() => setMenuOpen((o) => !o)}
           aria-expanded={menuOpen}
           aria-controls="hq-menu"
-          style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", color: T.black, background: T.yellow, border: "none", borderRadius: 999, padding: "10px 16px", cursor: "pointer" }}
+          style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: T.black, background: "transparent", border: "1px solid #D4CFC9", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}
         >
           {menuOpen ? "✕ CLOSE" : "≡ MENU"}
         </button>
@@ -200,7 +205,7 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
           <div style={{ width: 32, height: 32, background: T.cream, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <div style={{ color: T.black }}><SMark size={18} /></div>
           </div>
-          <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 800, color: T.cream, letterSpacing: "0.02em", lineHeight: 1.15 }}>
+          <span className="hq-ink" style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 800, color: T.cream, letterSpacing: "0.02em", lineHeight: 1.15 }}>
             STRETCHY<br />HQ
           </span>
         </Link>
@@ -217,7 +222,7 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
 
           {NAV_GROUPS.map((group) => (
             <div key={group.heading} style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 2 }}>
-              <div style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(245,237,227,0.35)", padding: "0 12px", marginBottom: 4 }}>
+              <div className="hq-nav-heading" style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(245,237,227,0.35)", padding: "0 12px", marginBottom: 4 }}>
                 {group.heading}
               </div>
               {group.items.map((item) => (
@@ -232,7 +237,7 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
           ))}
 
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 2 }}>
-            <div style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(245,237,227,0.35)", padding: "0 12px", marginBottom: 4 }}>
+            <div className="hq-nav-heading" style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(245,237,227,0.35)", padding: "0 12px", marginBottom: 4 }}>
               {NAV_TAIL_GROUP.heading}
             </div>
             {NAV_TAIL_GROUP.items.map((item) => (
@@ -247,7 +252,7 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div style={{ marginTop: "auto" }}>
-          <Link href="/home" style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.12em", textDecoration: "none" }}>
+          <Link href="/home" className="hq-back" style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.12em", textDecoration: "none" }}>
             ← BACK TO APP
           </Link>
         </div>
