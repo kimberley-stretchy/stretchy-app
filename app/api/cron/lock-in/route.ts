@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { sendPushToUsers } from "@/lib/push-server";
 import { calculatePrice } from "@/lib/pricing";
+import { settlePaymentIntent } from "@/lib/lockInCharge";
 import { notifyHQ } from "@/lib/notifyLifecycle";
 import { sendAttendeeBatch } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
@@ -94,58 +95,14 @@ export async function GET(request: NextRequest) {
       const dueCents = finalAmountCents * spotsForThisPi;
 
       try {
-        let pi = await stripe.paymentIntents.retrieve(piId);
-        let paidPiId: string | null = null;
-
-        if (pi.status === "requires_capture") {
-          try {
-            // Adjust the amount to the final price (it may have been authorised
-            // at a higher price) — never capture more than authorised.
-            await stripe.paymentIntents.capture(piId, {
-              amount_to_capture: Math.min(dueCents, pi.amount),
-            });
-            paidPiId = piId;
-          } catch (captureErr) {
-            // Most likely the authorisation lapsed between retrieve and capture —
-            // re-read it and fall through to the saved-card charge below.
-            console.error(`Capture failed for PI ${piId}, retrying on saved card:`, captureErr);
-            pi = await stripe.paymentIntents.retrieve(piId);
-          }
-        } else if (pi.status === "succeeded") {
-          // Already captured by an earlier run — just settle the rows.
-          paidPiId = piId;
-        }
-
-        if (!paidPiId && pi.status !== "succeeded") {
-          // The authorisation is gone. Card authorisations lapse after about 7
-          // days, so any hold placed more than a week out lands here: Stripe has
-          // already cancelled the PaymentIntent. The card was saved at hold time
-          // (setup_future_usage), so charge it directly for the final amount.
-          const customerId = typeof pi.customer === "string" ? pi.customer : pi.customer?.id;
-          let paymentMethodId = typeof pi.payment_method === "string" ? pi.payment_method : pi.payment_method?.id;
-          if (customerId && !paymentMethodId) {
-            const pms = await stripe.paymentMethods.list({ customer: customerId, type: "card", limit: 1 });
-            paymentMethodId = pms.data[0]?.id;
-          }
-          if (!customerId || !paymentMethodId) throw new Error(`No saved card to charge for PI ${piId} (status ${pi.status})`);
-
-          const recharge = await stripe.paymentIntents.create(
-            {
-              amount: dueCents,
-              currency: "nzd",
-              customer: customerId,
-              payment_method: paymentMethodId,
-              off_session: true,
-              confirm: true,
-              metadata: { ...pi.metadata, replaces_pi: piId },
-              description: `Session x${spotsForThisPi}: ${session.title}`,
-            },
-            // A re-run of this cron must never charge the same hold twice.
-            { idempotencyKey: `lock-in-recharge-${piId}` }
-          );
-          if (recharge.status !== "succeeded") throw new Error(`Saved-card charge for PI ${piId} ended as ${recharge.status}`);
-          paidPiId = recharge.id;
-        }
+        // Capture the live authorisation, or — if it has lapsed — charge the
+        // saved card. All the rules are in lib/lockInCharge.ts.
+        const { paidPiId } = await settlePaymentIntent(
+          stripe,
+          piId,
+          dueCents,
+          `Session x${spotsForThisPi}: ${session.title}`
+        );
 
         // Mark these holds as charged (per row: final price × that row's spots)
         for (const h of holdsForThisPi) {
