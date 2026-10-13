@@ -6,6 +6,7 @@ import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import SMark from "@/components/SMark";
+import { NewTabLink, CANCELLATION_POLICY_HREF } from "@/components/PolicyLinks";
 import { createClient } from "@/lib/supabase/client";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -164,7 +165,13 @@ function SetupForm({
         </p>
       </div>
 
-      <PaymentElement options={{ layout: "tabs" }} />
+      {/* Our words instead of Stripe's open-ended "future payments" small print. */}
+      <PaymentElement options={{ layout: "tabs", terms: { card: "never" } }} />
+      <p className="text-xs leading-[1.6]" style={{ color: "rgba(20,17,15,.6)" }}>
+        By saving your card, you agree Stretchy can charge it only for places you choose to hold,
+        and never more than the max price shown when you hold them. Nothing is charged today.{" "}
+        <NewTabLink href={CANCELLATION_POLICY_HREF}>Cancellation policy</NewTabLink>
+      </p>
 
       {error && <p className="text-xs font-semibold" style={{ color: "#C6362E" }}>{error}</p>}
 
