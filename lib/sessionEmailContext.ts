@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { HQ_EMAIL, type AttendeeEmailPayload } from "@/lib/stretchy-email";
+import { styleAndLevel } from "@/lib/sessionDisplay";
 
 // Turns the raw session/movement fields into the extra bits the attendee email
 // templates want (teacher name + style + handle, GEM name + handle, venue
@@ -42,11 +43,44 @@ export interface SessionForEmail {
 // Look up teacher + GEM names/handles and assemble the shared email fields.
 // Skips the auto-provisioned HQ placeholder host (unassigned sessions default
 // to Kimberley's record) so we don't wrongly print "with Kimberley Torrie".
+//
+// Pass `sessionId` when the result feeds an attendee email: the refreshed emails
+// draw everything (dates, times, people dots, prices, "Bring with you") from the
+// session itself, so this reads the full row and the live headcount once here
+// rather than every caller having to select the right columns.
 export async function buildSessionEmailExtras(
   admin: SupabaseClient,
-  session: SessionForEmail
+  session: SessionForEmail,
+  sessionId?: string
 ): Promise<Partial<AttendeeEmailPayload>> {
+  const facts: Partial<AttendeeEmailPayload> = {};
+  if (sessionId) {
+    const [{ data: row }, { data: holds }] = await Promise.all([
+      admin.from("sessions").select("*").eq("id", sessionId).maybeSingle(),
+      admin.from("holds").select("quantity").eq("session_id", sessionId).eq("state", "active"),
+    ]);
+    if (row) {
+      const { style, level } = styleAndLevel(row.description, row.movement_type);
+      Object.assign(facts, {
+        startsAt: row.starts_at ?? undefined,
+        durationMins: row.duration_mins ?? undefined,
+        minAttendees: row.min_attendees ?? undefined,
+        maxAttendees: row.max_attendees ?? undefined,
+        costBase: row.cost_base ?? undefined,
+        revenueTarget: row.revenue_target ?? undefined,
+        sessionState: row.state ?? undefined,
+        locationAddress: row.location_address ?? undefined,
+        styleLine: style,
+        level: level ?? undefined,
+        bringTitle: row.bring_title ?? undefined,
+        bringNote: row.bring_note ?? undefined,
+        held: (holds ?? []).reduce((sum: number, h: { quantity: number | null }) => sum + (h.quantity ?? 1), 0),
+      } satisfies Partial<AttendeeEmailPayload>);
+    }
+  }
+
   const extras: Partial<AttendeeEmailPayload> = {
+    ...facts,
     teacherStyle: movementLabel(session.movement_type),
     durationLabel: session.duration_mins ? `${session.duration_mins} min` : undefined,
     directions: session.getting_there ?? undefined,

@@ -103,7 +103,7 @@ export async function confirmSession(
     Math.max(holds, session.min_attendees)
   ).toFixed(2)} incl. GST`;
 
-  const emailExtras = await buildSessionEmailExtras(admin, session);
+  const emailExtras = await buildSessionEmailExtras(admin, session, session.id);
 
   const holders = await getAttendees(admin, userIds);
   const goAheadItems = [];
@@ -118,7 +118,7 @@ export async function confirmSession(
         date: dateStr,
         price: finalPrice,
         venue: session.location_name ?? undefined,
-        socialStretchVenue: session.social_stretch_venue ?? "nearby",
+        socialStretchVenue: session.social_stretch_venue ?? undefined,
         sessionId: session.id,
         isComp: compUserIds.has(a.auth_user_id),
         isFirstStretchy: await isFirstStretchy(admin, a.auth_user_id),
@@ -129,8 +129,8 @@ export async function confirmSession(
   }
   await sendAttendeeBatch(goAheadItems);
   await sendPushToUsers(userIds, {
-    title: "It's happening! ✅",
-    body: `${session.title} is confirmed. Price may still drop — see you there!`,
+    title: "It's going ahead 🎉",
+    body: `${session.title} is on. There's still room to join, and the price keeps dropping.`,
     url: `/notifications/going-ahead?session=${session.id}`,
     requireInteraction: true,
   }).catch(console.error);
@@ -147,7 +147,7 @@ export async function confirmSession(
         date: dateStr,
         price: finalPrice,
         venue: session.location_name ?? undefined,
-        socialStretchVenue: session.social_stretch_venue ?? "nearby",
+        socialStretchVenue: session.social_stretch_venue ?? undefined,
         sessionId: session.id,
         ...emailExtras,
       },
@@ -156,7 +156,7 @@ export async function confirmSession(
   if (interestedIds.length > 0) {
     await sendPushToUsers(interestedIds, {
       title: "It's on 🎉",
-      body: `${session.title} is happening — grab a spot before it fills.`,
+      body: `${session.title} is going ahead. Still room to join, up to 2 hours before.`,
       url: `/sessions/${session.id}`,
     }).catch(console.error);
   }
@@ -190,6 +190,9 @@ export async function cancelSession(
   session: DecisionSession
 ): Promise<{ action: "cancelled"; holders: number }> {
   const { count: holds, userIds, spotsByUser } = await getHoldSummary(admin, session.id);
+  // Read the session facts for the email BEFORE releasing the holds, so the
+  // "{held} of {min}" count and dots show the room as it was.
+  const emailExtras = await buildSessionEmailExtras(admin, session, session.id);
 
   await admin.from("sessions").update({ state: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", session.id);
   await admin.from("sessions").update({ grace_started_at: null }).eq("id", session.id).then(undefined, () => {});
@@ -205,14 +208,17 @@ export async function cancelSession(
         name: firstNameOf(a.name),
         sessionTitle: session.title,
         date: dateStr,
+        venue: session.location_name ?? undefined,
         sessionId: session.id,
         spots: spotsByUser.get(a.auth_user_id),
+        ...emailExtras,
+        attendeeCount: holds,
       },
     }))
   );
   await sendPushToUsers(userIds, {
-    title: "Not this time 💙",
-    body: `${session.title} didn't reach the minimum. Nothing was charged.`,
+    title: "Not this time 💛",
+    body: `${session.title} didn't reach its minimum, so it's called off. You pay nothing.`,
     url: `/notifications/cancelled?session=${session.id}`,
   }).catch(console.error);
 

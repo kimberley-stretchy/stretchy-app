@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 import InfoRows from "@/components/sessions/InfoRows";
@@ -67,6 +67,12 @@ export default function BookingView({
 }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareMsg, setShareMsg] = useState<string | null>(null);
+
+  // "Share with a mate" in the emails links here with ?share=1 — open the share
+  // options straight away so it's one tap from the email.
+  useEffect(() => {
+    if (!embedded && new URLSearchParams(window.location.search).get("share") === "1") setShareOpen(true);
+  }, [embedded]);
 
   async function copyShareLink(url: string, msg: string) {
     try {

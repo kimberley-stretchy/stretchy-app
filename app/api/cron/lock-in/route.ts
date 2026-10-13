@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
       .eq("id", session.id);
 
     // Send "price locked" email to each attendee (new template + real details).
-    const emailExtras = await buildSessionEmailExtras(admin, session);
+    const emailExtras = await buildSessionEmailExtras(admin, session, session.id);
     const priceStr = `$${finalPrice.toFixed(2)} incl. GST`;
     const lockItems = [];
     const unpaidPeople: string[] = [];
@@ -197,7 +197,7 @@ export async function GET(request: NextRequest) {
       // Never tell someone they've been charged when the charge failed —
       // HQ gets their details below to follow up instead.
       if (unpaidHoldIds.has(hold.id)) {
-        unpaidPeople.push(`${attendee?.name ?? "Unknown"} (${attendee?.email ?? "no email"}) · ${qtyOf(hold)} spot${qtyOf(hold) === 1 ? "" : "s"}`);
+        unpaidPeople.push(`${attendee?.name ?? "Unknown"} (${attendee?.email ?? "no email"}) · ${qtyOf(hold)} place${qtyOf(hold) === 1 ? "" : "s"}`);
         continue;
       }
       if (!attendee?.email) continue;
@@ -216,10 +216,13 @@ export async function GET(request: NextRequest) {
           sessionId: session.id,
           isComp: !!hold.is_comp,
           isFirstStretchy: firstTimer,
-          attendeeCount: totalHolds,
           spots,
           totalPrice: `$${(finalPrice * spots).toFixed(2)} incl. GST`,
           ...emailExtras,
+          // After the spread: the exact amount charged per place, and the
+          // headcount (holds are already marked charged, so a live count reads 0).
+          unitPriceCents: finalAmountCents,
+          attendeeCount: totalHolds,
         },
       });
     }
@@ -228,8 +231,8 @@ export async function GET(request: NextRequest) {
     // Send push notifications to all holders
     const holderUserIds = holds.filter(h => !unpaidHoldIds.has(h.id)).map(h => h.user_id);
     await sendPushToUsers(holderUserIds, {
-      title: "Price locked 🔒",
-      body: `${session.title} — $${finalPrice.toFixed(2)} charged. See you in 2 hours!`,
+      title: "Final price charged",
+      body: `${session.title}: $${finalPrice.toFixed(2)} each. See you in 2 hours!`,
       url: `/sessions/${session.id}`,
       requireInteraction: true,
     }).catch(console.error);

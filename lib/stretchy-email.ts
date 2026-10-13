@@ -12,6 +12,7 @@
 // auth hop entirely.
 // ─────────────────────────────────────────────────────────────────────────────
 import { Resend } from "resend";
+import { renderAttendeeEmail } from "@/lib/attendeeEmailTemplates";
 import { logEmail, logEmails } from "@/lib/emailLog";
 
 export const FROM = "Stretchy <hello@stretchyyoga.co.nz>";
@@ -98,94 +99,9 @@ export function button(sc: Scheme, href: string, text: string) {
 export function row(sc: Scheme, text: string) {
   return `<p style="color:${sc.text};font-size:14px;line-height:1.5;margin:0 0 7px;">${text}</p>`;
 }
-function caption(sc: Scheme, text: string) {
-  return `<p style="color:${sc.text};font-size:12px;line-height:1.5;margin:0;">${text}</p>`;
-}
-function para(sc: Scheme, text: string) {
-  return `<p style="color:${sc.text};font-size:13px;line-height:1.6;margin:0 0 16px;">${text}</p>`;
-}
-
-// Merged "Your Stretchy" card — session details AND who's on, in one box.
-function stretchyCard(sc: Scheme, p: AttendeeEmailPayload, tag: string, byo = true) {
-  const parts: string[] = [
-    label(sc, tag),
-    `<p style="color:${sc.text};font-size:20px;font-weight:800;margin:0 0 8px;letter-spacing:-0.01em;">${p.sessionTitle}</p>`,
-    `<p style="color:${sc.text};font-size:14px;margin:0 0 4px;">🗓 ${p.date}</p>`,
-    `<p style="color:${sc.text};font-size:14px;margin:0 0 4px;">📍 ${p.venue || "TBC"}${p.venueHandle ? ` · ${p.venueHandle}` : ""}</p>`,
-  ];
-  if (p.teacherName || p.teacherStyle)
-    parts.push(`<p style="color:${sc.text};font-size:14px;margin:0 0 4px;">🧘 ${p.teacherStyle ?? "Movement"}${p.teacherName ? ` with ${p.teacherName}` : ""}${p.teacherHandle ? ` · ${p.teacherHandle}` : ""}</p>`);
-  if (p.gemName)
-    parts.push(`<p style="color:${sc.text};font-size:14px;margin:0 0 4px;">💫 GEM on the day: ${p.gemName}${p.gemHandle ? ` · ${p.gemHandle}` : ""}</p>`);
-  if (p.spots && p.spots > 1)
-    parts.push(`<p style="color:${sc.text};font-size:14px;font-weight:800;margin:0 0 4px;">🎟 You're holding ${p.spots} spots — bring the crew!</p>`);
-  // Social Stretch + getting-there/parking live together at the foot of the card.
-  const foot: string[] = [];
-  if (p.socialStretchVenue)
-    foot.push(`<p style="color:${sc.text};font-size:13px;margin:0 0 6px;">🌞 Social Stretch after at ${p.socialStretchVenue}${p.socialVenueHandle ? ` · ${p.socialVenueHandle}` : ""}</p>`);
-  if (p.directions)
-    foot.push(`<p style="color:${sc.text};font-size:13px;margin:0 0 6px;">🚗 Getting there / parking: ${p.directions}</p>`);
-  if (byo)
-    foot.push(`<p style="color:${sc.text};font-size:13px;margin:0;">🎒 BYO yoga mat & a stretchy mindset.</p>`);
-  if (foot.length)
-    parts.push(`<div style="margin:10px 0 0;padding-top:10px;border-top:2px solid ${sc.text};">${foot.join("")}</div>`);
-  return box(sc, parts.join(""), 20);
-}
-
-function priceBox(sc: Scheme, value: string, cap: string, heading = "Current price per spot") {
-  return box(sc, `${label(sc, heading)}
-    <p style="font-size:32px;font-weight:900;color:${sc.text};margin:0 0 4px;letter-spacing:-0.02em;">${value}</p>
-    ${caption(sc, cap)}`);
-}
-
-function tellMates(sc: Scheme) {
-  return `<p style="color:${sc.text};font-size:14px;line-height:1.6;margin:0 0 16px;font-weight:700;">Tell your mates, dates, mum, randoms 🙌 — the more people who move together, the better it gets for all (and the cheaper it gets, too).</p>`;
-}
 
 function signoff(sc: Scheme, text: string) {
   return `<p style="color:${sc.text};font-size:15px;line-height:1.55;margin:16px 0 0;">${text},<br>Stretchy</p>`;
-}
-
-function cancellationBlock(sc: Scheme, cancelUrl: string) {
-  return `<div style="border-top:2px solid ${sc.text};margin-top:16px;padding-top:16px;">
-    ${label(sc, "Cancellation window")}
-    <p style="color:${sc.text};font-size:13px;line-height:1.6;margin:0 0 12px;">${CANCEL_WINDOW}</p>
-    ${button(sc, cancelUrl, "View or cancel my booking")}
-  </div>`;
-}
-
-function whatToBring(sc: Scheme) {
-  return box(sc, `${label(sc, "What to bring")}
-    ${row(sc, "🧘 BYO yoga mat")}
-    ${row(sc, "🧠 A Stretchy mindset")}
-    ${row(sc, "💧 A water bottle & any props you may need (yoga block, cushion for knees, yoga strap)")}
-    ${row(sc, "💸 $$ for your food & bev after")}`);
-}
-
-function directionsBox(sc: Scheme, directions?: string) {
-  if (!directions) return "";
-  return box(sc, `${label(sc, "Getting there / parking")}${caption(sc, directions)}`);
-}
-
-function firstStretchy(sc: Scheme, p: AttendeeEmailPayload) {
-  const gem = p.gemName ?? "your GEM";
-  const teacher = p.teacherName ?? "your teacher";
-  const mins = p.durationLabel ?? "~60 min";
-  const style = p.teacherStyle ?? "movement";
-  return box(sc, `${label(sc, "✨ Your first Stretchy?")}
-    <p style="color:${sc.text};font-size:15px;font-weight:800;margin:0 0 10px;">Here's what to expect</p>
-    ${row(sc, `⏰ Come 5 mins early to introduce yourself to ${gem} and ${teacher}.`)}
-    ${row(sc, `🧘 ${mins} of ${style} — always go at your own pace & take it as you need. No judgement here, we're a welcoming crew.`)}
-    ${row(sc, `🌞 Enjoy the Social Stretch after. Our GEMs (Good Energy Managers) are there to make sure you feel comfy. Say hi to someone new!`)}
-    ${row(sc, `🎒 BYO yoga mat & $$ for the Social Stretch.`)}
-    ${row(sc, `💬 Any questions before then, flick us a message at ${HELLO}.`)}`);
-}
-
-function bigCount(sc: Scheme, n: number) {
-  return `<div style="margin:4px 0 18px;">
-    <div style="font-size:68px;font-weight:900;line-height:1;color:${sc.text};letter-spacing:-0.03em;">${n}</div>
-    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:${sc.text};margin:8px 0 0;">${n === 1 ? "spot" : "spots"} left to go</p>
-  </div>`;
 }
 
 export function brandFooter(sc: Scheme) {
@@ -226,165 +142,8 @@ export function page(
   </div>`;
 }
 
-const CANCEL_WINDOW =
-  "Cancel free any time before the 36-hour mark — no charge. After that, we treat it as locked in and the price stands, because by then we've committed to your teacher, your GEM, and your venue. That's what keeps it fair for everyone who shows up. If we ever have to cancel on our end, you're refunded in full — always.";
-
 // ─── EMAIL TEMPLATES ──────────────────────────────────────────────────────────
-
-function holdConfirmedEmail(p: AttendeeEmailPayload) {
-  const many = !!(p.spots && p.spots > 1);
-  const crew = p.spots && p.spots >= 4 ? "a whole crew" : "you and your people";
-  return page("blue", (sc) => `
-    ${h1(sc, many ? `You've held ${p.spots} spots. 🙌` : "You've held a spot. 🙌")}
-    ${hey(sc, p.name)}
-    ${msg(sc, many
-      ? `You've held <strong>${p.spots} spots</strong> for <strong>${p.sessionTitle}</strong> — love it, that's ${crew} coming together. 🙌 Nothing's charged yet. 🧘`
-      : `Your spot's held for <strong>${p.sessionTitle}</strong>. Nothing's charged yet. 🧘`)}
-    ${stretchyCard(sc, p, "Your Stretchy")}
-    ${box(sc, `${label(sc, "Current price per spot")}
-      <p style="font-size:32px;font-weight:900;color:${sc.text};margin:0 0 4px;letter-spacing:-0.02em;">${p.price ?? "TBC"}</p>
-      ${p.spots && p.spots > 1 && p.totalPrice ? `<p style="color:${sc.text};font-size:15px;font-weight:800;margin:0 0 6px;">× ${p.spots} spots = ${p.totalPrice} at today's price</p>` : ""}
-      ${caption(sc, "The current starting price — the most you could ever pay for this one. From here it only gets better-er as more people join. Your card's charged 2 hours before, at the final price. 📉")}
-      ${cancellationBlock(sc, p.cancelUrl || `${APP_URL}/hold/${p.sessionId ?? ""}`)}`)}
-    ${tellMates(sc)}
-    ${signoff(sc, "See you soon")}
-  `);
-}
-
-function almostThereEmail(p: AttendeeEmailPayload) {
-  const needed = Math.max(p.needed ?? 1, 1);
-  const neededPeople = `${needed} more ${needed === 1 ? "person" : "people"}`;
-  const shareUrl = p.shareUrl || (p.sessionId ? `${APP_URL}/sessions/${p.sessionId}` : `${APP_URL}/sessions`);
-  if (p.isHolder) {
-    const spotWord = p.isComp ? "place is saved" : "spot is held";
-    return page("purple", (sc) => `
-      ${h1(sc, "So close to going ahead. 👀")}
-      ${hey(sc, p.name)}
-      ${msg(sc, `We just need <strong>${neededPeople}</strong> for this Stretchy session to go ahead. Your ${spotWord}, but this is the moment to get more people together: tell your mates, your co-workers, the guy in the coffee line. 🙌`)}
-      ${button(sc, shareUrl, "Share this Stretchy →")}
-      ${stretchyCard(sc, p, "Your Stretchy")}
-      ${p.isComp
-        // Comps can't cancel or be charged — no cancellation-window box, just a nudge to help fill it.
-        ? box(sc, `${label(sc, "Heads up · on us")}<p style="color:${sc.text};font-size:13px;line-height:1.6;margin:0;">You're in on us — nothing to pay. We just need <strong>${neededPeople}</strong> to lock it in by the <strong>36-hour mark (about 2 hours from now)</strong>. Share it around and help make it happen. 💛</p>`)
-        : box(sc, `${label(sc, "Heads up · cancellation window")}<p style="color:${sc.text};font-size:13px;line-height:1.6;margin:0 0 12px;">You can still cancel free until the <strong>36-hour mark — about 2 hours from now</strong>. After that your place is locked in and the price stands. If we don't reach the minimum by then, it's called off and nothing's charged.</p>${button(sc, p.cancelUrl || `${APP_URL}/hold/${p.sessionId ?? ""}`, "Manage my hold")}`)}
-      ${signoff(sc, "See you soon")}
-    `);
-  }
-  return page("purple", (sc) => `
-    ${h1(sc, `Interested?! We need ${neededPeople} for this Stretchy to go ahead.`)}
-    ${hey(sc, p.name)}
-    ${msg(sc, `We just need <strong>${neededPeople}</strong> for this Stretchy session to go ahead. Could that be you?!`)}
-    ${msg(sc, `From there if we reach our minimum numbers, the session is all go, and the price may keep dropping — the more people who move together, the better it gets for all. Spread the word.`)}
-    ${button(sc, shareUrl, "Grab your spot →")}
-    ${stretchyCard(sc, p, "The Session")}
-    ${p.price ? priceBox(sc, p.price, "The more of us who come together, the better-er it gets — the price only keeps dropping.", "Price right now") : ""}
-    ${button(sc, shareUrl, "Grab your spot →")}
-    ${signoff(sc, "Hope to see you soon")}
-  `);
-}
-
-function sessionGoingAheadEmail(p: AttendeeEmailPayload) {
-  const isComp = p.isComp ?? false;
-  const url = p.sessionId ? `${APP_URL}/notifications/going-ahead?session=${p.sessionId}` : `${APP_URL}/sessions`;
-  return page("olive", (sc) => `
-    ${h1(sc, "It's happening! 🧘")}
-    ${hey(sc, p.name)}
-    ${msg(sc, p.spots && p.spots > 1
-      ? `This one's going ahead — all <strong>${p.spots}</strong> of your spots are in. See you on the mat! 🤙`
-      : `This one's going ahead. See you on the mat! 🤙`)}
-    ${stretchyCard(sc, p, "Confirmed")}
-    ${priceBox(sc, isComp ? "On us 💛" : (p.price ?? "TBC"), isComp ? "This one's covered by Stretchy — nothing to pay. Just show up. 🧘" : "This is your ceiling — the most you'll ever pay. It can still drop from here, never rise. Your card's charged 2 hours before, at the final price. 📉", isComp ? "Your spot" : "The current price")}
-    ${p.isFirstStretchy ? firstStretchy(sc, p) : whatToBring(sc)}
-    ${button(sc, url, "View your session →")}
-    ${signoff(sc, "See you soon")}
-  `);
-}
-
-function openConfirmedEmail(p: AttendeeEmailPayload) {
-  const bookUrl = p.shareUrl || (p.sessionId ? `${APP_URL}/sessions/${p.sessionId}` : `${APP_URL}/sessions`);
-  return page("orange", (sc) => `
-    ${h1(sc, "Still interested? Stretchy is on & the price is droppppppin' 📉")}
-    ${hey(sc, p.name)}
-    ${msg(sc, `<strong>${p.sessionTitle}</strong> hit its minimum and is going ahead. You marked yourself interested, so heads up: there's still room, but spots go. Grab yours. 🧘`)}
-    ${stretchyCard(sc, p, "Going ahead")}
-    ${p.price ? priceBox(sc, p.price, "Nothing's charged until 2 hours before — and the more of us who come together, the better-er it gets.", "Price right now") : ""}
-    ${button(sc, bookUrl, "Book my spot →")}
-    ${signoff(sc, "Hope to see you soon")}
-  `);
-}
-
-function sessionCancelledEmail(p: AttendeeEmailPayload) {
-  const url = p.sessionId ? `${APP_URL}/notifications/cancelled?session=${p.sessionId}` : `${APP_URL}/sessions`;
-  return page("cream", (sc) => `
-    ${h1(sc, "Not this time. 💛")}
-    ${hey(sc, p.name)}
-    ${msg(sc, `Unfortunately this one didn't get enough holds to go ahead. Nothing was charged. Let's get the next session running — tell your mates, a random, a date, your flatmates. 💛`)}
-    ${stretchyCard(sc, p, "Didn't go ahead", false)}
-    ${para(sc, "The more people who move together, the better the price gets for everyone — and the more sessions go ahead. Keep an eye out for what's next. 🌞")}
-    ${button(sc, url, "See what's next →")}
-    ${signoff(sc, "Hope to see you soon")}
-  `, { highlight: false });
-}
-
-function priceLockedEmail(p: AttendeeEmailPayload) {
-  const isComp = p.isComp ?? false;
-  const crew = p.attendeeCount ? `${p.attendeeCount} people` : "a great crew";
-  const style = p.teacherStyle ?? "movement";
-  return page("orange", (sc) => `
-    ${h1(sc, "We're moving &amp; grooving together. 🕺")}
-    ${hey(sc, p.name)}
-    ${msg(sc, isComp
-      ? `We now have <strong>${crew}</strong> coming together for ${style} in a couple of hours. This one's on us — nothing to pay.`
-      : `We now have <strong>${crew}</strong> coming together for ${style} in a couple of hours. So the final price is now locked &amp; loaded: <strong>${p.price ?? ""}</strong>${p.spots && p.spots > 1 ? ` per spot` : ""}.`)}
-    ${msg(sc, isComp ? "We'll see you shortly to stretch bodies, minds &amp; social circles." : "Your card is now charged and we'll see you shortly to stretch bodies, minds &amp; social circles.")}
-    ${msg(sc, "All the deets below.")}
-    ${msg(sc, "Catch you soon,<br>Stretchy")}
-    ${box(sc, `${label(sc, isComp ? "Your spot · on us" : (p.spots && p.spots > 1 ? "Total charged now" : "Final price · charged now"))}
-      <p style="font-size:36px;font-weight:900;color:${sc.text};margin:0 0 6px;letter-spacing:-0.02em;">${isComp ? "On us 💛" : (p.spots && p.spots > 1 && p.totalPrice ? p.totalPrice : (p.price ?? ""))}</p>
-      ${caption(sc, isComp
-        ? "Covered by Stretchy — nothing to pay. Thanks for coming along."
-        : (p.spots && p.spots > 1
-            ? `Your ${p.spots} spots at ${p.price ?? ""} each — charged now in one go. Thanks for making it happen.`
-            : "Your final price for this Stretchy social movement. Thanks for making it happen. Heads up, your card is charged now at this final price per person."))}`)}
-    ${stretchyCard(sc, p, "You're in")}
-    ${p.isFirstStretchy ? firstStretchy(sc, p) : whatToBring(sc)}
-  `);
-}
-
-function holdCancelledEmail(p: AttendeeEmailPayload) {
-  return page("cream", (sc) => `
-    ${h1(sc, "Hold cancelled. 👋")}
-    ${hey(sc, p.name)}
-    ${msg(sc, `Your hold's been cancelled. Nothing was charged — your card authorisation's been released.`)}
-    ${stretchyCard(sc, p, "Cancelled", false)}
-    ${p.sessionGoingAhead ? "" : para(sc, "Changed your mind? There's still time to grab a spot. 🧘")}
-    ${button(sc, `${APP_URL}/sessions`, "Browse sessions →")}
-    ${signoff(sc, "Hope to see you soon")}
-  `, { highlight: false });
-}
-
-function compHoldConfirmedEmail(p: AttendeeEmailPayload) {
-  const manageUrl = p.sessionId ? `${APP_URL}/hold/${p.sessionId}` : `${APP_URL}/sessions`;
-  const loginUrl = `${APP_URL}/login${p.sessionId ? `?next=/hold/${p.sessionId}` : ""}`;
-  // White box with purple text + purple button (reversed out of the purple ground).
-  const whiteBox = (heading: string, bodyHtml: string, href: string, cta: string) => `<div style="background:#FFFFFF;border-radius:16px;padding:18px;margin:0 0 16px;">
-    ${heading ? `<p style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#902F8A;margin:0 0 8px;">${heading}</p>` : ""}
-    <p style="color:#902F8A;font-size:13px;line-height:1.5;margin:0 0 12px;">${bodyHtml}</p>
-    <a href="${href}" style="display:block;text-align:center;background:#902F8A;color:#FFFFFF !important;-webkit-text-fill-color:#FFFFFF !important;text-decoration:none;font-size:15px;font-weight:800;padding:15px 24px;border-radius:999px;"><span style="color:#FFFFFF !important;-webkit-text-fill-color:#FFFFFF !important;text-decoration:none;">${cta}</span></a>
-  </div>`;
-  return page("purple", (sc) => `
-    ${h1(sc, "We've held you a place — on us. 💛")}
-    ${hey(sc, p.name)}
-    ${msg(sc, `Stretchy HQ has saved you a spot at <strong>${p.sessionTitle}</strong>. It's our shout, so there's nothing to pay — just come and move with us. 🧘`)}
-    ${msg(sc, `Heads up: Stretchy needs a minimum number of people to make a session happen, so we'll confirm about <strong>36 hours out</strong> whether it's going ahead (we'll email you either way).`)}
-    ${msg(sc, "Hope to see you soon,<br>Stretchy")}
-    ${stretchyCard(sc, p, "Your spot · on us")}
-    ${p.newAccount
-      ? whiteBox("One quick thing — set up your account", "So you can see your spot and get your reminders, finish setting up your account. Log in with this email — we'll send you a code, no password needed.", loginUrl, "Set up my account →")
-      : whiteBox("", "It's all in your account — view the details or add it to your calendar any time.", manageUrl, "View my spot →")}
-    ${whatToBring(sc)}
-  `);
-}
+// The attendee emails live in lib/attendeeEmailTemplates.ts.
 
 // City waitlist welcome — all orange, S logo + Stretchy header, standard footer.
 export function buildWaitlistEmail(name: string, city?: string): { subject: string; html: string } {
@@ -476,28 +235,28 @@ export interface AttendeeEmailPayload {
   gemHandle?: string;
   venueHandle?: string;
   socialVenueHandle?: string;
+  // ── Session facts for the refreshed emails (filled by buildSessionEmailExtras) ──
+  startsAt?: string;          // ISO start time — all dates and times come from this
+  durationMins?: number;
+  minAttendees?: number;
+  maxAttendees?: number;
+  held?: number;              // places held right now
+  costBase?: number;
+  revenueTarget?: number;
+  sessionState?: string;
+  locationAddress?: string;
+  styleLine?: string;         // "Vinyasa yoga"
+  level?: string;             // "all levels"
+  bringTitle?: string;        // HQ's "Bring with you" bold line
+  bringNote?: string;         // …and grey line
+  unitPriceCents?: number;    // exact per-place amount charged (final price email)
+  calledOffByHQ?: boolean;    // session cancelled by HQ, not for missing the minimum
+  cancelledSpots?: number;    // hold-cancelled email: places just cancelled…
+  remainingSpots?: number;    // …and places still held (0 = whole hold cancelled)
 }
 
 export function buildAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject: string; html: string } {
-  const t = p.sessionTitle;
-  switch (type) {
-    case "hold_confirmed":
-      return { subject: `You're holding a place — ${t}`, html: holdConfirmedEmail(p) };
-    case "session_going_ahead":
-      return { subject: `It's happening — ${t}`, html: sessionGoingAheadEmail(p) };
-    case "session_cancelled":
-      return { subject: `Not this time — ${t}`, html: sessionCancelledEmail(p) };
-    case "price_locked":
-      return { subject: p.isComp ? `You're locked in for ${t} 🧘` : `You're locked in — ${t}`, html: priceLockedEmail(p) };
-    case "hold_cancelled":
-      return { subject: `Hold cancelled — ${t}`, html: holdCancelledEmail(p) };
-    case "almost_there":
-      return { subject: (p.needed ?? 0) <= 1 ? `1 more and ${t} is on 👀` : `${p.needed} more and ${t} is on 👀`, html: almostThereEmail(p) };
-    case "comp_hold_confirmed":
-      return { subject: `We've held you a place — ${t} (on us 💛)`, html: compHoldConfirmedEmail(p) };
-    case "session_confirmed_open":
-      return { subject: `It's on — ${t}. Grab a spot 🎉`, html: openConfirmedEmail(p) };
-  }
+  return renderAttendeeEmail(type, p);
 }
 
 function toPlainText(html: string): string {

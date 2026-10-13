@@ -342,25 +342,19 @@ export async function DELETE(request: NextRequest) {
   try {
     const { data: attendeeData } = await admin.from("attendees").select("name, email").eq("auth_user_id", user.id).single();
     if (attendeeData?.email) {
-      const startDate = new Date(session.starts_at);
-      const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
-        " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
-      const firstName = attendeeData.name?.split(" ")[0] ?? "there";
-      const isPartial = remainingQty > 0;
-      const subject = isPartial ? `Booking updated — ${session.title}` : `Hold cancelled — ${session.title}`;
-      const bodyLine = isPartial
-        ? `${cancelQty} spot${cancelQty === 1 ? "" : "s"} cancelled for ${session.title} (${dateStr}). You still have ${remainingQty} spot${remainingQty === 1 ? "" : "s"} held — nothing extra was charged.`
-        : `Your hold for ${session.title} (${dateStr}) has been cancelled. Nothing was charged — your card authorisation has been released.`;
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: "Stretchy <hello@stretchyyoga.co.nz>",
-        to: attendeeData.email,
-        bcc: "kimberley@stretchyyoga.co.nz",
-        reply_to: "kimberley@stretchyyoga.co.nz",
-        subject,
-        text: `Hi ${firstName},\n\n${bodyLine}\n\nBrowse sessions: https://stretchyyoga.co.nz/sessions\n\nStretchy`,
-        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#F7F0E8;padding:32px;border-radius:16px;"><h1 style="font-size:26px;font-weight:900;color:#14110F;margin:0 0 8px;">${isPartial ? "Booking updated." : "Hold cancelled."} 👋</h1><p style="color:#555;font-size:15px;margin:0 0 20px;">Hi ${firstName} — ${bodyLine}</p><a href="https://stretchyyoga.co.nz/sessions" style="display:inline-block;background:#14110F;color:#F7F0E8;text-decoration:none;font-size:13px;font-weight:700;padding:12px 22px;border-radius:8px;">Browse sessions →</a><p style="font-size:11px;color:#AAA;text-align:center;margin:24px 0 0;">Made with Love by <a href="https://studiodawn.org" style="color:#AAA;">Studio Dawn</a></p></div>`,
-      }).catch(console.error);
+      await sendAttendeeEmail(
+        "hold_cancelled",
+        {
+          to: attendeeData.email,
+          name: attendeeData.name?.split(" ")[0] ?? "there",
+          sessionTitle: session.title,
+          date: "",
+          sessionId,
+          cancelledSpots: cancelQty ?? hold.quantity,
+          remainingSpots: Math.max(remainingQty, 0),
+        },
+        { bcc: "kimberley@stretchyyoga.co.nz" }
+      );
     }
   } catch (e) { console.error("Cancel email error:", e); }
 
@@ -548,7 +542,7 @@ export async function PATCH(request: NextRequest) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.stretchyyoga.co.nz";
 
       const [extras, firstTimer] = await Promise.all([
-        buildSessionEmailExtras(admin, sessionData),
+        buildSessionEmailExtras(admin, sessionData, sessionId),
         isFirstStretchy(admin, holdUserId),
       ]);
 

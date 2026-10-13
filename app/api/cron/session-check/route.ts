@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
       // Everyone holding — paying AND comps — gets the "nearly there" nudge: comps
       // can't cancel/be charged, but they can still help fill it by sharing. The
       // template drops the cancellation-window box for comps.
+      const nudgeExtras = await buildSessionEmailExtras(admin, s, s.id);
       const holders = await getAttendees(admin, userIds);
       const holderRes = await sendAttendeeBatch(holders.map((a) => ({
         type: "almost_there" as const,
@@ -127,8 +128,10 @@ export async function GET(request: NextRequest) {
           sessionId: s.id,
           isHolder: true,
           isComp: compUserIds.has(a.auth_user_id),
-          cancelUrl: `${APP_URL}/my-holds`,
+          cancelUrl: `${APP_URL}/hold/${s.id}`,
           spots: spotsByUser.get(a.auth_user_id),
+          socialStretchVenue: s.social_stretch_venue ?? undefined,
+          ...nudgeExtras,
         },
       })));
 
@@ -147,6 +150,8 @@ export async function GET(request: NextRequest) {
           shareUrl,
           sessionId: s.id,
           isHolder: false,
+          socialStretchVenue: s.social_stretch_venue ?? undefined,
+          ...nudgeExtras,
         },
       })));
 
@@ -159,7 +164,6 @@ export async function GET(request: NextRequest) {
 
       // Teacher + GEM — "help fill it" heads-up (isolated; can't block the stamp).
       const recruitStyle = movementLabel(s.movement_type);
-      const nudgeExtras = await buildSessionEmailExtras(admin, s);
       const nudgeDetails = { social: s.social_stretch_venue, teacherHandle: nudgeExtras.teacherHandle, gemHandle: nudgeExtras.gemHandle, venueHandle: nudgeExtras.venueHandle, socialVenueHandle: nudgeExtras.socialVenueHandle };
       const recruitSession = { id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name };
       if (s.host_id) notifyHostRecruit({ hostId: s.host_id, role: "teacher", session: recruitSession, needed, shareUrl, style: recruitStyle, gemName: nudgeExtras.gemName, details: nudgeDetails }).catch(console.error);

@@ -190,7 +190,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     " at " +
     startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
 
-  const emailExtras = await buildSessionEmailExtras(admin, session);
+  const emailExtras = await buildSessionEmailExtras(admin, session, sessionId);
   const firstTimer = await isFirstStretchy(admin, userId);
   const emailResult = await sendAttendeeEmail(
     "comp_hold_confirmed",
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       sessionTitle: session.title,
       date: dateStr,
       venue: session.location_name,
-      socialStretchVenue: session.social_stretch_venue ?? "nearby",
+      socialStretchVenue: session.social_stretch_venue ?? undefined,
       sessionId,
       newAccount,
       isFirstStretchy: firstTimer,

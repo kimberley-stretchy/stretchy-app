@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendAttendeeBatch } from "@/lib/stretchy-email";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { Resend } from "resend";
@@ -392,24 +393,23 @@ export async function DELETE(request: NextRequest) {
       .select("auth_user_id, name, email")
       .in("auth_user_id", userIds);
 
-    const startDate = new Date(session.starts_at);
-    const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
-      " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
-
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    for (const a of attendees ?? []) {
-      if (!a.email) continue;
-      const firstName = a.name?.split(" ")[0] ?? "there";
-      await resend.emails.send({
-        from: "Stretchy <hello@stretchyyoga.co.nz>",
-        to: a.email,
+    // The same "Not this time" email as a session that missed its minimum, with
+    // the reason swapped: this one was called off by HQ. One Resend batch.
+    await sendAttendeeBatch(
+      (attendees ?? []).filter((a) => a.email).map((a) => ({
+        type: "session_cancelled" as const,
+        payload: {
+          to: a.email as string,
+          name: a.name?.split(" ")[0] ?? "there",
+          sessionTitle: session.title,
+          date: "",
+          venue: session.location_name ?? undefined,
+          sessionId: id,
+          calledOffByHQ: true,
+        },
         bcc: "kimberley@stretchyyoga.co.nz",
-        reply_to: "kimberley@stretchyyoga.co.nz",
-        subject: `This one's not going ahead — ${session.title}`,
-        text: `Hi ${firstName},\n\nSorry — ${session.title} (${dateStr}) at ${session.location_name} has been cancelled. Nothing was charged, and your card authorisation has been fully released.\n\nBrowse other sessions: https://stretchyyoga.co.nz/sessions\n\nStretchy`,
-        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#F7F0E8;padding:32px;border-radius:16px;"><h1 style="font-size:26px;font-weight:900;color:#14110F;margin:0 0 8px;">This one&rsquo;s not going ahead. 😔</h1><p style="color:#555;font-size:15px;margin:0 0 20px;">Hi ${firstName} — sorry, <strong>${session.title}</strong> (${dateStr}) at ${session.location_name} has been cancelled.</p><div style="background:white;border-radius:12px;padding:18px;margin-bottom:16px;"><p style="font-size:14px;font-weight:700;color:#14110F;margin:0 0 4px;">Nothing was charged. ✓</p><p style="font-size:13px;color:#888;margin:0;">Your card authorisation has been fully released.</p></div><a href="https://stretchyyoga.co.nz/sessions" style="display:inline-block;background:#14110F;color:#F7F0E8;text-decoration:none;font-size:13px;font-weight:700;padding:12px 22px;border-radius:8px;">Browse other sessions →</a><p style="font-size:11px;color:#AAA;text-align:center;margin:24px 0 0;">Made with Love by <a href="https://studiodawn.org" style="color:#AAA;">Studio Dawn</a></p></div>`,
-      }).catch((e: unknown) => console.error("Cancellation notify email error:", e));
-    }
+      }))
+    );
   }
 
   return NextResponse.json({ ok: true, releasedHolds: (holds ?? []).length });
