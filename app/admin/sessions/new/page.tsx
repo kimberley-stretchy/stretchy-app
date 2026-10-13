@@ -86,6 +86,9 @@ function BuildAStretchyForm() {
   const [socialNote, setSocialNote] = useState("3 min walk · pay your own");
   const [venueInstagram, setVenueInstagram] = useState("");
   const [socialVenueInstagram, setSocialVenueInstagram] = useState("");
+  // Contact emails for the two venues — each gets a calendar hold for its part.
+  const [venueEmail, setVenueEmail] = useState("");
+  const [socialVenueEmail, setSocialVenueEmail] = useState("");
   const [gemId, setGemId] = useState("");
   const [gemRate, setGemRate] = useState(18);
   const [charityName, setCharityName] = useState("Stretchy Donation");
@@ -129,6 +132,8 @@ function BuildAStretchyForm() {
         setSocialNote(s.social_stretch_note ?? "");
         setVenueInstagram(s.venue_instagram ?? "");
         setSocialVenueInstagram(s.social_venue_instagram ?? "");
+        setVenueEmail(s.venue_email ?? "");
+        setSocialVenueEmail(s.social_venue_email ?? "");
         setCurrency(s.currency ?? "NZD");
         setMinMats(s.min_attendees ?? 14);
         setMaxMats(s.max_attendees ?? 32);
@@ -209,6 +214,8 @@ function BuildAStretchyForm() {
         social_stretch_note: socialNote,
         venue_instagram: venueInstagram || null,
         social_venue_instagram: socialVenueInstagram || null,
+        venue_email: venueEmail.trim() || null,
+        social_venue_email: socialVenueEmail.trim() || null,
         cost_lines: costLines,
         host_id: teacherId || undefined,
         gem_host_id: gemId || undefined,
@@ -340,6 +347,7 @@ function BuildAStretchyForm() {
                 </select>
                 <Pill value={socialNote} onChange={setSocialNote} placeholder="Distance · who pays" borderColor={T.orange} />
                 <Pill value={socialVenueInstagram} onChange={setSocialVenueInstagram} placeholder="Social venue @handle (optional)" borderColor={T.orange} />
+                <Pill value={socialVenueEmail} onChange={setSocialVenueEmail} placeholder="Social venue contact email (optional — sends them a calendar hold)" borderColor={T.orange} />
               </div>
             </Section>
           </div>
@@ -349,6 +357,7 @@ function BuildAStretchyForm() {
               <Pill value={venueName} onChange={setVenueName} placeholder="Venue name" />
               <Pill value={venueAddress} onChange={setVenueAddress} placeholder="Address" />
               <Pill value={venueInstagram} onChange={setVenueInstagram} placeholder="Venue @handle (optional)" />
+              <Pill value={venueEmail} onChange={setVenueEmail} placeholder="Venue contact email (optional — sends them a calendar hold)" />
             </div>
             <textarea
               value={gettingThere}

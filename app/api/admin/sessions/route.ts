@@ -5,6 +5,7 @@ import Stripe from "stripe";
 import { Resend } from "resend";
 import { requireAdmin } from "@/lib/adminAuth";
 import { notifyHostScheduled, notifyHostCancelled } from "@/lib/notifyHostScheduled";
+import { sendVenueHolds, notifyVenues } from "@/lib/notifyVenue";
 import { movementLabel } from "@/lib/sessionEmailContext";
 
 // Create inside each request handler so env vars are always available at runtime
@@ -51,6 +52,22 @@ async function getOrCreateHostId(): Promise<string> {
 }
 
 // GET /api/admin/sessions — list all sessions, or a single session by ?id=
+// Save the two venue contact emails. Only touches a field that was actually
+// sent, and never throws: before the migration is run this quietly does nothing.
+async function saveVenueContacts(
+  supabase: ReturnType<typeof getSupabase>,
+  id: string,
+  c: { venue_email?: unknown; social_venue_email?: unknown }
+) {
+  const clean = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().toLowerCase() : null);
+  const fields: Record<string, string | null> = {};
+  if (c.venue_email !== undefined) fields.venue_email = clean(c.venue_email);
+  if (c.social_venue_email !== undefined) fields.social_venue_email = clean(c.social_venue_email);
+  if (Object.keys(fields).length === 0) return;
+  const { error } = await supabase.from("sessions").update(fields).eq("id", id);
+  if (error) console.error("Venue contact save skipped:", error.message);
+}
+
 export async function GET(request: NextRequest) {
   const authed = await requireAdmin(request);
   if ("error" in authed) return authed.error;
@@ -118,8 +135,20 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // Venue contact emails. Read separately, like the others, so a missing
+  // column (migration not run yet) can't break the whole list.
+  const venueContacts: Record<string, { venue_email: string | null; social_venue_email: string | null }> = {};
+  if (sessionIds.length > 0) {
+    const { data: rows } = await supabase.from("sessions").select("id, venue_email, social_venue_email").in("id", sessionIds);
+    (rows || []).forEach((r: { id: string; venue_email: string | null; social_venue_email: string | null }) => {
+      venueContacts[r.id] = { venue_email: r.venue_email, social_venue_email: r.social_venue_email };
+    });
+  }
+
   const sessions = (data || []).map((s) => ({
     ...s,
+    venue_email: venueContacts[s.id]?.venue_email ?? null,
+    social_venue_email: venueContacts[s.id]?.social_venue_email ?? null,
     current_holds: holdCounts[s.id] || 0,
     keep_alive_at: keptAlive[s.id] ?? null,
     bring_title: bring[s.id]?.bring_title ?? null,
@@ -156,6 +185,8 @@ export async function POST(request: NextRequest) {
     social_stretch_note,
     venue_instagram,
     social_venue_instagram,
+    venue_email,
+    social_venue_email,
     what_to_bring,
     cost_lines,
     host_id: hostIdInput,
@@ -221,6 +252,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error?.message ?? "Could not create the session." }, { status: 500 });
   }
 
+  // Venue contacts are saved on their own (the columns may not exist yet), then
+  // each venue that has one gets its calendar hold. Drafts stay quiet.
+  await saveVenueContacts(supabase, data.id, { venue_email, social_venue_email });
+  await sendVenueHolds(supabase, data.id);
+
   const sessionForNotify = {
     id: data.id,
     title,
@@ -250,9 +286,15 @@ export async function PATCH(request: NextRequest) {
 
   const supabase = getSupabase();
   const body = await request.json();
-  const { id, ...updates } = body;
+  const { id, venue_email, social_venue_email, ...updates } = body;
 
   if (!id) return NextResponse.json({ error: "Missing session id" }, { status: 400 });
+  // Saved on their own, so a missing column can never fail the whole edit.
+  await saveVenueContacts(supabase, id, { venue_email, social_venue_email });
+  if (Object.keys(updates).length === 0) {
+    await sendVenueHolds(supabase, id);
+    return NextResponse.json({ ok: true });
+  }
 
   const { data: before } = await supabase.from("sessions").select("host_id, gem_host_id").eq("id", id).single();
 
@@ -267,6 +309,10 @@ export async function PATCH(request: NextRequest) {
   }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // A venue contact that's new (or changed), or a draft that's just gone live,
+  // gets its calendar hold now. Already-invited contacts aren't sent it again.
+  await sendVenueHolds(supabase, id);
 
   // Someone newly put on a live session (e.g. "GEM to come" → a named GEM)
   // gets the same "you're scheduled" email as on create. Drafts stay quiet.
@@ -381,6 +427,7 @@ export async function DELETE(request: NextRequest) {
       await notifyHostCancelled({ hostId: session.host_id, role: "teacher", session: sessionForNotify }).catch((e) => console.error("Teacher cancel-notify error:", e));
     }
   }
+  await notifyVenues(supabase, session.id, "cancelled");
   if (session.gem_host_id) {
     await notifyHostCancelled({ hostId: session.gem_host_id, role: "gem", session: sessionForNotify }).catch((e) => console.error("GEM cancel-notify error:", e));
   }
