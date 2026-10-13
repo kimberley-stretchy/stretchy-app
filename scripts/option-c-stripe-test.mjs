@@ -2,7 +2,7 @@
 // it later (at "36 hours out"), capture at "2 hours out". Refuses a live key.
 //   set -a; . ./.env.local; set +a; node scripts/option-c-stripe-test.mjs
 import Stripe from "../node_modules/stripe/esm/stripe.esm.node.js";
-import { authoriseSavedCard, headcountForPrice } from "../lib/authoriseAtConfirm.ts";
+import { authoriseSavedCard, headcountForPrice, needsFreshAuthorisation, cardFollowUp, cardDeadline } from "../lib/authoriseAtConfirm.ts";
 import { settlePaymentIntent } from "../lib/lockInCharge.ts";
 
 const key = process.env.STRIPE_SECRET_KEY ?? "";
@@ -80,6 +80,25 @@ const MAX = 2282, FINAL = 1775;
 check("G  18 confirmed, 1 released later → still priced at 18", headcountForPrice(17, 14, 18) === 18);
 check("G  more join after 36h → priced at the higher headcount", headcountForPrice(21, 14, 18) === 21);
 check("G  before confirmation → at least the minimum", headcountForPrice(9, 14, null) === 14);
+
+// H) Which bookings need a fresh authorisation at 36 hrs out (no Stripe)
+{
+  const capture = new Date("2026-10-22T15:15:00Z"); // 2 hrs before Fri 23 Oct 6:15am
+  const sec = (iso) => Math.floor(new Date(iso).getTime() / 1000);
+  check("H  booked 11 days before, still 'uncaptured' → needs a fresh one", needsFreshAuthorisation({ status: "requires_capture", created: sec("2026-10-11T07:19:00Z") }, capture) === true);
+  check("H  booked 11 days before, already lapsed → needs a fresh one", needsFreshAuthorisation({ status: "canceled", created: sec("2026-10-11T07:19:00Z") }, capture) === true);
+  check("H  booked 2 days before → the original is still good", needsFreshAuthorisation({ status: "requires_capture", created: sec("2026-10-20T15:15:00Z") }, capture) === false);
+  check("H  booked inside 36 hrs → the original is still good", needsFreshAuthorisation({ status: "requires_capture", created: sec("2026-10-22T02:00:00Z") }, capture) === false);
+  check("H  already paid → leave it alone", needsFreshAuthorisation({ status: "succeeded", created: sec("2026-10-11T07:19:00Z") }, capture) === false);
+  check("H  no payment on record → needs one", needsFreshAuthorisation(null, capture) === true);
+}
+// I) Following up a failed card (no Stripe)
+check("I  30 hrs out → wait", cardFollowUp({ hoursUntil: 30, reminded: false }) === "wait");
+check("I  20 hrs out, not reminded → remind", cardFollowUp({ hoursUntil: 20, reminded: false }) === "remind");
+check("I  18 hrs out, already reminded → wait", cardFollowUp({ hoursUntil: 18, reminded: true }) === "wait");
+check("I  12 hrs out → release the place", cardFollowUp({ hoursUntil: 12, reminded: true }) === "release");
+check("I  missed runs, 5 hrs out → release the place", cardFollowUp({ hoursUntil: 5, reminded: false }) === "release");
+check("I  deadline for a Fri 6:15am session is Thu 6:15pm", cardDeadline("2026-10-22T17:15:00Z").toISOString() === "2026-10-22T05:15:00.000Z");
 
 console.log(fail ? `\n${fail} FAILED` : "\nall passed");
 process.exit(fail ? 1 : 0);

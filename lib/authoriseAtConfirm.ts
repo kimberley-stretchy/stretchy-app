@@ -83,3 +83,38 @@ export async function authoriseSavedCard(
 export function headcountForPrice(heldNow: number, min: number, confirmedHeadcount?: number | null): number {
   return Math.max(heldNow, min, confirmedHeadcount ?? 0);
 }
+
+// ── When does a booking need a fresh authorisation at 36 hours out? ──────────
+
+/** Authorisations last 5–7 days depending on the card. Treat 4.5 days as the safe limit. */
+export const SAFE_AUTH_AGE_MS = 4.5 * 24 * 60 * 60 * 1000;
+
+/**
+ * True if the authorisation placed at booking can't be relied on to still be
+ * alive at capture time (2 hours before the session): it has already lapsed or
+ * been cancelled, or it will be too old by then.
+ */
+export function needsFreshAuthorisation(
+  pi: { status: string; created: number } | null,
+  captureAt: Date
+): boolean {
+  if (!pi) return true;
+  if (pi.status === "succeeded") return false; // already paid
+  if (pi.status !== "requires_capture") return true;
+  return captureAt.getTime() - pi.created * 1000 > SAFE_AUTH_AGE_MS;
+}
+
+/** How long someone has to fix a card that failed at 36 hours out. */
+export const CARD_DEADLINE_HOURS = 12; // before the session starts
+export const CARD_REMINDER_HOURS = 20; // one reminder, 8 hours before the deadline
+
+export function cardDeadline(startsAt: string | Date): Date {
+  return new Date(new Date(startsAt).getTime() - CARD_DEADLINE_HOURS * 60 * 60 * 1000);
+}
+
+/** What the session-check job should do for a booking whose card failed. */
+export function cardFollowUp(i: { hoursUntil: number; reminded: boolean }): "release" | "remind" | "wait" {
+  if (i.hoursUntil <= CARD_DEADLINE_HOURS) return "release";
+  if (i.hoursUntil <= CARD_REMINDER_HOURS && !i.reminded) return "remind";
+  return "wait";
+}
