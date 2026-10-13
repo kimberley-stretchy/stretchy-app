@@ -210,6 +210,7 @@ export type AttendeeEmailType =
   | "comp_hold_confirmed"
   | "session_confirmed_open"
   | "booking_card_failed"
+  | "first_stretchy_followup"
   | "card_confirm_failed"
   | "card_confirm_reminder"
   | "card_place_released";

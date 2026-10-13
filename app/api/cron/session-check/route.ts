@@ -16,6 +16,7 @@ import {
   startGrace,
 } from "@/lib/sessionDecision";
 import { followUpFailedCards, nightBeforeCardSummary } from "@/lib/confirmCards";
+import { sendFirstStretchyFollowUps } from "@/lib/firstStretchyFollowUp";
 import { stepsDue, hoursUntil, NUDGE_HOURS, HQ_WINDOW_HOURS, DECISION_HOURS } from "@/lib/sessionSchedule";
 
 /**
@@ -305,5 +306,14 @@ export async function GET(request: NextRequest) {
     console.error("Card follow-up error:", e);
   }
 
-  return NextResponse.json({ nudged, checked: (sessions ?? []).length, results, cards });
+  // ── E) "HOW WAS YOUR FIRST STRETCHY?" ───────────────────────────────────────
+  // Two days after someone's first session, once, in the daytime.
+  let followUps = 0;
+  try {
+    followUps = await sendFirstStretchyFollowUps(admin, now);
+  } catch (e) {
+    console.error("First-Stretchy follow-up error:", e);
+  }
+
+  return NextResponse.json({ nudged, checked: (sessions ?? []).length, results, cards, followUps });
 }

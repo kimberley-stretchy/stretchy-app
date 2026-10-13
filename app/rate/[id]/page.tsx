@@ -32,6 +32,15 @@ export default function RateItPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted]   = useState(false);
 
+  // Feedback is saved against your account, so someone arriving signed out (from
+  // the follow-up email, say) signs in first and comes straight back here.
+  // Without this their answers were thrown away without them knowing.
+  useEffect(() => {
+    createClient().auth.getSession().then(({ data: { session: authSession } }) => {
+      if (!authSession) window.location.href = `/login?next=${encodeURIComponent(`/rate/${params.id}`)}`;
+    });
+  }, [params.id]);
+
   useEffect(() => {
     fetch(`/api/sessions/${params.id}`)
       .then((r) => (r.ok ? r.json() : null))

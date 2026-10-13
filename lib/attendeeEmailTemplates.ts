@@ -436,6 +436,22 @@ function cardPlaceReleased(p: AttendeeEmailPayload, c: Ctx) {
   return { subject: `Your place has been released — ${p.sessionTitle}`, html };
 }
 
+// 14 — How was your first Stretchy? (two days after someone's first session)
+function firstStretchyFollowUp(p: AttendeeEmailPayload) {
+  const rateUrl = p.sessionId ? `${APP_URL}/rate/${p.sessionId}` : `${APP_URL}/sessions`;
+  const html = page("purple", (sc) => `
+    ${h1(sc, "How was your first Stretchy? 💛")}
+    ${hey(sc, esc(p.name))}
+    ${msg(sc, `You came along to <strong>${esc(p.sessionTitle)}</strong> the other day, and we’d love to know how it went.`)}
+    ${msg(sc, "Stretchy is brand new, so what you tell us shapes it: the session itself, how holding a place and the pricing worked for you, and the whole idea. It takes about a minute, and honest is best.")}
+    ${filledButton(sc, rateUrl, "Tell us how it went")}
+    ${msg(sc, "<strong>Enjoyed it? Tell ya mates.</strong> The more people who come along, the lower the price gets for everyone.")}
+    ${outlineButton(sc, `${APP_URL}/sessions`, "See what’s on")}
+    <p style="color:${sc.text};font-size:15px;line-height:1.55;margin:0 0 22px;">See you there,<br>The Stretchy team</p>
+  `, { highlight: false });
+  return { subject: "How was your first Stretchy? 💛", html };
+}
+
 export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject: string; html: string } {
   const c = context(p);
   switch (type) {
@@ -448,6 +464,7 @@ export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPay
     case "hold_cancelled": return holdCancelled(p);
     case "comp_hold_confirmed": return placeOnUs(p, c);
     case "booking_card_failed": return cardFailed(p, c);
+    case "first_stretchy_followup": return firstStretchyFollowUp(p);
     case "card_confirm_failed": return cardConfirmFailed(p, c);
     case "card_confirm_reminder": return cardConfirmReminder(p, c);
     case "card_place_released": return cardPlaceReleased(p, c);
