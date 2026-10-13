@@ -373,6 +373,21 @@ function placeOnUs(p: AttendeeEmailPayload, c: Ctx) {
   return { subject: `We’ve held you ${places} — on us 💛`, html };
 }
 
+// 10 — Your card didn't go through (a booking attempt that failed at the card step)
+function cardFailed(p: AttendeeEmailPayload, c: Ctx) {
+  const places = c.n === 1 ? "your place" : `your ${c.n} places`;
+  const html = page("cream", (sc) => `
+    ${h1(sc, "Your card didn’t go through.")}
+    ${intro(sc, p, [
+      `We couldn’t hold ${places} for <strong>${esc(p.sessionTitle)}</strong> because your card didn’t go through. ${esc(p.declineReason ?? "Your bank declined it.")}`,
+      "<strong>Nothing was charged, and no place is held yet.</strong> Want to try again? It only takes a minute, and a different card works too.",
+    ])}
+    ${filledButton(sc, c.sessionUrl, "Hold my place")}
+    ${links(sc)}
+  `, { highlight: false });
+  return { subject: `Your card didn’t go through — ${p.sessionTitle}`, html };
+}
+
 export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject: string; html: string } {
   const c = context(p);
   switch (type) {
@@ -384,5 +399,6 @@ export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPay
     case "session_cancelled": return notThisTime(p, c);
     case "hold_cancelled": return holdCancelled(p);
     case "comp_hold_confirmed": return placeOnUs(p, c);
+    case "booking_card_failed": return cardFailed(p, c);
   }
 }

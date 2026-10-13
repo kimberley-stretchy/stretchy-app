@@ -18,6 +18,10 @@ These override anything below that says otherwise.
    - **37 hrs out:** HQ-only window. If still short, HQ alone is alerted and has one hour to press **Keep alive**. Pressing it sends nothing; it records the decision (`sessions.keep_alive_at`, migration `2026-10-13_keep_alive.sql`).
    - **36 hrs out:** the yes / no. Minimum met or kept alive → going ahead; otherwise called off. Everyone is told now, and free cancelling closes at the same moment. There is no grace hour after 36.
 4. **"Going ahead ✓" wording depends on the session being confirmed**, not only on the clock.
+5. **Email 10, "Your card didn't go through".** When a booking attempt fails at the card step, the person gets a short email with a link to try again and HQ gets an alert (who, which session, why). No place is held. At most one pair per person per session every 30 minutes (`lib/cardFailed.ts`, `POST /api/holds/failed`).
+6. **First name and optional mobile at first booking.** The booking pop-up asks for a first name (required) when we only have an email, and offers an optional mobile, "only used if we need to reach you on the day" (`POST /api/attendees/contact`).
+7. **The grey timing rows in emails are a 50% tint** (labels, text, dividing lines and the two links). The line above "Welcome to the highlight of your week" is the width of the content column.
+8. **Decided, not yet built — "Option C":** save the card at booking and place the card authorisation at 36 hours out instead of at booking. Its own project after this refresh; it needs its own emails and small wording changes to How it works, Terms and FAQ.
 
 ---
 

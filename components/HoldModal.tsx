@@ -13,6 +13,12 @@ import {
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
+const contactInput: React.CSSProperties = {
+  width: "100%", height: 46, borderRadius: 12, padding: "0 14px",
+  border: "1.5px solid rgba(26,26,26,0.2)", background: "#FFFFFF", color: "#14110F",
+  fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 15, outline: "none", boxSizing: "border-box",
+};
+
 const T = {
   black: "#14110F",
   cream: "#F7F0E8",
@@ -29,6 +35,8 @@ function CardForm({
   quantity,
   accessToken,
   late,
+  askName,
+  askPhone,
   onClose,
 }: {
   sessionId: string;
@@ -39,6 +47,10 @@ function CardForm({
   quantity: number;
   accessToken: string;
   late: boolean;
+  /** We don't have a real first name for this person yet — ask (required). */
+  askName: boolean;
+  /** We don't have a mobile for them — offer the field (optional). */
+  askPhone: boolean;
   onClose: () => void;
 }) {
   const stripe = useStripe();
@@ -46,12 +58,33 @@ function CardForm({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [phone, setPhone] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!stripe || !elements) return;
+    if (askName && !firstName.trim()) {
+      setError("Pop in your first name so your teacher knows who’s coming.");
+      return;
+    }
     setLoading(true);
     setError(null);
+
+    // Save their name / mobile first, so a typo is caught before the card step.
+    if ((askName && firstName.trim()) || (askPhone && phone.trim())) {
+      const contactRes = await fetch("/api/attendees/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+        body: JSON.stringify({ ...(askName ? { name: firstName } : {}), ...(askPhone && phone.trim() ? { phone } : {}) }),
+      });
+      if (!contactRes.ok) {
+        const data = await contactRes.json().catch(() => ({}));
+        setError(data.error ?? "Couldn’t save your details. Please try again.");
+        setLoading(false);
+        return;
+      }
+    }
 
     const { error: stripeError } = await stripe.confirmPayment({
       elements,
@@ -66,6 +99,13 @@ function CardForm({
       const detail = [stripeError.type, stripeError.code].filter(Boolean).join("/");
       setError(`${stripeError.message ?? "Card error — please try again."}${detail ? ` (${detail})` : ""}`);
       setLoading(false);
+      // Tell the person (by email) and HQ. Fire-and-forget: the server checks
+      // the payment itself, and never sends more than one pair per half hour.
+      fetch("/api/holds/failed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+        body: JSON.stringify({ paymentIntentId }),
+      }).catch(() => {});
       return;
     }
 
@@ -111,6 +151,39 @@ function CardForm({
           </p>
         )}
       </div>
+
+      {(askName || askPhone) && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+          {askName && (
+            <input
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
+              autoComplete="given-name"
+              aria-label="First name"
+              style={contactInput}
+            />
+          )}
+          {askPhone && (
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Mobile (optional)"
+              type="tel"
+              autoComplete="tel"
+              aria-label="Mobile number, optional"
+              style={contactInput}
+            />
+          )}
+          <p style={{ fontSize: 12, color: "rgba(26,26,26,0.5)", lineHeight: 1.45, margin: 0 }}>
+            {askName && askPhone
+              ? "Your name is for your teacher and GEM. Your mobile is only used if we need to reach you on the day."
+              : askName
+              ? "For your teacher and GEM, so they know who’s coming."
+              : "Only used if we need to reach you on the day."}
+          </p>
+        </div>
+      )}
 
       <PaymentElement options={{ layout: "tabs" }} />
 
@@ -174,6 +247,8 @@ export default function HoldModal({
   const [authUserId, setAuthUserId] = useState("");
   const [priceNZD, setPriceNZD] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
+  const [askName, setAskName] = useState(false);
+  const [askPhone, setAskPhone] = useState(false);
 
   useEffect(() => {
     fetch("/api/holds", {
@@ -200,6 +275,8 @@ export default function HoldModal({
         setAttendeeId(data.attendeeId);
         setAuthUserId(data.authUserId);
         setPriceNZD(data.priceNZD);
+        setAskName(!!data.profile?.needsName);
+        setAskPhone(data.profile ? !data.profile.hasPhone : false);
         setStep("card");
       })
       .catch(() => {
@@ -300,6 +377,8 @@ export default function HoldModal({
               quantity={quantity}
               accessToken={accessToken}
               late={late}
+              askName={askName}
+              askPhone={askPhone}
               onClose={onClose}
             />
           </Elements>

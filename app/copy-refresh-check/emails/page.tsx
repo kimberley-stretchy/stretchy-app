@@ -62,6 +62,7 @@ const EMAILS: { n: string; note?: string; type: AttendeeEmailType; p: AttendeeEm
   { n: "8 · Hold cancelled (by you)", type: "hold_cancelled", p: base(FAR, { cancelledSpots: 1, remainingSpots: 0 }) },
   { n: "8 · Booking updated (some places cancelled)", note: "Not in the mock: sent when someone cancels some of their places.", type: "hold_cancelled", p: base(FAR, { cancelledSpots: 1, remainingSpots: 2 }) },
   { n: "9 · A place on us (HQ comp)", type: "comp_hold_confirmed", p: base(FAR, { isComp: true, newAccount: true }) },
+  { n: "10 · Your card didn’t go through", note: "New: sent when a booking attempt fails at the card step. HQ gets an alert at the same time.", type: "booking_card_failed", p: base(FAR, { declineReason: "Your bank told us there weren’t enough funds available." }) },
   { n: "Evening session · place held", note: "Times and “tonight” follow the session.", type: "hold_confirmed", p: base(FAR + 12.5, { sessionTitle: "Ponsonby | Evening", venue: "Johnny Mitchell Hall", locationAddress: "20 Ponsonby Terrace, Ponsonby, Auckland 1011", directions: "Street parking on Ponsonby Terrace.", socialStretchVenue: "Freida Margolis · bar", gemName: undefined, styleLine: "Yin yoga", level: "beginners welcome" }) },
 ];
 

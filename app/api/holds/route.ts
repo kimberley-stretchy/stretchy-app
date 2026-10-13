@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
   // Get or create attendee record
   let { data: attendee } = await admin
     .from("attendees")
-    .select("id, stripe_customer_id, name, email")
+    .select("id, stripe_customer_id, name, email, phone")
     .eq("auth_user_id", user.id)
     .single();
 
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
         email: user.email!,
         avatar_url: user.user_metadata?.avatar_url ?? null,
       })
-      .select("id, stripe_customer_id, name, email")
+      .select("id, stripe_customer_id, name, email, phone")
       .single();
     attendee = newAttendee;
   }
@@ -210,6 +210,12 @@ export async function POST(request: NextRequest) {
     priceNZD: priceWithGST,
     sessionTitle: session.title,
     attendeeId: attendee?.id,
+    // So the booking pop-up can ask for a first name / mobile only when missing.
+    // A name that is just their email (the default for email sign-ins) doesn't count.
+    profile: {
+      needsName: !attendee?.name || attendee.name.includes("@") || attendee.name === (user.email ?? "").split("@")[0],
+      hasPhone: !!attendee?.phone,
+    },
   });
 }
 
@@ -326,7 +332,7 @@ export async function DELETE(request: NextRequest) {
         off_session: true,
         confirm: true,
         capture_method: "manual",
-        metadata: { session_id: sessionId, attendee_id: attendee.id, session_title: session.title, quantity: String(remainingQty) },
+        metadata: { session_id: sessionId, attendee_id: attendee.id, session_title: session.title, quantity: String(remainingQty), kind: "reauth" },
         description: `Hold x${remainingQty}: ${session.title}`,
       });
 
@@ -489,7 +495,7 @@ export async function PATCH(request: NextRequest) {
         off_session: true,
         confirm: true,
         capture_method: "manual",
-        metadata: { session_id: sessionId, attendee_id: attendee.id, session_title: session.title, quantity: String(combinedQuantity) },
+        metadata: { session_id: sessionId, attendee_id: attendee.id, session_title: session.title, quantity: String(combinedQuantity), kind: "reauth" },
         description: `Hold x${combinedQuantity}: ${session.title}`,
       });
 

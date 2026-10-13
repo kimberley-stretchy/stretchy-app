@@ -208,7 +208,8 @@ export type AttendeeEmailType =
   | "hold_cancelled"
   | "almost_there"
   | "comp_hold_confirmed"
-  | "session_confirmed_open";
+  | "session_confirmed_open"
+  | "booking_card_failed";
 
 export interface AttendeeEmailPayload {
   to: string;
@@ -254,6 +255,7 @@ export interface AttendeeEmailPayload {
   bringTitle?: string;        // HQ's "Bring with you" bold line
   bringNote?: string;         // …and grey line
   unitPriceCents?: number;    // exact per-place amount charged (final price email)
+  declineReason?: string;     // card-didn't-go-through email: the bank's reason, in plain words
   calledOffByHQ?: boolean;    // session cancelled by HQ, not for missing the minimum
   cancelledSpots?: number;    // hold-cancelled email: places just cancelled…
   remainingSpots?: number;    // …and places still held (0 = whole hold cancelled)
