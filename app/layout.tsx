@@ -63,8 +63,6 @@ export default function RootLayout({
           >
             Studio Dawn
           </a>
-          {/* Stripe account verification code — remove once Stripe has verified. */}
-          {" · "}VROk4x
         </footer>
       </body>
     </html>
