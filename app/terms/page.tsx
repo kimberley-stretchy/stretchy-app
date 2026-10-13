@@ -28,7 +28,8 @@ export default function TermsPage() {
 
           {/* Every "Cancellation policy ↗" link on the site and in emails lands here.
               Wording matches the site and emails (STRETCHY_WORDS.md). The policy
-              itself is unchanged; point 6 and "Your rights" still need a lawyer's review. */}
+              itself is unchanged; point 7 (was 6), the new point 4 (confirming your card,
+              added Oct 2026) and "Your rights" still need a lawyer's review. */}
           <div id="cancellation" className="scroll-mt-6">
             <h2 className="font-bold mb-2">Payment &amp; cancellation</h2>
             <p className="text-muted mb-2">Every Stretchy is priced by the community, not against it. The more people who come together, the lower the price gets for everyone. Here&rsquo;s exactly how payment and cancellation work.</p>
@@ -36,6 +37,7 @@ export default function TermsPage() {
               <li><strong className="text-ink">Hold your place.</strong> We save your card and show you the most you&rsquo;ll pay. Nothing is charged yet. Your bank may show a pending amount for a few days. That&rsquo;s a hold, not a payment.</li>
               <li><strong className="text-ink">Up to 36 hours before: free to cancel.</strong> No charge, no questions.</li>
               <li><strong className="text-ink">36 hours before: going ahead, or not.</strong> If we have the minimum number of people, we&rsquo;re on. If not, it&rsquo;s called off and you pay nothing. Free cancelling ends here.</li>
+              <li><strong className="text-ink">36 hours before: we confirm your card.</strong> If it doesn&rsquo;t go through, we&rsquo;ll email you. If we still don&rsquo;t have a working card 12 hours before, your place goes back to the group.</li>
               <li><strong className="text-ink">36 to 2 hours before: still room to join.</strong> More people can join and the price keeps dropping for everyone. If you join in this window, it&rsquo;s already going ahead, so there&rsquo;s no free cancelling.</li>
               <li><strong className="text-ink">2 hours before: final price charged.</strong> Joining closes and we charge your card the final price. It&rsquo;s never more than the max price shown. You&rsquo;ll get a receipt.</li>
               <li><strong className="text-ink">Can&rsquo;t make it after 36 hours?</strong> The price stands. We don&rsquo;t refund change-of-mind cancellations after this point, because by then we&rsquo;ve committed to your teacher, your GEM and your venue. That&rsquo;s what keeps the pricing fair for everyone who shows up. (This doesn&rsquo;t affect your legal rights. See below.)</li>
