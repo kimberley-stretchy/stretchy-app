@@ -454,7 +454,11 @@ export default function AdminSessionsPage() {
   );
 }
 
-type Attendee = { name: string; email: string; spots: number; heldAt: string };
+type Attendee = {
+  name: string; email: string; spots: number; heldAt: string;
+  userId?: string; phone?: string | null; isComp?: boolean; checkedIn?: boolean;
+  careNote?: string | null; careDuration?: string | null; firstTimer?: boolean;
+};
 type EmailLogRow = { id: string; recipient: string; email_type: string; subject: string | null; status: string; error: string | null; created_at: string };
 
 // Friendly names for the audit-log panel.
@@ -789,16 +793,52 @@ function SessionCard({
           ) : !attendees || attendees.length === 0 ? (
             <p style={{ fontSize: 13, color: "rgba(20,17,15,.45)" }}>No one&rsquo;s holding a spot yet.</p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {/* On the day: who's here, and anything they've told us about moving with care. */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: "rgba(20,17,15,.55)" }}>
+                  {attendees.filter((a) => a.checkedIn).reduce((n, a) => n + a.spots, 0)} HERE · {attendees.filter((a) => !a.checkedIn).reduce((n, a) => n + a.spots, 0)} NOT YET · {attendees.filter((a) => a.careNote).length} MOVING WITH CARE
+                </span>
+                <a href={`/host/session/${s.id}/run-sheet`} style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: T.ink, textDecoration: "underline" }}>
+                  OPEN RUN SHEET →
+                </a>
+              </div>
               {attendees.map((a, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
-                  <div>
-                    <span style={{ fontWeight: 700, color: T.ink }}>{a.name}</span>
-                    <span style={{ color: "rgba(20,17,15,.5)", marginLeft: 8 }}>{a.email}</span>
+                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13, paddingBottom: 10, borderBottom: "1px solid rgba(20,17,15,.08)" }}>
+                  <button
+                    type="button"
+                    aria-label={a.checkedIn ? `Mark ${a.name} not here` : `Check in ${a.name}`}
+                    onClick={async () => {
+                      if (!a.userId) return;
+                      const next = !a.checkedIn;
+                      setAttendees((list) => (list ?? []).map((x) => (x.userId === a.userId ? { ...x, checkedIn: next } : x)));
+                      await fetch(`/api/admin/sessions/${s.id}/attendees`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ userId: a.userId, checkedIn: next }),
+                      });
+                    }}
+                    style={{ width: 30, height: 30, minHeight: 30, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: a.checkedIn ? T.olive : "transparent", border: a.checkedIn ? "none" : `2px solid ${T.ink}`, color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1 }}
+                  >
+                    {a.checkedIn ? "✓" : ""}
+                  </button>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 700, color: T.ink }}>{a.name}</span>
+                      {a.spots > 1 && <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: T.purple }}>×{a.spots}</span>}
+                      {a.firstTimer && <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: T.yellow, color: T.ink }}>FIRST ONE</span>}
+                      {a.isComp && <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, border: `1px solid ${T.ink}` }}>ON US</span>}
+                    </div>
+                    <div style={{ color: "rgba(20,17,15,.55)", wordBreak: "break-word" }}>
+                      {a.email}{a.phone ? <> · <a href={`tel:${a.phone}`} style={{ color: "inherit" }}>{a.phone}</a></> : null}
+                    </div>
+                    {a.careNote && (
+                      <div style={{ marginTop: 6, padding: "8px 10px", borderRadius: 10, background: "rgba(252,187,22,.28)", fontWeight: 600, lineHeight: 1.4, whiteSpace: "pre-wrap" }}>
+                        <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", display: "block", marginBottom: 2 }}>MOVING WITH CARE{a.careDuration ? ` · ${a.careDuration.toUpperCase()}` : ""}</span>
+                        {a.careNote}
+                      </div>
+                    )}
                   </div>
-                  {a.spots > 1 && (
-                    <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 800, color: T.purple }}>×{a.spots}</span>
-                  )}
                 </div>
               ))}
             </div>

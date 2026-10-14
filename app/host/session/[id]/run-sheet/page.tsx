@@ -10,6 +10,7 @@ type RosterAttendee = {
   holdId: string;
   name: string;
   checkedInAt: string | null;
+  places?: number;
   movingWithCareNote: string | null;
   movingWithCareDuration: string | null;
   isFirstTimer: boolean;
@@ -17,8 +18,11 @@ type RosterAttendee = {
 
 type Notice = { id: string; author_name: string; message: string; created_at: string };
 
+type TeamNotice = { id: string; message: string; created_at: string };
+
 type RosterData = {
-  role: "teacher" | "gem";
+  role: "teacher" | "gem" | "hq";
+  teamNotices?: TeamNotice[];
   session: {
     title: string;
     startsAt: string;
@@ -148,15 +152,20 @@ export default function GemRunSheetPage() {
         <p className="text-3xl">🤷</p>
         <p className="font-display text-2xl">{error ?? "Not found."}</p>
         <Link href="/host/home" className="underline text-sm">
-          Back to your dashboard
+          Back to your home
         </Link>
       </main>
     );
   }
 
   const { session, roster, notices } = data;
-  const hereCount = roster.filter((a) => a.checkedInAt).length;
-  const notYetCount = roster.length - hereCount;
+  // Count PEOPLE, not bookings: one booking can be two or three places.
+  const placesOf = (a: RosterAttendee) => a.places ?? 1;
+  const totalPlaces = roster.reduce((n, a) => n + placesOf(a), 0);
+  const hereCount = roster.filter((a) => a.checkedInAt).reduce((n, a) => n + placesOf(a), 0);
+  const notYetCount = totalPlaces - hereCount;
+  const teamNotices = data.teamNotices ?? [];
+  const backHref = data.role === "hq" ? "/admin/sessions" : "/host/home";
   const careCount = roster.filter((a) => a.movingWithCareNote).length;
   const latestNotice = notices[0];
 
@@ -179,7 +188,7 @@ export default function GemRunSheetPage() {
       <div style={{ background: "#716F39" }}>
         <div className="max-w-lg mx-auto px-6 pt-5 pb-6">
           <div className="flex items-center justify-between mb-5">
-            <Link href="/host/home" aria-label="Back to your dashboard" style={{ color: "#F7F0E8" }}>
+            <Link href={backHref} aria-label="Back" style={{ color: "#F7F0E8" }}>
               <SMark size={30} />
             </Link>
             <span
@@ -190,7 +199,7 @@ export default function GemRunSheetPage() {
             </span>
           </div>
           <div className="font-mono text-[10px] font-extrabold tracking-[0.13em]" style={{ color: "rgba(247,240,232,0.7)" }}>
-            GEM RUN SHEET
+            {data.role === "teacher" ? "TEACHER RUN SHEET" : data.role === "hq" ? "HQ RUN SHEET" : "GEM RUN SHEET"} · {totalPlaces} BOOKED
           </div>
           <h1 className="font-display text-[26px] leading-none mt-1.5" style={{ color: "#F7F0E8" }}>
             {session.title.toUpperCase()}
@@ -243,9 +252,20 @@ export default function GemRunSheetPage() {
           </button>
         </div>
 
+        {teamNotices.length > 0 && (
+          <div className="border-2 border-ink rounded-2xl p-4" style={{ background: "#902F8A", color: "#F7F0E8" }}>
+            <span className="font-mono text-[9px] font-extrabold tracking-[0.11em]">FROM STRETCHY HQ</span>
+            <div className="flex flex-col gap-2.5 mt-2">
+              {teamNotices.map((n) => (
+                <p key={n.id} className="text-sm font-semibold leading-snug whitespace-pre-wrap">{n.message}</p>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="border-2 border-ink rounded-2xl p-4" style={{ background: "#FCBB16" }}>
           <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-[9px] font-extrabold tracking-[0.11em]">NOTICE FROM HQ</span>
+            <span className="font-mono text-[9px] font-extrabold tracking-[0.11em]">NOTICE FOR THE ROOM</span>
             {latestNotice && (
               <span className="font-mono text-[9px] text-ink/55">
                 {new Date(latestNotice.created_at).toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit" })}
@@ -255,7 +275,7 @@ export default function GemRunSheetPage() {
           {latestNotice ? (
             <p className="text-sm font-semibold leading-snug">{latestNotice.message}</p>
           ) : (
-            <p className="text-sm text-ink/60">No notices yet today.</p>
+            <p className="text-sm text-ink/60">Nothing yet today. Add one if the team needs to know something on the day.</p>
           )}
           {showNoticeForm ? (
             <div className="mt-3 flex flex-col gap-2">
@@ -293,7 +313,7 @@ export default function GemRunSheetPage() {
             const isIn = !!a.checkedInAt;
             const avatarBg = isIn ? (care ? "#E96709" : "#716F39") : "#EFDEDB";
             return (
-              <div key={a.holdId} className="border-2 border-ink rounded-2xl p-3 flex items-center gap-3 bg-white">
+              <div key={a.holdId} className="border-2 border-ink rounded-2xl p-3 flex items-start gap-3 bg-white">
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
                   style={{ background: avatarBg, color: isIn ? "#F7F0E8" : "#9A9590" }}
@@ -303,6 +323,11 @@ export default function GemRunSheetPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="font-bold text-sm">{a.name}</p>
+                    {placesOf(a) > 1 && (
+                      <span className="font-mono text-[8px] font-extrabold px-1.5 py-0.5 rounded-pill border border-ink">
+                        {placesOf(a)} PLACES
+                      </span>
+                    )}
                     {care && (
                       <span
                         className="font-mono text-[8px] font-extrabold px-1.5 py-0.5 rounded-pill"
@@ -320,18 +345,20 @@ export default function GemRunSheetPage() {
                       </span>
                     )}
                   </div>
-                  {care ? (
-                    <p className="text-xs font-semibold text-ink/80 mt-0.5 truncate">{a.movingWithCareNote}</p>
-                  ) : (
-                    <p className="text-xs mt-0.5" style={{ color: isIn ? "rgba(20,17,15,.55)" : "#9A9590" }}>
-                      {isIn ? "Checked in" : "Not here yet"}
+                  <p className="text-xs mt-0.5" style={{ color: isIn ? "rgba(20,17,15,.55)" : "#9A9590" }}>
+                    {isIn ? "Checked in" : "Not here yet"}
+                  </p>
+                  {care && (
+                    <p className="text-xs font-semibold text-ink/85 mt-1.5 leading-snug whitespace-pre-wrap rounded-lg px-2 py-1.5" style={{ background: "rgba(252,187,22,.28)" }}>
+                      {a.movingWithCareNote}
+                      {a.movingWithCareDuration && <span className="block font-mono text-[9px] font-extrabold tracking-[0.08em] text-ink/60 mt-1">{a.movingWithCareDuration.toUpperCase()}</span>}
                     </p>
                   )}
                 </div>
                 <button
                   onClick={() => toggleCheckIn(a.holdId, isIn)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: isIn ? "#716F39" : "transparent", border: isIn ? "none" : "1.5px solid #D4CFC9" }}
+                  className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: isIn ? "#716F39" : "transparent", border: isIn ? "none" : "2px solid #14110F" }}
                   aria-label={isIn ? "Mark not here" : "Check in"}
                 >
                   {isIn && (

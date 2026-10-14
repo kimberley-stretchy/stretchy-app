@@ -37,44 +37,76 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const supabase = getSupabase();
 
+  // Active before the final charge, "charged" after it — so the list is still
+  // here on the day (it used to go empty 2 hours before the session).
   const { data: holds, error } = await supabase
     .from("holds")
-    .select("id, user_id, state, created_at, quantity")
+    .select("id, user_id, state, created_at, quantity, is_comp, checked_in_at")
     .eq("session_id", id)
-    .eq("state", "active")
+    .in("state", ["active", "charged"])
     .order("created_at", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!holds || holds.length === 0) return NextResponse.json({ attendees: [] });
 
   const userIds = Array.from(new Set(holds.map((h) => h.user_id)));
+  // Name, contact, and what they've told us about moving with care — the same
+  // details the teacher and GEM see on the run sheet, plus contact for HQ.
   const { data: attendees } = await supabase
     .from("attendees")
-    .select("auth_user_id, name, email")
+    .select("auth_user_id, name, email, phone, moving_with_care_note, moving_with_care_duration, sessions_attended")
     .in("auth_user_id", userIds);
 
   const byUser = new Map((attendees ?? []).map((a) => [a.auth_user_id, a]));
 
   // One hold row per attendee, with quantity recording spot count — grouped
   // defensively in case any legacy multi-row holds still exist.
-  const grouped = new Map<string, { name: string; email: string; spots: number; heldAt: string }>();
+  const grouped = new Map<string, {
+    userId: string; name: string; email: string; phone: string | null; spots: number; heldAt: string;
+    isComp: boolean; checkedIn: boolean; careNote: string | null; careDuration: string | null; firstTimer: boolean;
+  }>();
   for (const h of holds) {
     const a = byUser.get(h.user_id);
-    const key = h.user_id;
-    const existing = grouped.get(key);
+    const existing = grouped.get(h.user_id);
     if (existing) {
       existing.spots += h.quantity ?? 1;
+      existing.checkedIn = existing.checkedIn || !!h.checked_in_at;
     } else {
-      grouped.set(key, {
+      grouped.set(h.user_id, {
+        userId: h.user_id,
         name: a?.name ?? "Unknown",
         email: a?.email ?? "—",
+        phone: a?.phone ?? null,
         spots: h.quantity ?? 1,
         heldAt: h.created_at,
+        isComp: !!h.is_comp,
+        checkedIn: !!h.checked_in_at,
+        careNote: a?.moving_with_care_note ?? null,
+        careDuration: a?.moving_with_care_duration ?? null,
+        firstTimer: (a?.sessions_attended ?? 0) === 0,
       });
     }
   }
 
   return NextResponse.json({ attendees: Array.from(grouped.values()) });
+}
+
+// PATCH /api/admin/sessions/[id]/attendees — HQ checks someone in (or undoes it).
+// Body: { userId, checkedIn }
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+  const { id } = await params;
+  const { userId, checkedIn } = await request.json().catch(() => ({}));
+  if (!userId) return NextResponse.json({ error: "Missing person" }, { status: 400 });
+  const { error } = await getSupabase()
+    .from("holds")
+    .update({ checked_in_at: checkedIn ? new Date().toISOString() : null })
+    .eq("session_id", id)
+    .eq("user_id", userId)
+    .in("state", ["active", "charged"]);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
 }
 
 // POST /api/admin/sessions/[id]/attendees — HQ comps (gifts) someone a place.
