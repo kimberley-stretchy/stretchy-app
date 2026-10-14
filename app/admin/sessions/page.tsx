@@ -457,7 +457,7 @@ export default function AdminSessionsPage() {
 type Attendee = {
   name: string; email: string; spots: number; heldAt: string;
   userId?: string; phone?: string | null; isComp?: boolean; checkedIn?: boolean;
-  careNote?: string | null; careDuration?: string | null; firstTimer?: boolean;
+  careNote?: string | null; careDuration?: string | null; firstTimer?: boolean; badge?: string | null;
 };
 type EmailLogRow = { id: string; recipient: string; email_type: string; subject: string | null; status: string; error: string | null; created_at: string };
 
@@ -826,7 +826,7 @@ function SessionCard({
                     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 700, color: T.ink }}>{a.name}</span>
                       {a.spots > 1 && <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: T.purple }}>×{a.spots}</span>}
-                      {a.firstTimer && <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: T.yellow, color: T.ink }}>FIRST ONE</span>}
+                      {a.badge && <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: T.yellow, color: T.ink }}>{a.badge}</span>}
                       {a.isComp && <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, border: `1px solid ${T.ink}` }}>ON US</span>}
                     </div>
                     <div style={{ color: "rgba(20,17,15,.55)", wordBreak: "break-word" }}>

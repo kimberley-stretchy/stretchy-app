@@ -6,6 +6,7 @@ import { requireHost } from "@/lib/hostAuth";
 import { requireAdmin } from "@/lib/adminAuth";
 import { liveTeamNotices } from "@/lib/teamNotices";
 import { careNotesFor } from "@/lib/careNotes";
+import { stretchyBadge, previousSessions } from "@/lib/stretchyBadge";
 
 function getAdmin() {
   return createAdminClient(
@@ -102,6 +103,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     ? await admin.from("attendees").select("auth_user_id, name, sessions_attended").in("auth_user_id", userIds)
     : { data: [] as { auth_user_id: string; name: string; sessions_attended: number }[] };
   const care = await careNotesFor(admin, userIds);
+  const before = await previousSessions(admin, userIds, id);
 
   const attendeeByUserId = new Map((attendees ?? []).map((a) => [a.auth_user_id, a]));
   const hostNameById = new Map((hostRows ?? []).map((h) => [h.id, h.name]));
@@ -115,7 +117,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       places: h.quantity ?? 1,
       movingWithCareNote: care.get(h.user_id)?.note ?? null,
       movingWithCareDuration: care.get(h.user_id)?.duration ?? null,
-      isFirstTimer: (a?.sessions_attended ?? 0) === 0,
+      isFirstTimer: (before.get(h.user_id) ?? 0) === 0,
+      badge: stretchyBadge(before.get(h.user_id) ?? 0),
     };
   });
 

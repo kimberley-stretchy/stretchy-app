@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/adminAuth";
 import { careNotesFor } from "@/lib/careNotes";
+import { stretchyBadge, previousSessions } from "@/lib/stretchyBadge";
 import { sendAttendeeEmail, APP_URL } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
 
@@ -58,6 +59,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .select("auth_user_id, name, email, phone, sessions_attended")
     .in("auth_user_id", userIds);
   const care = await careNotesFor(supabase, userIds);
+  const before = await previousSessions(supabase, userIds, id);
 
   const byUser = new Map((attendees ?? []).map((a) => [a.auth_user_id, a]));
 
@@ -65,7 +67,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // defensively in case any legacy multi-row holds still exist.
   const grouped = new Map<string, {
     userId: string; name: string; email: string; phone: string | null; spots: number; heldAt: string;
-    isComp: boolean; checkedIn: boolean; careNote: string | null; careDuration: string | null; firstTimer: boolean;
+    isComp: boolean; checkedIn: boolean; careNote: string | null; careDuration: string | null; firstTimer: boolean; badge: string | null;
   }>();
   for (const h of holds) {
     const a = byUser.get(h.user_id);
@@ -85,7 +87,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         checkedIn: !!h.checked_in_at,
         careNote: care.get(h.user_id)?.note ?? null,
         careDuration: care.get(h.user_id)?.duration ?? null,
-        firstTimer: (a?.sessions_attended ?? 0) === 0,
+        firstTimer: (before.get(h.user_id) ?? 0) === 0,
+        badge: stretchyBadge(before.get(h.user_id) ?? 0),
       });
     }
   }

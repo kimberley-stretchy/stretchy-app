@@ -14,6 +14,7 @@ type RosterAttendee = {
   movingWithCareNote: string | null;
   movingWithCareDuration: string | null;
   isFirstTimer: boolean;
+  badge?: string | null;
 };
 
 type Notice = { id: string; author_name: string; message: string; created_at: string };
@@ -336,12 +337,12 @@ export default function GemRunSheetPage() {
                         CARE
                       </span>
                     )}
-                    {a.isFirstTimer && (
+                    {a.badge && (
                       <span
                         className="font-mono text-[8px] font-extrabold px-1.5 py-0.5 rounded-pill"
                         style={{ background: "#FCBB16", color: "#14110F" }}
                       >
-                        FIRST ONE
+                        {a.badge}
                       </span>
                     )}
                   </div>
