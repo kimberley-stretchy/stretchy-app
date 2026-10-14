@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/adminAuth";
+import { careNotesFor } from "@/lib/careNotes";
 import { sendAttendeeEmail, APP_URL } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
 
@@ -54,8 +55,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // details the teacher and GEM see on the run sheet, plus contact for HQ.
   const { data: attendees } = await supabase
     .from("attendees")
-    .select("auth_user_id, name, email, phone, moving_with_care_note, moving_with_care_duration, sessions_attended")
+    .select("auth_user_id, name, email, phone, sessions_attended")
     .in("auth_user_id", userIds);
+  const care = await careNotesFor(supabase, userIds);
 
   const byUser = new Map((attendees ?? []).map((a) => [a.auth_user_id, a]));
 
@@ -81,8 +83,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         heldAt: h.created_at,
         isComp: !!h.is_comp,
         checkedIn: !!h.checked_in_at,
-        careNote: a?.moving_with_care_note ?? null,
-        careDuration: a?.moving_with_care_duration ?? null,
+        careNote: care.get(h.user_id)?.note ?? null,
+        careDuration: care.get(h.user_id)?.duration ?? null,
         firstTimer: (a?.sessions_attended ?? 0) === 0,
       });
     }

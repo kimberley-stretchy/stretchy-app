@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { requireHost } from "@/lib/hostAuth";
 import { requireAdmin } from "@/lib/adminAuth";
 import { liveTeamNotices } from "@/lib/teamNotices";
+import { careNotesFor } from "@/lib/careNotes";
 
 function getAdmin() {
   return createAdminClient(
@@ -94,12 +95,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   ]);
 
   const userIds = (holds ?? []).map((h) => h.user_id);
+  // Names first, on their own — then the care notes separately, so a problem
+  // reading notes can never blank out everybody's name (which is what happened
+  // while the note columns were missing from the database).
   const { data: attendees } = userIds.length
-    ? await admin
-        .from("attendees")
-        .select("auth_user_id, name, moving_with_care_note, moving_with_care_duration, sessions_attended")
-        .in("auth_user_id", userIds)
-    : { data: [] as { auth_user_id: string; name: string; moving_with_care_note: string | null; moving_with_care_duration: string | null; sessions_attended: number }[] };
+    ? await admin.from("attendees").select("auth_user_id, name, sessions_attended").in("auth_user_id", userIds)
+    : { data: [] as { auth_user_id: string; name: string; sessions_attended: number }[] };
+  const care = await careNotesFor(admin, userIds);
 
   const attendeeByUserId = new Map((attendees ?? []).map((a) => [a.auth_user_id, a]));
   const hostNameById = new Map((hostRows ?? []).map((h) => [h.id, h.name]));
@@ -111,8 +113,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       name: a?.name ?? "Stretchy mate",
       checkedInAt: h.checked_in_at,
       places: h.quantity ?? 1,
-      movingWithCareNote: a?.moving_with_care_note ?? null,
-      movingWithCareDuration: a?.moving_with_care_duration ?? null,
+      movingWithCareNote: care.get(h.user_id)?.note ?? null,
+      movingWithCareDuration: care.get(h.user_id)?.duration ?? null,
       isFirstTimer: (a?.sessions_attended ?? 0) === 0,
     };
   });
