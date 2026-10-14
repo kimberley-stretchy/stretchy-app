@@ -177,41 +177,42 @@ export default function GemRunSheetPage() {
   });
 
   const startDate = new Date(session.startsAt);
-  const subtitle =
-    startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase() +
-    " · " +
-    startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }) +
-    " · " +
-    session.locationName.toUpperCase();
+  const dayPill = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase();
+  const timePill = startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
 
   return (
     <main className="min-h-screen bg-cream text-ink pb-16">
-      <div style={{ background: "#716F39" }}>
-        <div className="max-w-lg mx-auto px-6 pt-5 pb-6">
-          <div className="flex items-center justify-between mb-5">
-            <Link href={backHref} aria-label="Back" style={{ color: "#F7F0E8" }}>
-              <SMark size={30} />
-            </Link>
-            <span
-              className="font-mono text-[10px] font-extrabold tracking-[0.12em] px-2.5 py-1 rounded-pill"
-              style={{ background: "#FCBB16", color: "#14110F" }}
-            >
-              LIVE
-            </span>
-          </div>
-          <div className="font-mono text-[10px] font-extrabold tracking-[0.13em]" style={{ color: "rgba(247,240,232,0.7)" }}>
-            {data.role === "teacher" ? "TEACHER RUN SHEET" : data.role === "hq" ? "HQ RUN SHEET" : "GEM RUN SHEET"} · {totalPlaces} BOOKED
-          </div>
-          <h1 className="font-display text-[26px] leading-none mt-1.5" style={{ color: "#F7F0E8" }}>
-            {session.title.toUpperCase()}
-          </h1>
-          <p className="font-mono text-xs mt-2" style={{ color: "rgba(247,240,232,0.75)" }}>
-            {subtitle}
-          </p>
+      {/* Header in the app's own style: cream, the S mark, date and time pills,
+          a big ink headline — the same as the sessions pages. */}
+      <div className="max-w-lg mx-auto px-5 pt-4">
+        <nav className="flex items-center justify-between">
+          <Link href={backHref} aria-label="Back" className="text-ink">
+            <SMark size={32} />
+          </Link>
+          <Link
+            href={backHref}
+            className="px-4 py-2 rounded-pill font-mono text-xs font-bold uppercase tracking-widest text-ink border border-border"
+          >
+            ← {data.role === "hq" ? "HQ" : "Home"}
+          </Link>
+        </nav>
+
+        <div className="flex items-center gap-2 flex-wrap mt-6">
+          <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#14110F", color: "#F7F0E8" }}>{dayPill}</span>
+          <span className="font-mono text-xs font-semibold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#E1D5C6", color: "#6B6862" }}>{timePill}</span>
+          <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#716F39", color: "#F7F0E8" }}>
+            {data.role === "teacher" ? "TEACHER" : data.role === "hq" ? "HQ" : "GEM"} RUN SHEET
+          </span>
         </div>
+        <h1 className="font-display font-bold text-ink mt-4" style={{ fontSize: "clamp(34px,10vw,46px)", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          {session.title}
+        </h1>
+        <p className="text-sm text-muted mt-2">
+          {session.locationName} · {totalPlaces} booked
+        </p>
       </div>
 
-      <div className="max-w-lg mx-auto px-6 -mt-3 flex flex-col gap-5 pt-3">
+      <div className="max-w-lg mx-auto px-5 flex flex-col gap-5 mt-8">
         <div className="grid grid-cols-3 gap-2.5">
           <div className="border-2 border-ink rounded-2xl p-3 bg-white text-center">
             <div className="font-display text-2xl leading-none">{hereCount}</div>

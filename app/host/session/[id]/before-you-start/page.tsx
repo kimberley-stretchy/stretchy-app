@@ -110,21 +110,26 @@ export default function BeforeYouStartPage() {
 
   return (
     <main className="min-h-screen bg-cream text-ink pb-16">
-      <div style={{ background: "#E96709" }}>
-        <div className="max-w-lg mx-auto px-6 pt-5 pb-7">
-          <Link href="/host/home" aria-label="Back to your dashboard" style={{ color: "#F7F0E8" }} className="mb-5 inline-block">
-            <SMark size={30} />
+      <div className="max-w-lg mx-auto px-5 pt-4 pb-6">
+        <nav className="flex items-center justify-between">
+          <Link href="/host/home" aria-label="Back to your home" className="text-ink">
+            <SMark size={32} />
           </Link>
-          <div className="font-mono text-[10px] font-extrabold tracking-[0.13em]" style={{ color: "rgba(247,240,232,0.8)" }}>
+          <Link href="/host/home" className="px-4 py-2 rounded-pill font-mono text-xs font-bold uppercase tracking-widest text-ink border border-border">
+            ← Home
+          </Link>
+        </nav>
+        <div className="flex items-center gap-2 flex-wrap mt-6">
+          <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#E96709", color: "#F7F0E8" }}>
             MOVING WITH CARE · {careNotes.length} {careNotes.length === 1 ? "PERSON" : "PEOPLE"}
-          </div>
-          <h1 className="font-display text-[32px] leading-none mt-2" style={{ color: "#F7F0E8" }}>
-            Before you start
-          </h1>
-          <p className="text-sm leading-relaxed mt-3" style={{ color: "rgba(247,240,232,0.9)" }}>
-            What people told us they&rsquo;re working around. Not medical advice — just what they&rsquo;d like you to know.
-          </p>
+          </span>
         </div>
+        <h1 className="font-display font-bold text-ink mt-4" style={{ fontSize: "clamp(34px,10vw,46px)", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          Before you start
+        </h1>
+        <p className="text-sm text-muted leading-relaxed mt-2">
+          What people told us they&rsquo;re working around. Not medical advice — just what they&rsquo;d like you to know.
+        </p>
       </div>
 
       <div className="max-w-lg mx-auto px-6 flex flex-col gap-5 pt-5">
