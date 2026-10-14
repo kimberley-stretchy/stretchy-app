@@ -3,6 +3,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { requireHost } from "@/lib/hostAuth";
+import { requireAdmin } from "@/lib/adminAuth";
 
 function getAdmin() {
   return createAdminClient(
@@ -30,22 +31,30 @@ async function getUser(request: NextRequest) {
   return user;
 }
 
-// POST /api/host/session/[id]/notices — GEM posts a notice for the room ("Notice from HQ" card).
+// POST /api/host/session/[id]/notices — a notice for the room on the day
+// ("Side door's stuck, use the front"). The session's GEM or teacher, or HQ.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const gate = await requireHost(request);
-  if ("error" in gate) return gate.error;
-
-  const user = await getUser(request);
-  if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
-
   const admin = getAdmin();
-  const { data: me } = await admin.from("hosts").select("id, name").eq("auth_user_id", user.id).single();
-  if (!me) return NextResponse.json({ error: "No host profile found" }, { status: 400 });
+  const hq = await requireAdmin(request);
+  const isHQ = !("error" in hq);
 
-  const { data: session } = await admin.from("sessions").select("gem_host_id").eq("id", id).single();
-  if (!session || session.gem_host_id !== me.id) {
-    return NextResponse.json({ error: "Only the GEM can add a notice" }, { status: 403 });
+  let me: { id: string; name: string } | null = null;
+  const gate = await requireHost(request);
+  if ("error" in gate) {
+    if (!isHQ) return gate.error;
+    me = { id: "hq", name: "Stretchy HQ" };
+  } else {
+    const user = await getUser(request);
+    if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+    ({ data: me } = await admin.from("hosts").select("id, name").eq("auth_user_id", user.id).single());
+    if (!me) return NextResponse.json({ error: "No host profile found" }, { status: 400 });
+  }
+
+  const { data: session } = await admin.from("sessions").select("gem_host_id, host_id").eq("id", id).single();
+  if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  if (!isHQ && session.gem_host_id !== me.id && session.host_id !== me.id) {
+    return NextResponse.json({ error: "Only this session's teacher or GEM can add a notice" }, { status: 403 });
   }
 
   const { message } = await request.json();

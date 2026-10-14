@@ -1,0 +1,10 @@
+import { stretchyBadge } from "../lib/stretchyBadge";
+let fail = 0;
+const check = (name: string, ok: boolean) => { console.log(`${ok ? "ok  " : "FAIL"} ${name}`); if (!ok) fail++; };
+check("never been before → 1ST STRETCHY", stretchyBadge(0) === "1ST STRETCHY");
+check("been once → 2ND STRETCHY", stretchyBadge(1) === "2ND STRETCHY");
+check("3rd → no badge", stretchyBadge(2) === null);
+check("4th → no badge", stretchyBadge(3) === null);
+check("5th → REGULAR", stretchyBadge(4) === "REGULAR");
+check("20th → REGULAR", stretchyBadge(19) === "REGULAR");
+console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);

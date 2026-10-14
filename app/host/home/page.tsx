@@ -26,6 +26,7 @@ export default function HostHomePage() {
   const [host, setHost] = useState<Host | null>(null);
   const [sessions, setSessions] = useState<MySession[]>([]);
   const [openRequests, setOpenRequests] = useState<SubRequest[]>([]);
+  const [teamNotices, setTeamNotices] = useState<{ id: string; message: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -70,6 +71,11 @@ export default function HostHomePage() {
       setSessions(mine.sessions ?? []);
       const reqData = await reqRes.json();
       setOpenRequests(reqData.requests ?? []);
+      // Messages from Stretchy HQ to the whole team.
+      fetch("/api/host/notices", { headers: { Authorization: `Bearer ${session.access_token}` } })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => setTeamNotices(d?.notices ?? []))
+        .catch(() => {});
       setLoading(false);
     });
     return () => subscription.unsubscribe();
@@ -117,6 +123,17 @@ export default function HostHomePage() {
           </div>
           <h1 className="font-display text-[32px] leading-none mt-2">Kia ora, {host.name.split(" ")[0]}.</h1>
         </div>
+
+        {teamNotices.length > 0 && (
+          <div className="border-2 border-ink rounded-2xl p-4" style={{ background: "#FCBB16" }}>
+            <div className="font-mono text-[10px] font-extrabold tracking-[0.12em]">FROM STRETCHY HQ</div>
+            <div className="flex flex-col gap-2.5 mt-2">
+              {teamNotices.map((n) => (
+                <p key={n.id} className="text-sm font-semibold leading-snug whitespace-pre-wrap">{n.message}</p>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Link
           href="/host/portal"
@@ -221,7 +238,7 @@ export default function HostHomePage() {
                           BEFORE YOU START
                         </Link>
                       )}
-                      {asGem && (
+                      {(asGem || asTeacher) && (
                         <Link
                           href={`/host/session/${s.id}/run-sheet`}
                           className="flex-1 text-center font-mono text-[10px] font-extrabold tracking-[0.08em] h-9 flex items-center justify-center rounded-pill border-2 border-ink"

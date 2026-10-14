@@ -45,6 +45,7 @@ const NAV_GROUPS = [
 const NAV_TAIL_GROUP = {
   heading: "COMMUNITY",
   items: [
+    { href: "/admin/notices", label: "Team notices" },
     { href: "/admin/newsletters", label: "Newsletters" },
     { href: "/admin/suggestions", label: "Future sessions" },
     { href: "/admin/feedback", label: "Feedback" },
