@@ -679,6 +679,19 @@ function SessionCard({
           >
             ATTENDEES ({s.current_holds})
           </button>
+          {/* The on-the-day view: check-in, care notes, notices. */}
+          {s.state !== "cancelled" && (
+            <Link
+              href={`/host/session/${s.id}/run-sheet`}
+              style={{
+                padding: "7px 14px", borderRadius: 999, textDecoration: "none",
+                border: `1.5px solid ${T.olive}`, background: T.olive, color: T.cream,
+                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
+              }}
+            >
+              RUN SHEET
+            </Link>
+          )}
           <button
             onClick={toggleEmails}
             title="Every email sent for this session — who got what, and delivery status."
