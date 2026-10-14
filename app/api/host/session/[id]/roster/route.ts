@@ -112,7 +112,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const a = attendeeByUserId.get(h.user_id);
     return {
       holdId: h.id,
-      name: a?.name ?? "Stretchy mate",
+      // No real name on file → the first part of their email, never the whole address.
+      name: a?.name ? (a.name.includes("@") ? a.name.split("@")[0] : a.name) : "Stretchy mate",
       checkedInAt: h.checked_in_at,
       places: h.quantity ?? 1,
       movingWithCareNote: care.get(h.user_id)?.note ?? null,
