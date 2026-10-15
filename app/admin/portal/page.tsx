@@ -45,7 +45,7 @@ async function post(body: object) {
 }
 
 // ── Locations ────────────────────────────────────────────────────────────────
-function LocationEditor({ loc, people, onSaved }: { loc: PortalLocation; people: PortalPerson[]; onSaved: () => void }) {
+function LocationEditor({ loc, people, profiles, onSaved }: { loc: PortalLocation; people: PortalPerson[]; profiles: HostProfile[]; onSaved: () => void }) {
   const [form, setForm] = useState<PortalLocation>(loc);
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
@@ -98,7 +98,7 @@ function LocationEditor({ loc, people, onSaved }: { loc: PortalLocation; people:
         </section>
       ))}
 
-      <GemPicker loc={loc} people={people} onSaved={onSaved} />
+      <GemPicker loc={loc} people={people} profiles={profiles} onSaved={onSaved} />
 
       <section>
         <div className="font-mono text-[10px] font-extrabold tracking-[0.12em] mb-2 text-ink/45">👥 TEAM AT {loc.name.toUpperCase()} · assign in the People tab</div>
@@ -117,38 +117,52 @@ function LocationEditor({ loc, people, onSaved }: { loc: PortalLocation; people:
   );
 }
 
-// Which GEM(s) look after this location. Ticking one adds this location to
-// their People entry (and they then see it in their team view).
-function GemPicker({ loc, people, onSaved }: { loc: PortalLocation; people: PortalPerson[]; onSaved: () => void }) {
-  const gems = people.filter((p) => p.role === "gem");
+// Which GEM(s) look after this location. Lists every approved GEM profile
+// (HQ → Profiles → GEMs). Ticking one who isn't in the team portal yet adds
+// them (name, email, phone, handles from their profile); ticking or unticking
+// sets this location on their card. They then see it in their team view.
+function GemPicker({ loc, people, profiles, onSaved }: { loc: PortalLocation; people: PortalPerson[]; profiles: HostProfile[]; onSaved: () => void }) {
   const [busy, setBusy] = useState<string | null>(null);
-  async function toggle(p: PortalPerson, on: boolean) {
-    setBusy(p.id);
-    const location_ids = on ? Array.from(new Set([...p.location_ids, loc.id])) : p.location_ids.filter((x) => x !== loc.id);
-    if (await post({ action: "savePerson", person: { id: p.id, location_ids } })) onSaved();
+  const gemProfiles = profiles.filter((h) => h.roles.includes("gem"));
+  const personFor = (h: HostProfile) => people.find((p) => p.email?.toLowerCase() === h.email.toLowerCase() && p.role === "gem");
+
+  async function toggle(h: HostProfile, on: boolean) {
+    setBusy(h.id);
+    const p = personFor(h);
+    const ok = p
+      ? await post({ action: "savePerson", person: { id: p.id, location_ids: on ? Array.from(new Set([...p.location_ids, loc.id])) : p.location_ids.filter((x) => x !== loc.id) } })
+      : await post({ action: "savePerson", person: {
+          name: h.name, email: h.email, role: "gem", phone: h.phone ?? null,
+          instagram: h.instagram, tiktok: h.tiktok, other_handles: h.website,
+          on_all_locations: false, sort_order: 20, location_ids: on ? [loc.id] : [],
+        } });
     setBusy(null);
+    if (ok) onSaved();
   }
+
   return (
     <section className="border-2 border-ink rounded-2xl p-4 bg-white">
       <div className="font-mono text-[10px] font-extrabold tracking-[0.12em] mb-2" style={{ color: "#902F8A" }}>✨ GEM AT {loc.name.toUpperCase()}</div>
-      {gems.length === 0 ? (
-        <p className="text-sm text-ink/60">No GEMs in the team portal yet. Add them in the People tab (role: GEM), with their phone number.</p>
+      {gemProfiles.length === 0 ? (
+        <p className="text-sm text-ink/60">No approved GEMs yet. Approve or add them in HQ → Profiles → GEMs.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {gems.map((p) => {
-            const here = p.on_all_locations || p.location_ids.includes(loc.id);
+          {gemProfiles.map((h) => {
+            const p = personFor(h);
+            const here = !!p && (p.on_all_locations || p.location_ids.includes(loc.id));
+            const phone = p?.phone || h.phone;
             return (
-              <label key={p.id} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={here} disabled={p.on_all_locations || busy === p.id} onChange={(e) => toggle(p, e.target.checked)} />
-                <span className="font-bold">{p.preferred_name || p.name}</span>
-                <span className="text-ink/60">{p.phone ? `· ${p.phone}` : "· no phone yet"}</span>
-                {p.on_all_locations && <span className="text-xs text-ink/50">(on every location)</span>}
+              <label key={h.id} className="flex items-center gap-2 text-sm flex-wrap">
+                <input type="checkbox" checked={here} disabled={!!p?.on_all_locations || busy === h.id} onChange={(e) => toggle(h, e.target.checked)} />
+                <span className="font-bold">{p?.preferred_name || h.name}</span>
+                <span className="text-ink/60">{phone ? `· ${phone}` : "· no phone yet"}</span>
+                {p?.on_all_locations && <span className="text-xs text-ink/50">(on every location)</span>}
               </label>
             );
           })}
         </div>
       )}
-      <p className="text-xs text-ink/55 mt-2">Shown at the top of this location in the team view.</p>
+      <p className="text-xs text-ink/55 mt-2">Tick who looks after this location. They&rsquo;re shown at the top of it in the team view. Add or change a phone number in HQ → Profiles → GEMs.</p>
     </section>
   );
 }
@@ -171,7 +185,7 @@ function LocationsTab({ data, reload }: { data: Data; reload: () => void }) {
         ))}
         <button onClick={add} className={`${btn} border-dashed bg-transparent`}>+ Add location</button>
       </div>
-      {loc ? <LocationEditor key={loc.id} loc={loc} people={data.people} onSaved={reload} /> : <p className="text-sm text-ink/55">No locations yet.</p>}
+      {loc ? <LocationEditor key={loc.id} loc={loc} people={data.people} profiles={data.profiles} onSaved={reload} /> : <p className="text-sm text-ink/55">No locations yet.</p>}
     </div>
   );
 }
@@ -231,6 +245,7 @@ function PersonEditor({ person, locations, profiles, takenEmails, onDone }: {
       ...f,
       name: h.name,
       email: h.email,
+      phone: f.phone || h.phone || null,
       instagram: f.instagram || h.instagram,
       tiktok: f.tiktok || h.tiktok,
       other_handles: f.other_handles || h.website,
