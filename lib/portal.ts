@@ -70,6 +70,7 @@ export type HostProfile = {
   instagram: string | null;
   tiktok: string | null;
   website: string | null;
+  phone?: string | null;
 };
 
 export const ROLE_LABELS: Record<PortalPerson["role"], string> = {

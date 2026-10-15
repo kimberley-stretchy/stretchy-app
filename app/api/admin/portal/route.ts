@@ -26,6 +26,11 @@ export async function GET(request: NextRequest) {
     admin.from("hosts").select("id, name, email, roles, instagram, tiktok, website").eq("vetting_status", "approved").order("name"),
   ]);
   const err = locs.error ?? people.error ?? links.error ?? agreements.error ?? acceptances.error ?? hosts.error;
+  const phoneById = new Map<string, string | null>();
+  {
+    const { data: phones, error: phoneErr } = await admin.from("hosts").select("id, phone");
+    if (!phoneErr) (phones ?? []).forEach((r: { id: string; phone: string | null }) => phoneById.set(r.id, r.phone));
+  }
   if (err) return NextResponse.json({ error: err.message }, { status: 500 });
 
   const withLocations: PortalPerson[] = (people.data ?? []).map((p) => ({
@@ -42,7 +47,9 @@ export async function GET(request: NextRequest) {
     people: withLocations,
     agreement: { published, draft },
     // Approved teacher/GEM profiles — teachers & GEMs in the portal must be one of these.
-    profiles: (hosts.data ?? []).filter((h) => (h.roles ?? []).some((r: string) => r === "teacher" || r === "gem")),
+    profiles: (hosts.data ?? [])
+      .filter((h) => (h.roles ?? []).some((r: string) => r === "teacher" || r === "gem"))
+      .map((h) => ({ ...h, phone: phoneById.get(h.id) ?? null })),
     acceptances: published ? (acceptances.data ?? []).filter((a) => a.agreement_id === published.id) : [],
   });
 }
