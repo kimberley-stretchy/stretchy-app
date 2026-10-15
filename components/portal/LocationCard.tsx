@@ -38,9 +38,20 @@ export function PersonCard({ p }: { p: PortalPerson }) {
 export default function LocationCard({
   location, people, secretsHidden = false,
 }: { location: PortalLocation; people: PortalPerson[]; secretsHidden?: boolean }) {
-  const team = peopleForLocation(people, location.id);
+  const everyone = peopleForLocation(people, location.id);
+  // The GEM gets their own box near the top: they're who the team calls on the day.
+  const gems = everyone.filter((p) => p.role === "gem");
+  const team = everyone.filter((p) => p.role !== "gem");
   return (
     <div className="flex flex-col gap-3">
+      <section className="border-2 border-ink rounded-2xl p-4" style={{ background: "#716F39", color: "#F7F0E8" }}>
+        <div className="font-mono text-[10px] font-extrabold tracking-[0.12em] mb-2">✨ GEM AT {location.name.toUpperCase()}</div>
+        {gems.length === 0 ? (
+          <p className="text-sm opacity-85">No GEM on file yet.</p>
+        ) : (
+          <div className="flex flex-col gap-2 text-ink">{gems.map((p) => <PersonCard key={p.id} p={p} />)}</div>
+        )}
+      </section>
       {LOCATION_GROUPS.map((g) => {
         const rows = g.fields.filter((f) => location[f.key]);
         if (g.secret && secretsHidden) {
