@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { sendPushToUser } from "@/lib/push-server";
 import { HQ_EMAIL, REPLY_TO, APP_URL, page, box, label, button, h1, hey, msg, row, type Scheme } from "@/lib/stretchy-email";
 import { logEmail } from "@/lib/emailLog";
+import { subjectDate } from "@/lib/sessionTimes";
 
 // Extra session detail for host emails' session box — good for sharing.
 export interface HostDetails {
@@ -152,7 +153,7 @@ export async function notifyHostConfirmed({
       ${hostSessionBox(sc, { title: session.title, dateStr, locationName: session.locationName, style, gemName: role === "teacher" ? gemName : undefined, details })}
       ${button(sc, runSheet, "Open your run sheet →")}
     `);
-    await sendHostEmail(host.email, `It's on: ${session.title}`, html, HQ_EMAIL, { emailType: `host_confirmed_${role}`, sessionId: session.id });
+    await sendHostEmail(host.email, `${subjectDate(session.startsAt)}It's on: ${session.title}`, html, HQ_EMAIL, { emailType: `host_confirmed_${role}`, sessionId: session.id });
     if (host.auth_user_id) {
       await sendPushToUser(host.auth_user_id, {
         title: "It's on ✅",

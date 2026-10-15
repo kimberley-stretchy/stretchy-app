@@ -15,7 +15,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { page, h1, hey, msg, label, APP_URL, type Scheme, type AttendeeEmailType, type AttendeeEmailPayload } from "@/lib/stretchy-email";
-import { sessionTimes } from "@/lib/sessionTimes";
+import { sessionTimes, subjectDate } from "@/lib/sessionTimes";
 import { calculatePrice, maxPriceToPromise } from "@/lib/pricing";
 import { venueLine, meetLine } from "@/lib/sessionDisplay";
 import { placeCount, yourPlaces, youOrCrew, bringNote, moreToGoAhead, inAndRoom } from "@/lib/places";
@@ -213,7 +213,7 @@ function placeHeld(p: AttendeeEmailPayload, c: Ctx) {
   const late = !c.before36;
   const places = yourPlaces(c.n);
   const headline = late ? "You’re in. 🙌" : c.n === 1 ? "Your place is held. 🙌" : `Your ${c.n} places are held. 🙌`;
-  const subject = late ? `You’re in — ${p.sessionTitle}` : c.n === 1 ? `Your place is held — ${p.sessionTitle}` : `Your ${c.n} places are held — ${p.sessionTitle}`;
+  const subject = subjectDate(p.startsAt) + (late ? `You’re in — ${p.sessionTitle}` : c.n === 1 ? `Your place is held — ${p.sessionTitle}` : `Your ${c.n} places are held — ${p.sessionTitle}`);
   const html = page("blue", (sc) => `
     ${h1(sc, headline)}
     ${intro(sc, p, late
@@ -279,7 +279,7 @@ function goingAhead(p: AttendeeEmailPayload, c: Ctx) {
     ${filledButton(sc, c.shareUrl, "Share with a mate")}
     ${links(sc)}
   `);
-  return { subject: `It’s going ahead 🎉 ${p.sessionTitle}`, html };
+  return { subject: `${subjectDate(p.startsAt)}It’s going ahead 🎉 ${p.sessionTitle}`, html };
 }
 
 // 5 — Still room (after 36 hrs, to people who tapped ♡)
@@ -294,7 +294,7 @@ function stillRoom(p: AttendeeEmailPayload, c: Ctx) {
     ${greyRows(sc, [ROW_ROOM_NOW, ROW_FINAL_LATE(c)])}
     ${links(sc)}
   `);
-  return { subject: `It’s going ahead — ${p.sessionTitle}. Still room 🎉`, html };
+  return { subject: `${subjectDate(p.startsAt)}It’s going ahead — ${p.sessionTitle}. Still room 🎉`, html };
 }
 
 // 6 / 6b — Your final price (2 hrs out)
@@ -371,7 +371,7 @@ function placeOnUs(p: AttendeeEmailPayload, c: Ctx) {
     ${p.newAccount ? filledButton(sc, loginUrl, "Set up my account") : filledButton(sc, c.manageUrl, "Manage my booking")}
     ${links(sc)}
   `);
-  return { subject: `We’ve held you ${places} — on us 💛`, html };
+  return { subject: `${subjectDate(p.startsAt)}We’ve held you ${places} — on us 💛`, html };
 }
 
 // 10 — Your card didn't go through (a booking attempt that failed at the card step)
