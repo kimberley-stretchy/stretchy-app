@@ -5,6 +5,7 @@ import { buildSessionEmailExtras } from "@/lib/sessionEmailContext";
 import { sendPushToUser } from "@/lib/push-server";
 import { REPLY_TO, page, box, label, button, h1, hey, msg, row } from "@/lib/stretchy-email";
 import { logEmail } from "@/lib/emailLog";
+import { subjectDate } from "@/lib/sessionTimes";
 
 const HQ_FROM = "Stretchy HQ <hello@stretchyyoga.co.nz>";
 const HQ_EMAIL = "kimberley@stretchyyoga.co.nz";
@@ -97,7 +98,7 @@ export async function notifyHostScheduled({
           to: host.email,
           bcc: HQ_EMAIL,
           reply_to: REPLY_TO,
-          subject: `You're scheduled: ${session.title}`,
+          subject: `${subjectDate(session.startsAt)}You're scheduled: ${session.title}`,
           html,
           attachments: [
             {
@@ -111,7 +112,7 @@ export async function notifyHostScheduled({
           sessionId: (session as { id?: string }).id,
           recipient: host.email!,
           emailType: `host_scheduled_${role}`,
-          subject: `You're scheduled: ${session.title}`,
+          subject: `${subjectDate(session.startsAt)}You're scheduled: ${session.title}`,
           resendId: (r as { data?: { id?: string } })?.data?.id ?? null,
           status: (r as { error?: unknown })?.error ? "error" : "sent",
           error: (r as { error?: unknown })?.error ? String((r as { error?: unknown }).error) : null,

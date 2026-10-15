@@ -122,6 +122,14 @@ export function formatDayTime(d: DateInput): string {
   return `${formatDay(d)}, ${formatTime(d)}`;
 }
 
+/**
+ * The date at the very front of a confirmation email's subject line, so it
+ * reads at a glance in an inbox: "Fri 23 Oct, 6:15am · ". Empty if unknown.
+ */
+export function subjectDate(startsAt?: DateInput | null): string {
+  return startsAt ? `${formatDay(startsAt)}, ${formatTime(startsAt)} · ` : "";
+}
+
 /** "Fri 23 Oct | 6:15–7:15am" — the bold header line on booking boxes and emails. */
 export function formatDayAndRange(startsAt: DateInput, durationMins?: number | null): string {
   return `${formatDay(startsAt)} | ${formatTimeRange(startsAt, durationMins)}`;
