@@ -107,6 +107,8 @@ export async function POST(request: NextRequest) {
       .select("id");
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (!rows || rows.length === 0) return NextResponse.json({ error: "HQ hasn’t added you to the team portal yet." }, { status: 404 });
+    // …and on their teacher/GEM profile, so HQ sees it too. Best-effort.
+    await admin.from("hosts").update({ phone: phone || null }).ilike("email", email.replace(/[\\%_]/g, (c: string) => `\\${c}`)).then(undefined, () => {});
     return NextResponse.json({ ok: true, phone: phone || null });
   }
 
