@@ -37,7 +37,69 @@ export type Person = {
   practiceTypes?: string[];
   neighbourhoods?: string[];
   activeSessions?: ActiveSession[];
+  phone?: string | null;
+  instagram?: string | null;
+  tiktok?: string | null;
+  website?: string | null;
+  /** A real teacher/GEM profile (not a form applicant) — HQ can edit it. */
+  editable?: boolean;
 };
+
+// HQ edits a teacher's or GEM's details: name, phone, handles, areas, bio.
+// The contact details are copied to their Team portal card too.
+function EditDetails({ p, onDone }: { p: Person; onDone: (saved: boolean) => void }) {
+  const [f, setF] = useState({
+    name: p.name ?? "", phone: p.phone ?? "", instagram: p.instagram ?? "", tiktok: p.tiktok ?? "",
+    website: p.website ?? "", neighbourhoods: (p.neighbourhoods ?? []).join(", "), bio: p.bio ?? "",
+  });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function save() {
+    setBusy(true);
+    setErr(null);
+    const res = await fetch("/api/admin/people/details", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hostId: p.id, ...f }),
+    }).catch(() => null);
+    const d = res ? await res.json().catch(() => ({})) : {};
+    setBusy(false);
+    if (!res || !res.ok) return setErr(d.error ?? "Couldn’t save — try again.");
+    if (d.phoneSaved === false) alert("Saved — but the phone number couldn’t be stored yet (the database step hasn’t been run).");
+    onDone(true);
+  }
+  const field: React.CSSProperties = { width: "100%", borderRadius: 10, border: `2px solid ${INK}`, padding: "8px 10px", fontSize: 16, background: "#fff", color: INK, boxSizing: "border-box", fontFamily: "inherit" };
+  const lbl: React.CSSProperties = { fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", color: "rgba(20,17,15,.55)", display: "block", marginBottom: 3 };
+  const row = (k: keyof typeof f, label: string, type = "text") => (
+    <label style={{ display: "block" }}>
+      <span style={lbl}>{label}</span>
+      <input type={type} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} style={field} />
+    </label>
+  );
+  return (
+    <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: 12, background: "#F7F0E8", border: `1.5px solid ${INK}` }}>
+      {row("name", "NAME")}
+      {row("phone", "PHONE", "tel")}
+      {row("instagram", "INSTAGRAM")}
+      {row("tiktok", "TIKTOK")}
+      {row("website", "WEBSITE")}
+      {row("neighbourhoods", "AREAS (COMMA-SEPARATED)")}
+      <label style={{ display: "block" }}>
+        <span style={lbl}>BIO</span>
+        <textarea rows={3} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} style={{ ...field, resize: "vertical" }} />
+      </label>
+      {err && <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#C6362E" }}>{err}</p>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={save} disabled={busy} style={{ height: 38, padding: "0 18px", borderRadius: 999, border: "none", background: INK, color: "#F7F0E8", fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: busy ? 0.6 : 1 }}>
+          {busy ? "Saving…" : "Save details"}
+        </button>
+        <button onClick={() => onDone(false)} disabled={busy} style={{ height: 38, padding: "0 16px", borderRadius: 999, border: `1.5px solid ${INK}`, background: "transparent", color: INK, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function initials(name: string) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
@@ -47,7 +109,7 @@ export type QuickAdd = { name: string; email: string; roles: string[]; neighbour
 
 export default function PeopleSection({
   title, people, applyHref, applyLabel, onDecide, busyId, onCancelSession, onFindCover, sessionActionId,
-  onApproveApplicant, onQuickAdd, defaultRole, onDelete,
+  onApproveApplicant, onQuickAdd, defaultRole, onDelete, onEdited,
 }: {
   title: string; people: Person[]; applyHref: string; applyLabel: string;
   onDecide?: (hostId: string, status: "approved" | "declined") => void; busyId?: string | null;
@@ -60,7 +122,10 @@ export default function PeopleSection({
   onQuickAdd?: (data: QuickAdd) => Promise<string | null>;
   defaultRole?: "teacher" | "gem";
   onDelete?: (person: Person) => void;
+  /** Called after HQ saves someone's details, to reload the list. */
+  onEdited?: () => void;
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const emptyForm: QuickAdd = { name: "", email: "", roles: [defaultRole ?? "teacher"], neighbourhoods: "", practiceTypes: "" };
   const [adding, setAdding] = useState(false);
@@ -102,7 +167,7 @@ export default function PeopleSection({
             const isPending = p.status === "AWAITING REVIEW" && !!onDecide;
             const busy = busyId === p.id;
             const expanded = expandedId === p.id;
-            const hasDetail = !!onDelete || !!(p.bio || p.email || (p.practiceTypes && p.practiceTypes.length) || (p.neighbourhoods && p.neighbourhoods.length) || (p.activeSessions && p.activeSessions.length));
+            const hasDetail = !!onDelete || !!p.editable || !!(p.bio || p.email || (p.practiceTypes && p.practiceTypes.length) || (p.neighbourhoods && p.neighbourhoods.length) || (p.activeSessions && p.activeSessions.length));
             return (
               <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 10, background: "#fff", border: `2px solid ${INK}`, borderRadius: 14, padding: "10px 14px" }}>
                 <div
@@ -129,8 +194,28 @@ export default function PeopleSection({
                   )}
                 </div>
 
-                {expanded && hasDetail && (
+                {expanded && hasDetail && editingId === p.id && (
+                  <EditDetails p={p} onDone={(saved) => { setEditingId(null); if (saved) onEdited?.(); }} />
+                )}
+
+                {expanded && hasDetail && editingId !== p.id && (
                   <div style={{ borderTop: "1px solid rgba(20,17,15,.12)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                    {p.editable && onEdited && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditingId(p.id); }}
+                        style={{ alignSelf: "flex-start", height: 30, padding: "0 14px", borderRadius: 999, border: `1.5px solid ${INK}`, background: "#FCBB16", color: INK, fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+                      >
+                        Edit details
+                      </button>
+                    )}
+                    <p style={{ fontSize: 12, color: "rgba(20,17,15,.7)", margin: 0 }}>
+                      📞 {p.phone ? <a href={`tel:${p.phone.replace(/[^\d+]/g, "")}`} style={{ color: INK, fontWeight: 600 }}>{p.phone}</a> : <span style={{ color: "rgba(20,17,15,.45)" }}>{p.editable ? "No phone yet" : "—"}</span>}
+                    </p>
+                    {(p.instagram || p.tiktok || p.website) && (
+                      <p style={{ fontSize: 12, color: "rgba(20,17,15,.7)", margin: 0 }}>
+                        {[p.instagram && `Instagram ${p.instagram}`, p.tiktok && `TikTok ${p.tiktok}`, p.website].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
                     {p.email && (
                       <p style={{ fontSize: 12, color: "rgba(20,17,15,.7)", margin: 0 }}>
                         <a href={`mailto:${p.email}`} style={{ color: INK, fontWeight: 600 }}>{p.email}</a>

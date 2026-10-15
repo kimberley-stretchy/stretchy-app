@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   const admin = getAdmin();
 
   const [{ data: hosts }, { data: venues }, { data: upcomingSessions }, { data: applications }] = await Promise.all([
-    admin.from("hosts").select("id, name, email, roles, practice_types, neighbourhood, neighbourhoods, vetting_status, sessions_hosted, application_notes, bio, avatar_url"),
+    admin.from("hosts").select("id, name, email, roles, practice_types, neighbourhood, neighbourhoods, vetting_status, sessions_hosted, application_notes, bio, avatar_url, instagram, tiktok, website"),
     admin.from("interest_submissions").select("id, name, email, fields, type, created_at").in("type", ["venue", "social_stretch"]),
     admin
       .from("sessions")
@@ -48,6 +48,21 @@ export async function GET(request: NextRequest) {
       .map((s) => ({ id: s.id, title: s.title, startsAt: s.starts_at, locationName: s.location_name, role: "gem" as const })),
   ];
 
+  // Phone numbers, read on their own so a missing column (before the
+  // migration) can't break the whole list.
+  const phoneById = new Map<string, string | null>();
+  {
+    const { data: phones, error: phoneErr } = await admin.from("hosts").select("id, phone");
+    if (!phoneErr) (phones ?? []).forEach((r: { id: string; phone: string | null }) => phoneById.set(r.id, r.phone));
+  }
+  const contact = (h: { id: string; instagram?: string | null; tiktok?: string | null; website?: string | null }) => ({
+    phone: (phoneById.get(h.id) ?? null) as string | null,
+    instagram: (h.instagram ?? null) as string | null,
+    tiktok: (h.tiktok ?? null) as string | null,
+    website: (h.website ?? null) as string | null,
+    editable: true as boolean,
+  });
+
   const teachers = (hosts ?? [])
     .filter((h) => (h.roles ?? []).includes("teacher"))
     .map((h) => ({
@@ -62,6 +77,7 @@ export async function GET(request: NextRequest) {
       practiceTypes: h.practice_types ?? [],
       neighbourhoods: h.neighbourhoods && h.neighbourhoods.length > 0 ? h.neighbourhoods : [h.neighbourhood].filter(Boolean),
       activeSessions: activeSessionsFor(h.id),
+      ...contact(h),
     }));
 
   const gems = (hosts ?? [])
@@ -78,6 +94,7 @@ export async function GET(request: NextRequest) {
       practiceTypes: h.practice_types ?? [],
       neighbourhoods: h.neighbourhoods && h.neighbourhoods.length > 0 ? h.neighbourhoods : [h.neighbourhood].filter(Boolean),
       activeSessions: activeSessionsFor(h.id),
+      ...contact(h),
     }));
 
   // Form applicants show as APPLIED until they sign up at /host/login — then
@@ -119,6 +136,12 @@ export async function GET(request: NextRequest) {
           practiceTypes: styles,
           neighbourhoods: areas,
           activeSessions: [] as ReturnType<typeof activeSessionsFor>,
+          // Applicants aren't profiles yet, so there's nothing to edit.
+          phone: null as string | null,
+          instagram: null as string | null,
+          tiktok: null as string | null,
+          website: null as string | null,
+          editable: false,
         };
       });
 

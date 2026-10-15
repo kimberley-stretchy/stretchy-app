@@ -100,6 +100,7 @@ function ProfilesContent() {
               onQuickAdd={quickAdd}
               onApproveApplicant={approveApplicant}
               onDelete={deletePerson}
+              onEdited={load}
               busyId={busyApplicant}
               defaultRole={tab === "gems" ? "gem" : "teacher"}
               onCancelSession={cancelSession}
