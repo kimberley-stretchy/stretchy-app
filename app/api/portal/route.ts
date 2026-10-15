@@ -77,6 +77,7 @@ export async function GET(request: NextRequest) {
     isAdmin: who.isAdmin,
     inDirectory: who.isAdmin || !!me,
     myRole: me?.role ?? null,
+    myPhone: me?.phone ?? null,
     locations,
     people: visiblePeople,
     agreement: agreement.data ?? null,
@@ -90,6 +91,24 @@ export async function POST(request: NextRequest) {
   if ("error" in who) return who.error;
   const admin = getAdmin();
   const body = await request.json().catch(() => ({}));
+
+  // { phone } — a teacher or GEM adding or changing their own phone number,
+  // so the rest of the team can reach them on the day.
+  if (typeof body.phone === "string") {
+    const phone = body.phone.trim().slice(0, 30);
+    if (phone && !/^[\d\s+()-]{6,30}$/.test(phone)) {
+      return NextResponse.json({ error: "That doesn’t look like a phone number." }, { status: 400 });
+    }
+    const email = (who.user.email ?? "").toLowerCase();
+    const { data: rows, error } = await admin
+      .from("portal_people")
+      .update({ phone: phone || null, updated_at: new Date().toISOString() })
+      .ilike("email", email.replace(/[\\%_]/g, (c: string) => `\\${c}`))
+      .select("id");
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!rows || rows.length === 0) return NextResponse.json({ error: "HQ hasn’t added you to the team portal yet." }, { status: 404 });
+    return NextResponse.json({ ok: true, phone: phone || null });
+  }
 
   const { data: current } = await admin
     .from("portal_agreements")

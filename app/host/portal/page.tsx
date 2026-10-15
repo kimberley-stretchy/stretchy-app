@@ -13,11 +13,57 @@ type Data = {
   isAdmin: boolean;
   inDirectory: boolean;
   myRole: PortalPerson["role"] | null;
+  myPhone?: string | null;
   locations: PortalLocation[];
   people: PortalPerson[];
   agreement: PortalAgreement | null;
   accepted: boolean;
 };
+
+// A teacher or GEM's own phone number, shown on their card so the team can
+// reach them on the day.
+function MyPhone({ token, initial, onSaved }: { token: string; initial: string; onSaved: () => void }) {
+  const [phone, setPhone] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  useEffect(() => setPhone(initial), [initial]);
+  async function save() {
+    setBusy(true);
+    setMsg(null);
+    const res = await fetch("/api/portal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ phone }),
+    });
+    const d = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) return setMsg(d.error ?? "Couldn’t save that. Please try again.");
+    setMsg("Saved. The team can see it on your card.");
+    onSaved();
+  }
+  return (
+    <section className="border-2 border-ink rounded-2xl p-4 bg-white flex flex-col gap-2">
+      <div className="font-mono text-[10px] font-extrabold tracking-[0.12em]">📞 YOUR PHONE NUMBER</div>
+      <p className="text-xs text-ink/60 m-0">So the team can reach you on the day. Only the Stretchy team sees it.</p>
+      <div className="flex gap-2">
+        <input
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="021 123 4567"
+          className="flex-1 min-w-0 border-2 border-ink rounded-lg px-3 py-2 bg-white"
+          style={{ fontSize: 16 }}
+        />
+        <button onClick={save} disabled={busy || phone.trim() === initial.trim()} className="px-4 rounded-pill bg-ink text-cream font-bold text-sm disabled:opacity-40">
+          {busy ? "Saving…" : "Save"}
+        </button>
+      </div>
+      {msg && <p className="text-sm font-bold m-0">{msg}</p>}
+    </section>
+  );
+}
 
 export default function TeamPortalPage() {
   const router = useRouter();
@@ -108,6 +154,10 @@ export default function TeamPortalPage() {
               {accepting ? "Saving…" : "Accept"}
             </button>
           </section>
+        )}
+
+        {!data.isAdmin && data.inDirectory && token && (
+          <MyPhone token={token} initial={data.myPhone ?? ""} onSaved={() => load(token)} />
         )}
 
         {data.locations.length === 0 ? (

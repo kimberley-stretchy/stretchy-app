@@ -98,6 +98,8 @@ function LocationEditor({ loc, people, onSaved }: { loc: PortalLocation; people:
         </section>
       ))}
 
+      <GemPicker loc={loc} people={people} onSaved={onSaved} />
+
       <section>
         <div className="font-mono text-[10px] font-extrabold tracking-[0.12em] mb-2 text-ink/45">👥 TEAM AT {loc.name.toUpperCase()} · assign in the People tab</div>
         <div className="flex flex-col gap-2">
@@ -112,6 +114,42 @@ function LocationEditor({ loc, people, onSaved }: { loc: PortalLocation; people:
         <button onClick={remove} className={`${btn} bg-white ml-auto text-[#C0392B]`}>Delete location</button>
       </div>
     </div>
+  );
+}
+
+// Which GEM(s) look after this location. Ticking one adds this location to
+// their People entry (and they then see it in their team view).
+function GemPicker({ loc, people, onSaved }: { loc: PortalLocation; people: PortalPerson[]; onSaved: () => void }) {
+  const gems = people.filter((p) => p.role === "gem");
+  const [busy, setBusy] = useState<string | null>(null);
+  async function toggle(p: PortalPerson, on: boolean) {
+    setBusy(p.id);
+    const location_ids = on ? Array.from(new Set([...p.location_ids, loc.id])) : p.location_ids.filter((x) => x !== loc.id);
+    if (await post({ action: "savePerson", person: { id: p.id, location_ids } })) onSaved();
+    setBusy(null);
+  }
+  return (
+    <section className="border-2 border-ink rounded-2xl p-4 bg-white">
+      <div className="font-mono text-[10px] font-extrabold tracking-[0.12em] mb-2" style={{ color: "#902F8A" }}>✨ GEM AT {loc.name.toUpperCase()}</div>
+      {gems.length === 0 ? (
+        <p className="text-sm text-ink/60">No GEMs in the team portal yet. Add them in the People tab (role: GEM), with their phone number.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {gems.map((p) => {
+            const here = p.on_all_locations || p.location_ids.includes(loc.id);
+            return (
+              <label key={p.id} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={here} disabled={p.on_all_locations || busy === p.id} onChange={(e) => toggle(p, e.target.checked)} />
+                <span className="font-bold">{p.preferred_name || p.name}</span>
+                <span className="text-ink/60">{p.phone ? `· ${p.phone}` : "· no phone yet"}</span>
+                {p.on_all_locations && <span className="text-xs text-ink/50">(on every location)</span>}
+              </label>
+            );
+          })}
+        </div>
+      )}
+      <p className="text-xs text-ink/55 mt-2">Shown at the top of this location in the team view.</p>
+    </section>
   );
 }
 
