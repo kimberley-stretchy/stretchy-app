@@ -6,13 +6,19 @@ import { requireAdmin } from "@/lib/adminAuth";
 // table/migration needed; only reachable through these admin-only routes).
 // One file per draft: <id>.json = { id, subject, updatedAt, data }, where
 // `data` is the HQ composer's state exactly as it was saved.
+// Once a newsletter goes out it's kept as a record with status "sent" (or
+// "scheduled"), which HQ lists under SENT rather than DRAFTS.
 const BUCKET = "newsletter-drafts";
 
 function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 }
 
-type DraftFile = { id: string; subject: string; updatedAt: string; data: unknown };
+type Status = "draft" | "sent" | "scheduled";
+type DraftFile = {
+  id: string; subject: string; updatedAt: string; data: unknown;
+  status?: Status; sentAt?: string | null; sentTo?: number | null; scheduledFor?: string | null;
+};
 
 const validId = (id: string | null): id is string => !!id && /^[a-z0-9-]{8,64}$/.test(id);
 
@@ -44,18 +50,26 @@ export async function GET(request: NextRequest) {
   const ids = (files ?? []).filter((f) => f.name.endsWith(".json")).map((f) => f.name.replace(/\.json$/, ""));
   const drafts = (await Promise.all(ids.map((d) => readDraft(admin, d))))
     .filter((d): d is DraftFile => !!d)
-    .map(({ id, subject, updatedAt }) => ({ id, subject, updatedAt }))
+    .map(({ id, subject, updatedAt, status, sentAt, sentTo, scheduledFor }) => ({ id, subject, updatedAt, status: status ?? "draft", sentAt: sentAt ?? null, sentTo: sentTo ?? null, scheduledFor: scheduledFor ?? null }))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   return NextResponse.json({ drafts });
 }
 
-// POST — save a draft. { id?, subject, data }. No id = new draft.
+// POST — save a draft. { id?, subject, data, status?, sentAt?, sentTo?, scheduledFor? }.
+// No id = new draft. Or { id, markSent: true } to move an existing draft to SENT.
 export async function POST(request: NextRequest) {
   const authed = await requireAdmin(request);
   if ("error" in authed) return authed.error;
   const admin = getAdmin();
 
   const body = await request.json().catch(() => null);
+  if (body && body.markSent && validId(body.id)) {
+    const existing = await readDraft(admin, body.id);
+    if (!existing) return NextResponse.json({ error: "Draft not found" }, { status: 404 });
+    const moved: DraftFile = { ...existing, status: "sent", sentAt: existing.sentAt ?? new Date().toISOString() };
+    const { error } = await admin.storage.from(BUCKET).upload(`${body.id}.json`, new Blob([JSON.stringify(moved)], { type: "application/json" }), { upsert: true, contentType: "application/json" });
+    return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ ok: true });
+  }
   if (!body || typeof body !== "object" || !body.data) return NextResponse.json({ error: "Nothing to save." }, { status: 400 });
   const id: string = validId(body.id) ? body.id : crypto.randomUUID();
   const draft: DraftFile = {
@@ -63,6 +77,10 @@ export async function POST(request: NextRequest) {
     subject: String(body.subject ?? "").slice(0, 200) || "Untitled newsletter",
     updatedAt: new Date().toISOString(),
     data: body.data,
+    status: body.status === "sent" || body.status === "scheduled" ? body.status : "draft",
+    sentAt: typeof body.sentAt === "string" ? body.sentAt : null,
+    sentTo: typeof body.sentTo === "number" ? body.sentTo : null,
+    scheduledFor: typeof body.scheduledFor === "string" ? body.scheduledFor : null,
   };
   const json = JSON.stringify(draft);
   if (json.length > 2_000_000) return NextResponse.json({ error: "Draft is too large to save." }, { status: 400 });

@@ -67,7 +67,7 @@ export default function NewslettersPage() {
   const uploadingFor = useRef<number | null>(null);
 
   // ── Drafts ────────────────────────────────────────────────────────────
-  type DraftMeta = { id: string; subject: string; updatedAt: string };
+  type DraftMeta = { id: string; subject: string; updatedAt: string; status?: "draft" | "sent" | "scheduled"; sentAt?: string | null; sentTo?: number | null; scheduledFor?: string | null };
   const [drafts, setDrafts] = useState<DraftMeta[]>([]);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [savedSnap, setSavedSnap] = useState<string | null>(null);
@@ -127,6 +127,14 @@ export default function NewslettersPage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch { setMsg({ ok: false, text: "Couldn't open that draft." }); }
     setBusy(null);
+  }
+
+  // A sent newsletter opens as a new, unsaved draft, so the sent copy is never changed.
+  async function openAsCopy(id: string) {
+    await openDraft(id);
+    setDraftId(null);
+    setSavedSnap(null);
+    setMsg({ ok: true, text: "Opened a copy of a sent newsletter. Save it to keep it as a new draft." });
   }
 
   async function deleteDraft(id: string, name: string) {
@@ -234,11 +242,34 @@ export default function NewslettersPage() {
       const d = await res.json();
       if (!res.ok) setMsg({ ok: false, text: d.error ?? "Something went wrong." });
       else if (mode === "test") setMsg({ ok: true, text: `Test sent to ${testEmail} — check your inbox to preview it.` });
-      else if (mode === "schedule") { setMsg({ ok: true, text: `Scheduled for ${nzWhen(d.scheduledAt)} (NZ time) 📅 — receipt in your inbox.` }); loadStatus(); }
-      else setMsg({ ok: true, text: `Newsletter sent${d.sentTo != null ? ` to ${d.sentTo} contacts` : ""} 🎉 — receipt in your inbox.` });
+      else if (mode === "schedule") { setMsg({ ok: true, text: `Scheduled for ${nzWhen(d.scheduledAt)} (NZ time) 📅 — receipt in your inbox. It’s now under SENT.` }); loadStatus(); await fileAsSent({ scheduledFor: d.scheduledAt ?? null }); }
+      else { setMsg({ ok: true, text: `Newsletter sent${d.sentTo != null ? ` to ${d.sentTo} contacts` : ""} 🎉 — receipt in your inbox. It’s now under SENT.` }); await fileAsSent({ sentTo: typeof d.sentTo === "number" ? d.sentTo : null }); }
     } catch { setMsg({ ok: false, text: "Request failed." }); }
     setBusy(null);
   }
+  // Keep a copy of exactly what went out, under SENT. The composer then starts
+  // fresh, so later edits never change the sent record.
+  async function fileAsSent(o: { sentTo?: number | null; scheduledFor?: string | null }) {
+    await fetch("/api/admin/newsletters/drafts", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: draftId ?? undefined, subject, data: snapshot(),
+        status: o.scheduledFor ? "scheduled" : "sent",
+        sentAt: o.scheduledFor ?? new Date().toISOString(),
+        sentTo: o.sentTo ?? null, scheduledFor: o.scheduledFor ?? null,
+      }),
+    }).catch(() => null);
+    setDraftId(null); setSavedSnap(null);
+    loadDrafts();
+  }
+
+  async function markSent(id: string, name: string) {
+    if (!confirm(`Move "${name}" to SENT? Do this for a newsletter that's already gone out.`)) return;
+    await fetch("/api/admin/newsletters/drafts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, markSent: true }) }).catch(() => null);
+    if (id === draftId) { setDraftId(null); setSavedSnap(null); }
+    loadDrafts();
+  }
+
   async function scheduleReal() {
     if (!scheduleDate || !scheduleTime) { setMsg({ ok: false, text: "Pick a date and time first." }); return; }
     const [y, m, d] = scheduleDate.split("-").map(Number);
@@ -291,22 +322,50 @@ export default function NewslettersPage() {
               </span>
             </div>
 
-            {drafts.length > 0 && (
-              <details style={{ marginBottom: 16 }} open={!draftId}>
-                <summary style={{ ...mono10, cursor: "pointer" }}>DRAFTS · {drafts.length}</summary>
+            {drafts.some((d) => (d.status ?? "draft") === "draft") && (
+              <details style={{ marginBottom: 12 }} open={!draftId}>
+                <summary style={{ ...mono10, cursor: "pointer" }}>DRAFTS · {drafts.filter((d) => (d.status ?? "draft") === "draft").length}</summary>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
-                  {drafts.map((d) => (
-                    <div key={d.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: d.id === draftId ? "rgba(144,47,138,.08)" : "#fff", border: `1.5px solid ${T.ink}`, borderRadius: 10, padding: "8px 12px" }}>
-                      <div style={{ minWidth: 0 }}>
+                  {drafts.filter((d) => (d.status ?? "draft") === "draft").map((d) => (
+                    <div key={d.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", background: d.id === draftId ? "rgba(144,47,138,.08)" : "#fff", border: `1.5px solid ${T.ink}`, borderRadius: 10, padding: "8px 12px" }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
                         <p style={{ fontSize: 13, fontWeight: 700, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.subject}{d.id === draftId ? " · open" : ""}</p>
                         <p style={{ fontSize: 11, color: "rgba(20,17,15,.55)", margin: "2px 0 0" }}>Saved {nzWhen(d.updatedAt)}</p>
                       </div>
                       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                         <button onClick={() => openDraft(d.id)} disabled={busy !== null || d.id === draftId} style={{ ...chip(false), padding: "4px 10px", opacity: d.id === draftId ? 0.4 : 1 }}>OPEN</button>
+                        <button onClick={() => markSent(d.id, d.subject)} disabled={busy !== null} title="Already sent this one? File it under SENT." style={{ ...chip(false), padding: "4px 10px" }}>MOVE TO SENT</button>
                         <button onClick={() => deleteDraft(d.id, d.subject)} disabled={busy !== null} style={{ ...chip(false), padding: "4px 10px", color: T.red, borderColor: T.red }}>DELETE</button>
                       </div>
                     </div>
                   ))}
+                </div>
+              </details>
+            )}
+
+            {drafts.some((d) => d.status === "sent" || d.status === "scheduled") && (
+              <details style={{ marginBottom: 16 }}>
+                <summary style={{ ...mono10, cursor: "pointer" }}>SENT · {drafts.filter((d) => d.status === "sent" || d.status === "scheduled").length}</summary>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                  {drafts
+                    .filter((d) => d.status === "sent" || d.status === "scheduled")
+                    .sort((x, y) => (y.sentAt ?? y.updatedAt).localeCompare(x.sentAt ?? x.updatedAt))
+                    .map((d) => (
+                      <div key={d.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", background: "rgba(113,111,57,.08)", border: `1.5px solid ${T.ink}`, borderRadius: 10, padding: "8px 12px" }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <p style={{ fontSize: 13, fontWeight: 700, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.subject}</p>
+                          <p style={{ fontSize: 11, color: "rgba(20,17,15,.55)", margin: "2px 0 0" }}>
+                            {d.status === "scheduled" && d.scheduledFor
+                              ? `Scheduled for ${nzWhen(d.scheduledFor)}`
+                              : `Sent ${nzWhen(d.sentAt ?? d.updatedAt)}${d.sentTo != null ? ` · ${d.sentTo} contacts` : ""}`}
+                          </p>
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                          <button onClick={() => openAsCopy(d.id)} disabled={busy !== null} title="Open a copy to reuse — the sent one stays as it was." style={{ ...chip(false), padding: "4px 10px" }}>REUSE</button>
+                          <button onClick={() => deleteDraft(d.id, d.subject)} disabled={busy !== null} style={{ ...chip(false), padding: "4px 10px", color: T.red, borderColor: T.red }}>DELETE</button>
+                        </div>
+                      </div>
+                    ))}
                 </div>
               </details>
             )}
