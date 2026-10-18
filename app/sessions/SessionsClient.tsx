@@ -6,7 +6,8 @@ import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
 import { MenuDrawer } from "@/components/MenuDrawer";
 import CapacityPips from "@/components/CapacityPips";
-import { maxPriceToPromise, priceRightNow, priceHasDropped } from "@/lib/pricing";
+import { maxPriceToPromise, priceRightNow } from "@/lib/pricing";
+import PriceEnds from "@/components/PriceEnds";
 import { roomLabel } from "@/lib/places";
 import { phase } from "@/lib/sessionTimes";
 import { NewTabLink, HOW_IT_WORKS_HREF } from "@/components/PolicyLinks";
@@ -93,17 +94,22 @@ function SessionCard({ s }: { s: DBSession }) {
         {!s.teacher_name && <div className="mb-2" />}
         <div className="mb-3">
           <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={typeColor} showMinLine />
+          <PriceEnds
+            className="font-mono text-[10px] font-extrabold tracking-[0.1em] text-ink/60 mt-1.5"
+            openingPrice={status.price}
+            floorPrice={status.price}
+            nowPrice={status.now}
+            held={holds}
+            max={s.max_attendees}
+            showEnds={false}
+          />
         </div>
         <div className="flex items-center justify-between">
           <p className="font-mono text-xs font-bold uppercase tracking-wide" style={{ color: status.color }}>
             {status.label}
           </p>
           <div className="font-mono font-bold text-sm px-3 py-1.5 rounded-pill flex-shrink-0 flex items-baseline gap-0.5" style={{ backgroundColor: typeColor, color: theme.onAccent }}>
-            {priceHasDropped(status.now, status.price) ? (
-              <><span className="text-xs font-semibold">$</span><span>{status.now.toFixed(2)}</span><span className="text-xs font-semibold ml-1">now · ${status.price.toFixed(2)} max</span></>
-            ) : (
-              <><span className="text-xs font-semibold">$</span><span>{status.price.toFixed(2)}</span><span className="text-xs font-semibold ml-1">max</span></>
-            )}
+<span className="text-xs font-semibold">$</span><span>{status.price.toFixed(2)}</span><span className="text-xs font-semibold ml-1">max</span>
           </div>
         </div>
       </div>

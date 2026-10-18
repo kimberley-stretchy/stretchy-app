@@ -99,10 +99,7 @@ export default function BookingView({
   const nowPrice = priceRightNow(session.cost_base, session.revenue_target, session.min_attendees, holds);
   const dropped = priceHasDropped(nowPrice, maxPrice);
   const price = dropped
-    ? {
-        bold: myQty > 1 ? `${formatPrice((Math.round(nowPrice * 100) * myQty) / 100)} right now for your ${myQty} places` : `${formatPrice(nowPrice)} right now`,
-        greyLead: `Never more than ${formatPrice(maxPrice)} per person.`,
-      }
+    ? { bold: capRow.bold, greyLead: `${capRow.greyLead ? `${capRow.greyLead} ` : ""}Current ${formatPrice(nowPrice)}${myQty > 1 ? " each" : ""}.` }
     : capRow;
   const need = before36 ? moreToGoAhead(holds, session.min_attendees) : null;
   const priceGrey = [
