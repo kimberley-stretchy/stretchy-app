@@ -203,6 +203,54 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // OPTION C — before 36 hrs out, booking only SAVES the card: nothing is held
+  // on anyone's bank yet. The hold for the most they can pay is placed when the
+  // session is confirmed at 36 hrs out (lib/confirmCards.ts) and charged 2 hrs
+  // out. Joining after 36 hrs out (it's already going ahead) still holds the
+  // amount straight away, below.
+  if (timePhase === "before36") {
+    const createSetup = (customer: string) =>
+      stripe.setupIntents.create({
+        customer,
+        payment_method_types: ["card"],
+        usage: "off_session",
+        metadata: {
+          kind: "booking_setup",
+          session_id: sessionId,
+          attendee_id: attendee?.id ?? "",
+          session_title: session.title,
+          quantity: String(quantity),
+        },
+      });
+    let setupIntent;
+    try {
+      try {
+        setupIntent = await createSetup(stripeCustomerId);
+      } catch (err) {
+        if (!(err instanceof Stripe.errors.StripeError && err.code === "resource_missing")) throw err;
+        stripeCustomerId = await createFreshCustomer();
+        setupIntent = await createSetup(stripeCustomerId);
+      }
+    } catch (err) {
+      console.error("SetupIntent creation error:", err);
+      return NextResponse.json({ error: "Could not start your booking — please try again." }, { status: 500 });
+    }
+    return NextResponse.json({
+      mode: "setup",
+      clientSecret: setupIntent.client_secret,
+      setupIntentId: setupIntent.id,
+      authUserId: user.id,
+      quantity,
+      priceNZD: priceWithGST,
+      sessionTitle: session.title,
+      attendeeId: attendee?.id,
+      profile: {
+        needsName: !attendee?.name || attendee.name.includes("@") || attendee.name === (user.email ?? "").split("@")[0],
+        hasPhone: !!attendee?.phone,
+      },
+    });
+  }
+
   // Create PaymentIntent — manual capture (authorize only, charge at lock-in)
   let paymentIntent;
   try {
@@ -228,6 +276,7 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({
+    mode: "payment",
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
     authUserId: user.id,
@@ -316,6 +365,10 @@ export async function DELETE(request: NextRequest) {
       }
     }
     await admin.from("holds").update({ state: "released" }).eq("id", hold.id);
+  } else if (!hold.stripe_pi_id) {
+    // Partial cancel of a saved-card booking (Option C): nothing is held on
+    // their bank yet, so there's nothing to re-authorise — just fewer places.
+    await admin.from("holds").update({ quantity: remainingQty }).eq("id", hold.id);
   } else {
     // Partial cancel — re-authorize just the remaining spots at the current
     // price. The original authorization covered the old quantity as one
@@ -418,8 +471,11 @@ export async function PATCH(request: NextRequest) {
   }
   if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
 
-  const { sessionId, paymentIntentId, quantity: rawQty } = await request.json();
+  const { sessionId, paymentIntentId, setupIntentId, quantity: rawQty } = await request.json();
   const quantity = Math.min(Math.max(Number(rawQty) || 1, 1), 6);
+  if (sessionId && typeof setupIntentId === "string" && setupIntentId.startsWith("seti_")) {
+    return confirmSavedCardBooking({ admin, stripe, userId: user.id, sessionId, setupIntentId, quantity });
+  }
   if (!sessionId || !paymentIntentId) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
@@ -561,6 +617,20 @@ export async function PATCH(request: NextRequest) {
     hold = holds?.[0];
   }
 
+  // finalPi.amount is the TOTAL for every spot — the email shows the per-spot price.
+  await sendPlaceHeld(admin, holdUserId, sessionId, finalPi.amount / combinedQuantity, combinedQuantity);
+
+  return NextResponse.json({ holdId: hold.id });
+}
+
+// The "Your place is held" email (+ the under-18 HQ alert). Never throws.
+async function sendPlaceHeld(
+  admin: ReturnType<typeof getAdmin>,
+  holdUserId: string,
+  sessionId: string,
+  perSpotCents: number,
+  combinedQuantity: number
+) {
   // Booking-held email (new template, fire and forget) + under-18 HQ alert.
   try {
     const [{ data: sessionData }, { data: attendeeData }] = await Promise.all([
@@ -573,10 +643,9 @@ export async function PATCH(request: NextRequest) {
       const dateStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" }) +
         " at " + startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true });
 
-      // finalPi.amount is the TOTAL for every spot — show the per-spot price.
-      const perSpot = finalPi.amount / 100 / combinedQuantity;
+      const perSpot = perSpotCents / 100;
       const priceDisplay = `$${perSpot.toFixed(2)} incl. GST`;
-      const totalDisplay = `$${(finalPi.amount / 100).toFixed(2)} incl. GST`;
+      const totalDisplay = `$${(perSpot * combinedQuantity).toFixed(2)} incl. GST`;
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.stretchyyoga.co.nz";
 
       const [extras, firstTimer] = await Promise.all([
@@ -618,5 +687,82 @@ export async function PATCH(request: NextRequest) {
     console.error("Email send error (non-blocking):", emailErr);
   }
 
-  return NextResponse.json({ holdId: hold.id });
+}
+
+// ── Saved-card booking (Option C) ─────────────────────────────────────────────
+// The card form saved their card (a SetupIntent). Record the place — no money
+// is held yet; that happens at 36 hrs out. Adding places to an existing booking
+// just adds to it; an older booking that still has a pending amount on the
+// bank has that released, so nobody sees a hold before 36 hrs out.
+async function confirmSavedCardBooking(o: {
+  admin: ReturnType<typeof getAdmin>;
+  stripe: Stripe;
+  userId: string;
+  sessionId: string;
+  setupIntentId: string;
+  quantity: number;
+}) {
+  const { admin, stripe, userId, sessionId, setupIntentId, quantity } = o;
+  const si = await stripe.setupIntents.retrieve(setupIntentId);
+  if (si.status !== "succeeded") {
+    return NextResponse.json({ error: "Your card didn’t go through. Please try again, or use a different card." }, { status: 400 });
+  }
+  const { data: me } = await admin.from("attendees").select("id, stripe_customer_id").eq("auth_user_id", userId).single();
+  const siCustomer = typeof si.customer === "string" ? si.customer : si.customer?.id;
+  if (!me || si.metadata?.attendee_id !== me.id || si.metadata?.session_id !== sessionId || (me.stripe_customer_id && siCustomer !== me.stripe_customer_id)) {
+    return NextResponse.json({ error: "This card check doesn’t belong to you." }, { status: 403 });
+  }
+
+  const { data: existing } = await admin
+    .from("holds")
+    .select("id, quantity, stripe_pi_id")
+    .eq("session_id", sessionId)
+    .eq("user_id", userId)
+    .eq("state", "active")
+    .maybeSingle();
+  // A repeat submit of the same card check — already recorded.
+  if (si.metadata?.hold_recorded === "1" && existing) return NextResponse.json({ holdId: existing.id });
+
+  const pmId = typeof si.payment_method === "string" ? si.payment_method : si.payment_method?.id;
+  if (pmId) await admin.from("attendees").update({ stripe_pm_id: pmId }).eq("id", me.id);
+
+  const { data: session } = await admin
+    .from("sessions")
+    .select("title, cost_base, revenue_target, min_attendees, max_attendees, starts_at, state")
+    .eq("id", sessionId)
+    .single();
+  if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  // Still before 36 hrs out? (Someone could sit on the card form past the mark.)
+  if (phase(session.starts_at, session.state) !== "before36") {
+    return NextResponse.json({ error: "This one has just been confirmed, so booking now places a hold on your card. Please close this and tap Hold my place again." }, { status: 409 });
+  }
+
+  const { data: allActive } = await admin.from("holds").select("quantity").eq("session_id", sessionId).eq("state", "active");
+  const heldNow = (allActive ?? []).reduce((n, h) => n + (h.quantity ?? 1), 0);
+  if (heldNow + quantity > session.max_attendees) {
+    return NextResponse.json({ error: "Sorry, those places have just gone. Have a look at what else is on." }, { status: 409 });
+  }
+
+  let holdId: string;
+  let combined = quantity;
+  if (existing) {
+    combined = existing.quantity + quantity;
+    if (existing.stripe_pi_id) await stripe.paymentIntents.cancel(existing.stripe_pi_id).catch(() => {});
+    const { error } = await admin.from("holds").update({ quantity: combined, stripe_pi_id: null }).eq("id", existing.id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    holdId = existing.id;
+  } else {
+    const { data: rows, error } = await admin
+      .from("holds")
+      .insert({ session_id: sessionId, user_id: userId, stripe_pi_id: null, state: "active", quantity })
+      .select("id");
+    if (error || !rows?.[0]) return NextResponse.json({ error: error?.message ?? "Couldn’t hold your place." }, { status: 500 });
+    holdId = rows[0].id;
+  }
+  await stripe.setupIntents.update(setupIntentId, { metadata: { ...si.metadata, hold_recorded: "1" } }).catch(() => {});
+
+  // The email shows the most they can pay: the price at the minimum.
+  const perSpot = maxPriceToPromise(session.cost_base, session.revenue_target, session.min_attendees, heldNow + quantity, true);
+  await sendPlaceHeld(admin, userId, sessionId, Math.round(perSpot * 100), combined);
+  return NextResponse.json({ holdId });
 }

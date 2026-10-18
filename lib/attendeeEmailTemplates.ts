@@ -204,7 +204,8 @@ const ROW_ROOM: Row = { label: "36 → 2 hrs out", bold: "Still room to join", s
 const ROW_FINAL = (c: Ctx, tail = ""): Row => ({ label: "2 hrs out", bold: "Final price charged", second: `${c.opening != null ? `Never more than ${money(c.before36 ? c.opening : c.maxNow ?? c.opening)}.` : "Never more than the max price shown."}${tail}` });
 const ROW_ROOM_NOW: Row = { label: "36 → 2 hrs out", bold: "Still room to join, right now", second: "Join now and you’re in straight away. The price keeps dropping." };
 const ROW_FINAL_LATE = (c: Ctx): Row => ({ label: "2 hrs out", bold: "Final price charged", second: `Joining closes.${c.maxNow != null ? ` Never more than ${money(c.maxNow)}.` : ""}` });
-const PENDING = " Your bank might show a pending amount before then. That’s a hold, not a payment.";
+// Option C: nothing is held when you book; the hold goes on at 36 hrs out.
+const PENDING = " Nothing is held on your card until it’s going ahead.";
 
 // ── The emails ───────────────────────────────────────────────────────────────
 

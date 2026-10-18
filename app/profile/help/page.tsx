@@ -37,7 +37,7 @@ const SOCIAL_LINKS = [
 const FAQS = [
   {
     q: "What is a hold? Am I charged straight away?",
-    a: "No. When you hold your place we save your card and show you the most you'll pay. Nothing is charged yet. Your bank may show a pending amount. That's a hold, not a payment.",
+    a: "No. When you hold your place we save your card and show you the most you'll pay. Nothing is held or charged yet. Once it's going ahead (36 hours before), your bank may show a pending amount. That's a hold, not a payment.",
   },
   {
     q: "When does my card actually get charged?",

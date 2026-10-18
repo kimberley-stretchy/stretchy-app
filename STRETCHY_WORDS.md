@@ -17,7 +17,7 @@ Use these words on every screen, email, push notification and error message. Fin
 | 36 → 2 hrs out | **Still room to join** · price **keeps dropping** · **No free cancelling from here** | better-er |
 | 2 hrs out | **Final price charged** · joining closes | locked & loaded, locked in, final price paid |
 | Top price | **$X max per person** · **never more than $X** | ceiling, current starting price, never more than you saw |
-| Card | **We save your card** · "That's a hold, not a payment." | card authorisation, committed |
+| Card | **We save your card** · at booking: "Nothing is held or charged yet." · from 36 hrs out (it's going ahead): "That's a hold, not a payment." | card authorisation, committed |
 | We cancel | **If we ever cancel, you don't pay.** (+ full refund if already charged) | "refunded in full, always" when nothing was charged |
 | Headcount | **people** · "10 more to go ahead" · "17 in · still room to join" · "30 max" | peeps, spots to minimum |
 | Arriving | **Say kia ora** · meet your teacher, then your GEM | — |

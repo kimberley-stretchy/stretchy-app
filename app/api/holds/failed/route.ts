@@ -35,13 +35,20 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const paymentIntentId = typeof body.paymentIntentId === "string" ? body.paymentIntentId : "";
-  if (!paymentIntentId.startsWith("pi_")) return NextResponse.json({ error: "Missing payment" }, { status: 400 });
+  const setupIntentId = typeof body.setupIntentId === "string" ? body.setupIntentId : "";
+  if (!paymentIntentId.startsWith("pi_") && !setupIntentId.startsWith("seti_")) return NextResponse.json({ error: "Missing payment" }, { status: 400 });
 
   const admin = getAdmin();
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-04-10" });
 
   try {
-    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+    // A saved-card booking (Option C) fails on a SetupIntent; it carries the same
+    // booking details and the bank's reason, so it's reported the same way.
+    const pi = setupIntentId
+      ? await stripe.setupIntents.retrieve(setupIntentId).then(
+          (si) => ({ id: si.id, metadata: si.metadata, last_payment_error: si.last_setup_error } as unknown as Stripe.PaymentIntent)
+        )
+      : await stripe.paymentIntents.retrieve(paymentIntentId);
     // Must be this person's own booking attempt.
     const { data: attendee } = await admin.from("attendees").select("id").eq("auth_user_id", user.id).maybeSingle();
     if (!attendee || pi.metadata?.attendee_id !== attendee.id) {
