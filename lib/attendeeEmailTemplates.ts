@@ -16,7 +16,7 @@
 
 import { page, h1, hey, msg, label, APP_URL, type Scheme, type AttendeeEmailType, type AttendeeEmailPayload } from "@/lib/stretchy-email";
 import { sessionTimes, subjectDate } from "@/lib/sessionTimes";
-import { calculatePrice, maxPriceToPromise } from "@/lib/pricing";
+import { calculatePrice, maxPriceToPromise, priceRightNow, priceHasDropped } from "@/lib/pricing";
 import { venueLine, meetLine } from "@/lib/sessionDisplay";
 import { placeCount, yourPlaces, youOrCrew, bringNote, moreToGoAhead, inAndRoom } from "@/lib/places";
 
@@ -40,8 +40,11 @@ function context(p: AttendeeEmailPayload) {
   // The most this person can pay: at-minimum price before 36 hrs out, current after.
   const maxNow = hasNumbers ? maxPriceToPromise(p.costBase!, p.revenueTarget!, min, held, before36) : null;
   const id = p.sessionId ?? "";
+  // The price right now (current headcount, floored at the minimum) — shown
+  // next to the cap once more than the minimum are in.
+  const rightNow = hasNumbers ? priceRightNow(p.costBase!, p.revenueTarget!, min, held) : null;
   return {
-    n, min, max, held, hasNumbers, t, before36, opening, floor, maxNow,
+    n, min, max, held, hasNumbers, t, before36, opening, floor, maxNow, rightNow,
     sessionUrl: id ? `${APP_URL}/sessions/${id}` : `${APP_URL}/sessions`,
     manageUrl: id ? `${APP_URL}/hold/${id}` : `${APP_URL}/sessions`,
     shareUrl: id ? `${APP_URL}/hold/${id}?share=1` : `${APP_URL}/sessions`,
@@ -195,6 +198,12 @@ function priceNowRow(c: Ctx): Row | null {
   const totalCents = Math.round(c.maxNow * 100) * c.n;
   const room = c.before36 ? moreToGoAhead(c.held, c.min) ?? inAndRoom(c.held) : inAndRoom(c.held);
   const drop = c.floor != null && c.held < c.max ? ` Drops to ${money(c.floor)}${c.n > 1 ? " each" : ""} if all ${c.max} fill.` : "";
+  if (c.rightNow != null && priceHasDropped(c.rightNow, c.maxNow)) {
+    const nowTotal = Math.round(c.rightNow * 100) * c.n;
+    return c.n === 1
+      ? { label: "Price now", bold: `${money(c.rightNow)} right now`, second: `Never more than ${money(c.maxNow)}. ${room}.${drop}` }
+      : { label: "Price now", bold: `${money(nowTotal / 100)} right now for your ${c.n} places`, second: `${money(c.rightNow)} each right now, never more than ${money(c.maxNow)} each. ${room}.${drop}` };
+  }
   return c.n === 1
     ? { label: "Price now", bold: `${money(c.maxNow)} max per person`, second: `${room}.${drop}` }
     : { label: "Price now", bold: `${money(totalCents / 100)} max for your ${c.n} places`, second: `${money(c.maxNow)} max per person. ${room}.${drop}` };
@@ -219,7 +228,9 @@ function placeHeld(p: AttendeeEmailPayload, c: Ctx) {
     ${intro(sc, p, late
       ? [`<strong>We look forward to seeing ${youOrCrew(c.n)} at Stretchy.</strong> This one’s already going ahead, so you’re in straight away. Here’s all the deets you need to know, and the more people who join, the better it gets for all.`]
       : [
-          `<strong>We look forward to seeing ${youOrCrew(c.n)} at Stretchy.</strong> We haven’t hit the minimum number of people yet, so ${places} ${c.n === 1 ? "is" : "are"} held and <strong>we’ll confirm 36 hours out</strong>. Nothing’s charged yet.`,
+          c.min > 0 && c.held >= c.min
+            ? `<strong>We look forward to seeing ${youOrCrew(c.n)} at Stretchy.</strong> We’ve hit the minimum of ${c.min} people, so it’s on track to go ahead. ${places.charAt(0).toUpperCase() + places.slice(1)} ${c.n === 1 ? "is" : "are"} held and <strong>we’ll confirm 36 hours out</strong>. Nothing’s charged yet.`
+            : `<strong>We look forward to seeing ${youOrCrew(c.n)} at Stretchy.</strong> We haven’t hit the minimum number of people yet, so ${places} ${c.n === 1 ? "is" : "are"} held and <strong>we’ll confirm 36 hours out</strong>. Nothing’s charged yet.`,
           "Here’s all the deets you need to know. And don’t forget, the more people who move together, the better it gets for all. So share Stretchy around!",
         ])}
     ${dayBox(sc, p, c, priceNowRow(c) ? { row: priceNowRow(c)!, dots: true } : undefined)}

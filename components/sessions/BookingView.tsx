@@ -7,7 +7,7 @@ import InfoRows from "@/components/sessions/InfoRows";
 import CapacityPips from "@/components/CapacityPips";
 import PolicyLinks from "@/components/PolicyLinks";
 import { googleCalendarUrl, downloadIcs, sessionCalendarEvent } from "@/lib/calendar";
-import { calculatePrice, formatPrice, maxPriceToPromise } from "@/lib/pricing";
+import { calculatePrice, formatPrice, maxPriceToPromise, priceRightNow, priceHasDropped } from "@/lib/pricing";
 import { sessionTimes } from "@/lib/sessionTimes";
 import { styleAndLevel, venueLine, meetLine } from "@/lib/sessionDisplay";
 import { heldHeadline, priceRow, bringNote, moreToGoAhead, inAndRoom } from "@/lib/places";
@@ -94,7 +94,16 @@ export default function BookingView({
 
   const floorPrice = calculatePrice(session.cost_base, session.revenue_target, session.max_attendees);
   const maxPrice = maxPriceToPromise(session.cost_base, session.revenue_target, session.min_attendees, holds, before36);
-  const price = priceRow(maxPrice, myQty);
+  const capRow = priceRow(maxPrice, myQty);
+  // Past the minimum: lead with the price right now, keep the cap beside it.
+  const nowPrice = priceRightNow(session.cost_base, session.revenue_target, session.min_attendees, holds);
+  const dropped = priceHasDropped(nowPrice, maxPrice);
+  const price = dropped
+    ? {
+        bold: myQty > 1 ? `${formatPrice((Math.round(nowPrice * 100) * myQty) / 100)} right now for your ${myQty} places` : `${formatPrice(nowPrice)} right now`,
+        greyLead: `Never more than ${formatPrice(maxPrice)} per person.`,
+      }
+    : capRow;
   const need = before36 ? moreToGoAhead(holds, session.min_attendees) : null;
   const priceGrey = [
     price.greyLead,

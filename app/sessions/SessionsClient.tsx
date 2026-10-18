@@ -6,7 +6,7 @@ import SMark from "@/components/SMark";
 import HowToStretchy from "@/components/HowToStretchy";
 import { MenuDrawer } from "@/components/MenuDrawer";
 import CapacityPips from "@/components/CapacityPips";
-import { maxPriceToPromise } from "@/lib/pricing";
+import { maxPriceToPromise, priceRightNow, priceHasDropped } from "@/lib/pricing";
 import { roomLabel } from "@/lib/places";
 import { phase } from "@/lib/sessionTimes";
 import { NewTabLink, HOW_IT_WORKS_HREF } from "@/components/PolicyLinks";
@@ -49,6 +49,8 @@ function getStatus(s: DBSession) {
     color: confirmed ? "#716F39" : short ? "#E96709" : "#14110F",
     // The most this person can pay: at-minimum price until 36 hrs out, current after.
     price: maxPriceToPromise(s.cost_base, s.revenue_target, s.min_attendees, holds, phase(s.starts_at, s.state) === "before36"),
+    // The price right now, once more than the minimum are in (shown with the cap).
+    now: priceRightNow(s.cost_base, s.revenue_target, s.min_attendees, holds),
   };
 }
 
@@ -97,7 +99,11 @@ function SessionCard({ s }: { s: DBSession }) {
             {status.label}
           </p>
           <div className="font-mono font-bold text-sm px-3 py-1.5 rounded-pill flex-shrink-0 flex items-baseline gap-0.5" style={{ backgroundColor: typeColor, color: theme.onAccent }}>
-            <span className="text-xs font-semibold">$</span><span>{status.price.toFixed(2)}</span><span className="text-xs font-semibold ml-1">max</span>
+            {priceHasDropped(status.now, status.price) ? (
+              <><span className="text-xs font-semibold">$</span><span>{status.now.toFixed(2)}</span><span className="text-xs font-semibold ml-1">now · ${status.price.toFixed(2)} max</span></>
+            ) : (
+              <><span className="text-xs font-semibold">$</span><span>{status.price.toFixed(2)}</span><span className="text-xs font-semibold ml-1">max</span></>
+            )}
           </div>
         </div>
       </div>
