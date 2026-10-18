@@ -1,5 +1,6 @@
 import CapacityPips from "@/components/CapacityPips";
 import { formatPrice, priceHasDropped } from "@/lib/pricing";
+import PriceEnds from "@/components/PriceEnds";
 
 // The price block in a 2px ink outline box — the same block as the homepage
 // card: big price + caption, "{label}" / "{max} MAX", dots with the minimum
@@ -49,10 +50,14 @@ export default function PriceBox({
       <div role="img" aria-label={`${held} of ${max} places held, goes ahead at ${min}`}>
         <CapacityPips min={min} max={max} held={held} accent={accent} showMinLine />
       </div>
-      <div className="flex justify-between gap-3 font-mono text-[11px] font-extrabold tracking-[0.08em] text-ink/60">
-        <span>{formatPrice(openingPrice)}</span>
-        <span>{formatPrice(floorPrice)}</span>
-      </div>
+      <PriceEnds
+        className="font-mono text-[11px] font-extrabold tracking-[0.08em] text-ink/60"
+        openingPrice={openingPrice}
+        floorPrice={floorPrice}
+        nowPrice={nowPrice}
+        held={held}
+        max={max}
+      />
     </div>
   );
 }

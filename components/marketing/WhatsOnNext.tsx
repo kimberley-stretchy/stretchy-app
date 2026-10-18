@@ -5,6 +5,7 @@ import CapacityPips from "@/components/CapacityPips";
 import { roomLabel } from "@/lib/places";
 import { phase, formatDay, formatTimeRange } from "@/lib/sessionTimes";
 import { locationTheme } from "@/lib/locationColours";
+import PriceEnds from "@/components/PriceEnds";
 
 export type MarketingSession = {
   id: string;
@@ -165,10 +166,14 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
             <span>{s.max_attendees} MAX</span>
           </div>
           <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={accent} showMinLine />
-          <div className="flex justify-between gap-2.5 font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em] text-ink/50 mt-1.5">
-            <span>{formatPrice(openingPrice)}</span>
-            <span>{formatPrice(floorPrice)}</span>
-          </div>
+          <PriceEnds
+            className="font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em] text-ink/50 mt-1.5"
+            openingPrice={openingPrice}
+            floorPrice={floorPrice}
+            nowPrice={s.isPlaceholder ? undefined : now}
+            held={holds}
+            max={s.max_attendees}
+          />
         </div>
       </div>
     </div>
