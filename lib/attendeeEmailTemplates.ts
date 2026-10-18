@@ -111,6 +111,23 @@ function ends(color: string, left: string, right: string, strongLeft = false) {
   </tr></table>`;
 }
 
+/**
+ * The prices under the dots once past the minimum: the at-minimum price left,
+ * "CURRENT $21.30 PP" in the middle, the full-room price right. (Email can't
+ * place it under the exact dot the way the website does, so it sits centred.)
+ * Without a dropped price it's just the two ends.
+ */
+function endsWithCurrent(color: string, c: Ctx) {
+  if (c.opening == null || c.floor == null) return "";
+  const dropped = c.rightNow != null && c.held < c.max && priceHasDropped(c.rightNow, c.opening);
+  if (!dropped) return ends(color, money(c.opening), money(c.floor));
+  const cell = (align: string, text: string, strong = false) =>
+    `<td align="${align}" style="font-family:${MONO};font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:${color};${strong ? "" : "opacity:.75;"}white-space:nowrap;">${text}</td>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>
+    ${cell("left", money(c.opening))}${cell("center", `Current ${money(c.rightNow!)} pp`, true)}${cell("right", money(c.floor))}
+  </tr></table>`;
+}
+
 /** Outlined box (no price in it). */
 function outlineBox(sc: Scheme, inner: string) {
   return `<div style="border:2px solid ${sc.text};border-radius:16px;padding:16px;margin:0 0 16px;">${inner}</div>`;
@@ -128,7 +145,7 @@ function priceBlock(sc: Scheme, o: { big: string; caption: string; leftLabel: st
     <p style="font-size:13px;color:${fg};opacity:.8;margin:5px 0 12px;">${o.caption}</p>
     ${c.max > 0 ? ends(fg, o.leftLabel, `${c.max} max`, true) : ""}
     ${peopleDots(fg, c.held, c.min, c.max)}
-    ${o.endPrices && c.opening != null && c.floor != null ? ends(fg, money(c.opening), money(c.floor)) : ""}
+    ${o.endPrices ? endsWithCurrent(fg, c) : ""}
   </div>`;
 }
 
@@ -189,6 +206,7 @@ function dayBox(sc: Scheme, p: AttendeeEmailPayload, c: Ctx, extra?: { row: Row;
     ${label(sc, "How it goes")}
     ${rows(sc.text, list)}
     ${extra?.dots ? peopleDots(sc.text, c.held, c.min, c.max) : ""}
+    ${extra?.dots && c.rightNow != null && c.opening != null && priceHasDropped(c.rightNow, c.opening) ? endsWithCurrent(sc.text, c) : ""}
   `);
 }
 
