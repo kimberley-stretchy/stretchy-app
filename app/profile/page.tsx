@@ -6,6 +6,7 @@ import Link from "next/link";
 import SMark from "@/components/SMark";
 import { createClient } from "@/lib/supabase/client";
 import PushButton from "@/components/PushButton";
+import { locationTheme } from "@/lib/locationColours";
 
 const SETTINGS = [
   { label: "Notifications", icon: "🔔", href: "/profile/notifications" },
@@ -140,7 +141,7 @@ export default function ProfilePage() {
               {upcomingHolds.map(h => {
                 const s = h.sessions;
                 if (!s) return null;
-                const typeColor = TYPE_COLORS[s.movement_type] ?? "#888";
+                const typeColor = locationTheme(s).accent;
                 const startDate = new Date(s.starts_at);
                 const dayStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase();
                 const timeStr = startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
@@ -148,7 +149,7 @@ export default function ProfilePage() {
                 return (
                   <Link key={h.id} href={`/hold/${s.id}`} className="block bg-white rounded-card border-2 border-ink p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: typeColor }}>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ color: locationTheme(s).onAccent, backgroundColor: typeColor }}>
                         {s.movement_type.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">

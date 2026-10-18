@@ -4,6 +4,7 @@ import { calculatePrice, formatPrice, maxPriceToPromise } from "@/lib/pricing";
 import CapacityPips from "@/components/CapacityPips";
 import { roomLabel } from "@/lib/places";
 import { phase, formatDay, formatTimeRange } from "@/lib/sessionTimes";
+import { locationTheme } from "@/lib/locationColours";
 
 export type MarketingSession = {
   id: string;
@@ -43,7 +44,11 @@ function movementLabel(t: string): string {
 }
 
 function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
-  const accent = ACCENTS[index % ACCENTS.length];
+  // Each location has its own colour; placeholders keep the alternating pair.
+  const theme = s.isPlaceholder ? null : locationTheme(s);
+  const accent = theme?.accent ?? ACCENTS[index % ACCENTS.length];
+  const accentText = theme?.textAccent ?? accent;
+  const onAccent = theme?.onAccent ?? "#F7F0E8";
   const photo = CARD_PHOTOS[index % CARD_PHOTOS.length];
   const start = new Date(s.starts_at);
   const end = s.duration_mins ? new Date(start.getTime() + s.duration_mins * 60 * 1000) : null;
@@ -91,14 +96,14 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
         )}
       </div>
       <div className="absolute top-3 left-3 lg:top-4 lg:left-4 bg-cream rounded-[10px] lg:rounded-xl px-[11px] py-[7px] lg:px-[14px] lg:py-[10px] text-center">
-        <div className="font-mono text-[13px] lg:text-[15px] font-extrabold" style={{ color: accent }}>{dayShort}</div>
+        <div className="font-mono text-[13px] lg:text-[15px] font-extrabold" style={{ color: accentText }}>{dayShort}</div>
         <div className="font-display text-[26px] lg:text-[32px] leading-[.9]">{dayNum}</div>
         <div className="font-mono text-[10px] lg:text-[11px] font-extrabold text-ink/55">{monthShort}</div>
       </div>
       <div className="absolute top-3 right-3 lg:top-4 lg:right-4 flex flex-col lg:flex-row gap-[5px] lg:gap-1.5 items-end lg:items-center">
         <span
-          className="text-cream rounded-pill px-[11px] lg:px-3.5 py-1.5 lg:py-2 font-mono text-[9px] lg:text-[11px] font-extrabold whitespace-nowrap"
-          style={{ backgroundColor: accent }}
+          className="rounded-pill px-[11px] lg:px-3.5 py-1.5 lg:py-2 font-mono text-[9px] lg:text-[11px] font-extrabold whitespace-nowrap"
+          style={{ backgroundColor: accent, color: onAccent }}
         >
           {label}
         </span>

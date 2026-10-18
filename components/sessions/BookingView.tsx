@@ -11,6 +11,7 @@ import { calculatePrice, formatPrice, maxPriceToPromise } from "@/lib/pricing";
 import { sessionTimes } from "@/lib/sessionTimes";
 import { styleAndLevel, venueLine, meetLine } from "@/lib/sessionDisplay";
 import { heldHeadline, priceRow, bringNote, moreToGoAhead, inAndRoom } from "@/lib/places";
+import { locationTheme } from "@/lib/locationColours";
 
 // Manage my booking — what someone holding a place sees. Purely presentational:
 // the page (app/hold/[id]) loads the session and owns cancelling; this draws it.
@@ -171,7 +172,7 @@ export default function BookingView({
               min={session.min_attendees}
               max={session.max_attendees}
               held={holds}
-              accent="#902F8A"
+              accent={locationTheme(session).accent}
               showMinLine
               pipClassName="flex-1 self-center aspect-square max-w-[11px] rounded-full border-[1.5px]"
             />

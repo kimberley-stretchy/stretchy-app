@@ -1,0 +1,12 @@
+import { locationTheme } from "../lib/locationColours";
+let fail = 0;
+const check = (name: string, ok: boolean) => { console.log(`${ok ? "ok  " : "FAIL"} ${name}`); if (!ok) fail++; };
+check("Herne Bay → purple", locationTheme({ title: "Herne Bay | Morning", location_name: "Bayfield Primary School Hall" }).accent === "#902F8A");
+check("Ōrākei (with macrons) → orange", locationTheme({ title: "Ōrākei | Morning", location_name: "Ōrākei School Hall" }).accent === "#E96709");
+check("Orakei (plain) → orange", locationTheme({ title: "Orakei | Evening" }).accent === "#E96709");
+check("St Heliers → yellow, with ink text on it", (() => { const t = locationTheme({ title: "St Heliers | Morning" }); return t.accent === "#FCBB16" && t.onAccent === "#14110F" && t.textAccent === "#14110F"; })());
+check("Saint Heliers → yellow", locationTheme({ title: "Saint Heliers | Morning" }).accent === "#FCBB16");
+check("Ponsonby → blue", locationTheme({ title: "Ponsonby | Evening" }).accent === "#0000FF");
+check("only the address says Ponsonby → blue", locationTheme({ title: "Sunset flow", location_name: "The Studio", location_address: "1 Jervois Rd, Ponsonby" }).accent === "#0000FF");
+check("somewhere new → movement colour", locationTheme({ title: "Mt Eden | Morning", movement_type: "pilates" }).accent === "#0000FF");
+console.log(fail ? `\n${fail} FAILED` : "\nall passed"); process.exit(fail ? 1 : 0);
