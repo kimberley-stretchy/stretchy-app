@@ -15,7 +15,7 @@ import { formatDay, formatTime } from "@/lib/sessionTimes";
 //     once, when the session is live and their email is on it;
 //   • "it's going ahead" with numbers, or "called off", at 36 hours out
 //     (or whenever HQ cancels).
-// HQ is copied on every one. Nothing here throws: a venue email must never get
+// HQ is cc'd on every one. Nothing here throws: a venue email must never get
 // in the way of saving a session or confirming it.
 //
 // Who to email: the contact typed on the session in HQ if there is one;
@@ -64,7 +64,9 @@ async function send(o: { to: string; subject: string; html: string; sessionId: s
     .send({
       from: FROM,
       to: o.to,
-      bcc: HQ_EMAIL,
+      // Stretchy HQ is copied openly, so the venue can reply-all and Kimberley
+      // sees every venue email in her inbox.
+      cc: HQ_EMAIL,
       reply_to: REPLY_TO,
       subject: o.subject,
       html: o.html,
