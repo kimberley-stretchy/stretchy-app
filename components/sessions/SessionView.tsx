@@ -5,6 +5,7 @@ import { calculatePrice, formatPrice, maxPriceToPromise } from "@/lib/pricing";
 import { sessionTimes } from "@/lib/sessionTimes";
 import { styleAndLevel, suburbOf } from "@/lib/sessionDisplay";
 import { moreToGoAhead, inAndRoom } from "@/lib/places";
+import { locationTheme } from "@/lib/locationColours";
 
 // The session page, top to bottom (COPY_REFRESH_HANDOVER.md section 4): title,
 // the session as rows, the price block in its outline box, the action button,
@@ -104,6 +105,7 @@ export default function SessionView({
 
         {/* 3. Price block, in the outline box */}
         <PriceBox
+          accent={locationTheme(s).accent}
           price={maxPrice}
           label={roomLine}
           held={holds}

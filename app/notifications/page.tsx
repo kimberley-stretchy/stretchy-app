@@ -6,6 +6,7 @@ import Link from "next/link";
 import SMark from "@/components/SMark";
 import { createClient } from "@/lib/supabase/client";
 import { calculatePrice } from "@/lib/pricing";
+import { locationTheme } from "@/lib/locationColours";
 
 const TYPE_COLORS: Record<string, string> = {
   yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
@@ -144,7 +145,7 @@ function HoldCard({ hold: h, currentHolds }: { hold: HoldWithSession; currentHol
   const s = h.sessions;
   if (!s) return null;
 
-  const typeColor = TYPE_COLORS[s.movement_type] ?? "#888";
+  const typeColor = locationTheme(s).accent;
   const startDate = new Date(s.starts_at);
   const dayStr = startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase();
   const timeStr = startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase();
@@ -157,7 +158,7 @@ function HoldCard({ hold: h, currentHolds }: { hold: HoldWithSession; currentHol
   return (
     <Link href={isFuture && h.state === "active" ? `/hold/${s.id}` : `/sessions/${s.id}`} className="block bg-white rounded-card border-2 border-ink p-4">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5" style={{ backgroundColor: typeColor }}>
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ color: locationTheme(s).onAccent, backgroundColor: typeColor }}>
           {s.movement_type.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">

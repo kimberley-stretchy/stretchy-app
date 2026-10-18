@@ -10,6 +10,7 @@ import { maxPriceToPromise } from "@/lib/pricing";
 import { roomLabel } from "@/lib/places";
 import { phase } from "@/lib/sessionTimes";
 import { NewTabLink, HOW_IT_WORKS_HREF } from "@/components/PolicyLinks";
+import { locationTheme } from "@/lib/locationColours";
 
 const TYPE_COLORS: Record<string, string> = {
   yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
@@ -27,6 +28,7 @@ type DBSession = {
   starts_at: string;
   duration_mins: number;
   location_name: string;
+  location_address?: string | null;
   cost_base: number;
   revenue_target: number;
   min_attendees: number;
@@ -51,7 +53,9 @@ function getStatus(s: DBSession) {
 }
 
 function SessionCard({ s }: { s: DBSession }) {
-  const typeColor = TYPE_COLORS[s.movement_type] ?? "#888";
+  // Each location has its own colour (lib/locationColours.ts).
+  const theme     = locationTheme(s);
+  const typeColor = theme.accent;
   const typeLabel = TYPE_LABELS[s.movement_type] ?? s.movement_type.toUpperCase();
   const initial   = s.movement_type.charAt(0).toUpperCase();
   const status    = getStatus(s);
@@ -70,12 +74,12 @@ function SessionCard({ s }: { s: DBSession }) {
             <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#14110F", color: "#F7F0E8" }}>{dayStr}</span>
             <span className="font-mono text-xs font-semibold px-3 py-1.5 rounded-pill" style={{ backgroundColor: "#E1D5C6", color: "#6B6862" }}>{timeStr}</span>
           </div>
-          <div className="w-10 h-10 rounded-card flex items-center justify-center font-bold text-base text-white flex-shrink-0" style={{ backgroundColor: typeColor }}>
+          <div className="w-10 h-10 rounded-card flex items-center justify-center font-bold text-base flex-shrink-0" style={{ backgroundColor: typeColor, color: theme.onAccent }}>
             {initial}
           </div>
         </div>
         <div className="flex items-center gap-2 mb-3">
-          <span className="font-mono text-xs font-bold px-2.5 py-1.5 rounded-pill" style={{ backgroundColor: typeColor, color: "#fff" }}>{typeLabel}</span>
+          <span className="font-mono text-xs font-bold px-2.5 py-1.5 rounded-pill" style={{ backgroundColor: typeColor, color: theme.onAccent }}>{typeLabel}</span>
         </div>
         <h2 className="font-display font-bold text-ink leading-tight mb-1" style={{ fontSize: "22px" }}>{s.title}</h2>
         <p className="text-sm text-muted mb-1">{s.location_name}</p>
@@ -92,7 +96,7 @@ function SessionCard({ s }: { s: DBSession }) {
           <p className="font-mono text-xs font-bold uppercase tracking-wide" style={{ color: status.color }}>
             {status.label}
           </p>
-          <div className="font-mono font-bold text-sm px-3 py-1.5 rounded-pill text-white flex-shrink-0 flex items-baseline gap-0.5" style={{ backgroundColor: typeColor }}>
+          <div className="font-mono font-bold text-sm px-3 py-1.5 rounded-pill flex-shrink-0 flex items-baseline gap-0.5" style={{ backgroundColor: typeColor, color: theme.onAccent }}>
             <span className="text-xs font-semibold">$</span><span>{status.price.toFixed(2)}</span><span className="text-xs font-semibold ml-1">max</span>
           </div>
         </div>

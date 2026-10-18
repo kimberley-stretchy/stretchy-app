@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import HQShell from "@/components/hq/HQShell";
 import { calculatePrice } from "@/lib/pricing";
+import { locationTheme } from "@/lib/locationColours";
 
 const T = {
   ink:    "#14110F",
@@ -509,7 +510,7 @@ function SessionCard({
   selected?: boolean;
   onSelect?: () => void;
 }) {
-  const typeColor = TYPE_COLORS[s.movement_type] || "#888";
+  const typeColor = locationTheme(s).textAccent;
   const stateInfo = STATE_COLORS[s.state] || STATE_COLORS.open;
   const startDate = new Date(s.starts_at);
   const currentPrice = calculatePrice(s.cost_base, s.revenue_target, Math.max(s.current_holds, s.min_attendees));
