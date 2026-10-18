@@ -17,6 +17,7 @@ import {
 } from "@/lib/sessionDecision";
 import { followUpFailedCards, nightBeforeCardSummary } from "@/lib/confirmCards";
 import { sendFirstStretchyFollowUps } from "@/lib/firstStretchyFollowUp";
+import { sendUpcomingVenueHolds } from "@/lib/notifyVenue";
 import { stepsDue, hoursUntil, NUDGE_HOURS, HQ_WINDOW_HOURS, DECISION_HOURS } from "@/lib/sessionSchedule";
 
 /**
@@ -315,5 +316,15 @@ export async function GET(request: NextRequest) {
     console.error("First-Stretchy follow-up error:", e);
   }
 
-  return NextResponse.json({ nudged, checked: (sessions ?? []).length, results, cards, followUps });
+  // ── F) VENUE CALENDAR HOLDS ─────────────────────────────────────────────────
+  // Sessions in the next two weeks: each venue (yoga + Social Stretch) gets its
+  // "pencilled in" email and calendar entry, once.
+  let venueHolds = 0;
+  try {
+    venueHolds = await sendUpcomingVenueHolds(admin, now);
+  } catch (e) {
+    console.error("Venue holds error:", e);
+  }
+
+  return NextResponse.json({ nudged, checked: (sessions ?? []).length, results, cards, followUps, venueHolds });
 }

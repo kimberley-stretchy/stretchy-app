@@ -17,6 +17,10 @@ import { formatDay, formatTime } from "@/lib/sessionTimes";
 //     (or whenever HQ cancels).
 // HQ is copied on every one. Nothing here throws: a venue email must never get
 // in the way of saving a session or confirming it.
+//
+// Who to email: the contact typed on the session in HQ if there is one;
+// otherwise the venue contact on file for that location in the Team portal
+// (HQ → Team portal → Locations: the contact email, or else the venue email).
 // ─────────────────────────────────────────────────────────────────────────────
 
 const FROM = "Stretchy HQ <hello@stretchyyoga.co.nz>";
@@ -131,6 +135,37 @@ async function load(admin: SupabaseClient, sessionId: string): Promise<{ s: Sess
 }
 
 const EMAIL_COL: Record<Which, string> = { venue: "venue_email", social: "social_venue_email" };
+
+// "Ōrākei" → "orakei", so a session's area matches its Team portal location
+// however it's spelt.
+const plain = (v?: string | null) => (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+/** The venue contacts on file for this session's location in the Team portal. */
+async function portalContacts(admin: SupabaseClient, s: SessionRow): Promise<Record<Which, string | null>> {
+  const none = { venue: null, social: null };
+  const { data, error } = await admin
+    .from("portal_locations")
+    .select("name, yoga_contact_email, yoga_venue_email, social_contact_email, social_venue_email");
+  if (error || !data) return none;
+  const area = plain(String(s.title ?? "").split("|")[0]);
+  const where = plain(`${s.location_name ?? ""} ${s.location_address ?? ""}`);
+  const loc =
+    data.find((l) => plain(l.name) && plain(l.name) === area) ??
+    data.find((l) => plain(l.name) && (area.includes(plain(l.name)) || where.includes(plain(l.name))));
+  if (!loc) return none;
+  const pick = (...v: (string | null)[]) => v.map((x) => (x ?? "").trim()).find((x) => isEmail(x)) ?? null;
+  return {
+    venue: pick(loc.yoga_contact_email, loc.yoga_venue_email),
+    social: pick(loc.social_contact_email, loc.social_venue_email),
+  };
+}
+
+/** Who gets this venue's emails: the session's own contact, else the Team portal's. */
+function contactFor(s: SessionRow, which: Which, portal: Record<Which, string | null>): string | null {
+  const own = s[EMAIL_COL[which]];
+  if (isEmail(own)) return own.trim().toLowerCase();
+  return portal[which] ? portal[which]!.toLowerCase() : null;
+}
 const INVITED_COL: Record<Which, string> = { venue: "venue_invited_email", social: "social_venue_invited_email" };
 
 /**
@@ -145,9 +180,10 @@ export async function sendVenueHolds(admin: SupabaseClient, sessionId: string): 
     if (!loaded) return sent;
     const { s, held } = loaded;
     if (s.is_draft || s.state === "cancelled" || new Date(s.starts_at).getTime() < Date.now()) return sent;
+    const portal = await portalContacts(admin, s);
 
     for (const which of ["venue", "social"] as Which[]) {
-      const to = isEmail(s[EMAIL_COL[which]]) ? (s[EMAIL_COL[which]] as string).trim() : null;
+      const to = contactFor(s, which, portal);
       if (!to || to === s[INVITED_COL[which]]) continue;
       if (which === "social" && !s.social_stretch_venue) continue;
       const e = renderVenueHold(s, which, held);
@@ -170,14 +206,58 @@ export async function notifyVenues(admin: SupabaseClient, sessionId: string, kin
     if (!loaded) return;
     const { s } = loaded;
     const held = heldBefore ?? loaded.held;
+    const portal = await portalContacts(admin, s);
     for (const which of ["venue", "social"] as Which[]) {
-      const to = isEmail(s[EMAIL_COL[which]]) ? (s[EMAIL_COL[which]] as string).trim() : null;
+      const to = contactFor(s, which, portal);
       if (!to) continue;
       if (which === "social" && !s.social_stretch_venue) continue;
       const e = renderVenueUpdate(s, which, kind, held);
-      await send({ to, subject: e.subject, html: e.html, sessionId, type: `venue_${kind}_${which}` });
+      // "Going ahead" carries the calendar entry again (same entry, so it
+      // updates the pencilled-in one rather than adding a second).
+      await send({
+        to, subject: e.subject, html: e.html, sessionId, type: `venue_${kind}_${which}`,
+        ...(kind === "confirmed" ? { ics: { name: `stretchy-${which === "venue" ? "session" : "social-stretch"}.ics`, content: buildIcsContent(e.part.event) } } : {}),
+      });
     }
   } catch (e) {
     console.error("notifyVenues error:", e);
   }
+}
+
+/** How far ahead venues get their calendar hold, for sessions already in HQ. */
+export const VENUE_HOLD_DAYS_AHEAD = 14;
+
+/**
+ * Run by the session-check job: every live session in the next two weeks
+ * whose venues haven't had their hold yet gets one now. Each venue hears about
+ * each session once (venue_invited_email / social_venue_invited_email), so
+ * a weekly series arrives one week at a time rather than all at once.
+ */
+export async function sendUpcomingVenueHolds(admin: SupabaseClient, now: Date = new Date()): Promise<number> {
+  let sent = 0;
+  try {
+    const { data } = await admin
+      .from("sessions")
+      .select("id")
+      .in("state", ["open", "confirmed"])
+      .not("is_draft", "is", true)
+      .gt("starts_at", now.toISOString())
+      .lte("starts_at", new Date(now.getTime() + VENUE_HOLD_DAYS_AHEAD * 86_400_000).toISOString());
+    for (const row of data ?? []) sent += (await sendVenueHolds(admin, row.id)).length;
+  } catch (e) {
+    console.error("sendUpcomingVenueHolds error:", e);
+  }
+  return sent;
+}
+
+/** Read-only: who each venue email for a session would go to. For checks. */
+export async function previewVenueRecipients(admin: SupabaseClient, sessionId: string) {
+  const loaded = await load(admin, sessionId);
+  if (!loaded) return null;
+  const portal = await portalContacts(admin, loaded.s);
+  return {
+    venue: contactFor(loaded.s, "venue", portal),
+    social: loaded.s.social_stretch_venue ? contactFor(loaded.s, "social", portal) : null,
+    alreadyInvited: { venue: loaded.s.venue_invited_email ?? null, social: loaded.s.social_venue_invited_email ?? null },
+  };
 }
