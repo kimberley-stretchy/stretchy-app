@@ -1,5 +1,5 @@
 import CapacityPips from "@/components/CapacityPips";
-import { formatPrice, priceHasDropped } from "@/lib/pricing";
+import { formatPrice } from "@/lib/pricing";
 import PriceEnds from "@/components/PriceEnds";
 
 // The price block in a 2px ink outline box — the same block as the homepage
@@ -32,16 +32,13 @@ export default function PriceBox({
   /** The price right now (lib/pricing → priceRightNow). Shown big once it's below the cap. */
   nowPrice?: number;
 }) {
-  const dropped = nowPrice != null && priceHasDropped(nowPrice, price);
   return (
     <div className="border-2 border-ink rounded-[22px] p-4 flex flex-col gap-[10px] bg-cream">
       <div>
         <p className="m-0 font-mono font-extrabold text-ink leading-none tabular-nums" style={{ fontSize: 44 }}>
-          {formatPrice(dropped ? nowPrice! : price)}
+          {formatPrice(price)}
         </p>
-        <p className="m-0 mt-1 text-[13px] text-ink/60">
-          {dropped ? <>right now &middot; never more than <strong className="text-ink">{formatPrice(price)}</strong> &middot; incl. GST</> : <>max per person &middot; incl. GST</>}
-        </p>
+        <p className="m-0 mt-1 text-[13px] text-ink/60">max per person &middot; incl. GST</p>
       </div>
       <div className="flex justify-between gap-3 font-mono text-[11px] font-extrabold tracking-[0.08em] uppercase text-ink/60">
         <span className="text-ink">{label}</span>
