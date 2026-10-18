@@ -89,6 +89,21 @@ export function maxPriceToPromise(
 }
 
 /**
+ * The price RIGHT NOW: what each person would pay if nobody else joined or
+ * left from here — the current headcount, floored at the minimum. Once more
+ * than the minimum are in, this sits below the "never more than" price
+ * (maxPriceToPromise). It's shown alongside that cap, never instead of it.
+ */
+export function priceRightNow(costBase: number, revenueTarget: number, minimumMats: number, peopleHolding: number): number {
+  return calculatePrice(costBase, revenueTarget, Math.max(peopleHolding, minimumMats));
+}
+
+/** True when the price right now is already below the cap (worth showing both). */
+export function priceHasDropped(now: number, cap: number): boolean {
+  return Math.round(now * 100) < Math.round(cap * 100);
+}
+
+/**
  * Full pricing state for a session — everything the UI needs.
  */
 export function getPricingState(

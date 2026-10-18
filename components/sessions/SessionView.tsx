@@ -1,7 +1,7 @@
 import InfoRows from "@/components/sessions/InfoRows";
 import PriceBox from "@/components/sessions/PriceBox";
 import PolicyLinks from "@/components/PolicyLinks";
-import { calculatePrice, formatPrice, maxPriceToPromise } from "@/lib/pricing";
+import { calculatePrice, formatPrice, maxPriceToPromise, priceRightNow } from "@/lib/pricing";
 import { sessionTimes } from "@/lib/sessionTimes";
 import { styleAndLevel, suburbOf } from "@/lib/sessionDisplay";
 import { moreToGoAhead, inAndRoom } from "@/lib/places";
@@ -107,6 +107,7 @@ export default function SessionView({
         <PriceBox
           accent={locationTheme(s).accent}
           price={maxPrice}
+          nowPrice={priceRightNow(s.cost_base, s.revenue_target, s.min_attendees, holds)}
           label={roomLine}
           held={holds}
           min={s.min_attendees}

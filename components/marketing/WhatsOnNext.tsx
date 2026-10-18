@@ -1,10 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { calculatePrice, formatPrice, maxPriceToPromise } from "@/lib/pricing";
+import { calculatePrice, formatPrice, maxPriceToPromise, priceRightNow, priceHasDropped } from "@/lib/pricing";
 import CapacityPips from "@/components/CapacityPips";
 import { roomLabel } from "@/lib/places";
 import { phase, formatDay, formatTimeRange } from "@/lib/sessionTimes";
 import { locationTheme } from "@/lib/locationColours";
+import PriceEnds from "@/components/PriceEnds";
 
 export type MarketingSession = {
   id: string;
@@ -68,6 +69,10 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
   // The big price is the most this person can pay: the at-minimum price until
   // 36 hrs out, the current price after (lib/pricing.ts → maxPriceToPromise).
   const price = maxPriceToPromise(s.cost_base, s.revenue_target, s.min_attendees, holds, phase(s.starts_at, s.state) === "before36");
+  // Past the minimum, the price right now is lower than the cap: show it big,
+  // with the cap beside it so nobody's misled.
+  const now = priceRightNow(s.cost_base, s.revenue_target, s.min_attendees, holds);
+  const dropped = !s.isPlaceholder && priceHasDropped(now, price);
   const openingPrice = calculatePrice(s.cost_base, s.revenue_target, s.min_attendees);
   const floorPrice = calculatePrice(s.cost_base, s.revenue_target, s.max_attendees);
 
@@ -142,8 +147,10 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
 
         <div className="flex items-end justify-between gap-3.5">
           <div>
-            <div className="font-mono text-[32px] lg:text-[42px] font-extrabold leading-none">{formatPrice(price)}</div>
-            <div className="text-[11px] lg:text-xs font-semibold text-ink/55 mt-1">max per person &middot; incl. GST</div>
+            <div className="font-mono text-[32px] lg:text-[42px] font-extrabold leading-none">{formatPrice(dropped ? now : price)}</div>
+            <div className="text-[11px] lg:text-xs font-semibold text-ink/55 mt-1">
+              {dropped ? <>right now &middot; never more than {formatPrice(price)} &middot; incl. GST</> : <>max per person &middot; incl. GST</>}
+            </div>
           </div>
           <Link
             href={s.isPlaceholder ? "/sessions" : `/sessions/${s.id}`}
@@ -159,10 +166,14 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
             <span>{s.max_attendees} MAX</span>
           </div>
           <CapacityPips min={s.min_attendees} max={s.max_attendees} held={holds} accent={accent} showMinLine />
-          <div className="flex justify-between gap-2.5 font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em] text-ink/50 mt-1.5">
-            <span>{formatPrice(openingPrice)}</span>
-            <span>{formatPrice(floorPrice)}</span>
-          </div>
+          <PriceEnds
+            className="font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em] text-ink/50 mt-1.5"
+            openingPrice={openingPrice}
+            floorPrice={floorPrice}
+            nowPrice={s.isPlaceholder ? undefined : now}
+            held={holds}
+            max={s.max_attendees}
+          />
         </div>
       </div>
     </div>
