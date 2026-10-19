@@ -35,8 +35,10 @@ const MORE = [
     title: "Business & investment opportunities",
     short: "A new economic model for movement communities. Partner, back, license or collaborate.",
     body: "We’re creating a new economic model for movement communities, with the tech, systems and brand to match. Get in touch about partnering, backing, building, licensing or collaborating — whether that’s growing Stretchy or exploring what we’ve built for your own movement community.",
-    cta: "Start a conversation →",
-    href: "/partner",
+    // Licensing, investment and partnerships for the tech now live on stretchy.social.
+    link: { text: "exploring what we’ve built for your own movement community", href: "https://stretchy.social" },
+    cta: "Licence the tech ↗",
+    href: "https://stretchy.social",
   },
   {
     title: "Feedback on Stretchy",
@@ -46,6 +48,21 @@ const MORE = [
     href: "mailto:kimberley@stretchyyoga.co.nz?subject=Feedback on Stretchy",
   },
 ];
+
+type BodyLink = { text: string; href: string };
+
+// Turns one phrase inside a card's text into a link (e.g. to stretchy.social).
+function withLink(body: string, link?: BodyLink) {
+  if (!link || !body.includes(link.text)) return body;
+  const [before, after] = body.split(link.text);
+  return (
+    <>
+      {before}
+      <a href={link.href} className="underline font-semibold text-ink">{link.text}</a>
+      {after}
+    </>
+  );
+}
 
 export default function OpportunitiesBand() {
   return (
@@ -118,7 +135,7 @@ export default function OpportunitiesBand() {
         {MORE.map((m) => (
           <div key={m.title} className="border-2 border-dashed border-ink/35 rounded-[20px] p-6 flex flex-col gap-3">
             <div className="font-display text-[23px] leading-none">{m.title}</div>
-            <p className="m-0 text-[13px] leading-[1.5] text-ink/70">{m.body}</p>
+            <p className="m-0 text-[13px] leading-[1.5] text-ink/70">{withLink(m.body, (m as { link?: BodyLink }).link)}</p>
             <a
               href={m.href}
               className="mt-auto self-start inline-flex items-center justify-center h-11 px-[26px] bg-transparent text-ink border-2 border-ink rounded-pill text-sm font-bold"

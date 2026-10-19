@@ -55,3 +55,7 @@ coverage/
 
 # Customer exports — never commit personal data
 *customers*.csv
+
+# Local design exports (reference only, never deployed)
+/design-import/
+/public/zz-design/
