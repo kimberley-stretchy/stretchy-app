@@ -44,7 +44,7 @@ function track(event: string, props?: Record<string, string>) {
 
 // ── Little building blocks ─────────────────────────────────────────────────
 const mono = (size = 12, extra: React.CSSProperties = {}): React.CSSProperties => ({ fontFamily: MONO, fontSize: size, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", ...extra });
-const h2: React.CSSProperties = { margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(23px,4.05vw,60px)", lineHeight: 0.95, textTransform: "uppercase", textWrap: "balance" } as React.CSSProperties;
+const h2: React.CSSProperties = { margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(23px,4.05vw,60px)", lineHeight: 0.95, textTransform: "uppercase", overflowWrap: "break-word", maxWidth: "100%" } as React.CSSProperties;
 const bodyText: React.CSSProperties = { margin: 0, fontSize: "clamp(12.5px,1.01vw,14px)", lineHeight: 1.55, textWrap: "pretty" } as React.CSSProperties;
 const section = (extra: React.CSSProperties = {}): React.CSSProperties => ({ padding: "clamp(44px,8vw,112px) clamp(16px,2.5vw,40px)", borderBottom: `2px solid ${INK}`, ...extra });
 const wrap: React.CSSProperties = { maxWidth: 1360, margin: "0 auto" };
@@ -278,7 +278,7 @@ export default function SocialSite() {
             <div style={{ ...wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,520px),1fr))", gap: "clamp(40px,5vw,72px)", alignItems: "center" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
                 <div style={mono(11.5)}>The tech behind Stretchy · Tāmaki Makaurau</div>
-                <h1 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(28px,4.75vw,74px)", lineHeight: 0.92, textTransform: "uppercase", textWrap: "balance" } as React.CSSProperties}>People-powered Pricing.</h1>
+                <h1 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(28px,4.75vw,74px)", lineHeight: 0.92, textTransform: "uppercase", overflowWrap: "break-word", maxWidth: "100%" } as React.CSSProperties}>People-powered Pricing.</h1>
                 <p style={{ margin: 0, fontSize: "clamp(14px,1.45vw,20px)", lineHeight: 1.25, fontWeight: 600, maxWidth: 600 }}>The more who move together, the better for all.</p>
                 <p style={{ ...bodyText, maxWidth: 600, fontSize: "clamp(12.5px,1.01vw,15px)" }}>We&rsquo;re building technology to help communities bring people together, make events happen and make participation more accessible. Stretchy Social is the tech and intellectual property behind the Stretchy movement. We&rsquo;re hoping to get People-powered Pricing to more people, in more places.</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 4 }}>
@@ -380,7 +380,7 @@ export default function SocialSite() {
                 <p style={{ ...bodyText, maxWidth: 760 }}>One simple flow, from the organiser setting the minimum to everyone sharing the final price. Here&rsquo;s how it runs at Stretchy Yoga.</p>
               </div>
               {narrow && <div style={{ ...mono(10.5, { letterSpacing: ".12em" }), marginBottom: -20 }}>SWIPE THROUGH THE STEPS →</div>}
-              <div style={{ display: "grid", gridAutoFlow: "column", gridAutoColumns: narrow ? "86vw" : "minmax(min(82vw,320px),1fr)", gap: narrow ? 12 : 16, alignItems: "start", overflowX: "auto", scrollSnapType: "x mandatory", ...(narrow ? { margin: "0 -16px", padding: "0 16px 8px", scrollPadding: "0 16px" } : { paddingBottom: 8 }), WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+              <div style={{ display: "grid", gridAutoFlow: "column", gridAutoColumns: narrow ? "86vw" : "minmax(min(82vw,320px),1fr)", gap: narrow ? 12 : 16, alignItems: narrow ? "start" : "stretch", ...(narrow ? {} : { gridTemplateRows: "auto auto", rowGap: 16 }), overflowX: "auto", scrollSnapType: "x mandatory", ...(narrow ? { margin: "0 -16px", padding: "0 16px 8px", scrollPadding: "0 16px" } : { paddingBottom: 8 }), WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
                 <StepCard narrow={narrow} bg={YELLOW} fg={INK} step="01 | Before" num="01 / 03" title="Set the goal" lead="Your costs, fair pay for your people, your revenue or fundraising target." body="Set a minimum to go ahead and a maximum to cap the room." foot="You set the minimum">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -483,12 +483,11 @@ export default function SocialSite() {
           {/* ── Pricing ── */}
           <section id="pricing" style={section()}>
             <div style={{ ...wrap, display: "flex", flexDirection: "column", gap: "clamp(22px,4vw,48px)" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,480px),1fr))", gap: "clamp(20px,4vw,64px)", alignItems: "end" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                  <div style={mono(11.5, { color: P })}>Pricing</div>
-                  <h2 style={{ ...h2, fontSize: "clamp(24.5px,4.75vw,74px)", lineHeight: 0.92 }}>Shaped to how you run.</h2>
-                </div>
-                <p style={bodyText}>No costly lock-in membership platform. Pick the model that fits your organisation. Final pricing is being shaped with our beta partners.</p>
+              {/* Headline runs across the full width, the paragraph sits under it. */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <div style={mono(11.5, { color: P })}>Pricing</div>
+                <h2 style={{ ...h2, fontSize: "clamp(24.5px,4.75vw,74px)", lineHeight: 0.92 }}>Shaped to how you run.</h2>
+                <p style={{ ...bodyText, maxWidth: 760 }}>No costly lock-in membership platform. Pick the model that fits your organisation. Final pricing is being shaped with our beta partners.</p>
               </div>
               <div style={{ border: `2px solid ${INK}`, borderRadius: 26, overflow: "hidden" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", margin: "0 -2px -2px 0" }}>
@@ -523,12 +522,12 @@ export default function SocialSite() {
                   <PillLink href={IG}>@stretchy.yoga</PillLink>
                 </div>
               </div>
-              <div style={{ background: BLUE, color: CREAM, borderRadius: 34, padding: 12, maxWidth: 560, width: "100%", justifySelf: "center" }}>
+              <div style={{ background: BLUE, color: CREAM, borderRadius: 30, padding: 10, maxWidth: 400, width: "100%", justifySelf: "center" }}>
                 <div style={{ border: `2px solid ${CREAM}`, borderRadius: 26, display: "flex", flexDirection: "column", aspectRatio: "4/5" }}>
                   <div style={{ padding: "16px 22px", borderBottom: `2px solid ${CREAM}`, display: "flex", justifyContent: "space-between", ...mono(10.5, { letterSpacing: ".12em" }) }}><span>An experiment in</span><span>Est. 2024</span></div>
                   <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden" }}>
                     <Mask color={P} style={{ position: "absolute", inset: "8% 10%" }} />
-                    <span style={{ position: "relative", fontFamily: DISPLAY, fontSize: "clamp(23px,3.87vw,53px)", lineHeight: 0.95, textTransform: "uppercase", textAlign: "center" }}>Purpose, people &amp; profit, in equal measure.</span>
+                    <span style={{ position: "relative", fontFamily: DISPLAY, fontSize: "clamp(22px,2.6vw,38px)", lineHeight: 0.95, textTransform: "uppercase", textAlign: "center" }}>Purpose, people &amp; profit, in equal measure.</span>
                   </div>
                   <div style={{ padding: "14px 22px", borderTop: `2px solid ${CREAM}`, display: "flex", justifyContent: "space-between", ...mono(9.5, { letterSpacing: ".12em" }) }}><span>Because they can work together</span><span>→</span></div>
                 </div>
@@ -539,12 +538,11 @@ export default function SocialSite() {
           {/* ── Get involved ── */}
           <section id="shape" style={{ padding: "clamp(44px,8vw,112px) clamp(16px,2.5vw,40px)" }}>
             <div style={{ ...wrap, display: "flex", flexDirection: "column", gap: "clamp(22px,4vw,48px)" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,480px),1fr))", gap: "clamp(20px,4vw,64px)", alignItems: "end" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                  <div style={mono(11.5, { color: RUST })}>Get involved</div>
-                  <h2 style={{ ...h2, fontSize: "clamp(24.5px,4.75vw,74px)", lineHeight: 0.92 }}>Help shape what comes next.</h2>
-                </div>
-                <p style={bodyText}>We&rsquo;re looking to connect with organisations who could use the technology, people who want to test it, collaborators who can help us build it, and investors interested in its potential.</p>
+              {/* Headline runs across the full width, the paragraph sits under it. */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <div style={mono(11.5, { color: RUST })}>Get involved</div>
+                <h2 style={{ ...h2, fontSize: "clamp(24.5px,4.75vw,74px)", lineHeight: 0.92 }}>Help shape what comes next.</h2>
+                <p style={{ ...bodyText, maxWidth: 760 }}>We&rsquo;re looking to connect with organisations who could use the technology, people who want to test it, collaborators who can help us build it, and investors interested in its potential.</p>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 16 }}>
                 <ShapeCard bg={YELLOW} fg={INK} tag="01 | WAITLIST + BETA" right="EARLY ACCESS" title="JOIN THE WAITLIST" body="Hear about early access first. We'll invite people from the waitlist to beta test." button={{ label: "Join the waitlist", onClick: open("waitlist") }} />
@@ -838,13 +836,15 @@ function StepCard({ narrow, bg, fg, step, num, title, lead, body, foot, children
       </div>
     );
   }
-  // Wider: the step card, with the screen mock in its own card beneath.
+  // Wider: the step card, with the screen mock in its own card beneath. Both sit
+  // straight in the parent's two-row grid, so all three step cards share one
+  // height and all three mocks share another, and everything lines up.
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, scrollSnapAlign: "start" }}>
-      <div style={{ background: bg, color: fg, borderRadius: 30, padding: 12 }}>
-        <div style={{ border: line, borderRadius: 22, display: "flex", flexDirection: "column" }}>
+    <>
+      <div style={{ background: bg, color: fg, borderRadius: 30, padding: 12, scrollSnapAlign: "start", display: "flex" }}>
+        <div style={{ border: line, borderRadius: 22, display: "flex", flexDirection: "column", flex: 1 }}>
           <div style={{ padding: "16px 20px", borderBottom: line, display: "flex", justifyContent: "space-between", ...mono(10.5, { letterSpacing: ".12em" }) }}><span>{step}</span><span>{num}</span></div>
-          <div style={{ padding: "22px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ padding: "22px 20px", display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
             <h3 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(23px,2.46vw,37px)", lineHeight: 0.92, textTransform: "uppercase" }}>{title}</h3>
             <p style={{ margin: 0, fontSize: "clamp(12.5px,0.92vw,13px)", lineHeight: 1.45, fontWeight: 600 }}>{lead}</p>
             <p style={{ margin: 0, fontSize: "clamp(11.5px,0.88vw,12.5px)", lineHeight: 1.5 }}>{body}</p>
@@ -853,7 +853,7 @@ function StepCard({ narrow, bg, fg, step, num, title, lead, body, foot, children
         </div>
       </div>
       <div style={{ border: `2px solid ${INK}`, borderRadius: 40, background: bg, color: fg, padding: "20px 18px 24px", display: "flex", flexDirection: "column", gap: 14, minHeight: 500 }}>{children}</div>
-    </div>
+    </>
   );
 }
 
