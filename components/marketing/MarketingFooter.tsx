@@ -59,6 +59,7 @@ export default function MarketingFooter() {
             <a href="/venue/offer">Offer a space</a>
             <a href="/gem/apply">Become a Good Energy Manager</a>
             <a href="/partner">Partner with us</a>
+            <a href="https://stretchy.social">Stretchy Social: licence the tech ↗</a>
           </div>
         </div>
 
