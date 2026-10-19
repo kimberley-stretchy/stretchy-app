@@ -119,9 +119,9 @@ const WHO_ONEOFF = [
   { n: "06", tag: "Event organisers", c: OLIVE, fg: CREAM, t: "Event organisers", d: "Manage scheduling, bookings and payments without committing to a costly, ongoing platform.", eg: "Workshops, gigs, supper clubs and pop-up markets." },
 ];
 const PLANS = [
-  { k: "Per event", c: YELLOW, t: "Event licence", d: "Pay for the events you run. Ideal for one-offs, fundraisers and seasonal series.", p: "Let’s talk", best: "Best for one-off, casual events" },
-  { k: "Membership", c: SKY, t: "Host membership", d: "For regular hosts running a handful of sessions a month, with the core tools included.", p: "Let’s talk", best: "Best for clubs and communities" },
-  { k: "Subscription", c: P, t: "Ongoing platform", d: "White-labelled under your brand, with integrations and support, for studios and organisations running weekly sessions.", p: "Let’s talk", best: "Best for studios and organisations" },
+  { k: "Per event", c: YELLOW, t: "Event licence", d: "Pay for the events you run. Ideal for one-offs, fundraisers and seasonal series.", best: "Best for one-off, casual events" },
+  { k: "Membership", c: SKY, t: "Host membership", d: "For regular hosts running a handful of sessions a month, with the core tools included.", best: "Best for clubs and communities" },
+  { k: "Subscription", c: P, t: "Ongoing platform", d: "White-labelled under your brand, with integrations and support, for studios and organisations running weekly sessions.", best: "Best for studios and organisations" },
 ];
 
 // ── The page ───────────────────────────────────────────────────────────────
@@ -496,21 +496,18 @@ export default function SocialSite() {
                       <div style={{ display: "flex", gap: 10, alignItems: "center" }}><span style={{ flex: "none", width: 14, height: 14, borderRadius: 999, background: pl.c }} /><span style={mono(10.5, { letterSpacing: ".12em" })}>{pl.k}</span></div>
                       <h3 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(21px,2.29vw,33.5px)", lineHeight: 0.95, textTransform: "uppercase" }}>{pl.t}</h3>
                       <p style={{ margin: 0, fontSize: "clamp(11.5px,0.88vw,12.5px)", lineHeight: 1.5, flex: 1 }}>{pl.d}</p>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2, paddingTop: 10, borderTop: `1.5px solid ${INK}` }}><span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 21 }}>{pl.p}</span><span style={{ fontSize: 10.5, opacity: 0.75 }}>{pl.best}</span></div>
+                      <div style={{ paddingTop: 10, borderTop: `1.5px solid ${INK}` }}><span style={{ fontSize: 10.5, opacity: 0.75 }}>{pl.best}</span></div>
                     </div>
                   ))}
                 </div>
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
-                <p style={{ margin: 0, fontSize: 12.5 }}>Every plan includes white-labelling and People-powered Pricing.</p>
-                <OutlineButton onClick={open("waitlist")} style={{ height: "clamp(36px,2.99vw,40.5px)", padding: "0 20px", fontSize: 12.5 }}>Join the waitlist</OutlineButton>
               </div>
             </div>
           </section>
 
           {/* ── Case study ── */}
           <section id="case" style={section({ background: CREAM })}>
-            <div style={{ ...wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,480px),1fr))", gap: "clamp(32px,4vw,64px)", alignItems: "center" }}>
+            {/* The blue box stretches to exactly the height of the copy beside it. */}
+            <div style={{ ...wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,480px),1fr))", gap: "clamp(32px,4vw,64px)", alignItems: "stretch" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <div style={mono(11.5, { color: P })}>The case study · Built in Tāmaki Makaurau, made to travel</div>
                 <h2 style={{ ...h2, fontSize: "clamp(23px,3.87vw,58px)", lineHeight: 0.94 }}>A labour of love. A real-world case study.</h2>
@@ -522,8 +519,8 @@ export default function SocialSite() {
                   <PillLink href={IG}>@stretchy.yoga</PillLink>
                 </div>
               </div>
-              <div style={{ background: BLUE, color: CREAM, borderRadius: 30, padding: 10, maxWidth: 400, width: "100%", justifySelf: "center" }}>
-                <div style={{ border: `2px solid ${CREAM}`, borderRadius: 26, display: "flex", flexDirection: "column", aspectRatio: "4/5" }}>
+              <div style={{ background: BLUE, color: CREAM, borderRadius: 30, padding: 10, maxWidth: 400, width: "100%", justifySelf: "center", display: "flex", minHeight: 360 }}>
+                <div style={{ border: `2px solid ${CREAM}`, borderRadius: 26, display: "flex", flexDirection: "column", flex: 1 }}>
                   <div style={{ padding: "16px 22px", borderBottom: `2px solid ${CREAM}`, display: "flex", justifyContent: "space-between", ...mono(10.5, { letterSpacing: ".12em" }) }}><span>An experiment in</span><span>Est. 2024</span></div>
                   <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden" }}>
                     <Mask color={P} style={{ position: "absolute", inset: "8% 10%" }} />
