@@ -3,7 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { sendApplicantConfirmation } from "@/lib/applicantEmail";
 
-const VALID_TYPES = ["social_stretch", "teacher", "gem", "venue", "partner"];
+const VALID_TYPES = [
+  "social_stretch", "teacher", "gem", "venue", "partner",
+  // stretchy.social — the Stretchy platform offered to other businesses,
+  // teachers and organisations.
+  "platform_waitlist", "platform_enquiry", "platform_testing",
+];
 
 // What HQ sees in the alert email, and where to review each kind of submission.
 const TYPE_INFO: Record<string, { label: string; review: string }> = {
@@ -12,6 +17,9 @@ const TYPE_INFO: Record<string, { label: string; review: string }> = {
   venue:          { label: "venue offer",              review: "/admin/venues" },
   social_stretch: { label: "Social Stretch venue",     review: "/admin/venues" },
   partner:        { label: "partner enquiry",          review: "/admin" },
+  platform_waitlist: { label: "stretchy.social waitlist sign-up", review: "/admin/social" },
+  platform_enquiry:  { label: "stretchy.social enquiry",          review: "/admin/social" },
+  platform_testing:  { label: "stretchy.social testing sign-up",  review: "/admin/social" },
 };
 
 function fieldLines(fields: unknown): string {

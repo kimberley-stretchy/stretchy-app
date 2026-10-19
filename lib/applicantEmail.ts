@@ -16,6 +16,9 @@ const COPY: Record<string, { scheme: string; headline: string; thanks: string; s
   teacher:        { scheme: "dkblue", headline: "You’re in the mix. 🙌",    thanks: "Thanks for applying to teach a Stretchy.",                                 subject: "We’ve got your teaching application 🙌" },
   venue:          { scheme: "cream",  headline: "Space offered. 🏠",        thanks: "Thanks for offering your space for a Stretchy.",                           subject: "We’ve got your venue offer 🏠" },
   social_stretch: { scheme: "cream",  headline: "Space offered. 🏠",        thanks: "Thanks for offering your spot for a Social Stretch.",                      subject: "We’ve got your Social Stretch offer 🏠" },
+  platform_waitlist: { scheme: "purple", headline: "You’re on the list. 💛", thanks: "Thanks for joining the stretchy.social waitlist.", subject: "You’re on the stretchy.social waitlist 💛" },
+  platform_enquiry:  { scheme: "purple", headline: "Message received. 💛",  thanks: "Thanks for getting in touch about running your community on Stretchy.", subject: "We’ve got your message 💛" },
+  platform_testing:  { scheme: "purple", headline: "You’re in the test crew. 🙌", thanks: "Thanks for putting your hand up to help test stretchy.social.", subject: "Thanks for helping us test stretchy.social 🙌" },
   partner:        { scheme: "purple", headline: "Message received. 💛",     thanks: "Thanks for getting in touch about partnering with Stretchy.",              subject: "We’ve got your message 💛" },
 };
 

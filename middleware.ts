@@ -10,8 +10,28 @@ const ADMIN_PREFIXES = ["/admin"];
 // the site is public. Old /access links just bounce to where they were headed.
 const ACCESS_GATE_PATH = "/access";
 
+// stretchy.social — the Stretchy platform for other businesses, teachers and
+// organisations — is served from this same app. Its pages live under
+// /social-site; on the stretchy.social address they appear at the top level
+// (stretchy.social/ → /social-site). On stretchyyoga.co.nz that folder isn't
+// shown; it sends people to stretchy.social instead. Previews and local
+// development can open /social-site directly.
+const SOCIAL_HOSTS = new Set(["stretchy.social", "www.stretchy.social"]);
+const MAIN_HOSTS = new Set(["stretchyyoga.co.nz", "www.stretchyyoga.co.nz"]);
+const SOCIAL_PREFIX = "/social-site";
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const host = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
+
+  if (SOCIAL_HOSTS.has(host)) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.startsWith(SOCIAL_PREFIX) ? pathname : `${SOCIAL_PREFIX}${pathname === "/" ? "" : pathname}`;
+    return NextResponse.rewrite(url);
+  }
+  if (MAIN_HOSTS.has(host) && (pathname === SOCIAL_PREFIX || pathname.startsWith(`${SOCIAL_PREFIX}/`))) {
+    return NextResponse.redirect(new URL(pathname.slice(SOCIAL_PREFIX.length) || "/", "https://stretchy.social"));
+  }
 
   if (pathname === ACCESS_GATE_PATH) {
     const next = request.nextUrl.searchParams.get("next");
