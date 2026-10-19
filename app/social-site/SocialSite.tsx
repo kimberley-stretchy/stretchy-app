@@ -119,9 +119,9 @@ const WHO_ONEOFF = [
   { n: "06", tag: "Event organisers", c: OLIVE, fg: CREAM, t: "Event organisers", d: "Manage scheduling, bookings and payments without committing to a costly, ongoing platform.", eg: "Workshops, gigs, supper clubs and pop-up markets." },
 ];
 const PLANS = [
-  { k: "Per event", c: YELLOW, t: "Event licence", d: "Pay for the events you run. Ideal for one-offs, fundraisers and seasonal series.", p: "Let’s talk", best: "Best for one-off, casual events" },
-  { k: "Membership", c: SKY, t: "Host membership", d: "For regular hosts running a handful of sessions a month, with the core tools included.", p: "Let’s talk", best: "Best for clubs and communities" },
-  { k: "Subscription", c: P, t: "Ongoing platform", d: "White-labelled under your brand, with integrations and support, for studios and organisations running weekly sessions.", p: "Let’s talk", best: "Best for studios and organisations" },
+  { k: "Per event", c: YELLOW, t: "Event licence", d: "Pay for the events you run. Ideal for one-offs, fundraisers and seasonal series.", best: "Best for one-off, casual events" },
+  { k: "Membership", c: SKY, t: "Host membership", d: "For regular hosts running a handful of sessions a month, with the core tools included.", best: "Best for clubs and communities" },
+  { k: "Subscription", c: P, t: "Ongoing platform", d: "White-labelled under your brand, with integrations and support, for studios and organisations running weekly sessions.", best: "Best for studios and organisations" },
 ];
 
 // ── The page ───────────────────────────────────────────────────────────────
@@ -496,14 +496,10 @@ export default function SocialSite() {
                       <div style={{ display: "flex", gap: 10, alignItems: "center" }}><span style={{ flex: "none", width: 14, height: 14, borderRadius: 999, background: pl.c }} /><span style={mono(10.5, { letterSpacing: ".12em" })}>{pl.k}</span></div>
                       <h3 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(21px,2.29vw,33.5px)", lineHeight: 0.95, textTransform: "uppercase" }}>{pl.t}</h3>
                       <p style={{ margin: 0, fontSize: "clamp(11.5px,0.88vw,12.5px)", lineHeight: 1.5, flex: 1 }}>{pl.d}</p>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2, paddingTop: 10, borderTop: `1.5px solid ${INK}` }}><span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 21 }}>{pl.p}</span><span style={{ fontSize: 10.5, opacity: 0.75 }}>{pl.best}</span></div>
+                      <div style={{ paddingTop: 10, borderTop: `1.5px solid ${INK}` }}><span style={{ fontSize: 10.5, opacity: 0.75 }}>{pl.best}</span></div>
                     </div>
                   ))}
                 </div>
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
-                <p style={{ margin: 0, fontSize: 12.5 }}>Every plan includes white-labelling and People-powered Pricing.</p>
-                <OutlineButton onClick={open("waitlist")} style={{ height: "clamp(36px,2.99vw,40.5px)", padding: "0 20px", fontSize: 12.5 }}>Join the waitlist</OutlineButton>
               </div>
             </div>
           </section>
