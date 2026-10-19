@@ -8,6 +8,8 @@ import { TYPES, spendLabel, type LeadType, type Currency } from "@/lib/socialLea
 // Resend; set STRETCHY_SOCIAL_FROM to switch (e.g. "Stretchy Social <hello@stretchy.social>").
 const FROM = process.env.STRETCHY_SOCIAL_FROM || "Stretchy Social <hello@stretchyyoga.co.nz>";
 const IG = "https://www.instagram.com/stretchy.yoga/";
+// Lead alerts go to Stretchy HQ, copied to Kimberley's Studio Dawn inbox.
+const ALERT_CC = "kimberley@studiodawn.org";
 const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 type Row = Record<string, unknown> & { id: string; type: LeadType; name: string; email: string; organisation?: string | null };
@@ -33,15 +35,15 @@ function rowsHtml(r: Row): string {
     .join("");
 }
 
-async function send(o: { to: string; subject: string; html: string; type: string; replyTo?: string }) {
+async function send(o: { to: string; subject: string; html: string; type: string; replyTo?: string; cc?: string }) {
   if (!process.env.RESEND_API_KEY) return;
   const r = await new Resend(process.env.RESEND_API_KEY).emails
-    .send({ from: FROM, to: o.to, reply_to: o.replyTo ?? REPLY_TO, subject: o.subject, html: o.html })
+    .send({ from: FROM, to: o.to, ...(o.cc ? { cc: o.cc } : {}), reply_to: o.replyTo ?? REPLY_TO, subject: o.subject, html: o.html })
     .catch((e) => ({ data: null, error: e }));
   await logEmail({ recipient: o.to, emailType: o.type, subject: o.subject, resendId: r.data?.id ?? null, status: r.error ? "error" : "sent", error: r.error ? String((r.error as { message?: string }).message ?? r.error) : null });
 }
 
-/** To Kimberley, on every submission: "New Stretchy Social [type]: [name], [organisation]". */
+/** To Kimberley (cc Studio Dawn), on every submission: "New Stretchy Social [type]: [name], [organisation]". */
 export async function alertHQ(r: Row, opts: { step2?: boolean; hot?: boolean } = {}) {
   const who = [r.name, r.organisation].filter(Boolean).join(", ");
   const subject = opts.hot
@@ -57,7 +59,7 @@ export async function alertHQ(r: Row, opts: { step2?: boolean; hot?: boolean } =
     <table style="border-collapse:collapse">${rowsHtml(r)}</table>
     <p style="margin:18px 0 0;font-size:13px">Reply to this email to answer them directly. All leads: https://www.stretchyyoga.co.nz/admin/social</p>
   </div>`;
-  await send({ to: HQ_EMAIL, subject, html, type: opts.hot ? "social_lead_hot" : "social_lead_alert", replyTo: r.email });
+  await send({ to: HQ_EMAIL, cc: ALERT_CC, subject, html, type: opts.hot ? "social_lead_hot" : "social_lead_alert", replyTo: r.email });
 }
 
 /** To the person: a short thanks for their button, what happens next, and Instagram. No marketing. */
