@@ -506,7 +506,8 @@ export default function SocialSite() {
 
           {/* ── Case study ── */}
           <section id="case" style={section({ background: CREAM })}>
-            <div style={{ ...wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,480px),1fr))", gap: "clamp(32px,4vw,64px)", alignItems: "center" }}>
+            {/* The blue box stretches to exactly the height of the copy beside it. */}
+            <div style={{ ...wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,480px),1fr))", gap: "clamp(32px,4vw,64px)", alignItems: "stretch" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <div style={mono(11.5, { color: P })}>The case study · Built in Tāmaki Makaurau, made to travel</div>
                 <h2 style={{ ...h2, fontSize: "clamp(23px,3.87vw,58px)", lineHeight: 0.94 }}>A labour of love. A real-world case study.</h2>
@@ -518,8 +519,8 @@ export default function SocialSite() {
                   <PillLink href={IG}>@stretchy.yoga</PillLink>
                 </div>
               </div>
-              <div style={{ background: BLUE, color: CREAM, borderRadius: 30, padding: 10, maxWidth: 400, width: "100%", justifySelf: "center" }}>
-                <div style={{ border: `2px solid ${CREAM}`, borderRadius: 26, display: "flex", flexDirection: "column", aspectRatio: "4/5" }}>
+              <div style={{ background: BLUE, color: CREAM, borderRadius: 30, padding: 10, maxWidth: 400, width: "100%", justifySelf: "center", display: "flex", minHeight: 360 }}>
+                <div style={{ border: `2px solid ${CREAM}`, borderRadius: 26, display: "flex", flexDirection: "column", flex: 1 }}>
                   <div style={{ padding: "16px 22px", borderBottom: `2px solid ${CREAM}`, display: "flex", justifyContent: "space-between", ...mono(10.5, { letterSpacing: ".12em" }) }}><span>An experiment in</span><span>Est. 2024</span></div>
                   <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden" }}>
                     <Mask color={P} style={{ position: "absolute", inset: "8% 10%" }} />
