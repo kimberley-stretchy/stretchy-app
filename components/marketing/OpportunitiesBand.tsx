@@ -35,8 +35,9 @@ const MORE = [
     title: "Business & investment opportunities",
     short: "A new economic model for movement communities. Partner, back, license or collaborate.",
     body: "We’re creating a new economic model for movement communities, with the tech, systems and brand to match. Get in touch about partnering, backing, building, licensing or collaborating — whether that’s growing Stretchy or exploring what we’ve built for your own movement community.",
-    cta: "Start a conversation →",
-    href: "/partner",
+    // Licensing, investment and partnerships for the tech now live on stretchy.social.
+    cta: "Licence the tech ↗",
+    href: "https://stretchy.social",
   },
   {
     title: "Feedback on Stretchy",
