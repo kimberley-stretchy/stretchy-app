@@ -2,7 +2,8 @@ import { formatPrice, priceHasDropped } from "@/lib/pricing";
 
 // The prices under the people dots: the price at the minimum under the left
 // end, the full-room price under the right end — and, once the session is past
-// its minimum, "CURRENT $21.30" under the dot for the latest person in.
+// its minimum, "CURRENT $21.30 PP" under the dot for the latest person in
+// (PP = per person; there isn't room to spell it out under the dots).
 // The big price above stays the "max per person" cap.
 export default function PriceEnds({
   openingPrice,
@@ -30,7 +31,7 @@ export default function PriceEnds({
   // drops onto its own line instead.
   const fitsUnderDot = !showEnds || (at >= 0.22 && at <= 0.78);
   if (!showEnds && !showNow) return null;
-  const current = showNow ? <span className="whitespace-nowrap text-ink">CURRENT {formatPrice(nowPrice!)}</span> : null;
+  const current = showNow ? <span className="whitespace-nowrap text-ink">CURRENT {formatPrice(nowPrice!)} PP</span> : null;
 
   return (
     <div className={className}>
