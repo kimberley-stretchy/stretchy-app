@@ -45,7 +45,7 @@ function track(event: string, props?: Record<string, string>) {
 // ── Little building blocks ─────────────────────────────────────────────────
 const mono = (size = 12, extra: React.CSSProperties = {}): React.CSSProperties => ({ fontFamily: MONO, fontSize: size, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", ...extra });
 const h2: React.CSSProperties = { margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(26px,4.6vw,68px)", lineHeight: 0.95, textTransform: "uppercase", textWrap: "balance" } as React.CSSProperties;
-const bodyText: React.CSSProperties = { margin: 0, fontSize: "clamp(15px,1.3vw,18px)", lineHeight: 1.55, textWrap: "pretty" } as React.CSSProperties;
+const bodyText: React.CSSProperties = { margin: 0, fontSize: "clamp(14px,1.15vw,16px)", lineHeight: 1.55, textWrap: "pretty" } as React.CSSProperties;
 const section = (extra: React.CSSProperties = {}): React.CSSProperties => ({ padding: "clamp(44px,8vw,112px) clamp(16px,2.5vw,40px)", borderBottom: `2px solid ${INK}`, ...extra });
 const wrap: React.CSSProperties = { maxWidth: 1360, margin: "0 auto" };
 
@@ -58,7 +58,7 @@ function OutlineButton({ children, onClick, style, light }: { children: React.Re
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={{ height: "clamp(48px,4.4vw,60px)", padding: "0 clamp(18px,2vw,28px)", borderRadius: 999, border: `3px solid ${fg}`, background: hover ? fg : "transparent", color: hover ? (light ? INK : CREAM) : fg, fontWeight: 600, fontSize: "clamp(15px,1.3vw,18px)", cursor: "pointer", ...style }}
+      style={{ height: "clamp(44px,3.9vw,52px)", padding: "0 clamp(16px,1.8vw,24px)", borderRadius: 999, border: `3px solid ${fg}`, background: hover ? fg : "transparent", color: hover ? (light ? INK : CREAM) : fg, fontWeight: 600, fontSize: "clamp(14px,1.15vw,16px)", cursor: "pointer", ...style }}
     >
       {children}
     </button>
@@ -90,7 +90,7 @@ function Chip({ label, on, onClick, small }: { label: string; on: boolean; onCli
       aria-pressed={on}
       style={small
         ? { minHeight: 30, padding: "4px 11px", borderRadius: 999, border: `1.5px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 500, fontSize: 12.5, lineHeight: 1.2, cursor: "pointer" }
-        : { minHeight: 44, padding: "8px 16px", borderRadius: 999, border: `3px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 600, fontSize: 14, lineHeight: 1.2, cursor: "pointer" }}
+        : { minHeight: 40, padding: "7px 14px", borderRadius: 999, border: `3px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 600, fontSize: 13, lineHeight: 1.2, cursor: "pointer" }}
     >
       {label}
     </button>
@@ -256,9 +256,9 @@ export default function SocialSite() {
             </nav>
           )}
           <div style={{ display: "flex", gap: 8, alignItems: "center", flex: "none" }}>
-            <OutlineButton onClick={open("waitlist")} style={{ height: "clamp(40px,3.4vw,46px)", padding: "0 clamp(14px,3vw,24px)", fontSize: "clamp(14px,3.6vw,16px)", whiteSpace: "nowrap" }}>Join the waitlist</OutlineButton>
+            <OutlineButton onClick={open("waitlist")} style={{ height: "clamp(38px,3vw,42px)", padding: "0 clamp(12px,2.6vw,20px)", fontSize: "clamp(13px,3.2vw,14px)", whiteSpace: "nowrap" }}>Join the waitlist</OutlineButton>
             {!wide && (
-              <button onClick={() => setMenu((m) => !m)} aria-label="Menu" aria-expanded={menu} style={{ flex: "none", width: "clamp(40px,3.4vw,46px)", height: "clamp(40px,3.4vw,46px)", borderRadius: 999, border: `3px solid ${INK}`, background: menu ? INK : "transparent", color: menu ? CREAM : INK, fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{menu ? "×" : "≡"}</button>
+              <button onClick={() => setMenu((m) => !m)} aria-label="Menu" aria-expanded={menu} style={{ flex: "none", width: "clamp(38px,3vw,42px)", height: "clamp(38px,3vw,42px)", borderRadius: 999, border: `3px solid ${INK}`, background: menu ? INK : "transparent", color: menu ? CREAM : INK, fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{menu ? "×" : "≡"}</button>
             )}
           </div>
         </div>
@@ -279,8 +279,8 @@ export default function SocialSite() {
               <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
                 <div style={mono(13)}>The tech behind Stretchy · Tāmaki Makaurau</div>
                 <h1 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(32px,5.4vw,84px)", lineHeight: 0.92, textTransform: "uppercase", textWrap: "balance" } as React.CSSProperties}>People-powered Pricing.</h1>
-                <p style={{ margin: 0, fontSize: "clamp(18px,1.9vw,27px)", lineHeight: 1.25, fontWeight: 600, maxWidth: 600 }}>The more who move together, the better for all.</p>
-                <p style={{ ...bodyText, maxWidth: 600, fontSize: "clamp(15px,1.3vw,19px)" }}>We&rsquo;re building technology to help communities bring people together, make events happen and make participation more accessible. Stretchy Social is the tech and intellectual property behind the Stretchy movement. We&rsquo;re hoping to get People-powered Pricing to more people, in more places.</p>
+                <p style={{ margin: 0, fontSize: "clamp(16px,1.65vw,23px)", lineHeight: 1.25, fontWeight: 600, maxWidth: 600 }}>The more who move together, the better for all.</p>
+                <p style={{ ...bodyText, maxWidth: 600, fontSize: "clamp(14px,1.15vw,17px)" }}>We&rsquo;re building technology to help communities bring people together, make events happen and make participation more accessible. Stretchy Social is the tech and intellectual property behind the Stretchy movement. We&rsquo;re hoping to get People-powered Pricing to more people, in more places.</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 4 }}>
                   {(["waitlist", "invest", "talk"] as LeadType[]).map((k) => (
                     <OutlineButton key={k} onClick={open(k)} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>{TYPES[k].label}</OutlineButton>
@@ -364,7 +364,7 @@ export default function SocialSite() {
                 <span style={{ display: "inline-flex", alignItems: "center", height: 32, padding: "0 14px", borderRadius: 999, background: ORANGE, color: INK, ...mono(11, { letterSpacing: ".12em" }) }}>What we&rsquo;re building</span>
                 <h2 style={h2}>What if getting more people together made it better for everyone?</h2>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: "clamp(20px,4vw,64px)", fontSize: "clamp(15px,1.3vw,18px)", lineHeight: 1.55 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: "clamp(20px,4vw,64px)", fontSize: "clamp(14px,1.15vw,16px)", lineHeight: 1.55 }}>
                 <p style={{ margin: 0, fontWeight: 700 }}><a href={SY} target="_blank" rel="noopener" style={{ color: INK, textDecoration: "underline", textUnderlineOffset: 3 }}>Stretchy Social Yoga Club</a> uses People-powered Pricing to make getting together more accessible. As more people join a session, the price can drop for everyone, helping organisers build attendance, share costs and bring communities together.</p>
                 <p style={{ margin: 0 }}>We saw the potential for this model to work beyond our own yoga community. So we&rsquo;re building a flexible, white-label event and payment platform that other businesses and communities can use to bring people together, manage bookings and payments, and create more sustainable events.</p>
               </div>
@@ -460,7 +460,7 @@ export default function SocialSite() {
                   {BUILD.map((b) => (
                     <div key={b.t} style={{ display: "flex", gap: 14, alignItems: "baseline", padding: "18px 8px", borderBottom: `2px solid ${INK}` }}>
                       <span style={{ flex: "none", width: 12, height: 12, borderRadius: 999, background: b.c }} />
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><span style={{ fontWeight: 700, fontSize: 18 }}>{b.t}</span><span style={{ fontSize: 15, lineHeight: 1.45, opacity: 0.8 }}>{b.d}</span></div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><span style={{ fontWeight: 700, fontSize: 16 }}>{b.t}</span><span style={{ fontSize: 13.5, lineHeight: 1.45, opacity: 0.8 }}>{b.d}</span></div>
                     </div>
                   ))}
                 </div>
@@ -496,15 +496,15 @@ export default function SocialSite() {
                     <div key={pl.t} style={{ display: "flex", flexDirection: "column", gap: 10, padding: "clamp(16px,2vw,28px)", borderRight: `2px solid ${INK}`, borderBottom: `2px solid ${INK}` }}>
                       <div style={{ display: "flex", gap: 10, alignItems: "center" }}><span style={{ flex: "none", width: 14, height: 14, borderRadius: 999, background: pl.c }} /><span style={mono(12, { letterSpacing: ".12em" })}>{pl.k}</span></div>
                       <h3 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(24px,2.6vw,38px)", lineHeight: 0.95, textTransform: "uppercase" }}>{pl.t}</h3>
-                      <p style={{ margin: 0, fontSize: "clamp(14px,1.1vw,16px)", lineHeight: 1.5, flex: 1 }}>{pl.d}</p>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2, paddingTop: 10, borderTop: `1.5px solid ${INK}` }}><span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 24 }}>{pl.p}</span><span style={{ fontSize: 13, opacity: 0.75 }}>{pl.best}</span></div>
+                      <p style={{ margin: 0, fontSize: "clamp(13px,1vw,14px)", lineHeight: 1.5, flex: 1 }}>{pl.d}</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2, paddingTop: 10, borderTop: `1.5px solid ${INK}` }}><span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 24 }}>{pl.p}</span><span style={{ fontSize: 12, opacity: 0.75 }}>{pl.best}</span></div>
                     </div>
                   ))}
                 </div>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
-                <p style={{ margin: 0, fontSize: 16 }}>Every plan includes white-labelling and People-powered Pricing.</p>
-                <OutlineButton onClick={open("waitlist")} style={{ height: "clamp(44px,3.8vw,52px)", padding: "0 24px", fontSize: 16 }}>Join the waitlist</OutlineButton>
+                <p style={{ margin: 0, fontSize: 14 }}>Every plan includes white-labelling and People-powered Pricing.</p>
+                <OutlineButton onClick={open("waitlist")} style={{ height: "clamp(40px,3.4vw,46px)", padding: "0 20px", fontSize: 14 }}>Join the waitlist</OutlineButton>
               </div>
             </div>
           </section>
@@ -629,11 +629,11 @@ export default function SocialSite() {
               )}
               {/* Honeypot: hidden from people, filled in by bots. */}
               <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" value={f.hp} onChange={(e) => setF({ ...f, hp: e.target.value })} style={{ position: "absolute", left: -9999, width: 1, height: 1, opacity: 0 }} />
-              <label style={{ display: "flex", gap: 12, alignItems: "flex-start", cursor: "pointer", fontSize: 16, lineHeight: 1.45 }}>
+              <label style={{ display: "flex", gap: 12, alignItems: "flex-start", cursor: "pointer", fontSize: 14.5, lineHeight: 1.45 }}>
                 <input type="checkbox" checked={f.optin} onChange={(e) => setF({ ...f, optin: e.target.checked })} style={{ width: 24, height: 24, margin: 0, flex: "none", accentColor: P }} />
                 <span>Send me occasional Stretchy Social updates. Light on the comms, promise. (Optional)</span>
               </label>
-              <button type="submit" disabled={sending} style={{ height: 64, width: "100%", borderRadius: 999, border: 0, background: INK, color: CREAM, fontWeight: 600, fontSize: 19, cursor: "pointer", marginTop: 4, opacity: sending ? 0.6 : 1 }}>{sending ? "Sending…" : t.cta}</button>
+              <button type="submit" disabled={sending} style={{ height: 56, width: "100%", borderRadius: 999, border: 0, background: INK, color: CREAM, fontWeight: 600, fontSize: 17, cursor: "pointer", marginTop: 4, opacity: sending ? 0.6 : 1 }}>{sending ? "Sending…" : t.cta}</button>
               <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, opacity: 0.75 }}>We&rsquo;ll only use your details to reply. <a href="#terms" onClick={(e) => { e.preventDefault(); go("#terms"); }} style={{ color: INK }}>Privacy &amp; terms</a></p>
             </form>
           </div>
@@ -649,12 +649,12 @@ export default function SocialSite() {
               <div style={{ padding: "clamp(24px,5vw,48px) clamp(20px,4vw,40px)", display: "flex", flexDirection: "column", gap: 18 }}>
                 <Mask color={t.fg} style={{ height: 64, width: 55, alignSelf: "flex-start" }} />
                 <h1 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(30px,6.4vw,80px)", lineHeight: 0.92, textTransform: "uppercase", overflowWrap: "anywhere" }}>{t.thanksTitle}</h1>
-                <p style={{ margin: 0, fontSize: "clamp(19px,2vw,24px)", lineHeight: 1.3, fontWeight: 600 }}>{t.thanksAccent}</p>
+                <p style={{ margin: 0, fontSize: "clamp(17px,1.75vw,21px)", lineHeight: 1.3, fontWeight: 600 }}>{t.thanksAccent}</p>
                 <p style={{ ...bodyText, maxWidth: 540 }}>{t.thanksBody}</p>
               </div>
               <div style={{ padding: "16px 22px", borderTop: `2px solid ${t.fg}`, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                <button onClick={goHome} style={{ flex: "1 1 200px", height: "clamp(46px,4vw,54px)", padding: "0 22px", borderRadius: 999, border: `3px solid ${t.fg}`, background: "transparent", color: t.fg, fontWeight: 600, fontSize: 16, cursor: "pointer" }}>← Back to the page</button>
-                <a href={IG} target="_blank" rel="noopener" style={{ flex: "1 1 200px", display: "flex", alignItems: "center", justifyContent: "center", height: "clamp(46px,4vw,54px)", padding: "0 22px", borderRadius: 999, background: t.btn, color: t.btnFg, textDecoration: "none", fontWeight: 600, fontSize: 16 }}>Follow @stretchy.yoga</a>
+                <button onClick={goHome} style={{ flex: "1 1 200px", height: "clamp(42px,3.5vw,48px)", padding: "0 22px", borderRadius: 999, border: `3px solid ${t.fg}`, background: "transparent", color: t.fg, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>← Back to the page</button>
+                <a href={IG} target="_blank" rel="noopener" style={{ flex: "1 1 200px", display: "flex", alignItems: "center", justifyContent: "center", height: "clamp(42px,3.5vw,48px)", padding: "0 22px", borderRadius: 999, background: t.btn, color: t.btnFg, textDecoration: "none", fontWeight: 600, fontSize: 14 }}>Follow @stretchy.yoga</a>
               </div>
             </div>
           </div>
@@ -664,7 +664,7 @@ export default function SocialSite() {
               <div style={{ padding: "clamp(18px,3vw,28px) clamp(18px,3vw,28px) 20px", display: "flex", flexDirection: "column", gap: 10 }}>
                 <span style={mono(12, { letterSpacing: ".12em", color: P })}>Optional · about a minute</span>
                 <h2 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(26px,3.6vw,44px)", lineHeight: 0.95, textTransform: "uppercase" }}>Help shape Stretchy Social.</h2>
-                <p style={{ margin: 0, fontSize: "clamp(15px,1.3vw,17px)", lineHeight: 1.5 }}>Tap what fits. Skip anything you like.</p>
+                <p style={{ margin: 0, fontSize: "clamp(14px,1.15vw,15px)", lineHeight: 1.5 }}>Tap what fits. Skip anything you like.</p>
               </div>
               {s2Questions.map((q) => (
                 <Step2Row key={q.k} title={q.t} multi={q.multi}>
@@ -685,8 +685,8 @@ export default function SocialSite() {
                 </Step2Row>
               ))}
               <div style={{ padding: "16px clamp(18px,3vw,28px)", borderTop: `2px solid ${INK}`, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                <button type="button" onClick={sendStep2} style={{ flex: "1 1 200px", height: "clamp(46px,4vw,54px)", borderRadius: 999, border: `3px solid ${INK}`, background: INK, color: CREAM, fontWeight: 600, fontSize: 16, cursor: "pointer" }}>Send my answers</button>
-                <button type="button" onClick={() => setS2state("skipped")} style={{ flex: "1 1 200px", height: "clamp(46px,4vw,54px)", borderRadius: 999, border: `3px solid ${INK}`, background: "transparent", color: INK, fontWeight: 600, fontSize: 16, cursor: "pointer" }}>Skip for now</button>
+                <button type="button" onClick={sendStep2} style={{ flex: "1 1 200px", height: "clamp(42px,3.5vw,48px)", borderRadius: 999, border: `3px solid ${INK}`, background: INK, color: CREAM, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>Send my answers</button>
+                <button type="button" onClick={() => setS2state("skipped")} style={{ flex: "1 1 200px", height: "clamp(42px,3.5vw,48px)", borderRadius: 999, border: `3px solid ${INK}`, background: "transparent", color: INK, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>Skip for now</button>
               </div>
             </div>
           )}
@@ -734,10 +734,10 @@ export default function SocialSite() {
                 <Mask color={CREAM} style={{ width: "clamp(40px,4vw,56px)", aspectRatio: "1787/2084", flex: "none" }} />
                 <span style={{ fontFamily: DISPLAY, fontSize: "clamp(28px,4vw,52px)", lineHeight: 1 }}>STRETCHY SOCIAL</span>
               </div>
-              <p style={{ margin: 0, fontSize: 17, lineHeight: 1.5 }}>Built by Kimberley Torrie at <a href={SD} target="_blank" rel="noopener" style={{ color: CREAM }}>Studio Dawn</a>, Tāmaki Makaurau.</p>
+              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5 }}>Built by Kimberley Torrie at <a href={SD} target="_blank" rel="noopener" style={{ color: CREAM }}>Studio Dawn</a>, Tāmaki Makaurau.</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
-                <span style={{ fontWeight: 600, fontSize: 20 }}>Like our thinking? Let&rsquo;s talk.</span>
-                <a href="mailto:kimberley@stretchyyoga.co.nz" style={{ color: CREAM, fontWeight: 600, fontSize: 17 }}>kimberley@stretchyyoga.co.nz</a>
+                <span style={{ fontWeight: 600, fontSize: 18 }}>Like our thinking? Let&rsquo;s talk.</span>
+                <a href="mailto:kimberley@stretchyyoga.co.nz" style={{ color: CREAM, fontWeight: 600, fontSize: 15 }}>kimberley@stretchyyoga.co.nz</a>
               </div>
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap", ...mono(12, { letterSpacing: ".1em" }) }}>
                 <a href={IG} target="_blank" rel="noopener" style={{ color: CREAM }}>Instagram</a>
@@ -764,7 +764,7 @@ export default function SocialSite() {
 }
 
 // ── Pieces used above ──────────────────────────────────────────────────────
-const termsP: React.CSSProperties = { margin: 0, fontSize: "clamp(15px,1.3vw,17px)", lineHeight: 1.6 };
+const termsP: React.CSSProperties = { margin: 0, fontSize: "clamp(14px,1.15vw,15px)", lineHeight: 1.6 };
 
 function TermsBlock({ dot, title, children, last }: { dot: string; title: string; children: React.ReactNode; last?: boolean }) {
   return (
@@ -835,7 +835,7 @@ function StepCard({ narrow, bg, fg, step, num, title, lead, body, foot, children
           <div style={{ padding: "10px 14px", borderBottom: line, display: "flex", justifyContent: "space-between", ...mono(11, { letterSpacing: ".12em" }) }}><span>{step}</span><span>{num}</span></div>
           <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 6, borderBottom: line }}>
             <h3 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: 26, lineHeight: 0.92, textTransform: "uppercase" }}>{title}</h3>
-            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.4, fontWeight: 600 }}>{lead}</p>
+            <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.4, fontWeight: 600 }}>{lead}</p>
           </div>
           <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>{children}</div>
         </div>
@@ -850,8 +850,8 @@ function StepCard({ narrow, bg, fg, step, num, title, lead, body, foot, children
           <div style={{ padding: "16px 20px", borderBottom: line, display: "flex", justifyContent: "space-between", ...mono(12, { letterSpacing: ".12em" }) }}><span>{step}</span><span>{num}</span></div>
           <div style={{ padding: "22px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
             <h3 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(26px,2.8vw,42px)", lineHeight: 0.92, textTransform: "uppercase" }}>{title}</h3>
-            <p style={{ margin: 0, fontSize: "clamp(15px,1.2vw,17px)", lineHeight: 1.45, fontWeight: 600 }}>{lead}</p>
-            <p style={{ margin: 0, fontSize: "clamp(14px,1.1vw,16px)", lineHeight: 1.5 }}>{body}</p>
+            <p style={{ margin: 0, fontSize: "clamp(14px,1.05vw,15px)", lineHeight: 1.45, fontWeight: 600 }}>{lead}</p>
+            <p style={{ margin: 0, fontSize: "clamp(13px,1vw,14px)", lineHeight: 1.5 }}>{body}</p>
           </div>
           <div style={{ padding: "14px 20px", borderTop: line, display: "flex", justifyContent: "space-between", ...mono(11, { letterSpacing: ".12em" }) }}><span>{foot}</span><span>→</span></div>
         </div>
@@ -874,8 +874,8 @@ function WhoRow({ n, title, items }: { n: string; title: string; items: typeof W
             <div style={{ background: w.c, color: w.fg, padding: "14px 20px", borderBottom: `2px solid ${INK}`, display: "flex", justifyContent: "space-between", ...mono(11, { letterSpacing: ".12em" }) }}><span>{w.tag}</span><span>{w.n}</span></div>
             <div style={{ padding: "22px 20px 24px", display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
               <h3 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: 24, lineHeight: 1, textTransform: "uppercase" }}>{w.t}</h3>
-              <p style={{ margin: 0, fontSize: "clamp(14px,1.1vw,16px)", lineHeight: 1.5 }}>{w.d}</p>
-              <p style={{ margin: "auto 0 0", paddingTop: 12, borderTop: `1.5px solid ${INK}`, fontSize: 15, lineHeight: 1.45 }}><strong style={{ fontFamily: MONO, fontSize: 12, letterSpacing: ".1em" }}>EG.</strong> {w.eg}</p>
+              <p style={{ margin: 0, fontSize: "clamp(13px,1vw,14px)", lineHeight: 1.5 }}>{w.d}</p>
+              <p style={{ margin: "auto 0 0", paddingTop: 12, borderTop: `1.5px solid ${INK}`, fontSize: 13.5, lineHeight: 1.45 }}><strong style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".1em" }}>EG.</strong> {w.eg}</p>
             </div>
           </div>
         ))}
@@ -886,7 +886,7 @@ function WhoRow({ n, title, items }: { n: string; title: string; items: typeof W
 
 function PillLink({ href, children, filled }: { href: string; children: React.ReactNode; filled?: boolean }) {
   return (
-    <a href={href} target="_blank" rel="noopener" style={{ display: "inline-flex", alignItems: "center", height: "clamp(44px,3.8vw,52px)", padding: "0 22px", borderRadius: 999, ...(filled ? { background: INK, color: CREAM } : { border: `3px solid ${INK}`, color: INK }), textDecoration: "none", fontWeight: 600, fontSize: 16 }}>
+    <a href={href} target="_blank" rel="noopener" style={{ display: "inline-flex", alignItems: "center", height: "clamp(40px,3.4vw,46px)", padding: "0 20px", borderRadius: 999, ...(filled ? { background: INK, color: CREAM } : { border: `3px solid ${INK}`, color: INK }), textDecoration: "none", fontWeight: 600, fontSize: 14 }}>
       {children}
     </a>
   );
@@ -897,7 +897,7 @@ function ShapeCard({ bg, fg, tag, right, title, body, button, link }: {
   button?: { label: string; onClick: () => void }; link?: { label: string; href: string };
 }) {
   const line = `2px solid ${fg}`;
-  const btn: React.CSSProperties = { flex: "1 1 140px", height: "clamp(46px,4vw,54px)", padding: "0 16px", borderRadius: 999, border: `3px solid ${fg}`, background: "transparent", color: fg, fontWeight: 600, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" };
+  const btn: React.CSSProperties = { flex: "1 1 140px", height: "clamp(42px,3.5vw,48px)", padding: "0 16px", borderRadius: 999, border: `3px solid ${fg}`, background: "transparent", color: fg, fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" };
   return (
     <div style={{ background: bg, color: fg, borderRadius: 30, padding: 12 }}>
       <div style={{ border: line, borderRadius: 22, display: "flex", flexDirection: "column", height: "100%" }}>
@@ -905,7 +905,7 @@ function ShapeCard({ bg, fg, tag, right, title, body, button, link }: {
         <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
           {/* Sized so the longest word ("MOVEMENT") never splits across lines in a four-across row. */}
           <h3 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(26px,2vw,30px)", lineHeight: 0.92, overflowWrap: "break-word" }}>{title}</h3>
-          <p style={{ margin: 0, fontSize: 17, lineHeight: 1.45, fontWeight: 500 }}>{body}</p>
+          <p style={{ margin: 0, fontSize: 15, lineHeight: 1.45, fontWeight: 500 }}>{body}</p>
         </div>
         <div style={{ padding: "16px 20px", borderTop: line, display: "flex", flexWrap: "wrap", gap: 10 }}>
           {button && <button type="button" onClick={button.onClick} style={btn}>{button.label}</button>}
