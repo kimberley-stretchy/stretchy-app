@@ -65,6 +65,27 @@ function OutlineButton({ children, onClick, style, light }: { children: React.Re
   );
 }
 
+// "Help shape Stretchy Social" — the link to the research survey, the same
+// wording in every section. `src` tells HQ which section the person came from.
+// Previews and local runs serve the site under /social-site, so the link
+// follows whichever address the page is on.
+function HelpShapeLink({ src, light, style }: { src: string; light?: boolean; style?: React.CSSProperties }) {
+  const [base, setBase] = useState("/research");
+  useEffect(() => { if (window.location.pathname.startsWith("/social-site")) setBase("/social-site/research"); }, []);
+  const fg = light ? CREAM : INK;
+  return (
+    <a
+      href={`${base}?src=${src}`}
+      onClick={() => track("help_shape_click", { from: src })}
+      style={{ display: "inline-flex", alignItems: "center", gap: 10, alignSelf: "flex-start", color: fg, textDecoration: "none", fontWeight: 600, fontSize: "clamp(12.5px,1.01vw,14px)", ...style }}
+    >
+      <span style={{ width: 10, height: 10, borderRadius: 999, background: light ? CREAM : P, flex: "none" }} />
+      <span style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>Help shape Stretchy Social</span>
+      <span style={{ ...mono(9.5, { letterSpacing: ".1em" }), opacity: 0.7 }}>3–5 min survey →</span>
+    </a>
+  );
+}
+
 function Mask({ color, style }: { color: string; style: React.CSSProperties }) {
   return <div aria-hidden="true" style={{ background: color, WebkitMask: `url(${MARK}) center/contain no-repeat`, mask: `url(${MARK}) center/contain no-repeat`, ...style }} />;
 }
@@ -293,6 +314,7 @@ export default function SocialSite() {
                     <OutlineButton key={k} onClick={open(k)} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>{TYPES[k].label}</OutlineButton>
                   ))}
                 </div>
+                <HelpShapeLink src="hero" />
               </div>
 
               <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 18, padding: "12px 0" }}>
@@ -398,6 +420,7 @@ export default function SocialSite() {
                   ))}
                 </div>
               </div>
+              <HelpShapeLink src="building" />
             </div>
           </section>
 
@@ -501,6 +524,7 @@ export default function SocialSite() {
                   ))}
                 </div>
               </div>
+              <HelpShapeLink src="how-it-works" />
             </div>
           </section>
 
@@ -513,6 +537,7 @@ export default function SocialSite() {
               </div>
               <WhoRow n="01" title="Ongoing sessions" items={WHO_ONGOING} />
               <WhoRow n="02" title="One-off, casual events" items={WHO_ONEOFF} />
+              <HelpShapeLink src="who" />
             </div>
           </section>
 
@@ -537,6 +562,7 @@ export default function SocialSite() {
                   ))}
                 </div>
               </div>
+              <HelpShapeLink src="pricing" />
             </div>
           </section>
 
@@ -577,6 +603,7 @@ export default function SocialSite() {
                 <h2 style={{ ...h2, fontSize: "clamp(24.5px,4.75vw,74px)", lineHeight: 0.92 }}>More brains to build a better world.</h2>
                 <p style={{ margin: 0, fontSize: "clamp(14px,1.45vw,20px)", lineHeight: 1.25, fontWeight: 600 }}>Help shape what comes next.</p>
                 <p style={{ ...bodyText, maxWidth: 760 }}>We&rsquo;re looking to connect with organisations who could use the technology, people who want to test it, collaborators who can help us build it, and investors interested in its potential.</p>
+                <HelpShapeLink src="get-involved" />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 16 }}>
                 <ShapeCard bg={YELLOW} fg={INK} tag="01 | WAITLIST + BETA" right="EARLY ACCESS" title="JOIN THE WAITLIST" body="Hear about early access first. We'll invite people from the waitlist to beta test." button={{ label: "Join the waitlist", onClick: open("waitlist") }} />
@@ -771,6 +798,7 @@ export default function SocialSite() {
             <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, lineHeight: 1.5 }}>
               <span style={{ fontWeight: 600 }}>Like our thinking? Let&rsquo;s talk.</span>
               <a href="mailto:kimberley@stretchyyoga.co.nz" style={{ color: CREAM, fontWeight: 600 }}>kimberley@stretchyyoga.co.nz</a>
+              <HelpShapeLink src="footer" light style={{ marginTop: 6 }} />
             </div>
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", ...mono(10, { letterSpacing: ".1em" }) }}>
               <a href={IG} target="_blank" rel="noopener" style={{ color: CREAM }}>Instagram</a>
