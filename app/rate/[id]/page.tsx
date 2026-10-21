@@ -23,7 +23,7 @@ function Chip({ label, on, onClick }: { label: string; on: boolean; onClick: () 
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      className="px-4 py-2 rounded-pill text-sm font-semibold border-2 transition-colors"
+      className="px-3 py-1 rounded-pill text-xs font-semibold border-2 transition-colors"
       style={{ borderColor: INK, background: on ? INK : "#FFFFFF", color: on ? "#F7F0E8" : INK }}
     >
       {label}
@@ -45,25 +45,25 @@ function Question({ q, answers, setAnswers }: { q: FeedbackQuestion; answers: An
   const otherOn = picked(OTHER);
 
   return (
-    <div className="bg-white rounded-card border-2 border-ink p-4 flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="m-0 font-bold text-ink text-[15px] leading-snug">{q.q}</p>
+    <div className="bg-white rounded-card border-2 border-ink p-3 flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
+        <p className="m-0 font-bold text-ink text-sm leading-snug">{q.q}</p>
         {q.options.length > 0 && (
-          <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted flex-none">{q.multi ? "Pick as many as you like" : "Pick one"}</span>
+          <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted">{q.multi ? "Pick as many as you like" : "Pick one"}</span>
         )}
       </div>
       {q.options.length === 0 ? (
         <textarea
-          rows={3}
+          rows={2}
           value={(val as string) ?? ""}
           onChange={(e) => setAnswers({ ...answers, [q.k]: e.target.value })}
           placeholder={q.placeholder}
-          className="w-full rounded-xl border-2 border-ink px-3 py-2 bg-cream text-ink resize-none"
+          className="w-full rounded-lg border-2 border-ink px-3 py-1.5 bg-cream text-ink resize-none"
           style={{ fontSize: 16 }}
         />
       ) : (
         <>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {q.options.map((o) => <Chip key={o} label={o} on={picked(o)} onClick={() => toggle(o)} />)}
             {q.other && <Chip label={OTHER} on={otherOn} onClick={() => toggle(OTHER)} />}
           </div>
@@ -73,7 +73,7 @@ function Question({ q, answers, setAnswers }: { q: FeedbackQuestion; answers: An
               onChange={(e) => setAnswers({ ...answers, [`${q.k}_other`]: e.target.value })}
               placeholder="Tell us more"
               autoFocus
-              className="w-full h-11 rounded-xl border-2 border-ink px-3 bg-cream text-ink"
+              className="w-full h-9 rounded-lg border-2 border-ink px-3 bg-cream text-ink"
               style={{ fontSize: 16 }}
             />
           )}
@@ -83,7 +83,7 @@ function Question({ q, answers, setAnswers }: { q: FeedbackQuestion; answers: An
               value={(answers[`${q.k}_more`] as string) ?? ""}
               onChange={(e) => setAnswers({ ...answers, [`${q.k}_more`]: e.target.value })}
               placeholder="Say more (optional)"
-              className="w-full rounded-xl border-2 border-ink px-3 py-2 bg-cream text-ink resize-none"
+              className="w-full rounded-lg border-2 border-ink px-3 py-1.5 bg-cream text-ink resize-none"
               style={{ fontSize: 16 }}
             />
           )}
@@ -155,10 +155,10 @@ export default function RateItPage() {
         <Link href="/sessions" className="px-4 py-2 rounded-pill font-mono text-xs font-bold uppercase tracking-widest text-ink border border-border">Skip</Link>
       </nav>
 
-      <div className="px-5 max-w-lg mx-auto flex flex-col gap-4">
+      <div className="px-5 max-w-lg mx-auto flex flex-col gap-3">
         <div className="flex flex-col gap-2 mb-1">
           {day && <p className="m-0 font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted">{day} · {session?.location_name}</p>}
-          <h1 className="font-display font-bold text-ink m-0" style={{ fontSize: "clamp(32px,9vw,44px)", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          <h1 className="font-display font-bold text-ink m-0" style={{ fontSize: "clamp(26px,7vw,36px)", letterSpacing: "-0.03em", lineHeight: 1 }}>
             How was your Stretchy?
           </h1>
           <p className="m-0 text-sm text-muted">About 30 seconds. Tap what fits, skip anything you like.</p>
@@ -166,17 +166,17 @@ export default function RateItPage() {
 
         {FEEDBACK_QUESTIONS.map((q) => <Question key={q.k} q={q} answers={answers} setAnswers={setAnswers} />)}
 
-        <div className="bg-white rounded-card border-2 border-ink p-4 flex flex-col gap-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="m-0 font-bold text-ink text-[15px] leading-snug">Want us to know it&rsquo;s you?</p>
-            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted flex-none">Optional</span>
+        <div className="bg-white rounded-card border-2 border-ink p-3 flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
+            <p className="m-0 font-bold text-ink text-sm leading-snug">Want us to know it&rsquo;s you?</p>
+            <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted">Optional</span>
           </div>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             autoComplete="name"
-            className="w-full h-11 rounded-xl border-2 border-ink px-3 bg-cream text-ink"
+            className="w-full h-9 rounded-lg border-2 border-ink px-3 bg-cream text-ink"
             style={{ fontSize: 16 }}
           />
           <input
@@ -185,7 +185,7 @@ export default function RateItPage() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Your email"
             autoComplete="email"
-            className="w-full h-11 rounded-xl border-2 border-ink px-3 bg-cream text-ink"
+            className="w-full h-9 rounded-lg border-2 border-ink px-3 bg-cream text-ink"
             style={{ fontSize: 16 }}
           />
           <p className="m-0 text-xs text-muted">Leave these blank to stay anonymous.</p>
@@ -198,7 +198,7 @@ export default function RateItPage() {
           type="button"
           onClick={send}
           disabled={sending || !answered}
-          className="h-14 rounded-pill bg-ink text-cream font-bold text-base disabled:opacity-40"
+          className="h-11 rounded-pill bg-ink text-cream font-bold text-sm disabled:opacity-40"
         >
           {sending ? "Sending…" : "Send my answers"}
         </button>
