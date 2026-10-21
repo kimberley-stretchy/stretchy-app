@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { page, h1, hey, msg, button, HQ_EMAIL, REPLY_TO } from "@/lib/stretchy-email";
 import { logEmail } from "@/lib/emailLog";
 import { TYPES, spendLabel, type LeadType, type Currency } from "@/lib/socialLeads";
+import { RESEARCH_QUESTIONS } from "@/lib/socialResearch";
 
 // The two stretchy.social emails (+ the hot-lead alert). Sent from the
 // verified stretchyyoga.co.nz address until stretchy.social is verified in
@@ -76,4 +77,26 @@ export async function confirmToPerson(r: Row) {
     <p style="color:${sc.text};font-size:15px;line-height:1.55;margin:0 0 22px;">Talk soon,<br>Kimberley and the Stretchy Social team</p>
   `, { highlight: false });
   await send({ to: r.email, subject: `${t.thanksTitle} · Stretchy Social`, html, type: `social_lead_confirm_${r.type}` });
+}
+
+/** To Kimberley (cc Studio Dawn), for each stretchy.social/research response. */
+export async function alertResearch(r: { id: string; name?: string | null; organisation?: string | null; email?: string | null; website?: string | null; source?: string | null; answers: Record<string, string | string[]> }) {
+  const who = [r.name, r.organisation].filter(Boolean).join(", ") || "anonymous";
+  const subject = `New Stretchy Social research response: ${who}`;
+  const rows = RESEARCH_QUESTIONS.map((q) => {
+    const v = r.answers[q.k];
+    const other = r.answers[`${q.k}_other`];
+    if (!v || (Array.isArray(v) && v.length === 0)) return "";
+    const answer = [Array.isArray(v) ? v.join(", ") : v, other ? `“${other}”` : ""].filter(Boolean).join(" · ");
+    return `<tr><td style="padding:6px 12px 6px 0;font-family:monospace;font-size:12px;vertical-align:top;color:#555">${q.n}. ${esc(q.q)}</td><td style="padding:6px 0;font-size:14px;vertical-align:top">${esc(String(answer))}</td></tr>`;
+  }).join("");
+  const contact = [r.email ? `<a href="mailto:${esc(r.email)}" style="color:#16110F">${esc(r.email)}</a>` : "", r.website ? esc(r.website) : "", r.source ? `via ${esc(r.source)}` : ""].filter(Boolean).join(" · ");
+  const html = `<div style="font-family:-apple-system,Segoe UI,sans-serif;max-width:680px;margin:0 auto;padding:24px;background:#F7F1EA;border-radius:16px;color:#16110F">
+    <p style="font-family:monospace;font-size:11px;letter-spacing:.12em;margin:0 0 6px">STRETCHY.SOCIAL · RESEARCH</p>
+    <h1 style="font-size:24px;margin:0 0 6px">${esc(who)}</h1>
+    ${contact ? `<p style="margin:0 0 16px">${contact}</p>` : ""}
+    <table style="border-collapse:collapse">${rows}</table>
+    <p style="margin:18px 0 0;font-size:13px">All responses, with tallies: https://www.stretchyyoga.co.nz/admin/social-research</p>
+  </div>`;
+  await send({ to: HQ_EMAIL, cc: ALERT_CC, subject, html, type: "social_research_alert", ...(r.email ? { replyTo: r.email } : {}) });
 }
