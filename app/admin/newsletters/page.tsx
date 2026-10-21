@@ -513,6 +513,7 @@ export default function NewslettersPage() {
               <button onClick={() => add("image")} style={chip(false)}>+ IMAGE</button>
               <button onClick={() => add("divider")} style={chip(false)}>+ DIVIDER</button>
               <button onClick={() => add("button")} style={chip(false)}>+ BUTTON</button>
+              <button onClick={() => setBlocks((bs) => [...bs, { uid: UID++, type: "button", label: "Rate Stretchy quick-smart", url: "https://www.stretchyyoga.co.nz/feedback" }])} style={chip(false)}>+ FEEDBACK BUTTON</button>
               <button onClick={() => add("sessions")} style={chip(false)}>+ SESSIONS</button>
             </div>
 

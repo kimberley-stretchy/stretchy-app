@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await admin.from("session_feedback").select("*").order("updated_at", { ascending: false }).limit(500);
   if (error) return NextResponse.json({ items: [], setupNeeded: true });
 
-  const sessionIds = Array.from(new Set((data ?? []).map((r) => r.session_id)));
+  const sessionIds = Array.from(new Set((data ?? []).map((r) => r.session_id).filter(Boolean)));
   const { data: sessions } = sessionIds.length ? await admin.from("sessions").select("id, title, starts_at").in("id", sessionIds) : { data: [] };
   const sById = new Map((sessions ?? []).map((s: { id: string }) => [s.id, s]));
   // Only what people chose to tell us: the name / email they typed, or Anonymous.

@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { FEEDBACK_QUESTIONS, OTHER } from "@/lib/feedbackQuestions";
 
-// HQ → Feedback → "After a session": what people answered on /rate/[session].
+// HQ → Feedback → "After a session": what people answered on /rate/[session]
+// and on the general /feedback link (no session).
 // Tallies per question (filterable by session), then each person's answers.
 
 const INK = "#14110F";
 const MONO = "'JetBrains Mono', monospace";
-type Item = { id: string; updated_at: string; sessionId: string; session: { title?: string; starts_at?: string } | null; who: string; answers: Record<string, string | string[]> };
+type Item = { id: string; updated_at: string; sessionId: string | null; session: { title?: string; starts_at?: string } | null; who: string; answers: Record<string, string | string[]> };
 
 const day = (iso?: string) => (iso ? new Date(iso).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }) : "");
 
@@ -24,14 +25,14 @@ export default function SessionFeedback() {
 
   const sessions = useMemo(() => {
     const m = new Map<string, string>();
-    items.forEach((i) => m.set(i.sessionId, `${i.session?.title ?? "Session"} · ${day(i.session?.starts_at)}`));
+    items.forEach((i) => m.set(i.sessionId ?? "general", i.sessionId ? `${i.session?.title ?? "Session"} · ${day(i.session?.starts_at)}` : "General feedback"));
     return Array.from(m.entries());
   }, [items]);
-  const shown = filter === "all" ? items : items.filter((i) => i.sessionId === filter);
+  const shown = filter === "all" ? items : items.filter((i) => (i.sessionId ?? "general") === filter);
 
   if (loading) return <p style={{ fontFamily: MONO, fontSize: 12, color: "rgba(20,17,15,.4)" }}>LOADING…</p>;
   if (setupNeeded) return <p style={{ fontSize: 14, fontWeight: 700, color: "#C6362E" }}>The feedback table hasn&rsquo;t been set up yet.</p>;
-  if (items.length === 0) return <p style={{ fontSize: 14, color: "rgba(20,17,15,.55)" }}>No answers yet. They&rsquo;ll appear here as people fill in the quick questions after a session.</p>;
+  if (items.length === 0) return <p style={{ fontSize: 14, color: "rgba(20,17,15,.55)" }}>No answers yet. They&rsquo;ll appear here as people fill in the quick questions, after a session or at stretchyyoga.co.nz/feedback.</p>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -69,7 +70,7 @@ export default function SessionFeedback() {
         <div key={i.id} style={{ background: "#fff", border: `2px solid ${INK}`, borderRadius: 16, padding: 14, display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
             <strong style={{ fontSize: 14 }}>{i.who}</strong>
-            <span style={{ fontFamily: MONO, fontSize: 10, color: "rgba(20,17,15,.5)" }}>{(i.session?.title ?? "").toUpperCase()} · {day(i.session?.starts_at).toUpperCase()}</span>
+            <span style={{ fontFamily: MONO, fontSize: 10, color: "rgba(20,17,15,.5)" }}>{i.sessionId ? `${(i.session?.title ?? "").toUpperCase()} · ${day(i.session?.starts_at).toUpperCase()}` : "GENERAL FEEDBACK"}</span>
           </div>
           {FEEDBACK_QUESTIONS.map((q) => {
             const v = i.answers[q.k];

@@ -1,4 +1,5 @@
--- 2026-10-21 · Quick feedback after a session (stretchyyoga.co.nz/rate/[session]).
+-- 2026-10-21 · Quick feedback: after a session (stretchyyoga.co.nz/rate/[session])
+-- or general (stretchyyoga.co.nz/feedback, session_id empty).
 -- No sign-in needed. Name and email are optional (people choose to add them).
 -- If the person happens to be signed in, user_id is kept so answering again
 -- updates their row instead of adding a second; HQ never shows it as a name.
@@ -9,7 +10,7 @@ create table if not exists public.session_feedback (
   id          uuid primary key default gen_random_uuid(),
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
-  session_id  uuid not null,
+  session_id  uuid,
   user_id     uuid,
   name        text,
   email       text,
