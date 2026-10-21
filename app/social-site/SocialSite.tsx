@@ -381,8 +381,9 @@ export default function SocialSite() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: "clamp(14px,1.45vw,20px)", lineHeight: 1.3 }}>The tech starts with People-powered Pricing.</p>
-                  <p style={{ margin: 0 }}>Traditional pricing generally treats the customer as an individual making a transaction: one person, one price, one purchase.</p>
-                  <p style={{ margin: 0 }}>But community experiences create shared value. When another person joins a yoga class, they contribute to the atmosphere, the collective energy, the viability of the session and the opportunity for everyone to participate.</p>
+                  <p style={{ margin: 0 }}>Traditional pricing treats each customer as one person, one price, one purchase. But community experiences create shared value: everyone who joins adds to the energy, makes the session more viable and helps more people take part.</p>
+                  <p style={{ margin: 0 }}>At <a href={SY} target="_blank" rel="noopener" style={{ color: INK, fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>Stretchy Social Yoga Club</a>, the price can drop for everyone as more people join, so organisers build attendance and share costs, and communities come together.</p>
+                  <p style={{ margin: 0 }}>We saw this working beyond yoga, so we&rsquo;re building a flexible, white-label event and payment platform that other businesses and communities can use for bookings, payments and more sustainable events.</p>
                 </div>
               </div>
 
@@ -396,11 +397,6 @@ export default function SocialSite() {
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: "clamp(20px,4vw,64px)", fontSize: "clamp(12.5px,1.01vw,14px)", lineHeight: 1.55 }}>
-                <p style={{ margin: 0, fontWeight: 700 }}><a href={SY} target="_blank" rel="noopener" style={{ color: INK, textDecoration: "underline", textUnderlineOffset: 3 }}>Stretchy Social Yoga Club</a> uses People-powered Pricing to make getting together more accessible. As more people join a session, the price can drop for everyone, helping organisers build attendance, share costs and bring communities together.</p>
-                <p style={{ margin: 0 }}>We saw the potential for this model to work beyond our own yoga community. So we&rsquo;re building a flexible, white-label event and payment platform that other businesses and communities can use to bring people together, manage bookings and payments, and create more sustainable events.</p>
               </div>
             </div>
           </section>
