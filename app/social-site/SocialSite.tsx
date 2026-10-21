@@ -107,6 +107,13 @@ const BUILD = [
   { c: OLIVE, t: "Community-first tools", d: "For the hosts and helpers who keep a group together." },
   { c: P, t: "White-labelled alternative", d: "To ClassPass, Momence and Eventbrite. Your brand, your community, your data." },
   { c: BLUE, t: "Integrations & connections", d: "Plugs into what you already use: Stripe, Google Calendar, Resend for CRM and more." },
+  { c: ORANGE, t: "Social inclusion & sharing at the heart", d: "Simple sharing across social, email and text, to help people bring more mates." },
+];
+const PRACTICE = [
+  { c: P, who: "For participants", what: "A clearer relationship between attendance and what they pay." },
+  { c: ORANGE, who: "For organisers", what: "An incentive to build community and encourage group participation." },
+  { c: SKY, who: "For teachers", what: "A better chance of running viable sessions with predictable minimum attendance." },
+  { c: YELLOW, who: "For the wider community", what: "More opportunities to access movement without relying entirely on individual purchasing power." },
 ];
 const WHO_ONGOING = [
   { n: "01", tag: "Community clubs", c: YELLOW, fg: INK, t: "Community clubs", d: "Bring people together around a shared interest, with a model designed to support your costs and revenue goals.", eg: "Book clubs, social sports, craft nights and membership-based communities." },
@@ -278,9 +285,9 @@ export default function SocialSite() {
             <div style={{ ...wrap, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,520px),1fr))", gap: "clamp(40px,5vw,72px)", alignItems: "center" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
                 <div style={mono(11.5)}>The tech behind Stretchy · Tāmaki Makaurau</div>
-                <h1 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(28px,4.75vw,74px)", lineHeight: 0.92, textTransform: "uppercase", overflowWrap: "break-word", maxWidth: "100%" } as React.CSSProperties}>People-powered Pricing.</h1>
+                <h1 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(28px,4.75vw,74px)", lineHeight: 0.92, textTransform: "uppercase", overflowWrap: "break-word", maxWidth: "100%" } as React.CSSProperties}>A Social Movement.</h1>
                 <p style={{ margin: 0, fontSize: "clamp(14px,1.45vw,20px)", lineHeight: 1.25, fontWeight: 600, maxWidth: 600 }}>The more who move together, the better for all.</p>
-                <p style={{ ...bodyText, maxWidth: 600, fontSize: "clamp(12.5px,1.01vw,15px)" }}>We&rsquo;re building technology to help communities bring people together, make events happen and make participation more accessible. Stretchy Social is the tech and intellectual property behind the Stretchy movement. We&rsquo;re hoping to get People-powered Pricing to more people, in more places. <strong style={{ fontWeight: 700 }}>It is truly a social movement.</strong></p>
+                <p style={{ ...bodyText, maxWidth: 600, fontSize: "clamp(12.5px,1.01vw,15px)" }}>We&rsquo;re building technology to help communities bring people together, make events happen and make participation more accessible. Stretchy Social is the tech and intellectual property behind the Stretchy movement. We started with yoga in Auckland, but we aim to bring social connection &amp; People-powered Pricing to more people, in more places.</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 4 }}>
                   {(["waitlist", "invest", "talk"] as LeadType[]).map((k) => (
                     <OutlineButton key={k} onClick={open(k)} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>{TYPES[k].label}</OutlineButton>
@@ -364,11 +371,44 @@ export default function SocialSite() {
                 <span style={{ display: "inline-flex", alignItems: "center", height: 32, padding: "0 14px", borderRadius: 999, background: ORANGE, color: INK, ...mono(9.5, { letterSpacing: ".12em" }) }}>What we&rsquo;re building</span>
                 <h2 style={h2}>What if getting more people together made it better for everyone?</h2>
               </div>
+              {/* The vision: why Stretchy exists, then why the tech starts with pricing. */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: "clamp(20px,4vw,64px)", fontSize: "clamp(12.5px,1.01vw,14px)", lineHeight: 1.55 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: "clamp(14px,1.45vw,20px)", lineHeight: 1.3 }}>We believe that movement is medicine. And that connection is now more important than ever.</p>
+                  <p style={{ margin: 0 }}>Amidst a rapidly-changing, costly, tech-advanced world, we&rsquo;re interested in enabling more people to come together for much-needed social time, movement time, no-phone time, and to provide spaces to be a little silly, a little audacious and a lot curious.</p>
+                  <p style={{ margin: 0 }}>We&rsquo;re not anti-tech whatsoever. We believe it&rsquo;s a powerful tool to bring people together IRL, and to shape new ways of connecting people to themselves, others and new ideas.</p>
+                  <p style={{ margin: 0, fontWeight: 700 }}>That&rsquo;s the heart of how Stretchy began, and how it&rsquo;s now evolving.</p>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: "clamp(14px,1.45vw,20px)", lineHeight: 1.3 }}>The tech starts with People-powered Pricing.</p>
+                  <p style={{ margin: 0 }}>Traditional pricing generally treats the customer as an individual making a transaction: one person, one price, one purchase.</p>
+                  <p style={{ margin: 0 }}>But community experiences create shared value. When another person joins a yoga class, they contribute to the atmosphere, the collective energy, the viability of the session and the opportunity for everyone to participate.</p>
+                </div>
+              </div>
+
+              <div style={{ border: `2px solid ${INK}`, borderRadius: 26, overflow: "hidden" }}>
+                <div style={{ padding: "16px clamp(16px,2.6vw,24px)", borderBottom: `2px solid ${INK}`, ...mono(10.5, { letterSpacing: ".12em" }) }}>What this could mean in practice</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,260px),1fr))" }}>
+                  {PRACTICE.map((x) => (
+                    <div key={x.who} style={{ padding: "clamp(16px,2vw,24px)", display: "flex", flexDirection: "column", gap: 8, borderRight: `2px solid ${INK}`, borderBottom: `2px solid ${INK}`, marginRight: -2, marginBottom: -2 }}>
+                      <span style={{ display: "flex", gap: 10, alignItems: "center" }}><span style={{ width: 12, height: 12, borderRadius: 999, background: x.c, flex: "none" }} /><span style={{ fontWeight: 700, fontSize: 14 }}>{x.who}</span></span>
+                      <span style={{ fontSize: "clamp(12.5px,1.01vw,14px)", lineHeight: 1.5 }}>{x.what}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: "clamp(20px,4vw,64px)", fontSize: "clamp(12.5px,1.01vw,14px)", lineHeight: 1.55 }}>
                 <p style={{ margin: 0, fontWeight: 700 }}><a href={SY} target="_blank" rel="noopener" style={{ color: INK, textDecoration: "underline", textUnderlineOffset: 3 }}>Stretchy Social Yoga Club</a> uses People-powered Pricing to make getting together more accessible. As more people join a session, the price can drop for everyone, helping organisers build attendance, share costs and bring communities together.</p>
                 <p style={{ margin: 0 }}>We saw the potential for this model to work beyond our own yoga community. So we&rsquo;re building a flexible, white-label event and payment platform that other businesses and communities can use to bring people together, manage bookings and payments, and create more sustainable events.</p>
               </div>
             </div>
+          </section>
+
+          {/* ── Photo: a Social Stretch at Honey Sundays ── */}
+          <section aria-label="A Social Stretch after a Stretchy Yoga session" style={{ borderBottom: `2px solid ${INK}`, lineHeight: 0 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/social/honey-sundays-social-stretch.jpg" alt="A long table of people chatting over coffee outside Honey Sundays café after a Stretchy Yoga session, yoga mats at their feet" loading="lazy" style={{ display: "block", width: "100%", height: "clamp(300px,52vw,620px)", objectFit: "cover", objectPosition: "center 62%" }} />
           </section>
 
           {/* ── How it works ── */}
@@ -538,7 +578,8 @@ export default function SocialSite() {
               {/* Headline runs across the full width, the paragraph sits under it. */}
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                 <div style={mono(11.5, { color: RUST })}>Get involved</div>
-                <h2 style={{ ...h2, fontSize: "clamp(24.5px,4.75vw,74px)", lineHeight: 0.92 }}>Help shape what comes next.</h2>
+                <h2 style={{ ...h2, fontSize: "clamp(24.5px,4.75vw,74px)", lineHeight: 0.92 }}>The platform will work better when more brains get involved.</h2>
+                <p style={{ margin: 0, fontSize: "clamp(14px,1.45vw,20px)", lineHeight: 1.25, fontWeight: 600 }}>Help shape what comes next.</p>
                 <p style={{ ...bodyText, maxWidth: 760 }}>We&rsquo;re looking to connect with organisations who could use the technology, people who want to test it, collaborators who can help us build it, and investors interested in its potential.</p>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 16 }}>
