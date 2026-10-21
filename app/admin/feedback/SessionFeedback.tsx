@@ -74,7 +74,8 @@ export default function SessionFeedback() {
           {FEEDBACK_QUESTIONS.map((q) => {
             const v = i.answers[q.k];
             const other = i.answers[`${q.k}_other`] as string | undefined;
-            const text = [Array.isArray(v) ? v.filter((x) => x !== OTHER).join(", ") : v && v !== OTHER ? v : "", other ? `“${other}”` : ""].filter(Boolean).join(" · ");
+            const more = i.answers[`${q.k}_more`] as string | undefined;
+            const text = [Array.isArray(v) ? v.filter((x) => x !== OTHER).join(", ") : v && v !== OTHER ? v : "", other ? `“${other}”` : "", more ? `“${more}”` : ""].filter(Boolean).join(" · ");
             if (!text) return null;
             return (
               <p key={q.k} style={{ margin: 0, fontSize: 13, lineHeight: 1.45 }}>

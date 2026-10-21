@@ -465,14 +465,13 @@ function cardPlaceReleased(p: AttendeeEmailPayload, c: Ctx) {
 }
 
 // 14 — How was your first Stretchy? (two days after someone's first session)
-// Two ways to answer: the quick questions at /rate/[session] ("Rate it in 30
-// seconds"), or simply reply to the email (replies go to Kimberley).
+// Two ways to answer: the quick questions at /rate/[session] ("Rate it quick-smart"), or simply reply to the email (replies go to Kimberley).
 function firstStretchyFollowUp(p: AttendeeEmailPayload) {
   const html = page("purple", (sc) => `
     ${h1(sc, "How was your first Stretchy? ☀️☕🍷")}
     ${hey(sc, esc(p.name))}
     ${msg(sc, "Thanks for coming to Stretchy. We’d love to hear how it went.")}
-    ${p.sessionId ? filledButton(sc, `${APP_URL}/rate/${p.sessionId}`, "Rate it in 30 seconds") : ""}
+    ${p.sessionId ? filledButton(sc, `${APP_URL}/rate/${p.sessionId}`, "Rate it quick-smart") : ""}
     ${msg(sc, `Or email us back here with any feedback you may have (on the session, the experience, the booking system or whatever you like). You can also suggest where and how we show up next: <a href="${APP_URL}/suggest" style="color:${sc.text};font-weight:700;">Suggest a Stretchy</a>.`)}
     ${outlineButton(sc, `${APP_URL}/suggest`, "Suggest a Stretchy")}
     ${msg(sc, "And if you really enjoyed it, tell ya mates and help us grow the Stretchy community.")}

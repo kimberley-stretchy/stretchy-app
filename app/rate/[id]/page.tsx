@@ -9,7 +9,8 @@ import { FEEDBACK_QUESTIONS, OTHER, type FeedbackQuestion } from "@/lib/feedback
 
 // stretchyyoga.co.nz/rate/[session] — a few very quick questions after a
 // session. Tap an answer (or "Other" and write your own); everything is
-// optional. Linked from the "How was your first Stretchy?" email.
+// optional, and no sign-in needed (name / email only if they want to add
+// them). Linked from the "How was your first Stretchy?" email.
 
 type Session = { id: string; title: string; starts_at: string; location_name: string };
 type Answers = Record<string, string | string[]>;
@@ -48,7 +49,7 @@ function Question({ q, answers, setAnswers }: { q: FeedbackQuestion; answers: An
       <div className="flex items-baseline justify-between gap-3">
         <p className="m-0 font-bold text-ink text-[15px] leading-snug">{q.q}</p>
         {q.options.length > 0 && (
-          <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted flex-none">{q.multi ? "Pick any" : "Pick one"}</span>
+          <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted flex-none">{q.multi ? "Pick as many as you like" : "Pick one"}</span>
         )}
       </div>
       {q.options.length === 0 ? (
@@ -76,6 +77,16 @@ function Question({ q, answers, setAnswers }: { q: FeedbackQuestion; answers: An
               style={{ fontSize: 16 }}
             />
           )}
+          {q.more && Array.isArray(val) && val.length > 0 && (
+            <textarea
+              rows={2}
+              value={(answers[`${q.k}_more`] as string) ?? ""}
+              onChange={(e) => setAnswers({ ...answers, [`${q.k}_more`]: e.target.value })}
+              placeholder="Say more (optional)"
+              className="w-full rounded-xl border-2 border-ink px-3 py-2 bg-cream text-ink resize-none"
+              style={{ fontSize: 16 }}
+            />
+          )}
         </>
       )}
     </div>
@@ -87,31 +98,30 @@ export default function RateItPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Answers>({});
-  const [hideName, setHideName] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [hp, setHp] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  // Answers are saved against your account, so someone arriving signed out
-  // (from the follow-up email) signs in first and comes straight back here.
+  // No sign-in needed. If they happen to be signed in, the token just lets a
+  // second go update their first answers.
   useEffect(() => {
-    createClient().auth.getSession().then(({ data: { session: authSession } }) => {
-      if (!authSession) window.location.href = `/login?next=${encodeURIComponent(`/rate/${params.id}`)}`;
-      else setToken(authSession.access_token);
-    });
+    createClient().auth.getSession().then(({ data: { session: authSession } }) => setToken(authSession?.access_token ?? null));
     fetch(`/api/sessions/${params.id}`).then((r) => (r.ok ? r.json() : null)).then((d) => setSession(d)).catch(() => {});
   }, [params.id]);
 
   const answered = Object.entries(answers).some(([, v]) => (Array.isArray(v) ? v.length > 0 : !!(v ?? "").trim()));
 
   async function send() {
-    if (!token || !answered) return;
+    if (!answered) return;
     setSending(true);
     setError(null);
     const res = await fetch("/api/feedback", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ sessionId: params.id, answers, hideName }),
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ sessionId: params.id, answers, name, email, hp }),
     }).catch(() => null);
     const d = res ? await res.json().catch(() => ({})) : {};
     setSending(false);
@@ -156,16 +166,38 @@ export default function RateItPage() {
 
         {FEEDBACK_QUESTIONS.map((q) => <Question key={q.k} q={q} answers={answers} setAnswers={setAnswers} />)}
 
-        <label className="flex items-center gap-3 text-sm text-ink cursor-pointer px-1">
-          <input type="checkbox" checked={hideName} onChange={(e) => setHideName(e.target.checked)} className="w-5 h-5" style={{ accentColor: "#902F8A" }} />
-          Don&rsquo;t show my name with these answers
-        </label>
+        <div className="bg-white rounded-card border-2 border-ink p-4 flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="m-0 font-bold text-ink text-[15px] leading-snug">Want us to know it&rsquo;s you?</p>
+            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted flex-none">Optional</span>
+          </div>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            autoComplete="name"
+            className="w-full h-11 rounded-xl border-2 border-ink px-3 bg-cream text-ink"
+            style={{ fontSize: 16 }}
+          />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Your email"
+            autoComplete="email"
+            className="w-full h-11 rounded-xl border-2 border-ink px-3 bg-cream text-ink"
+            style={{ fontSize: 16 }}
+          />
+          <p className="m-0 text-xs text-muted">Leave these blank to stay anonymous.</p>
+        </div>
+        {/* Hidden from people; bots fill it in. */}
+        <input value={hp} onChange={(e) => setHp(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" name="company" />
 
         {error && <p className="m-0 text-sm font-bold" style={{ color: "#C6362E" }}>{error}</p>}
         <button
           type="button"
           onClick={send}
-          disabled={sending || !answered || !token}
+          disabled={sending || !answered}
           className="h-14 rounded-pill bg-ink text-cream font-bold text-base disabled:opacity-40"
         >
           {sending ? "Sending…" : "Send my answers"}

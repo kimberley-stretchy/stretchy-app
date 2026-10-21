@@ -12,6 +12,8 @@ export type FeedbackQuestion = {
   /** Adds an "Other" chip that opens a text box. */
   other?: boolean;
   placeholder?: string;
+  /** A "Say more" box under the answers, once any are picked. */
+  more?: boolean;
 };
 
 export const FEEDBACK_QUESTIONS: FeedbackQuestion[] = [
@@ -20,9 +22,9 @@ export const FEEDBACK_QUESTIONS: FeedbackQuestion[] = [
   { k: "pricing", q: "People-powered Pricing: what did you think?", options: ["Got it, love it", "Got it", "Not sure I understand it", "Don’t get it yet"], other: true },
   { k: "social", q: "How was the Social Stretch?", options: ["Loved it", "Good chats", "Didn’t stay this time", "Not for me"], other: true },
   { k: "feeling", q: "What was your overall feeling of Stretchy?", options: ["Welcoming", "Fun", "Calm", "Social", "Energising", "Good value", "A bit much"], multi: true, other: true },
-  { k: "improve", q: "What can we do to improve?", options: ["Times", "Locations", "Booking", "Price", "The class", "Social Stretch", "Communication"], multi: true, other: true },
-  { k: "more", q: "More of?", options: ["More sessions", "More locations", "Different times", "Different styles", "More social", "Events"], multi: true, other: true },
-  { k: "less", q: "Less of?", options: ["Emails", "Notifications", "Fine print", "Nothing, it’s great"], multi: true, other: true },
+  { k: "improve", q: "What can we do to improve?", options: ["Times", "Locations", "Booking", "Price", "The class", "Social Stretch", "Communication"], multi: true, other: true, more: true },
+  { k: "more", q: "More of?", options: ["More sessions", "More locations", "Different times", "Different styles", "More social", "Events"], multi: true, other: true, more: true },
+  { k: "less", q: "Less of?", options: [], placeholder: "Anything you’d like less of?" },
   { k: "comments", q: "Any comments or feedback for Stretchy?", options: [], placeholder: "Anything at all. We read every one." },
 ];
 
@@ -49,6 +51,8 @@ export function cleanAnswers(raw: unknown): Record<string, string | string[]> {
     }
     const other = text(r[`${q.k}_other`], 300);
     if (q.other && other) out[`${q.k}_other`] = other;
+    const more = text(r[`${q.k}_more`], 1000);
+    if (q.more && more) out[`${q.k}_more`] = more;
   }
   return out;
 }
