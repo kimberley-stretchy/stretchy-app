@@ -28,7 +28,7 @@ function Button({ children, onClick, filled, disabled, type = "button" }: { chil
       type={type}
       onClick={onClick}
       disabled={disabled}
-      style={{ height: 46, padding: "0 24px", borderRadius: 999, border: `2.25px solid ${INK}`, background: filled ? INK : "transparent", color: filled ? CREAM : INK, fontWeight: 600, fontSize: 14, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.4 : 1, fontFamily: BODY }}
+      style={{ height: 52.9, padding: "0 24px", borderRadius: 999, border: `2.25px solid ${INK}`, background: filled ? INK : "transparent", color: filled ? CREAM : INK, fontWeight: 600, fontSize: 14, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.4 : 1, fontFamily: BODY }}
     >
       {children}
     </button>
@@ -37,7 +37,7 @@ function Button({ children, onClick, filled, disabled, type = "button" }: { chil
 
 function LinkButton({ href, children, filled }: { href: string; children: React.ReactNode; filled?: boolean }) {
   return (
-    <a href={href} style={{ height: 46, padding: "0 24px", borderRadius: 999, border: `2.25px solid ${INK}`, background: filled ? INK : "transparent", color: filled ? CREAM : INK, fontWeight: 600, fontSize: 14, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+    <a href={href} style={{ height: 52.9, padding: "0 24px", borderRadius: 999, border: `2.25px solid ${INK}`, background: filled ? INK : "transparent", color: filled ? CREAM : INK, fontWeight: 600, fontSize: 14, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
       {children}
     </a>
   );
@@ -49,7 +49,7 @@ function Chip({ label, on, onClick, long }: { label: string; on: boolean; onClic
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      style={{ minHeight: 36, padding: long ? "9px 16px" : "6px 14px", borderRadius: long ? 18 : 999, border: `1.75px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 500, fontSize: 13, lineHeight: 1.35, cursor: "pointer", textAlign: "left", fontFamily: BODY, width: long ? "100%" : undefined }}
+      style={{ minHeight: 41.4, padding: long ? "9px 16px" : "6px 14px", borderRadius: long ? 18 : 999, border: `1.75px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 500, fontSize: 13, lineHeight: 1.35, cursor: "pointer", textAlign: "left", fontFamily: BODY, width: long ? "100%" : undefined }}
     >
       {label}
     </button>
