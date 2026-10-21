@@ -578,7 +578,7 @@ export default function SocialSite() {
               {/* Headline runs across the full width, the paragraph sits under it. */}
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                 <div style={mono(11.5, { color: RUST })}>Get involved</div>
-                <h2 style={{ ...h2, fontSize: "clamp(24.5px,4.75vw,74px)", lineHeight: 0.92 }}>The platform will work better when more brains get involved.</h2>
+                <h2 style={{ ...h2, fontSize: "clamp(24.5px,4.75vw,74px)", lineHeight: 0.92 }}>More brains to build a better world.</h2>
                 <p style={{ margin: 0, fontSize: "clamp(14px,1.45vw,20px)", lineHeight: 1.25, fontWeight: 600 }}>Help shape what comes next.</p>
                 <p style={{ ...bodyText, maxWidth: 760 }}>We&rsquo;re looking to connect with organisations who could use the technology, people who want to test it, collaborators who can help us build it, and investors interested in its potential.</p>
               </div>
