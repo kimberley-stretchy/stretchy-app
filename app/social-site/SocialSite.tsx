@@ -280,7 +280,7 @@ export default function SocialSite() {
                 <div style={mono(11.5)}>The tech behind Stretchy · Tāmaki Makaurau</div>
                 <h1 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 400, fontSize: "clamp(28px,4.75vw,74px)", lineHeight: 0.92, textTransform: "uppercase", overflowWrap: "break-word", maxWidth: "100%" } as React.CSSProperties}>People-powered Pricing.</h1>
                 <p style={{ margin: 0, fontSize: "clamp(14px,1.45vw,20px)", lineHeight: 1.25, fontWeight: 600, maxWidth: 600 }}>The more who move together, the better for all.</p>
-                <p style={{ ...bodyText, maxWidth: 600, fontSize: "clamp(12.5px,1.01vw,15px)" }}>We&rsquo;re building technology to help communities bring people together, make events happen and make participation more accessible. Stretchy Social is the tech and intellectual property behind the Stretchy movement. We&rsquo;re hoping to get People-powered Pricing to more people, in more places.</p>
+                <p style={{ ...bodyText, maxWidth: 600, fontSize: "clamp(12.5px,1.01vw,15px)" }}>We&rsquo;re building technology to help communities bring people together, make events happen and make participation more accessible. Stretchy Social is the tech and intellectual property behind the Stretchy movement. We&rsquo;re hoping to get People-powered Pricing to more people, in more places. <strong style={{ fontWeight: 700 }}>It is truly a social movement.</strong></p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 4 }}>
                   {(["waitlist", "invest", "talk"] as LeadType[]).map((k) => (
                     <OutlineButton key={k} onClick={open(k)} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>{TYPES[k].label}</OutlineButton>
