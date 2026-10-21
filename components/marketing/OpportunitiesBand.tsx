@@ -145,11 +145,6 @@ export default function OpportunitiesBand() {
           </div>
         ))}
       </div>
-
-      <p className="m-0 text-xs text-ink/50 leading-[1.5]">
-        Built by Stretchy. Please don&rsquo;t copy it. Like our thinking?{" "}
-        <a href="/vision" className="text-ink/70 font-semibold underline">Let&rsquo;s talk →</a>
-      </p>
     </div>
   );
 }
