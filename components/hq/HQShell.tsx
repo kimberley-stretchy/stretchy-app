@@ -15,20 +15,22 @@ const T = {
   body: "'Space Grotesk', system-ui, sans-serif",
 };
 
-const NAV_FLAT: { href: string; label: string; skipHighlight?: boolean }[] = [
-  { href: "/admin/sessions", label: "Sessions" },
-  { href: "/admin/customers", label: "Customers / Accounts" },
-  { href: "/admin/money", label: "Money" },
-  { href: "/admin/venues", label: "Venues" },
-  { href: "/admin/portal", label: "Team portal" },
-];
-
 const NAV_GROUPS = [
+  {
+    heading: "ADMIN & OPS",
+    items: [
+      { href: "/admin/sessions", label: "Sessions" },
+      { href: "/admin/customers", label: "Customers / Accounts" },
+      { href: "/admin/money", label: "Money" },
+    ],
+  },
   {
     heading: "PROFILES",
     items: [
       { href: "/admin/profiles?tab=teachers", label: "Teachers" },
       { href: "/admin/profiles?tab=gems", label: "GEMs" },
+      // The venues we use, with their contacts, live in Team portal → Locations.
+      { href: "/admin/portal?tab=locations", label: "Venues" },
     ],
   },
   {
@@ -36,20 +38,23 @@ const NAV_GROUPS = [
     items: [
       { href: "/admin/people?tab=teachers", label: "Teachers" },
       { href: "/admin/people?tab=gems", label: "GEMs" },
+      // Offers that came in through the venue form.
+      { href: "/admin/venues", label: "Venues" },
+    ],
+  },
+  {
+    heading: "COMMUNITY",
+    items: [
+      { href: "/admin/portal", label: "Team portal" },
+      { href: "/admin/notices", label: "Team notices" },
+      { href: "/admin/newsletters", label: "Newsletters" },
+      { href: "/admin/suggestions", label: "Future sessions" },
+      { href: "/admin/feedback", label: "Feedback" },
+      { href: "/admin/social", label: "stretchy.social leads" },
     ],
   },
 ];
-
-const NAV_TAIL_GROUP = {
-  heading: "COMMUNITY",
-  items: [
-    { href: "/admin/notices", label: "Team notices" },
-    { href: "/admin/social", label: "stretchy.social leads" },
-    { href: "/admin/newsletters", label: "Newsletters" },
-    { href: "/admin/suggestions", label: "Future sessions" },
-    { href: "/admin/feedback", label: "Feedback" },
-  ],
-};
+const ALL_HREFS = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.href));
 
 // A link is active on pathname match; if it also carries a ?tab= param
 // (Profiles/Pending share the "Teachers"/"GEMs" labels but point at
@@ -57,7 +62,9 @@ const NAV_TAIL_GROUP = {
 function isNavActive(href: string, pathname: string, currentTab: string | null) {
   const [hrefPath, hrefQuery] = href.split("?");
   if (pathname !== hrefPath) return false;
-  if (!hrefQuery) return true;
+  // Plain link (Team portal): active unless a ?tab= link on the same page
+  // (Profiles → Venues = Team portal's Locations tab) claims the current tab.
+  if (!hrefQuery) return !ALL_HREFS.some((h) => h.startsWith(`${hrefPath}?`) && new URLSearchParams(h.split("?")[1]).get("tab") === currentTab);
   const hrefTab = new URLSearchParams(hrefQuery).get("tab");
   return hrefTab === currentTab;
 }
@@ -226,17 +233,8 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
         </Link>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {NAV_FLAT.map((item) => (
-            <NavLink
-              key={item.label + item.href}
-              href={item.href}
-              label={item.label}
-              isActive={!item.skipHighlight && isNavActive(item.href, pathname, currentTab)}
-            />
-          ))}
-
           {NAV_GROUPS.map((group) => (
-            <div key={group.heading} style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 2 }}>
+            <div key={group.heading} style={{ marginTop: group === NAV_GROUPS[0] ? 0 : 14, display: "flex", flexDirection: "column", gap: 2 }}>
               <div className="hq-nav-heading" style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(20,17,15,0.4)", padding: "0 14px", marginBottom: 4 }}>
                 {group.heading}
               </div>
@@ -251,19 +249,6 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
             </div>
           ))}
 
-          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 2 }}>
-            <div className="hq-nav-heading" style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(20,17,15,0.4)", padding: "0 14px", marginBottom: 4 }}>
-              {NAV_TAIL_GROUP.heading}
-            </div>
-            {NAV_TAIL_GROUP.items.map((item) => (
-              <NavLink
-                key={item.label + item.href}
-                href={item.href}
-                label={item.label}
-                isActive={isNavActive(item.href, pathname, currentTab)}
-              />
-            ))}
-          </div>
         </nav>
 
         <div style={{ marginTop: "auto" }}>
