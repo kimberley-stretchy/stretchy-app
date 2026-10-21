@@ -58,7 +58,7 @@ function OutlineButton({ children, onClick, style, light }: { children: React.Re
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={{ height: "clamp(38.5px,3.43vw,46px)", padding: "0 clamp(16px,1.8vw,24px)", borderRadius: 999, border: `3px solid ${fg}`, background: hover ? fg : "transparent", color: hover ? (light ? INK : CREAM) : fg, fontWeight: 600, fontSize: "clamp(12.5px,1.01vw,14px)", cursor: "pointer", ...style }}
+      style={{ height: "clamp(38.5px,3.43vw,46px)", padding: "0 clamp(16px,1.8vw,24px)", borderRadius: 999, border: `2.25px solid ${fg}`, background: hover ? fg : "transparent", color: hover ? (light ? INK : CREAM) : fg, fontWeight: 600, fontSize: "clamp(12.5px,1.01vw,14px)", cursor: "pointer", ...style }}
     >
       {children}
     </button>
@@ -90,7 +90,7 @@ function Chip({ label, on, onClick, small }: { label: string; on: boolean; onCli
       aria-pressed={on}
       style={small
         ? { minHeight: 30, padding: "4px 11px", borderRadius: 999, border: `1.5px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 500, fontSize: 11, lineHeight: 1.2, cursor: "pointer" }
-        : { minHeight: 40, padding: "7px 14px", borderRadius: 999, border: `3px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 600, fontSize: 11.5, lineHeight: 1.2, cursor: "pointer" }}
+        : { minHeight: 40, padding: "7px 14px", borderRadius: 999, border: `2.25px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 600, fontSize: 11.5, lineHeight: 1.2, cursor: "pointer" }}
     >
       {label}
     </button>
@@ -258,7 +258,7 @@ export default function SocialSite() {
           <div style={{ display: "flex", gap: 8, alignItems: "center", flex: "none" }}>
             <OutlineButton onClick={open("waitlist")} style={{ height: "clamp(36px,2.64vw,37px)", padding: "0 clamp(12px,2.6vw,20px)", fontSize: "clamp(11.5px,2.82vw,12.5px)", whiteSpace: "nowrap" }}>Join the waitlist</OutlineButton>
             {!wide && (
-              <button onClick={() => setMenu((m) => !m)} aria-label="Menu" aria-expanded={menu} style={{ flex: "none", width: "clamp(36px,2.64vw,37px)", height: "clamp(36px,2.64vw,37px)", borderRadius: 999, border: `3px solid ${INK}`, background: menu ? INK : "transparent", color: menu ? CREAM : INK, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{menu ? "×" : "≡"}</button>
+              <button onClick={() => setMenu((m) => !m)} aria-label="Menu" aria-expanded={menu} style={{ flex: "none", width: "clamp(36px,2.64vw,37px)", height: "clamp(36px,2.64vw,37px)", borderRadius: 999, border: `2.25px solid ${INK}`, background: menu ? INK : "transparent", color: menu ? CREAM : INK, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{menu ? "×" : "≡"}</button>
             )}
           </div>
         </div>
@@ -890,7 +890,7 @@ function ShapeCard({ bg, fg, tag, right, title, body, button, link }: {
   button?: { label: string; onClick: () => void }; link?: { label: string; href: string };
 }) {
   const line = `2px solid ${fg}`;
-  const btn: React.CSSProperties = { flex: "1 1 140px", height: "clamp(37px,3.08vw,42px)", padding: "0 16px", borderRadius: 999, border: `3px solid ${fg}`, background: "transparent", color: fg, fontWeight: 600, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" };
+  const btn: React.CSSProperties = { flex: "1 1 140px", height: "clamp(37px,3.08vw,42px)", padding: "0 16px", borderRadius: 999, border: `2.25px solid ${fg}`, background: "transparent", color: fg, fontWeight: 600, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" };
   return (
     <div style={{ background: bg, color: fg, borderRadius: 30, padding: 12 }}>
       <div style={{ border: line, borderRadius: 22, display: "flex", flexDirection: "column", height: "100%" }}>
