@@ -15,9 +15,7 @@ const T = {
   body: "'Space Grotesk', system-ui, sans-serif",
 };
 
-const NAV_FLAT = [
-  { href: "/admin/sessions", label: "Today", skipHighlight: true },
-  { href: "/admin/sessions", label: "This week", skipHighlight: true },
+const NAV_FLAT: { href: string; label: string; skipHighlight?: boolean }[] = [
   { href: "/admin/sessions", label: "Sessions" },
   { href: "/admin/customers", label: "Customers / Accounts" },
   { href: "/admin/money", label: "Money" },
@@ -70,12 +68,13 @@ function NavLink({ href, label, isActive }: { href: string; label: string; isAct
       href={href}
       className={isActive ? "hq-link is-active" : "hq-link"}
       style={{
-        padding: "9px 12px",
-        borderRadius: 10,
+        padding: "7px 12px",
+        borderRadius: 999,
         fontSize: 13,
         fontWeight: isActive ? 700 : 500,
-        color: isActive ? T.black : "rgba(245,237,227,0.65)",
-        background: isActive ? T.yellow : "transparent",
+        color: T.black,
+        background: "transparent",
+        border: `2px solid ${isActive ? T.black : "transparent"}`,
         textDecoration: "none",
       }}
     >
@@ -90,6 +89,22 @@ function NavLink({ href, label, isActive }: { href: string; label: string; isAct
 // spacing: tighter edges, side-by-side columns stacked, wide tables scrollable,
 // and form fields at 16px so iPhones don't zoom in when you tap one.
 // The pages themselves use inline styles, hence the !important overrides.
+// The HQ look (Oct 2026, matching stretchy.social and the app): cream, ink
+// keylines, one colour at most. Coloured fills on buttons and pill badges in
+// any HQ page become ink outlines here, so pages don't each need restyling.
+// Ink-filled buttons stay: that's the "selected" look on toggles.
+const NOT_NEUTRAL = ':not([style*="background: rgb(20, 17, 15)"]):not([style*="background: rgb(255, 255, 255)"]):not([style*="background: rgb(247, 240, 232)"])';
+const HQ_LOOK_CSS = `
+.hq-content button[style*="background: rgb"]${NOT_NEUTRAL},
+.hq-content a[style*="border-radius: 999px"][style*="background: rgb"]${NOT_NEUTRAL} {
+  background: transparent !important; color: #14110F !important; border: 2px solid #14110F !important;
+}
+.hq-content span[style*="border-radius: 999px"][style*="padding"][style*="background: rgb"]${NOT_NEUTRAL} {
+  background: transparent !important; color: #14110F !important; box-shadow: inset 0 0 0 1.5px #14110F;
+}
+.hq-aside .hq-link:hover:not(.is-active) { border-color: rgba(20,17,15,0.25) !important; }
+`;
+
 const HQ_MOBILE_CSS = `
 .hq-topbar, .hq-scrim { display: none; }
 @media (max-width: 820px) {
@@ -111,7 +126,7 @@ const HQ_MOBILE_CSS = `
   .hq-aside.is-open { transform: translateX(0); }
   .hq-aside .hq-ink { color: #14110F !important; }
   .hq-aside .hq-link { padding: 13px 14px !important; font-size: 15px !important; font-weight: 600 !important; color: #14110F !important; border-radius: 14px !important; }
-  .hq-aside .hq-link.is-active { background: #14110F !important; color: #F7F0E8 !important; }
+  .hq-aside .hq-link.is-active { border-color: #14110F !important; }
   .hq-aside .hq-nav-heading { color: rgba(20,17,15,0.45) !important; font-size: 10px !important; margin-top: 6px; }
   .hq-aside .hq-back { color: rgba(20,17,15,0.55) !important; display: inline-block; padding: 16px 12px 0; }
   .hq-content main[style*="padding"] { padding: 16px !important; }
@@ -120,7 +135,7 @@ const HQ_MOBILE_CSS = `
   .hq-content [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
   .hq-content table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .hq-content input, .hq-content select, .hq-content textarea { font-size: 16px !important; min-width: 0 !important; max-width: 100%; }
-  .hq-content button, .hq-content a[role="button"] { min-height: 40px; }
+  .hq-content button, .hq-content a[role="button"] { min-height: 34px; }
   .hq-content h1 { font-family: 'BN Chubb', 'Space Grotesk', sans-serif !important; font-size: clamp(30px, 9vw, 40px) !important; line-height: 1 !important; letter-spacing: -0.02em !important; }
 }
 `;
@@ -152,7 +167,7 @@ function HQShellInner({ children }: { children: React.ReactNode }) {
   }, [router, pathname]);
 
   if (!checked) {
-    return <main style={{ background: T.black, minHeight: "100vh" }} />;
+    return <main style={{ background: T.cream, minHeight: "100vh" }} />;
   }
   return <HQFrame>{children}</HQFrame>;
 }
@@ -166,8 +181,8 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
   useEffect(() => { setMenuOpen(false); }, [pathname, currentTab]);
 
   return (
-    <div className="hq-shell" style={{ display: "flex", minHeight: "100vh", background: T.black, fontFamily: T.body }}>
-      <style dangerouslySetInnerHTML={{ __html: HQ_MOBILE_CSS }} />
+    <div className="hq-shell" style={{ display: "flex", minHeight: "100vh", background: T.cream, fontFamily: T.body }}>
+      <style dangerouslySetInnerHTML={{ __html: HQ_LOOK_CSS + HQ_MOBILE_CSS }} />
 
       {/* Phone only: a slim top bar with the menu button. */}
       <header className="hq-topbar">
@@ -180,7 +195,7 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
           onClick={() => setMenuOpen((o) => !o)}
           aria-expanded={menuOpen}
           aria-controls="hq-menu"
-          style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: T.black, background: "transparent", border: "1px solid #D4CFC9", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}
+          style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: T.black, background: "transparent", border: `2px solid ${T.black}`, borderRadius: 999, padding: "7px 16px", cursor: "pointer" }}
         >
           {menuOpen ? "✕ CLOSE" : "≡ MENU"}
         </button>
@@ -191,10 +206,10 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
         id="hq-menu"
         className={`hq-aside${menuOpen ? " is-open" : ""}`}
         style={{
-          width: 200,
+          width: 210,
           flexShrink: 0,
-          background: T.black,
-          borderRight: "1px solid rgba(245,237,227,0.10)",
+          background: T.cream,
+          borderRight: `2px solid ${T.black}`,
           padding: "24px 16px",
           position: "sticky",
           top: 0,
@@ -204,10 +219,8 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
         }}
       >
         <Link href="/admin/sessions" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28, textDecoration: "none" }}>
-          <div style={{ width: 32, height: 32, background: T.cream, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <div style={{ color: T.black }}><SMark size={18} /></div>
-          </div>
-          <span className="hq-ink" style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 800, color: T.cream, letterSpacing: "0.02em", lineHeight: 1.15 }}>
+          <div style={{ color: T.black, flexShrink: 0 }}><SMark size={28} /></div>
+          <span className="hq-ink" style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 800, color: T.black, letterSpacing: "0.02em", lineHeight: 1.15 }}>
             STRETCHY<br />HQ
           </span>
         </Link>
@@ -224,7 +237,7 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
 
           {NAV_GROUPS.map((group) => (
             <div key={group.heading} style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 2 }}>
-              <div className="hq-nav-heading" style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(245,237,227,0.35)", padding: "0 12px", marginBottom: 4 }}>
+              <div className="hq-nav-heading" style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(20,17,15,0.4)", padding: "0 14px", marginBottom: 4 }}>
                 {group.heading}
               </div>
               {group.items.map((item) => (
@@ -239,7 +252,7 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
           ))}
 
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 2 }}>
-            <div className="hq-nav-heading" style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(245,237,227,0.35)", padding: "0 12px", marginBottom: 4 }}>
+            <div className="hq-nav-heading" style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(20,17,15,0.4)", padding: "0 14px", marginBottom: 4 }}>
               {NAV_TAIL_GROUP.heading}
             </div>
             {NAV_TAIL_GROUP.items.map((item) => (
@@ -254,7 +267,7 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div style={{ marginTop: "auto" }}>
-          <Link href="/home" className="hq-back" style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(245,237,227,0.4)", letterSpacing: "0.12em", textDecoration: "none" }}>
+          <Link href="/home" className="hq-back" style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(20,17,15,0.5)", letterSpacing: "0.12em", textDecoration: "none" }}>
             ← BACK TO APP
           </Link>
         </div>
@@ -267,7 +280,7 @@ export function HQFrame({ children }: { children: React.ReactNode }) {
 
 export default function HQShell({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<main style={{ background: T.black, minHeight: "100vh" }} />}>
+    <Suspense fallback={<main style={{ background: T.cream, minHeight: "100vh" }} />}>
       <HQShellInner>{children}</HQShellInner>
     </Suspense>
   );

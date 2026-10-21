@@ -31,17 +31,24 @@ function areaOf(s: { title: string; location_name: string; location_address?: st
   return AREAS.find((a) => title.includes(norm(a))) ?? AREAS.find((a) => hay.includes(norm(a))) ?? "Other";
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  yoga: "#902F8A", pilates: "#0000FF", breath: "#29ABE2",
-  sound: "#716F39", flow: "#FCBB16", run: "#E96709", hiit: "#902F8A",
+const STATE_LABELS: Record<string, string> = {
+  open: "OPEN",
+  confirmed: "GOING AHEAD",
+  locked: "CHARGED",
+  cancelled: "CANCELLED",
+  completed: "DONE",
 };
 
-const STATE_COLORS: Record<string, { bg: string; fg: string; label: string }> = {
-  open:      { bg: "rgba(252,187,22,.28)",  fg: T.ink,    label: "OPEN" },
-  confirmed: { bg: "rgba(113,111,57,.18)",  fg: T.olive,  label: "CONFIRMED" },
-  locked:    { bg: "rgba(41,171,226,.18)",  fg: T.blue,   label: "LOCKED" },
-  cancelled: { bg: "rgba(20,17,15,.08)",    fg: "rgba(20,17,15,.5)", label: "CANCELLED" },
-  completed: { bg: "rgba(20,17,15,.06)",    fg: "rgba(20,17,15,.4)", label: "DONE" },
+// The HQ look: ink outlines, no fills. `on` = the ink-filled "selected" state.
+const pill = (on = false): React.CSSProperties => ({
+  display: "inline-flex", alignItems: "center", justifyContent: "center",
+  padding: "7px 14px", borderRadius: 999, cursor: "pointer", textDecoration: "none",
+  border: `2px solid ${T.ink}`, background: on ? T.ink : "transparent", color: on ? T.cream : T.ink,
+  fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", whiteSpace: "nowrap",
+});
+const tag: React.CSSProperties = {
+  fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
+  padding: "3px 9px", borderRadius: 999, border: `1.5px solid ${T.ink}`, color: T.ink, flexShrink: 0, whiteSpace: "nowrap",
 };
 
 type Session = {
@@ -65,7 +72,6 @@ type Session = {
 export default function AdminSessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cancelling, setCancelling] = useState<string | null>(null);
   const [testEmailSending, setTestEmailSending] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState<string | null>(null);
   const [testEmailAddress, setTestEmailAddress] = useState("kimberleytorrie@gmail.com");
@@ -127,16 +133,6 @@ export default function AdminSessionsPage() {
       })
       .catch(() => { setLoadError("Could not load sessions."); setLoading(false); });
   }, []);
-
-  async function cancelSession(id: string, title: string) {
-    if (!confirm(`Cancel "${title}"? This will release all holds.`)) return;
-    setCancelling(id);
-    await fetch(`/api/admin/sessions?id=${id}`, { method: "DELETE" });
-    setSessions((prev) =>
-      prev.map((s) => s.id === id ? { ...s, state: "cancelled" } : s)
-    );
-    setCancelling(null);
-  }
 
   // Selecting past sessions to permanently delete.
   const [selectedPast, setSelectedPast] = useState<Set<string>>(new Set());
@@ -255,7 +251,7 @@ export default function AdminSessionsPage() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 14 }}>
           <div>
-            <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: T.purple, letterSpacing: "0.12em", marginBottom: 6 }}>
+            <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.5)", letterSpacing: "0.12em", marginBottom: 6 }}>
               SESSIONS
             </p>
             <h1 style={{ fontFamily: T.display, fontWeight: 700, fontSize: "clamp(32px,8vw,44px)", letterSpacing: "-0.02em", lineHeight: 1, textTransform: "uppercase", margin: 0 }}>
@@ -264,19 +260,143 @@ export default function AdminSessionsPage() {
           </div>
           <Link
             href="/admin/sessions/new"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "12px 22px", borderRadius: 999,
-              background: T.ink, color: T.cream,
-              fontFamily: T.body, fontSize: 14, fontWeight: 700,
-              textDecoration: "none", flexShrink: 0,
-            }}
+            style={{ ...pill(), padding: "11px 20px", fontSize: 11 }}
           >
-            + New session
+            + NEW SESSION
           </Link>
         </div>
 
-        {/* Test push notification */}
+        {loadError && (
+          <div style={{ marginBottom: 20, padding: "14px 18px", borderRadius: 12, background: "rgba(198,54,46,.10)", border: `1.5px solid ${T.red}`, color: T.red, fontSize: 13, fontWeight: 600 }}>
+            {loadError}
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div style={{ textAlign: "center", padding: 60, color: "rgba(20,17,15,.35)", fontFamily: T.mono, fontSize: 12 }}>
+            LOADING…
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && sessions.length === 0 && (
+          <div style={{
+            textAlign: "center", padding: 60,
+            background: "#fff", borderRadius: 20,
+            border: "2px dashed rgba(20,17,15,.25)",
+          }}>
+            <p style={{ fontSize: 32, marginBottom: 12 }}>🧘</p>
+            <p style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 800, color: "rgba(20,17,15,.4)", letterSpacing: "0.16em" }}>
+              NO SESSIONS YET
+            </p>
+            <p style={{ fontSize: 14, color: "rgba(20,17,15,.5)", marginTop: 8, marginBottom: 24 }}>
+              Create your first session to get things moving.
+            </p>
+            <Link
+              href="/admin/sessions/new"
+              style={{ ...pill(), padding: "12px 22px", fontSize: 11 }}
+            >
+              Create first session →
+            </Link>
+          </div>
+        )}
+
+        {/* Location filter — applies to both lists below */}
+        {sessions.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+            {areaTabs.map((a) => {
+              const on = area === a;
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setArea(a)}
+                  aria-pressed={on}
+                  style={pill(on)}
+                >
+                  {a.toUpperCase()} · {upcomingCount(a)}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {area !== "All" && upcoming.length === 0 && (
+          <p style={{ fontFamily: T.body, fontSize: 14, color: "rgba(20,17,15,.55)", margin: "0 0 28px" }}>
+            No upcoming sessions in {area} yet.
+          </p>
+        )}
+
+        {/* Upcoming sessions */}
+        {upcoming.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: T.ink }}>
+                UPCOMING · {upcoming.length}
+              </span>
+              <span style={{ flex: 1, height: 2, background: T.ink }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {upcoming.map((s) => (
+                <SessionCard
+                  key={s.id}
+                  session={s}
+                  onRequestSub={requestSub}
+                  requestingSub={requestingSub === s.id}
+                  onPublish={publishSession}
+                  publishing={publishing === s.id}
+                  onConfirm={keepAlive}
+                  confirming={confirming === s.id}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Past sessions — everything that already ran or was cancelled. Tick to
+            permanently delete. */}
+        {past.length > 0 && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: T.ink }}>
+                PAST · {past.length}
+              </span>
+              <span style={{ flex: 1, height: 2, background: T.ink }} />
+              {selectedPast.size > 0 && (
+                <button
+                  onClick={deleteSelectedPast}
+                  disabled={deletingPast}
+                  style={{ ...pill(), padding: "5px 12px", color: T.red, borderColor: T.red }}
+                >
+                  {deletingPast ? "DELETING…" : `DELETE SELECTED (${selectedPast.size})`}
+                </button>
+              )}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {past.map((s) => (
+                <SessionCard
+                  key={s.id}
+                  session={s}
+                  onRequestSub={requestSub}
+                  requestingSub={requestingSub === s.id}
+                  onPublish={publishSession}
+                  publishing={publishing === s.id}
+                  onConfirm={keepAlive}
+                  confirming={confirming === s.id}
+                  selectable
+                  selected={selectedPast.has(s.id)}
+                  onSelect={() => togglePast(s.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tests, folded away */}
+        <details style={{ marginTop: 40, borderTop: `2px solid ${T.ink}`, paddingTop: 14 }}>
+          <summary style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", cursor: "pointer" }}>TEST EMAIL &amp; PUSH</summary>
+          <div style={{ marginTop: 14 }}>
         <div style={{ marginBottom: 14, padding: "16px 20px", borderRadius: 14, background: "#fff", border: `2px solid ${T.ink}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
           <div>
             <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.45)", letterSpacing: "0.12em", marginBottom: 4 }}>PUSH NOTIFICATION TEST</p>
@@ -309,146 +429,8 @@ export default function AdminSessionsPage() {
           </div>
         </div>
 
-        {loadError && (
-          <div style={{ marginBottom: 20, padding: "14px 18px", borderRadius: 12, background: "rgba(198,54,46,.10)", border: `1.5px solid ${T.red}`, color: T.red, fontSize: 13, fontWeight: 600 }}>
-            {loadError}
           </div>
-        )}
-
-        {/* Loading */}
-        {loading && (
-          <div style={{ textAlign: "center", padding: 60, color: "rgba(20,17,15,.35)", fontFamily: T.mono, fontSize: 12 }}>
-            LOADING…
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loading && sessions.length === 0 && (
-          <div style={{
-            textAlign: "center", padding: 60,
-            background: "#fff", borderRadius: 20,
-            border: "2px dashed rgba(20,17,15,.25)",
-          }}>
-            <p style={{ fontSize: 32, marginBottom: 12 }}>🧘</p>
-            <p style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 800, color: "rgba(20,17,15,.4)", letterSpacing: "0.16em" }}>
-              NO SESSIONS YET
-            </p>
-            <p style={{ fontSize: 14, color: "rgba(20,17,15,.5)", marginTop: 8, marginBottom: 24 }}>
-              Create your first session to get things moving.
-            </p>
-            <Link
-              href="/admin/sessions/new"
-              style={{
-                display: "inline-block", padding: "14px 24px", borderRadius: 999,
-                background: T.ink, color: T.cream, textDecoration: "none",
-                fontFamily: T.body, fontSize: 15, fontWeight: 700,
-              }}
-            >
-              Create first session →
-            </Link>
-          </div>
-        )}
-
-        {/* Location filter — applies to both lists below */}
-        {sessions.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-            {areaTabs.map((a) => {
-              const on = area === a;
-              return (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setArea(a)}
-                  aria-pressed={on}
-                  style={{
-                    fontFamily: T.mono, fontSize: 11, fontWeight: 800, letterSpacing: "0.08em",
-                    padding: "9px 16px", borderRadius: 999, cursor: "pointer",
-                    border: `2px solid ${T.ink}`,
-                    background: on ? T.ink : "transparent",
-                    color: on ? T.cream : T.ink,
-                  }}
-                >
-                  {a.toUpperCase()} · {upcomingCount(a)}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {area !== "All" && upcoming.length === 0 && (
-          <p style={{ fontFamily: T.body, fontSize: 14, color: "rgba(20,17,15,.55)", margin: "0 0 28px" }}>
-            No upcoming sessions in {area} yet.
-          </p>
-        )}
-
-        {/* Upcoming sessions */}
-        {upcoming.length > 0 && (
-          <div style={{ marginBottom: 32 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: T.ink }}>
-                UPCOMING · {upcoming.length}
-              </span>
-              <span style={{ flex: 1, height: 1, background: "rgba(20,17,15,.15)" }} />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {upcoming.map((s) => (
-                <SessionCard
-                  key={s.id}
-                  session={s}
-                  onCancel={cancelSession}
-                  cancelling={cancelling === s.id}
-                  onRequestSub={requestSub}
-                  requestingSub={requestingSub === s.id}
-                  onPublish={publishSession}
-                  publishing={publishing === s.id}
-                  onConfirm={keepAlive}
-                  confirming={confirming === s.id}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Past sessions — everything that already ran or was cancelled. Tick to
-            permanently delete. */}
-        {past.length > 0 && (
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: T.ink }}>
-                PAST · {past.length}
-              </span>
-              <span style={{ flex: 1, height: 1, background: "rgba(20,17,15,.15)" }} />
-              {selectedPast.size > 0 && (
-                <button
-                  onClick={deleteSelectedPast}
-                  disabled={deletingPast}
-                  style={{ padding: "6px 14px", borderRadius: 999, border: "none", cursor: "pointer", background: T.red, color: T.cream, fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", flexShrink: 0 }}
-                >
-                  {deletingPast ? "DELETING…" : `DELETE SELECTED (${selectedPast.size})`}
-                </button>
-              )}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {past.map((s) => (
-                <SessionCard
-                  key={s.id}
-                  session={s}
-                  onCancel={cancelSession}
-                  cancelling={cancelling === s.id}
-                  onRequestSub={requestSub}
-                  requestingSub={requestingSub === s.id}
-                  onPublish={publishSession}
-                  publishing={publishing === s.id}
-                  onConfirm={keepAlive}
-                  confirming={confirming === s.id}
-                  selectable
-                  selected={selectedPast.has(s.id)}
-                  onSelect={() => togglePast(s.id)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        </details>
       </div>
     </main>
     </HQShell>
@@ -485,8 +467,6 @@ const EMAIL_LABELS: Record<string, string> = {
 
 function SessionCard({
   session: s,
-  onCancel,
-  cancelling,
   onRequestSub,
   requestingSub,
   onPublish,
@@ -498,8 +478,6 @@ function SessionCard({
   onSelect,
 }: {
   session: Session;
-  onCancel: (id: string, title: string) => void;
-  cancelling: boolean;
   onRequestSub: (id: string, title: string) => void;
   requestingSub: boolean;
   onPublish: (id: string) => void;
@@ -510,24 +488,36 @@ function SessionCard({
   selected?: boolean;
   onSelect?: () => void;
 }) {
-  const typeColor = locationTheme(s).textAccent;
-  const stateInfo = STATE_COLORS[s.state] || STATE_COLORS.open;
+  const dot = locationTheme(s).textAccent;
   const startDate = new Date(s.starts_at);
   const currentPrice = calculatePrice(s.cost_base, s.revenue_target, Math.max(s.current_holds, s.min_attendees));
-
   const needsMore = s.min_attendees - s.current_holds;
-  const isConfirmed = s.current_holds >= s.min_attendees;
+  const live = s.state !== "cancelled" && s.state !== "completed";
 
-  const [showAttendees, setShowAttendees] = useState(false);
+  // One panel at a time under the card: the people (with the emails they've
+  // been sent underneath), or the handful of less-used actions.
+  const [panel, setPanel] = useState<"people" | "more" | null>(null);
   const [attendees, setAttendees] = useState<Attendee[] | null>(null);
-  const [loadingAttendees, setLoadingAttendees] = useState(false);
-  const [showEmails, setShowEmails] = useState(false);
   const [emails, setEmails] = useState<EmailLogRow[] | null>(null);
-  const [loadingEmails, setLoadingEmails] = useState(false);
   const [addEmail, setAddEmail] = useState("");
   const [addName, setAddName] = useState("");
   const [adding, setAdding] = useState(false);
   const [addMsg, setAddMsg] = useState<string | null>(null);
+
+  async function loadPeople() {
+    const [a, e] = await Promise.all([
+      fetch(`/api/admin/sessions/${s.id}/attendees`).then((r) => (r.ok ? r.json() : { attendees: [] })).catch(() => ({ attendees: [] })),
+      fetch(`/api/admin/sessions/${s.id}/emails`).then((r) => (r.ok ? r.json() : { emails: [] })).catch(() => ({ emails: [] })),
+    ]);
+    setAttendees(a.attendees ?? []);
+    setEmails(e.emails ?? []);
+  }
+
+  function toggle(p: "people" | "more") {
+    const next = panel === p ? null : p;
+    setPanel(next);
+    if (next === "people" && attendees === null) loadPeople();
+  }
 
   async function addComp() {
     if (!addEmail.trim() || adding) return;
@@ -544,9 +534,7 @@ function SessionCard({
         setAddMsg(`✓ Added ${data.attendee?.name ?? addEmail}${data.newAccount ? " — new account, they'll get a set-up link" : ""}`);
         setAddEmail("");
         setAddName("");
-        const r = await fetch(`/api/admin/sessions/${s.id}/attendees`);
-        const d = await r.json();
-        if (r.ok) setAttendees(d.attendees);
+        loadPeople();
       } else {
         setAddMsg(data.error ?? "Could not add.");
       }
@@ -556,269 +544,87 @@ function SessionCard({
     setAdding(false);
   }
 
-  async function toggleAttendees() {
-    if (showAttendees) { setShowAttendees(false); return; }
-    setShowAttendees(true);
-    if (attendees !== null) return;
-    setLoadingAttendees(true);
-    try {
-      const res = await fetch(`/api/admin/sessions/${s.id}/attendees`);
-      const data = await res.json();
-      setAttendees(res.ok ? data.attendees : []);
-    } catch {
-      setAttendees([]);
-    }
-    setLoadingAttendees(false);
-  }
-
-  async function toggleEmails() {
-    if (showEmails) { setShowEmails(false); return; }
-    setShowEmails(true);
-    if (emails !== null) return;
-    setLoadingEmails(true);
-    try {
-      const res = await fetch(`/api/admin/sessions/${s.id}/emails`);
-      const data = await res.json();
-      setEmails(res.ok ? data.emails : []);
-    } catch {
-      setEmails([]);
-    }
-    setLoadingEmails(false);
-  }
+  const field: React.CSSProperties = { padding: "8px 12px", borderRadius: 10, background: "#fff", border: `2px solid ${T.ink}`, color: T.ink, fontFamily: T.body, fontSize: 13, outline: "none" };
+  const keyline = `1.5px solid ${T.ink}`;
 
   return (
-    <div style={{ background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 14, overflow: "hidden" }}>
-      {/* Top row */}
-      <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-        {/* Tick to select for deletion (past sessions only) */}
+    <div style={{ background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 16, overflow: "hidden", opacity: live ? 1 : 0.75 }}>
+      {/* What, when, where */}
+      <div style={{ padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: 12 }}>
         {selectable && (
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={onSelect}
-            title="Select to permanently delete"
-            style={{ width: 18, height: 18, flexShrink: 0, cursor: "pointer", accentColor: "#C6362E" }}
-          />
+          <input type="checkbox" checked={selected} onChange={onSelect} title="Select to permanently delete" style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0, cursor: "pointer", accentColor: T.ink }} />
         )}
-        {/* Type dot */}
-        <div style={{
-          width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-          background: typeColor + "22", display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 800, color: typeColor }}>
-            {s.movement_type.charAt(0).toUpperCase()}
-          </span>
-        </div>
-
-        {/* Title + location */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontWeight: 700, fontSize: 15, margin: 0, lineHeight: 1.2, color: T.ink }}>{s.title}</p>
-          <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.5)", letterSpacing: "0.08em", marginTop: 3 }}>
+          <p style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: "rgba(20,17,15,.6)", margin: 0 }}>
+            <span style={{ width: 9, height: 9, borderRadius: "50%", background: dot, flexShrink: 0 }} />
             {startDate.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" }).toUpperCase()} · {startDate.toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()}
           </p>
-          <p style={{ fontSize: 12, color: "rgba(20,17,15,.5)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {s.location_name}
-          </p>
+          <p style={{ fontWeight: 700, fontSize: 16, margin: "4px 0 0", lineHeight: 1.2 }}>{s.title}</p>
+          <p style={{ fontSize: 12.5, color: "rgba(20,17,15,.55)", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.location_name}</p>
         </div>
-
-        {/* Draft / state badge — is_draft is a separate flag from state, so a
-            draft session still shows state "open" underneath; flag it clearly
-            since a draft is invisible on the public site regardless of state. */}
-        {s.is_draft && (
-          <span style={{
-            fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
-            padding: "4px 10px", borderRadius: 999, flexShrink: 0,
-            background: "rgba(252,187,22,.35)", color: T.ink,
-          }}>
-            DRAFT — NOT LIVE
-          </span>
-        )}
-        <span style={{
-          fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
-          padding: "4px 10px", borderRadius: 999, flexShrink: 0,
-          background: stateInfo.bg, color: stateInfo.fg,
-        }}>
-          {stateInfo.label}
-        </span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
+          <span style={tag}>{STATE_LABELS[s.state] ?? s.state.toUpperCase()}</span>
+          {s.is_draft && <span style={tag}>DRAFT · NOT LIVE</span>}
+          {s.keep_alive_at && s.state === "open" && <span style={tag}>KEPT ALIVE</span>}
+        </div>
       </div>
 
-      {/* Stats row */}
-      <div style={{
-        padding: "12px 18px", display: "flex", gap: 22, alignItems: "center", flexWrap: "wrap",
-        borderTop: "1px solid rgba(20,17,15,.10)",
-        background: T.cream,
-      }}>
-        <Stat label="HOLDS" value={`${s.current_holds} / ${s.max_attendees}`} />
-        <Stat label="PRICE NOW" value={`$${currentPrice.toFixed(2)}`} color={T.purple} />
-        <Stat label="COSTS + TARGET" value={`$${s.cost_base} + $${s.revenue_target}`} />
-        <Stat label="MIN" value={`${s.min_attendees} needed`} color={isConfirmed ? T.olive : needsMore > 0 ? T.orange : T.olive} />
+      {/* The numbers, on one line */}
+      <div style={{ padding: "10px 18px", borderTop: keyline, display: "flex", gap: "6px 18px", flexWrap: "wrap", fontFamily: T.mono, fontSize: 12, fontWeight: 700 }}>
+        <span>{s.current_holds} / {s.max_attendees} IN</span>
+        <span style={{ color: "rgba(20,17,15,.6)" }}>{needsMore > 0 && live ? `${needsMore} MORE TO GO AHEAD` : `MIN ${s.min_attendees}`}</span>
+        <span>NOW ${currentPrice.toFixed(2)}</span>
+        <span style={{ color: "rgba(20,17,15,.6)" }}>${s.cost_base} + ${s.revenue_target}</span>
+      </div>
 
-        {/* Actions */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {s.is_draft && (
-            <button
-              onClick={() => onPublish(s.id)}
-              disabled={publishing}
-              style={{
-                padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
-                background: T.yellow, color: T.ink,
-                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-              }}
-            >
-              {publishing ? "PUBLISHING…" : "PUBLISH"}
-            </button>
-          )}
-          <button
-            onClick={toggleAttendees}
-            style={{
-              padding: "7px 14px", borderRadius: 999, cursor: "pointer",
-              border: `1.5px solid ${T.ink}`,
-              background: showAttendees ? T.ink : "transparent",
-              color: showAttendees ? T.cream : T.ink,
-              fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-            }}
-          >
-            ATTENDEES ({s.current_holds})
-          </button>
-          {/* The on-the-day view: check-in, care notes, notices. */}
-          {s.state !== "cancelled" && (
-            <Link
-              href={`/host/session/${s.id}/run-sheet`}
-              style={{
-                padding: "7px 14px", borderRadius: 999, textDecoration: "none",
-                border: `1.5px solid ${T.olive}`, background: T.olive, color: T.cream,
-                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-              }}
-            >
-              RUN SHEET
-            </Link>
-          )}
-          <button
-            onClick={toggleEmails}
-            title="Every email sent for this session — who got what, and delivery status."
-            style={{
-              padding: "7px 14px", borderRadius: 999, cursor: "pointer",
-              border: `1.5px solid ${T.ink}`,
-              background: showEmails ? T.ink : "transparent",
-              color: showEmails ? T.cream : T.ink,
-              fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-            }}
-          >
-            EMAILS
-          </button>
-          <Link
-            href={`/sessions/${s.id}`}
-            style={{
-              padding: "7px 14px", borderRadius: 999, textDecoration: "none",
-              border: `1.5px solid ${T.ink}`, background: "transparent", color: T.ink,
-              fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-            }}
-          >
-            VIEW
-          </Link>
-          {s.state !== "cancelled" && s.state !== "completed" && (
-            <Link
-              href={`/admin/sessions/new?edit=${s.id}`}
-              style={{
-                padding: "7px 14px", borderRadius: 999, textDecoration: "none",
-                border: "none", background: T.ink, color: T.cream,
-                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-              }}
-            >
-              EDIT
-            </Link>
-          )}
-          <Link
-            href={`/admin/sessions/new?duplicate=${s.id}`}
-            style={{
-              padding: "7px 14px", borderRadius: 999, textDecoration: "none",
-              border: `1.5px solid ${T.ink}`, background: "transparent", color: T.ink,
-              fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-            }}
-          >
-            DUPLICATE
-          </Link>
-          {(s.state === "locked" || s.state === "completed") && (
-            <Link
-              href={`/admin/sessions/${s.id}/money`}
-              style={{
-                padding: "7px 14px", borderRadius: 999, textDecoration: "none",
-                background: T.yellow, color: T.ink,
-                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-              }}
-            >
-              MONEY
-            </Link>
-          )}
+      {/* Main actions */}
+      <div style={{ padding: "10px 18px 14px", borderTop: keyline, display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {s.is_draft && (
+          <button onClick={() => onPublish(s.id)} disabled={publishing} style={pill(true)}>{publishing ? "PUBLISHING…" : "PUBLISH"}</button>
+        )}
+        <button onClick={() => toggle("people")} style={pill(panel === "people")}>PEOPLE · {s.current_holds}</button>
+        {s.state !== "cancelled" && <Link href={`/host/session/${s.id}/run-sheet`} style={pill()}>RUN SHEET</Link>}
+        <Link href={`/sessions/${s.id}`} style={pill()}>VIEW</Link>
+        {live && <Link href={`/admin/sessions/new?edit=${s.id}`} style={pill()}>EDIT</Link>}
+        <button onClick={() => toggle("more")} style={pill(panel === "more")} aria-expanded={panel === "more"}>MORE {panel === "more" ? "▴" : "▾"}</button>
+      </div>
+
+      {/* More: the less-used actions */}
+      {panel === "more" && (
+        <div style={{ padding: "12px 18px 14px", borderTop: keyline, display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link href={`/admin/sessions/new?duplicate=${s.id}`} style={pill()}>DUPLICATE</Link>
           {(s.state === "open" || s.state === "confirmed") && (
-            <button
-              onClick={() => onRequestSub(s.id, s.title)}
-              disabled={requestingSub}
-              style={{
-                padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
-                background: "rgba(233,103,9,.18)", color: T.orange,
-                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-              }}
-            >
-              {requestingSub ? "SENDING…" : "NEED SUB"}
-            </button>
+            <button onClick={() => onRequestSub(s.id, s.title)} disabled={requestingSub} style={pill()}>{requestingSub ? "SENDING…" : "NEED A SUB"}</button>
           )}
           {s.state === "open" && (
             <button
               onClick={() => onConfirm(s.id, s.title, s.current_holds, s.min_attendees)}
               disabled={confirming}
-              title={
-                s.keep_alive_at
-                  ? "Kept alive: this goes ahead at 36 hours out whatever the numbers. Click to undo."
-                  : "Go ahead at 36 hours out even if it's under the minimum. Nothing is sent now — everyone is told at 36 hours out."
-              }
-              style={{
-                padding: "7px 14px", borderRadius: 999, cursor: "pointer",
-                border: `2px solid ${T.olive}`,
-                background: s.keep_alive_at ? "transparent" : T.olive,
-                color: s.keep_alive_at ? T.olive : "#fff",
-                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-              }}
+              title={s.keep_alive_at ? "Kept alive: this goes ahead at 36 hours out whatever the numbers. Click to undo." : "Go ahead at 36 hours out even if it's under the minimum. Nothing is sent now — everyone is told at 36 hours out."}
+              style={pill()}
             >
-              {confirming ? "SAVING…" : s.keep_alive_at ? "KEPT ALIVE ✓ · UNDO" : "KEEP ALIVE"}
+              {confirming ? "SAVING…" : s.keep_alive_at ? "UNDO KEEP ALIVE" : "KEEP ALIVE"}
             </button>
           )}
-          {s.state === "open" && (
-            <button
-              onClick={() => onCancel(s.id, s.title)}
-              disabled={cancelling}
-              style={{
-                padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer",
-                background: T.red, color: T.cream,
-                fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-              }}
-            >
-              {cancelling ? "…" : "CANCEL"}
-            </button>
-          )}
+          {(s.state === "locked" || s.state === "completed") && <Link href={`/admin/sessions/${s.id}/money`} style={pill()}>MONEY</Link>}
+          {live && <span style={{ fontSize: 12, color: "rgba(20,17,15,.55)", alignSelf: "center" }}>Cancel is in Edit.</span>}
         </div>
-      </div>
+      )}
 
-      {/* Attendee roster */}
-      {showAttendees && (
-        <div style={{ padding: "14px 18px", borderTop: "1px solid rgba(20,17,15,.10)" }}>
-          {loadingAttendees ? (
-            <p style={{ fontSize: 12, color: "rgba(20,17,15,.4)", fontFamily: T.mono }}>LOADING…</p>
-          ) : !attendees || attendees.length === 0 ? (
-            <p style={{ fontSize: 13, color: "rgba(20,17,15,.45)" }}>No one&rsquo;s holding a spot yet.</p>
+      {/* People: who's coming, add someone on us, and the emails sent */}
+      {panel === "people" && (
+        <div style={{ padding: "14px 18px", borderTop: keyline }}>
+          {attendees === null ? (
+            <p style={{ fontSize: 12, color: "rgba(20,17,15,.4)", fontFamily: T.mono, margin: 0 }}>LOADING…</p>
+          ) : attendees.length === 0 ? (
+            <p style={{ fontSize: 13, color: "rgba(20,17,15,.5)", margin: 0 }}>No one&rsquo;s holding a place yet.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {/* On the day: who's here, and anything they've told us about moving with care. */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: "rgba(20,17,15,.55)" }}>
-                  {attendees.filter((a) => a.checkedIn).reduce((n, a) => n + a.spots, 0)} HERE · {attendees.filter((a) => !a.checkedIn).reduce((n, a) => n + a.spots, 0)} NOT YET · {attendees.filter((a) => a.careNote).length} MOVING WITH CARE
-                </span>
-                <a href={`/host/session/${s.id}/run-sheet`} style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: T.ink, textDecoration: "underline" }}>
-                  OPEN RUN SHEET →
-                </a>
-              </div>
+              <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: "rgba(20,17,15,.6)" }}>
+                {attendees.filter((a) => a.checkedIn).reduce((n, a) => n + a.spots, 0)} HERE · {attendees.filter((a) => !a.checkedIn).reduce((n, a) => n + a.spots, 0)} NOT YET · {attendees.filter((a) => a.careNote).length} MOVING WITH CARE
+              </span>
               {attendees.map((a, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13, paddingBottom: 10, borderBottom: "1px solid rgba(20,17,15,.08)" }}>
+                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13, paddingBottom: 10, borderBottom: "1px solid rgba(20,17,15,.12)" }}>
                   <button
                     type="button"
                     aria-label={a.checkedIn ? `Mark ${a.name} not here` : `Check in ${a.name}`}
@@ -832,22 +638,22 @@ function SessionCard({
                         body: JSON.stringify({ userId: a.userId, checkedIn: next }),
                       });
                     }}
-                    style={{ width: 30, height: 30, minHeight: 30, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: a.checkedIn ? T.olive : "transparent", border: a.checkedIn ? "none" : `2px solid ${T.ink}`, color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1 }}
+                    style={{ width: 28, height: 28, minHeight: 28, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: a.checkedIn ? T.ink : "transparent", border: `2px solid ${T.ink}`, color: T.cream, fontWeight: 800, fontSize: 13, lineHeight: 1 }}
                   >
                     {a.checkedIn ? "✓" : ""}
                   </button>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 700, color: T.ink }}>{a.name}</span>
-                      {a.spots > 1 && <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: T.purple }}>×{a.spots}</span>}
-                      {a.badge && <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: T.yellow, color: T.ink }}>{a.badge}</span>}
-                      {a.isComp && <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, border: `1px solid ${T.ink}` }}>ON US</span>}
+                      <span style={{ fontWeight: 700 }}>{a.name}</span>
+                      {a.spots > 1 && <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800 }}>×{a.spots}</span>}
+                      {a.badge && <span style={tag}>{a.badge}</span>}
+                      {a.isComp && <span style={tag}>ON US</span>}
                     </div>
                     <div style={{ color: "rgba(20,17,15,.55)", wordBreak: "break-word" }}>
                       {a.email}{a.phone ? <> · <a href={`tel:${a.phone}`} style={{ color: "inherit" }}>{a.phone}</a></> : null}
                     </div>
                     {a.careNote && (
-                      <div style={{ marginTop: 6, padding: "8px 10px", borderRadius: 10, background: "rgba(252,187,22,.28)", fontWeight: 600, lineHeight: 1.4, whiteSpace: "pre-wrap" }}>
+                      <div style={{ marginTop: 6, padding: "8px 10px", borderRadius: 10, border: `1.5px solid ${T.ink}`, lineHeight: 1.4, whiteSpace: "pre-wrap" }}>
                         <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", display: "block", marginBottom: 2 }}>MOVING WITH CARE{a.careDuration ? ` · ${a.careDuration.toUpperCase()}` : ""}</span>
                         {a.careNote}
                       </div>
@@ -860,75 +666,43 @@ function SessionCard({
 
           {/* Comp someone in — Stretchy covers it, no charge. They get the full
               "you're in — on us" email + the 38h / 36h / 2h reminders. */}
-          {s.state !== "cancelled" && s.state !== "completed" && (
-            <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px dashed rgba(20,17,15,.2)" }}>
-              <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.45)", letterSpacing: "0.1em", marginBottom: 8 }}>
-                ADD SOMEONE — ON US (NO CHARGE)
-              </p>
+          {live && (
+            <div style={{ marginTop: 14 }}>
+              <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.5)", letterSpacing: "0.1em", margin: "0 0 8px" }}>ADD SOMEONE · ON US</p>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                <input
-                  value={addEmail}
-                  onChange={(e) => setAddEmail(e.target.value)}
-                  placeholder="email@example.com"
-                  type="email"
-                  style={{ padding: "8px 12px", borderRadius: 8, background: T.cream, border: "1.5px solid rgba(20,17,15,.2)", color: T.ink, fontFamily: T.body, fontSize: 13, outline: "none", flex: "1 1 180px", minWidth: 160 }}
-                />
-                <input
-                  value={addName}
-                  onChange={(e) => setAddName(e.target.value)}
-                  placeholder="Name (optional)"
-                  style={{ padding: "8px 12px", borderRadius: 8, background: T.cream, border: "1.5px solid rgba(20,17,15,.2)", color: T.ink, fontFamily: T.body, fontSize: 13, outline: "none", flex: "1 1 130px", minWidth: 120 }}
-                />
-                <button
-                  onClick={addComp}
-                  disabled={adding || !addEmail.trim()}
-                  style={{ padding: "8px 16px", borderRadius: 999, border: "none", cursor: adding || !addEmail.trim() ? "default" : "pointer", background: T.purple, color: T.cream, fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", opacity: adding || !addEmail.trim() ? 0.5 : 1 }}
-                >
-                  {adding ? "ADDING…" : "ADD (ON US)"}
-                </button>
+                <input value={addEmail} onChange={(e) => setAddEmail(e.target.value)} placeholder="email@example.com" type="email" style={{ ...field, flex: "1 1 180px", minWidth: 160 }} />
+                <input value={addName} onChange={(e) => setAddName(e.target.value)} placeholder="Name (optional)" style={{ ...field, flex: "1 1 130px", minWidth: 120 }} />
+                <button onClick={addComp} disabled={adding || !addEmail.trim()} style={{ ...pill(), opacity: adding || !addEmail.trim() ? 0.4 : 1 }}>{adding ? "ADDING…" : "ADD"}</button>
               </div>
-              {addMsg && (
-                <p style={{ fontSize: 12, marginTop: 8, color: addMsg.startsWith("✓") ? T.olive : T.red }}>{addMsg}</p>
-              )}
+              {addMsg && <p style={{ fontSize: 12, marginTop: 8, color: addMsg.startsWith("✓") ? T.ink : T.red }}>{addMsg}</p>}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Email audit log — every email sent for this session, who got it, status. */}
-      {showEmails && (
-        <div style={{ padding: "14px 18px", borderTop: "1px solid rgba(20,17,15,.10)" }}>
-          {loadingEmails ? (
-            <p style={{ fontSize: 12, color: "rgba(20,17,15,.4)", fontFamily: T.mono }}>LOADING…</p>
-          ) : !emails || emails.length === 0 ? (
-            <p style={{ fontSize: 13, color: "rgba(20,17,15,.45)" }}>No emails logged for this session yet.</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.45)", letterSpacing: "0.1em", marginBottom: 4 }}>
-                {emails.length} EMAIL{emails.length === 1 ? "" : "S"} SENT
-              </p>
-              {emails.map((e) => (
-                <div key={e.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, fontSize: 12.5, borderBottom: "1px solid rgba(20,17,15,.06)", paddingBottom: 5 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <span style={{ fontWeight: 700, color: T.ink }}>{EMAIL_LABELS[e.email_type] ?? e.email_type}</span>
-                    <span style={{ color: "rgba(20,17,15,.55)", marginLeft: 8, overflow: "hidden", textOverflow: "ellipsis" }}>{e.recipient}</span>
+          {/* Every email sent for this session, who got it, and whether it landed. */}
+          {emails && emails.length > 0 && (
+            <details style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(20,17,15,.12)" }}>
+              <summary style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", cursor: "pointer" }}>
+                EMAILS SENT · {emails.length}{emails.some((e) => e.status === "error") ? ` · ${emails.filter((e) => e.status === "error").length} FAILED` : ""}
+              </summary>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
+                {emails.map((e) => (
+                  <div key={e.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, fontSize: 12.5, borderBottom: "1px solid rgba(20,17,15,.08)", paddingBottom: 5, flexWrap: "wrap" }}>
+                    <div style={{ minWidth: 0 }}>
+                      <span style={{ fontWeight: 700 }}>{EMAIL_LABELS[e.email_type] ?? e.email_type}</span>
+                      <span style={{ color: "rgba(20,17,15,.55)", marginLeft: 8, wordBreak: "break-all" }}>{e.recipient}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                      <span style={{ fontFamily: T.mono, fontSize: 10, color: "rgba(20,17,15,.45)" }}>
+                        {new Date(e.created_at).toLocaleString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })}
+                      </span>
+                      <span style={{ ...tag, color: e.status === "error" ? T.red : T.ink, borderColor: e.status === "error" ? T.red : T.ink }} title={e.error ?? undefined}>
+                        {e.status === "error" ? "FAILED" : "SENT"}
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    <span style={{ fontFamily: T.mono, fontSize: 10, color: "rgba(20,17,15,.4)" }}>
-                      {new Date(e.created_at).toLocaleString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })}
-                    </span>
-                    <span style={{
-                      fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",
-                      padding: "3px 8px", borderRadius: 999,
-                      background: e.status === "error" ? "rgba(214,40,40,.14)" : "rgba(113,111,57,.16)",
-                      color: e.status === "error" ? T.red : T.olive,
-                    }} title={e.error ?? undefined}>
-                      {e.status === "error" ? "FAILED" : "SENT"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </details>
           )}
         </div>
       )}
@@ -936,15 +710,3 @@ function SessionCard({
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div>
-      <p style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, color: "rgba(20,17,15,.4)", letterSpacing: "0.1em", marginBottom: 2 }}>
-        {label}
-      </p>
-      <p style={{ fontFamily: T.mono, fontSize: 13, fontWeight: 800, color: color || T.ink }}>
-        {value}
-      </p>
-    </div>
-  );
-}
