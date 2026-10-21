@@ -465,16 +465,18 @@ function cardPlaceReleased(p: AttendeeEmailPayload, c: Ctx) {
 }
 
 // 14 — How was your first Stretchy? (two days after someone's first session)
-// No form: people simply reply to the email (replies go to Kimberley).
+// Two ways to answer: the quick questions at /rate/[session] ("Rate it in 30
+// seconds"), or simply reply to the email (replies go to Kimberley).
 function firstStretchyFollowUp(p: AttendeeEmailPayload) {
   const html = page("purple", (sc) => `
     ${h1(sc, "How was your first Stretchy? ☀️☕🍷")}
     ${hey(sc, esc(p.name))}
     ${msg(sc, "Thanks for coming to Stretchy. We’d love to hear how it went.")}
-    ${msg(sc, `Please feel free to email us back here with any feedback you may have (on the session, the experience, the booking system or whatever you like). You can also suggest where and how we show up next: <a href="${APP_URL}/suggest" style="color:${sc.text};font-weight:700;">Suggest a Stretchy</a>.`)}
+    ${p.sessionId ? filledButton(sc, `${APP_URL}/rate/${p.sessionId}`, "Rate it in 30 seconds") : ""}
+    ${msg(sc, `Or email us back here with any feedback you may have (on the session, the experience, the booking system or whatever you like). You can also suggest where and how we show up next: <a href="${APP_URL}/suggest" style="color:${sc.text};font-weight:700;">Suggest a Stretchy</a>.`)}
     ${outlineButton(sc, `${APP_URL}/suggest`, "Suggest a Stretchy")}
     ${msg(sc, "And if you really enjoyed it, tell ya mates and help us grow the Stretchy community.")}
-    ${filledButton(sc, `${APP_URL}/sessions`, "See what’s on next")}
+    ${outlineButton(sc, `${APP_URL}/sessions`, "See what’s on next")}
     <p style="color:${sc.text};font-size:15px;line-height:1.55;margin:0 0 22px;">With gratitude,<br>The Stretchy team</p>
   `, { highlight: false });
   return { subject: "How was your first Stretchy? ☀️☕🍷", html };

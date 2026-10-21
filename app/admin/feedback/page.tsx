@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import HQShell from "@/components/hq/HQShell";
+import SessionFeedback from "./SessionFeedback";
 
 const T = {
   ink: "#14110F",
@@ -21,6 +22,7 @@ type Item = {
 export default function AdminFeedbackPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"after" | "team">("after");
 
   useEffect(() => {
     fetch("/api/admin/feedback").then((r) => r.json()).then((d) => { setItems(d.items ?? []); setLoading(false); }).catch(() => setLoading(false));
@@ -35,6 +37,13 @@ export default function AdminFeedbackPage() {
             {loading ? "Loading…" : `${items.length} from your community.`}
           </h1>
 
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+            {([["after", "After a session"], ["team", "Teachers, GEMs & suggestions"]] as const).map(([k, l]) => (
+              <button key={k} onClick={() => setTab(k)} style={{ padding: "8px 16px", borderRadius: 999, border: `2px solid ${T.ink}`, background: tab === k ? T.ink : "#fff", color: tab === k ? T.cream : T.ink, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{l}</button>
+            ))}
+          </div>
+          {tab === "after" && <SessionFeedback />}
+          {tab === "team" && (<>
           {!loading && items.length === 0 && (
             <div style={{ textAlign: "center", padding: 60, background: "#fff", borderRadius: 20, border: "2px dashed rgba(20,17,15,.25)" }}>
               <p style={{ fontSize: 32, marginBottom: 12 }}>💬</p>
@@ -70,6 +79,7 @@ export default function AdminFeedbackPage() {
               </div>
             ))}
           </div>
+          </>)}
         </div>
       </main>
     </HQShell>
