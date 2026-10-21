@@ -58,7 +58,7 @@ function OutlineButton({ children, onClick, style, light }: { children: React.Re
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={{ height: "clamp(38.5px,3.43vw,46px)", padding: "0 clamp(16px,1.8vw,24px)", borderRadius: 999, border: `2.25px solid ${fg}`, background: hover ? fg : "transparent", color: hover ? (light ? INK : CREAM) : fg, fontWeight: 600, fontSize: "clamp(12.5px,1.01vw,14px)", cursor: "pointer", ...style }}
+      style={{ height: "clamp(44.3px,3.9vw,52.9px)", padding: "0 clamp(16px,1.8vw,24px)", borderRadius: 999, border: `2.25px solid ${fg}`, background: hover ? fg : "transparent", color: hover ? (light ? INK : CREAM) : fg, fontWeight: 600, fontSize: "clamp(12.5px,1.01vw,14px)", cursor: "pointer", ...style }}
     >
       {children}
     </button>
@@ -89,8 +89,8 @@ function Chip({ label, on, onClick, small }: { label: string; on: boolean; onCli
       onClick={onClick}
       aria-pressed={on}
       style={small
-        ? { minHeight: 30, padding: "4px 11px", borderRadius: 999, border: `1.5px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 500, fontSize: 11, lineHeight: 1.2, cursor: "pointer" }
-        : { minHeight: 40, padding: "7px 14px", borderRadius: 999, border: `2.25px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 600, fontSize: 11.5, lineHeight: 1.2, cursor: "pointer" }}
+        ? { minHeight: 34.5, padding: "4px 11px", borderRadius: 999, border: `1.5px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 500, fontSize: 11, lineHeight: 1.2, cursor: "pointer" }
+        : { minHeight: 46, padding: "7px 14px", borderRadius: 999, border: `2.25px solid ${INK}`, background: on ? INK : "transparent", color: on ? CREAM : INK, fontWeight: 600, fontSize: 11.5, lineHeight: 1.2, cursor: "pointer" }}
     >
       {label}
     </button>
@@ -263,9 +263,9 @@ export default function SocialSite() {
             </nav>
           )}
           <div style={{ display: "flex", gap: 8, alignItems: "center", flex: "none" }}>
-            <OutlineButton onClick={open("waitlist")} style={{ height: "clamp(36px,2.64vw,37px)", padding: "0 clamp(12px,2.6vw,20px)", fontSize: "clamp(11.5px,2.82vw,12.5px)", whiteSpace: "nowrap" }}>Join the waitlist</OutlineButton>
+            <OutlineButton onClick={open("waitlist")} style={{ height: "clamp(41.4px,3vw,42.5px)", padding: "0 clamp(12px,2.6vw,20px)", fontSize: "clamp(11.5px,2.82vw,12.5px)", whiteSpace: "nowrap" }}>Join the waitlist</OutlineButton>
             {!wide && (
-              <button onClick={() => setMenu((m) => !m)} aria-label="Menu" aria-expanded={menu} style={{ flex: "none", width: "clamp(36px,2.64vw,37px)", height: "clamp(36px,2.64vw,37px)", borderRadius: 999, border: `2.25px solid ${INK}`, background: menu ? INK : "transparent", color: menu ? CREAM : INK, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{menu ? "×" : "≡"}</button>
+              <button onClick={() => setMenu((m) => !m)} aria-label="Menu" aria-expanded={menu} style={{ flex: "none", width: "clamp(41.4px,3vw,42.5px)", height: "clamp(41.4px,3vw,42.5px)", borderRadius: 999, border: `2.25px solid ${INK}`, background: menu ? INK : "transparent", color: menu ? CREAM : INK, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{menu ? "×" : "≡"}</button>
             )}
           </div>
         </div>
@@ -596,7 +596,7 @@ export default function SocialSite() {
             <a href="#top" onClick={(e) => { e.preventDefault(); goHome(); }} style={{ fontWeight: 600, fontSize: 13, textDecoration: "underline", textUnderlineOffset: 3, color: INK }}>← Back to Stretchy Social</a>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {LEAD_TYPES.map((k) => (
-                <button key={k} type="button" onClick={open(k)} style={{ height: 40, padding: "0 16px", borderRadius: 999, border: 0, background: k === type ? INK : SAND, color: k === type ? CREAM : INK, ...mono(10.5, { letterSpacing: ".1em" }), cursor: "pointer" }}>{TYPES[k].short}</button>
+                <button key={k} type="button" onClick={open(k)} style={{ height: 46, padding: "0 16px", borderRadius: 999, border: 0, background: k === type ? INK : SAND, color: k === type ? CREAM : INK, ...mono(10.5, { letterSpacing: ".1em" }), cursor: "pointer" }}>{TYPES[k].short}</button>
               ))}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -665,7 +665,7 @@ export default function SocialSite() {
                 <input type="checkbox" checked={f.optin} onChange={(e) => setF({ ...f, optin: e.target.checked })} style={{ width: 24, height: 24, margin: 0, flex: "none", accentColor: P }} />
                 <span>Send me occasional Stretchy Social updates. Light on the comms, promise. (Optional)</span>
               </label>
-              <button type="submit" disabled={sending} style={{ height: 50, width: "100%", borderRadius: 999, border: 0, background: INK, color: CREAM, fontWeight: 600, fontSize: 15, cursor: "pointer", marginTop: 4, opacity: sending ? 0.6 : 1 }}>{sending ? "Sending…" : t.cta}</button>
+              <button type="submit" disabled={sending} style={{ height: 57.5, width: "100%", borderRadius: 999, border: 0, background: INK, color: CREAM, fontWeight: 600, fontSize: 15, cursor: "pointer", marginTop: 4, opacity: sending ? 0.6 : 1 }}>{sending ? "Sending…" : t.cta}</button>
               <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, opacity: 0.75 }}>We&rsquo;ll only use your details to reply. <a href="#terms" onClick={(e) => { e.preventDefault(); go("#terms"); }} style={{ color: INK }}>Privacy &amp; terms</a></p>
             </form>
           </div>
@@ -685,8 +685,8 @@ export default function SocialSite() {
                 <p style={{ ...bodyText, maxWidth: 540 }}>{t.thanksBody}</p>
               </div>
               <div style={{ padding: "16px 22px", borderTop: `2px solid ${t.fg}`, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                <button onClick={goHome} style={{ flex: "1 1 200px", height: "clamp(37px,3.08vw,42px)", padding: "0 22px", borderRadius: 999, border: `3px solid ${t.fg}`, background: "transparent", color: t.fg, fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>← Back to the page</button>
-                <a href={IG} target="_blank" rel="noopener" style={{ flex: "1 1 200px", display: "flex", alignItems: "center", justifyContent: "center", height: "clamp(37px,3.08vw,42px)", padding: "0 22px", borderRadius: 999, background: t.btn, color: t.btnFg, textDecoration: "none", fontWeight: 600, fontSize: 12.5 }}>Follow @stretchy.yoga</a>
+                <button onClick={goHome} style={{ flex: "1 1 200px", height: "clamp(42.5px,3.5vw,48.3px)", padding: "0 22px", borderRadius: 999, border: `3px solid ${t.fg}`, background: "transparent", color: t.fg, fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>← Back to the page</button>
+                <a href={IG} target="_blank" rel="noopener" style={{ flex: "1 1 200px", display: "flex", alignItems: "center", justifyContent: "center", height: "clamp(42.5px,3.5vw,48.3px)", padding: "0 22px", borderRadius: 999, background: t.btn, color: t.btnFg, textDecoration: "none", fontWeight: 600, fontSize: 12.5 }}>Follow @stretchy.yoga</a>
               </div>
             </div>
           </div>
@@ -717,8 +717,8 @@ export default function SocialSite() {
                 </Step2Row>
               ))}
               <div style={{ padding: "16px clamp(18px,3vw,28px)", borderTop: `2px solid ${INK}`, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                <button type="button" onClick={sendStep2} style={{ flex: "1 1 200px", height: "clamp(37px,3.08vw,42px)", borderRadius: 999, border: `3px solid ${INK}`, background: INK, color: CREAM, fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>Send my answers</button>
-                <button type="button" onClick={() => setS2state("skipped")} style={{ flex: "1 1 200px", height: "clamp(37px,3.08vw,42px)", borderRadius: 999, border: `3px solid ${INK}`, background: "transparent", color: INK, fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>Skip for now</button>
+                <button type="button" onClick={sendStep2} style={{ flex: "1 1 200px", height: "clamp(42.5px,3.5vw,48.3px)", borderRadius: 999, border: `3px solid ${INK}`, background: INK, color: CREAM, fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>Send my answers</button>
+                <button type="button" onClick={() => setS2state("skipped")} style={{ flex: "1 1 200px", height: "clamp(42.5px,3.5vw,48.3px)", borderRadius: 999, border: `3px solid ${INK}`, background: "transparent", color: INK, fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>Skip for now</button>
               </div>
             </div>
           )}
@@ -916,7 +916,7 @@ function WhoRow({ n, title, items }: { n: string; title: string; items: typeof W
 
 function PillLink({ href, children, filled }: { href: string; children: React.ReactNode; filled?: boolean }) {
   return (
-    <a href={href} target="_blank" rel="noopener" style={{ display: "inline-flex", alignItems: "center", height: "clamp(36px,2.99vw,40.5px)", padding: "0 20px", borderRadius: 999, ...(filled ? { background: INK, color: CREAM } : { border: `3px solid ${INK}`, color: INK }), textDecoration: "none", fontWeight: 600, fontSize: 12.5 }}>
+    <a href={href} target="_blank" rel="noopener" style={{ display: "inline-flex", alignItems: "center", height: "clamp(41.4px,3.4vw,46.6px)", padding: "0 20px", borderRadius: 999, ...(filled ? { background: INK, color: CREAM } : { border: `3px solid ${INK}`, color: INK }), textDecoration: "none", fontWeight: 600, fontSize: 12.5 }}>
       {children}
     </a>
   );
@@ -927,7 +927,7 @@ function ShapeCard({ bg, fg, tag, right, title, body, button, link }: {
   button?: { label: string; onClick: () => void }; link?: { label: string; href: string };
 }) {
   const line = `2px solid ${fg}`;
-  const btn: React.CSSProperties = { flex: "1 1 140px", height: "clamp(37px,3.08vw,42px)", padding: "0 16px", borderRadius: 999, border: `2.25px solid ${fg}`, background: "transparent", color: fg, fontWeight: 600, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" };
+  const btn: React.CSSProperties = { flex: "1 1 140px", height: "clamp(42.5px,3.5vw,48.3px)", padding: "0 16px", borderRadius: 999, border: `2.25px solid ${fg}`, background: "transparent", color: fg, fontWeight: 600, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" };
   return (
     <div style={{ background: bg, color: fg, borderRadius: 30, padding: 12 }}>
       <div style={{ border: line, borderRadius: 22, display: "flex", flexDirection: "column", height: "100%" }}>
