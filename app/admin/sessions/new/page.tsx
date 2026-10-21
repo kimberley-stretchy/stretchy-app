@@ -33,7 +33,7 @@ type Person = { id: string; name: string; status?: string };
 
 export default function BuildAStretchyPage() {
   return (
-    <Suspense fallback={<HQShell><main style={{ background: "#14110F", minHeight: "100vh" }} /></HQShell>}>
+    <Suspense fallback={<HQShell><main style={{ background: "#F7F0E8", minHeight: "100vh" }} /></HQShell>}>
       <BuildAStretchyForm />
     </Suspense>
   );
@@ -50,6 +50,8 @@ function BuildAStretchyForm() {
   const [saving, setSaving] = useState<"publish" | "draft" | "save" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingDuplicate, setLoadingDuplicate] = useState(!!loadId);
+  const [loadedState, setLoadedState] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/people").then((r) => r.json()).then((d) => { setTeachers((d.teachers ?? []).filter((t: Person) => t.status !== "APPLIED")); setGems((d.gems ?? []).filter((g: Person) => g.status !== "APPLIED")); }).catch(() => {});
@@ -155,6 +157,7 @@ function BuildAStretchyForm() {
         if (otherLines.length) setExtraLines(otherLines.map((l) => ({ name: l.name, amount: l.amount })));
 
         if (s.revenue_target != null) setStretchyAmount(s.revenue_target);
+        setLoadedState(s.state ?? null);
         setLoadingDuplicate(false);
       })
       .catch(() => setLoadingDuplicate(false));
@@ -185,6 +188,17 @@ function BuildAStretchyForm() {
   const spotsLeft = Math.max(0, maxMats - simulateN);
   const goingAhead = simulateN >= minMats;
   const title = `${neighbourhood} | ${timeOfDay}`;
+
+  // Cancel lives here (not on the sessions list), so it's never one tap away.
+  async function cancelSession() {
+    if (!editId || cancelling) return;
+    if (!confirm(`Cancel "${neighbourhood}${timeOfDay ? ` | ${timeOfDay}` : ""}"? This will release all holds.`)) return;
+    setCancelling(true);
+    const res = await fetch(`/api/admin/sessions?id=${editId}`, { method: "DELETE" }).catch(() => null);
+    setCancelling(false);
+    if (!res || !res.ok) { setError("Couldn’t cancel this session. Please try again."); return; }
+    router.push("/admin/sessions");
+  }
 
   async function submit(mode: "publish" | "draft" | "save") {
     if (!neighbourhood || !date || !venueName) {
@@ -255,7 +269,7 @@ function BuildAStretchyForm() {
       <div style={{ display: "flex", minHeight: "100vh" }}>
         {/* Center form */}
         <div style={{ flex: 1, background: T.cream, padding: "28px 36px 80px", minWidth: 0 }}>
-          <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", color: T.purple, marginBottom: 6 }}>
+          <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", color: "rgba(20,17,15,.5)", marginBottom: 6 }}>
             SESSIONS / {editId ? "EDIT" : duplicateId ? "DUPLICATE" : "NEW"}
           </p>
           <h1 style={{ fontFamily: "'BN Chubb', 'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 40, letterSpacing: "-0.02em", lineHeight: 1, textTransform: "uppercase", color: T.ink, marginBottom: 24 }}>
@@ -291,7 +305,7 @@ function BuildAStretchyForm() {
                 <span
                   style={{
                     width: 34, height: 20, borderRadius: 999, flexShrink: 0, position: "relative",
-                    background: isRepeat ? T.yellow : "rgba(20,17,15,.15)", transition: "background .15s",
+                    background: isRepeat ? T.ink : "rgba(20,17,15,.15)", transition: "background .15s",
                   }}
                 >
                   <span style={{
@@ -324,30 +338,30 @@ function BuildAStretchyForm() {
           </Section>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-            <Section label="MOVEMENT" labelColor={T.blue}>
+            <Section label="MOVEMENT">
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <select value={movementType} onChange={(e) => changeMovementType(e.target.value)} style={{ ...pillStyle, borderColor: T.blue }}>
+                <select value={movementType} onChange={(e) => changeMovementType(e.target.value)} style={pillStyle}>
                   {MOVEMENT_TYPES.map((m) => <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
                 </select>
-                <Pill value={movementStyle} onChange={setMovementStyle} placeholder="Style · level" borderColor={T.blue} />
-                <select value={teacherId} onChange={(e) => setTeacherId(e.target.value)} style={{ ...pillStyle, borderColor: T.blue }}>
+                <Pill value={movementStyle} onChange={setMovementStyle} placeholder="Style · level" />
+                <select value={teacherId} onChange={(e) => setTeacherId(e.target.value)} style={pillStyle}>
                   <option value="">Pick a teacher…</option>
                   {teachers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
             </Section>
 
-            <Section label="SOCIAL STRETCH" labelColor={T.orange}>
+            <Section label="SOCIAL STRETCH">
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <Pill value={socialVenue} onChange={setSocialVenue} placeholder="Venue · style" borderColor={T.orange} />
-                <select value={gemId} onChange={(e) => setGemId(e.target.value)} style={{ ...pillStyle, borderColor: T.orange }}>
+                <Pill value={socialVenue} onChange={setSocialVenue} placeholder="Venue · style" />
+                <select value={gemId} onChange={(e) => setGemId(e.target.value)} style={pillStyle}>
                   {/* No GEM yet — saved with no gem_host_id; assign one later by editing. */}
                   <option value="">GEM to come</option>
                   {gems.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                 </select>
-                <Pill value={socialNote} onChange={setSocialNote} placeholder="Distance · who pays" borderColor={T.orange} />
-                <Pill value={socialVenueInstagram} onChange={setSocialVenueInstagram} placeholder="Social venue @handle (optional)" borderColor={T.orange} />
-                <Pill value={socialVenueEmail} onChange={setSocialVenueEmail} placeholder="Social venue contact email (optional — sends them a calendar hold)" borderColor={T.orange} />
+                <Pill value={socialNote} onChange={setSocialNote} placeholder="Distance · who pays" />
+                <Pill value={socialVenueInstagram} onChange={setSocialVenueInstagram} placeholder="Social venue @handle (optional)" />
+                <Pill value={socialVenueEmail} onChange={setSocialVenueEmail} placeholder="Social venue contact email (optional — sends them a calendar hold)" />
               </div>
             </Section>
           </div>
@@ -414,14 +428,14 @@ function BuildAStretchyForm() {
               {extraLines.map((l, i) => (
                 <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", alignItems: "center", padding: "8px 14px", borderTop: "1px solid rgba(20,17,15,.12)" }}>
                   <input value={l.name} onChange={(e) => setExtraLines((prev) => prev.map((x, xi) => xi === i ? { ...x, name: e.target.value } : x))} placeholder="Cost line" style={{ ...inlineInputStyle, fontWeight: 600 }} />
-                  <input type="number" value={l.amount} onChange={(e) => setExtraLines((prev) => prev.map((x, xi) => xi === i ? { ...x, amount: Number(e.target.value) } : x))} style={{ ...inlineInputStyle, background: T.yellow, borderRadius: 999, padding: "3px 10px", fontWeight: 700, width: 70 }} />
+                  <input type="number" value={l.amount} onChange={(e) => setExtraLines((prev) => prev.map((x, xi) => xi === i ? { ...x, amount: Number(e.target.value) } : x))} style={{ ...inlineInputStyle, background: "transparent", border: `1.5px solid ${T.ink}`, borderRadius: 999, padding: "3px 10px", fontWeight: 700, width: 70 }} />
                   <button type="button" onClick={() => setExtraLines((prev) => prev.filter((_, xi) => xi !== i))} style={{ border: "none", background: "none", cursor: "pointer", color: "rgba(20,17,15,.4)", fontSize: 16 }}>×</button>
                 </div>
               ))}
               <RateRow label="Stretchy" value={stretchyAmount} onChange={setStretchyAmount} />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderTop: "1px solid rgba(20,17,15,.12)", background: T.ink }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: T.cream }}>Total to cover</span>
-                <span style={{ fontFamily: T.mono, fontSize: 15, fontWeight: 800, color: T.yellow }}>${(costBase + revenueTarget).toFixed(2)}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderTop: `2px solid ${T.ink}` }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>Total to cover</span>
+                <span style={{ fontFamily: T.mono, fontSize: 15, fontWeight: 800 }}>${(costBase + revenueTarget).toFixed(2)}</span>
               </div>
             </div>
 
@@ -435,7 +449,7 @@ function BuildAStretchyForm() {
           </Section>
 
           <Section label="THE ROOM">
-            <div style={{ background: "rgba(41,171,226,0.14)", border: `2px solid ${T.ink}`, borderRadius: 16, padding: 18 }}>
+            <div style={{ background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 16, padding: 18 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 10 }}>
                 <NumberField label="MINIMUM MATS" value={minMats} onChange={(v) => { const m = Math.max(1, v); setMinMats(m); if (m > maxMats) setMaxMats(m); }} />
                 <NumberField label="MAXIMUM MATS" value={maxMats} onChange={(v) => setMaxMats(Math.max(minMats, v))} />
@@ -463,17 +477,17 @@ function BuildAStretchyForm() {
         </div>
 
         {/* Right live preview */}
-        <div style={{ width: 300, flexShrink: 0, background: T.blue, color: T.cream, padding: "28px 24px", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+        <div style={{ width: 300, flexShrink: 0, background: T.cream, color: T.ink, borderLeft: `2px solid ${T.ink}`, padding: "28px 24px", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
           <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", opacity: 0.75, marginBottom: 14 }}>LIVE PREVIEW</p>
           <p style={{ fontFamily: T.mono, fontSize: 42, fontWeight: 800, lineHeight: 1, marginBottom: 4 }}>${previewPrice.toFixed(2)}</p>
           <p style={{ fontSize: 12, opacity: 0.8, marginBottom: 16 }}>per person · incl. GST · at {simulateN} mats</p>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(247,240,232,0.12)", borderRadius: 10, padding: "10px 14px", marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: `1.5px solid ${T.ink}`, borderRadius: 10, padding: "10px 14px", marginBottom: 16 }}>
             <span style={{ fontSize: 12, opacity: 0.85 }}>Total to cover</span>
             <span style={{ fontFamily: T.mono, fontSize: 16, fontWeight: 800 }}>${(costBase + revenueTarget).toFixed(2)}</span>
           </div>
 
-          <div style={{ background: T.yellow, color: T.ink, borderRadius: 14, padding: 16, marginBottom: 16 }}>
+          <div style={{ border: `2px solid ${T.ink}`, color: T.ink, borderRadius: 14, padding: 16, marginBottom: 16 }}>
             <p style={{ fontFamily: "'BN Chubb', 'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 16, lineHeight: 1.25, textTransform: "uppercase" }}>
               {goingAhead
                 ? `Going ahead. ${spotsLeft} spots left, and each one drops the price.`
@@ -488,7 +502,7 @@ function BuildAStretchyForm() {
             </div>
             <div style={{ display: "flex", gap: 2 }}>
               {Array.from({ length: maxMats }).map((_, i) => (
-                <span key={i} style={{ flex: 1, height: 8, borderRadius: 2, background: i < simulateN ? T.yellow : "rgba(247,240,232,0.25)" }} />
+                <span key={i} style={{ flex: 1, height: 8, borderRadius: 2, background: i < simulateN ? T.ink : "rgba(20,17,15,0.15)" }} />
               ))}
             </div>
           </div>
@@ -504,26 +518,37 @@ function BuildAStretchyForm() {
           </p>
 
           {editId ? (
+            <>
             <button
               onClick={() => submit("save")}
               disabled={saving !== null}
-              style={{ width: "100%", height: 48, borderRadius: 999, border: "none", cursor: "pointer", background: T.yellow, color: T.ink, fontWeight: 800, fontSize: 15 }}
+              style={{ width: "100%", height: 48, borderRadius: 999, border: `2px solid ${T.ink}`, cursor: "pointer", background: "transparent", color: T.ink, fontWeight: 800, fontSize: 15 }}
             >
               {saving === "save" ? "Saving…" : "Save changes"}
             </button>
+            {loadedState === "open" && (
+              <button
+                onClick={cancelSession}
+                disabled={cancelling}
+                style={{ width: "100%", height: 44, marginTop: 24, borderRadius: 999, border: "2px solid #C6362E", cursor: "pointer", background: "transparent", color: "#C6362E", fontWeight: 700, fontSize: 14 }}
+              >
+                {cancelling ? "Cancelling…" : "Cancel this session"}
+              </button>
+            )}
+            </>
           ) : (
             <>
               <button
                 onClick={() => submit("publish")}
                 disabled={saving !== null}
-                style={{ width: "100%", height: 48, borderRadius: 999, border: "none", cursor: "pointer", background: T.yellow, color: T.ink, fontWeight: 800, fontSize: 15, marginBottom: 10 }}
+                style={{ width: "100%", height: 48, borderRadius: 999, border: `2px solid ${T.ink}`, cursor: "pointer", background: "transparent", color: T.ink, fontWeight: 800, fontSize: 15, marginBottom: 10 }}
               >
                 {saving === "publish" ? "Publishing…" : "Publish this Stretchy"}
               </button>
               <button
                 onClick={() => submit("draft")}
                 disabled={saving !== null}
-                style={{ width: "100%", height: 48, borderRadius: 999, border: `2px solid ${T.cream}`, cursor: "pointer", background: "transparent", color: T.cream, fontWeight: 700, fontSize: 14 }}
+                style={{ width: "100%", height: 48, borderRadius: 999, border: `2px solid ${T.ink}`, cursor: "pointer", background: "transparent", color: T.ink, fontWeight: 700, fontSize: 14 }}
               >
                 {saving === "draft" ? "Saving…" : "Save as draft"}
               </button>
@@ -569,7 +594,7 @@ function RateRow({ label, value, onChange, name, onNameChange }: {
         type="number"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        style={{ ...inlineInputStyle, background: T.yellow, borderRadius: 999, padding: "3px 10px", fontWeight: 700, width: 70 }}
+        style={{ ...inlineInputStyle, background: "transparent", border: `1.5px solid ${T.ink}`, borderRadius: 999, padding: "3px 10px", fontWeight: 700, width: 70 }}
       />
     </div>
   );
