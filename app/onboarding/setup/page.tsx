@@ -126,7 +126,7 @@ function SetupForm({
         <div className="font-mono text-[10px] font-extrabold tracking-[0.12em] mb-2.5" style={{ color: "rgba(20,17,15,.6)" }}>HOW YOU&rsquo;LL PAY</div>
         {/* Same five points, same words, as Terms → Payment & cancellation (points 1–5). */}
         <p className="text-xs leading-[1.6] mb-2.5" style={{ color: "#14110F" }}>
-          <strong>Hold your place.</strong> We save your card and show you the most you&rsquo;ll pay. Nothing is charged yet. Your bank may show a pending amount for a few days. That&rsquo;s a hold, not a payment.
+          <strong>Hold your place.</strong> We save your card and show you the most you&rsquo;ll pay. Nothing is held or charged yet.
         </p>
         <p className="text-xs leading-[1.6] mb-2.5" style={{ color: "#14110F" }}>
           <strong>Up to 36 hours before: free to cancel.</strong> No charge, no questions.

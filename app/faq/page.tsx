@@ -18,7 +18,7 @@ const FAQS = [
   },
   {
     q: "When do I get charged?",
-    a: "2 hours before the session, at the final price. When you hold your place we save your card, and your bank may show a pending amount. That's a hold, not a payment.",
+    a: "2 hours before the session, at the final price. When you hold your place we save your card; nothing is held or charged. Once it's going ahead (36 hours before), your bank may show a pending amount. That's a hold, not a payment.",
   },
   {
     q: "What if I need to cancel?",
@@ -34,7 +34,7 @@ const FAQS = [
   },
   {
     q: "Why is there a pending amount on my bank?",
-    a: "It's a temporary hold for the most you'll pay. It isn't a payment and it drops off on its own. You're only charged the final price, 2 hours before.",
+    a: "Once a session is going ahead (36 hours before), we place a temporary hold for the most you'll pay. It isn't a payment and the unused part drops off on its own. You're only charged the final price, 2 hours before.",
   },
   {
     q: "I'm holding more than one place. How does that work?",

@@ -138,6 +138,26 @@ const session = { id: "sess_test", title: "Test session", starts_at: new Date(Da
   const s3 = await settlePaymentIntent(stripe, fixPi, 1597, "Test");
   check("16 and at 2 hrs out they're charged the final price like everyone else", s3.how === "captured" && s3.amountCents === 1597);
 
+  // ── Booking only saved the card (no hold at booking) ──────────────────────
+  const saver = await stripe.customers.create({ email: "saver@example.test", metadata: { test: "option-c-flow" } });
+  const si = await stripe.setupIntents.create({ customer: saver.id, payment_method_types: ["card"], usage: "off_session", payment_method: "pm_card_visa", confirm: true });
+  db.attendees.push({ id: "att_saver", auth_user_id: "user_saver", stripe_customer_id: saver.id, stripe_pm_id: si.payment_method as string });
+  db.holds.push({ id: `h_saver_${RUN}`, session_id: session.id, state: "active", user_id: "user_saver", quantity: 2, stripe_pi_id: null, is_comp: false });
+
+  // An older booking holding 1 place's worth that later added a 2nd place.
+  const grew = await person("grew", "pm_card_visa");
+  const piGrew = await bookingAuth(grew, UNIT, false);
+  db.holds.push({ id: `h_grew_${RUN}`, session_id: session.id, state: "active", user_id: grew.userId, quantity: 2, stripe_pi_id: piGrew, is_comp: false });
+
+  const r3 = await confirmCards(admin(), session, UNIT);
+  const saved = hold(`h_saver_${RUN}`);
+  const savedPi = saved.stripe_pi_id ? await stripe.paymentIntents.retrieve(saved.stripe_pi_id) : null;
+  check("17 card saved at booking, nothing held → held at 36 hrs out for 2 × $22.82", r3.outcomes.find((o) => o.holdId === `h_saver_${RUN}`)?.status === "authorised" && savedPi?.status === "requires_capture" && savedPi.amount === UNIT * 2);
+  const grewPi = await stripe.paymentIntents.retrieve(hold(`h_grew_${RUN}`).stripe_pi_id);
+  check("18 booking-time hold too small for the places now booked → re-held for the full amount", r3.outcomes.find((o) => o.holdId === `h_grew_${RUN}`)?.status === "authorised" && grewPi.amount === UNIT * 2);
+  check("18 …and the old, smaller hold is released", (await stripe.paymentIntents.retrieve(piGrew)).status === "canceled");
+  await stripe.customers.del(saver.id).catch(() => {});
+
   for (const a of db.attendees) await stripe.customers.del(a.stripe_customer_id).catch(() => {});
   console.log(fail ? `\n${fail} FAILED` : "\nall passed");
   process.exit(fail ? 1 : 0);

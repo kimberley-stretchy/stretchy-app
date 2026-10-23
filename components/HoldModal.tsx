@@ -32,6 +32,7 @@ function CardForm({
   attendeeId,
   authUserId,
   paymentIntentId,
+  mode,
   priceNZD,
   quantity,
   accessToken,
@@ -43,7 +44,10 @@ function CardForm({
   sessionId: string;
   attendeeId: string;
   authUserId: string;
+  /** The PaymentIntent (joining after 36 hrs out) or SetupIntent (before) id. */
   paymentIntentId: string;
+  /** "setup" = just save the card (before 36 hrs out) · "payment" = hold the amount now. */
+  mode: "setup" | "payment";
   priceNZD: number;
   quantity: number;
   accessToken: string;
@@ -87,13 +91,13 @@ function CardForm({
       }
     }
 
-    const { error: stripeError } = await stripe.confirmPayment({
-      elements,
-      redirect: "if_required",
-      confirmParams: {
-        return_url: `${window.location.origin}/hold/${sessionId}`,
-      },
-    });
+    // Before 36 hrs out the card is only saved (nothing held on the bank);
+    // after, the amount is held straight away.
+    const confirmParams = { return_url: `${window.location.origin}/hold/${sessionId}` };
+    const { error: stripeError } = mode === "setup"
+      ? await stripe.confirmSetup({ elements, redirect: "if_required", confirmParams })
+      : await stripe.confirmPayment({ elements, redirect: "if_required", confirmParams });
+    const intentField = mode === "setup" ? "setupIntentId" : "paymentIntentId";
 
     if (stripeError) {
       console.error("Stripe confirmPayment error:", stripeError);
@@ -105,7 +109,7 @@ function CardForm({
       fetch("/api/holds/failed", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
-        body: JSON.stringify({ paymentIntentId }),
+        body: JSON.stringify({ [intentField]: paymentIntentId }),
       }).catch(() => {});
       return;
     }
@@ -116,7 +120,7 @@ function CardForm({
         "Content-Type": "application/json",
         "Authorization": `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({ sessionId, paymentIntentId, attendeeId, authUserId, quantity }),
+      body: JSON.stringify({ sessionId, [intentField]: paymentIntentId, attendeeId, authUserId, quantity }),
     });
 
     const data = await res.json();
@@ -229,7 +233,9 @@ function CardForm({
         {late ? "ALREADY GOING AHEAD · NO FREE CANCELLING FROM HERE" : "FREE TO CANCEL UP TO 36 HOURS OUT"}
       </p>
       <p style={{ marginTop: 6, textAlign: "center", fontSize: 12, color: "rgba(26,26,26,0.5)", lineHeight: 1.45 }}>
-        We save your card. That&rsquo;s a hold, not a payment.
+        {mode === "setup"
+          ? <>We save your card. Nothing is held or charged today.</>
+          : <>We save your card. That&rsquo;s a hold, not a payment.</>}
       </p>
     </form>
   );
@@ -254,6 +260,7 @@ export default function HoldModal({
   const [step, setStep] = useState<"loading" | "card" | "error">("loading");
   const [clientSecret, setClientSecret] = useState("");
   const [paymentIntentId, setPaymentIntentId] = useState("");
+  const [mode, setMode] = useState<"setup" | "payment">("payment");
   const [attendeeId, setAttendeeId] = useState("");
   const [authUserId, setAuthUserId] = useState("");
   const [priceNZD, setPriceNZD] = useState(0);
@@ -282,7 +289,8 @@ export default function HoldModal({
           return;
         }
         setClientSecret(data.clientSecret);
-        setPaymentIntentId(data.paymentIntentId);
+        setPaymentIntentId(data.setupIntentId ?? data.paymentIntentId);
+        setMode(data.mode === "setup" ? "setup" : "payment");
         setAttendeeId(data.attendeeId);
         setAuthUserId(data.authUserId);
         setPriceNZD(data.priceNZD);
@@ -384,6 +392,7 @@ export default function HoldModal({
               attendeeId={attendeeId}
               authUserId={authUserId}
               paymentIntentId={paymentIntentId}
+              mode={mode}
               priceNZD={priceNZD}
               quantity={quantity}
               accessToken={accessToken}

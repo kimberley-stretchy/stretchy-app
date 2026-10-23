@@ -65,7 +65,10 @@ export async function confirmCards(
     const base = { holdId: h.id as string, userId: h.user_id as string, quantity };
     try {
       const pi = h.stripe_pi_id ? await stripe.paymentIntents.retrieve(h.stripe_pi_id).catch(() => null) : null;
-      if (!needsFreshAuthorisation(pi, captureAt)) {
+      // Keep the booking-time hold only if it's still good AND covers every place
+      // now booked (an older booking that later added places may not).
+      const tooSmall = !!pi && pi.status === "requires_capture" && pi.amount < unitCents * quantity;
+      if (!tooSmall && !needsFreshAuthorisation(pi, captureAt)) {
         outcomes.push({ ...base, status: "kept" });
         continue;
       }
