@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/adminAuth";
+import { cardFeesFor, type FeeHold } from "@/lib/stripeFees";
 
 function getAdmin() {
   return createClient(
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (error || !session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
   const [{ data: holds }, { data: hostRows }] = await Promise.all([
-    admin.from("holds").select("id, state, amount_charged_nzd").eq("session_id", id).in("state", ["charged", "confirmed", "active"]),
+    admin.from("holds").select("*").eq("session_id", id).in("state", ["charged", "confirmed", "active"]),
     (() => {
       const ids = [session.host_id, session.gem_host_id].filter(Boolean) as string[];
       return ids.length
@@ -37,8 +38,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   ]);
 
   const hostById = new Map((hostRows ?? []).map((h) => [h.id, h]));
-  const mats = holds?.length ?? 0;
+  const mats = (holds ?? []).reduce((n, h) => n + (h.quantity ?? 1), 0);
+  const onUs = (holds ?? []).filter((h) => h.is_comp).reduce((n, h) => n + (h.quantity ?? 1), 0);
   const collected = (holds ?? []).reduce((sum, h) => sum + (h.amount_charged_nzd ? h.amount_charged_nzd / 100 : 0), 0);
+  // The fees Stripe actually took on this session's card payments.
+  const fees = await cardFeesFor(admin, (holds ?? []).filter((h) => h.state === "charged") as FeeHold[]);
+  const cardFees = Array.from(fees.values()).reduce((s, c) => s + c, 0) / 100;
 
   const costLines: { role: string; name: string; amount: number }[] = Array.isArray(session.cost_lines) ? session.cost_lines : [];
   const lineItems = costLines.map((l) => {
@@ -64,8 +69,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       hostPaidAt: session.host_paid_at,
     },
     collected,
+    cardFees,
     paidOut,
     mats,
+    onUs,
     lineItems,
   });
 }

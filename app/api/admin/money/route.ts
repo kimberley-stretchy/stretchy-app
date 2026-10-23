@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/adminAuth";
+import { cardFeesFor, type FeeHold } from "@/lib/stripeFees";
 
 function getAdmin() {
   return createClient(
@@ -15,7 +16,7 @@ function getAdmin() {
 const BOOKS_START = new Date("2026-10-11T00:00:00+13:00").getTime();
 
 // GET /api/admin/money — revenue overview: total incoming, and per session what was
-// collected, what's owed out, and whether it's been settled.
+// collected, the card fees Stripe took, what's owed out, and whether it's been settled.
 export async function GET(request: NextRequest) {
   const authed = await requireAdmin(request);
   if ("error" in authed) return authed.error;
@@ -23,13 +24,19 @@ export async function GET(request: NextRequest) {
   const admin = getAdmin();
   const [{ data: sessions }, { data: holds }] = await Promise.all([
     admin.from("sessions").select("id, title, starts_at, location_name, state, cost_lines, host_paid_at"),
-    admin.from("holds").select("session_id, amount_charged_nzd").eq("state", "charged"),
+    admin.from("holds").select("*").eq("state", "charged"),
   ]);
 
+  // Only payments for sessions in the books (and so only those Stripe charged for real).
+  const inBooks = new Set((sessions ?? []).filter((s) => new Date(s.starts_at).getTime() >= BOOKS_START).map((s) => s.id));
+  const booksHolds = (holds ?? []).filter((h) => inBooks.has(h.session_id));
+  const fees = await cardFeesFor(admin, booksHolds as FeeHold[]);
   const collectedBy = new Map<string, number>();
-  for (const h of holds ?? []) {
+  const feesBy = new Map<string, number>();
+  for (const h of booksHolds) {
     if (!h.session_id) continue;
     collectedBy.set(h.session_id, (collectedBy.get(h.session_id) ?? 0) + (h.amount_charged_nzd ? h.amount_charged_nzd / 100 : 0));
+    feesBy.set(h.session_id, (feesBy.get(h.session_id) ?? 0) + (fees.get(h.id) ?? 0) / 100);
   }
 
   const now = Date.now();
@@ -49,6 +56,7 @@ export async function GET(request: NextRequest) {
       locationName: s.location_name,
       state: s.state,
       collected,
+      cardFees: feesBy.get(s.id) ?? 0,
       paidOut,
       settled: !!s.host_paid_at,
     };
@@ -59,13 +67,15 @@ export async function GET(request: NextRequest) {
   const totalCollected = rows.reduce((s, r) => s + r.collected, 0);
   const owedOutstanding = rows.filter((r) => !r.settled).reduce((s, r) => s + r.paidOut, 0);
   const paidSettled = rows.filter((r) => r.settled).reduce((s, r) => s + r.paidOut, 0);
+  const cardFees = rows.reduce((s, r) => s + r.cardFees, 0);
 
   return NextResponse.json({
     totals: {
       totalCollected,
       owedOutstanding,
       paidSettled,
-      net: totalCollected - (owedOutstanding + paidSettled),
+      cardFees,
+      net: totalCollected - cardFees - (owedOutstanding + paidSettled),
     },
     sessions: withMoney,
   });
