@@ -17,8 +17,8 @@ const T = {
   display: "'BN Chubb', 'Space Grotesk', sans-serif",
 };
 
-type Row = { id: string; title: string; startsAt: string; locationName: string; state: string; collected: number; paidOut: number; settled: boolean };
-type Totals = { totalCollected: number; owedOutstanding: number; paidSettled: number; net: number };
+type Row = { id: string; title: string; startsAt: string; locationName: string; state: string; collected: number; cardFees: number; paidOut: number; settled: boolean };
+type Totals = { totalCollected: number; cardFees: number; owedOutstanding: number; paidSettled: number; net: number };
 
 const money = (n: number) => `$${n.toFixed(2)}`;
 
@@ -38,7 +38,7 @@ export default function AdminMoneyPage() {
     <HQShell>
       <main style={{ background: T.cream, minHeight: "100vh", color: T.ink, fontFamily: T.body }}>
         <div style={{ maxWidth: 820, padding: "32px 32px 60px" }}>
-          <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: T.purple, letterSpacing: "0.12em", marginBottom: 6 }}>MONEY</p>
+          <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.5)", letterSpacing: "0.12em", marginBottom: 6 }}>MONEY</p>
           <h1 style={{ fontFamily: T.display, fontWeight: 700, fontSize: "clamp(32px,8vw,44px)", letterSpacing: "-0.02em", lineHeight: 1, textTransform: "uppercase", margin: "0 0 22px" }}>
             The books.
           </h1>
@@ -46,10 +46,11 @@ export default function AdminMoneyPage() {
           {/* Totals */}
           {totals && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12, marginBottom: 24 }}>
-              <Tile label="TOTAL INCOMING" value={money(totals.totalCollected)} bg={T.olive} fg={T.cream} />
-              <Tile label="OWED (UNSETTLED)" value={money(totals.owedOutstanding)} bg={T.yellow} fg={T.ink} />
-              <Tile label="PAID OUT (SETTLED)" value={money(totals.paidSettled)} bg="#fff" fg={T.ink} border />
-              <Tile label="NET" value={money(totals.net)} bg={totals.net < 0 ? "rgba(198,54,46,.12)" : "rgba(113,111,57,.14)"} fg={totals.net < 0 ? T.red : T.olive} border />
+              <Tile label="TOTAL INCOMING" value={money(totals.totalCollected)} />
+              <Tile label="CARD FEES (STRIPE)" value={money(totals.cardFees)} />
+              <Tile label="OWED (UNSETTLED)" value={money(totals.owedOutstanding)} />
+              <Tile label="PAID OUT (SETTLED)" value={money(totals.paidSettled)} />
+              <Tile label="NET" value={money(totals.net)} fg={totals.net < 0 ? T.red : T.ink} />
             </div>
           )}
 
@@ -74,13 +75,12 @@ export default function AdminMoneyPage() {
                       </p>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <p style={{ fontFamily: T.mono, fontSize: 10, color: "rgba(20,17,15,.45)", margin: 0 }}>IN {money(s.collected)} · OUT {money(s.paidOut)}</p>
+                      <p style={{ fontFamily: T.mono, fontSize: 10, color: "rgba(20,17,15,.45)", margin: 0 }}>IN {money(s.collected)} · FEES {money(s.cardFees)} · OUT {money(s.paidOut)}</p>
                     </div>
                     <span style={{
                       fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",
                       padding: "5px 10px", borderRadius: 999, width: 70, textAlign: "center", flexShrink: 0,
-                      background: s.settled ? "rgba(113,111,57,.18)" : "rgba(252,187,22,.28)",
-                      color: s.settled ? T.olive : T.ink,
+                      border: `1.5px solid ${T.ink}`, color: T.ink,
                     }}>
                       {s.settled ? "SETTLED" : "OWED"}
                     </span>
@@ -95,9 +95,9 @@ export default function AdminMoneyPage() {
   );
 }
 
-function Tile({ label, value, bg, fg, border }: { label: string; value: string; bg: string; fg: string; border?: boolean }) {
+function Tile({ label, value, fg = T.ink }: { label: string; value: string; fg?: string }) {
   return (
-    <div style={{ padding: "14px 16px", borderRadius: 14, background: bg, color: fg, border: border ? `2px solid ${T.ink}` : "none" }}>
+    <div style={{ padding: "14px 16px", borderRadius: 14, background: "transparent", color: fg, border: `2px solid ${T.ink}` }}>
       <p style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", margin: "0 0 4px", opacity: 0.85 }}>{label}</p>
       <p style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>{value}</p>
     </div>

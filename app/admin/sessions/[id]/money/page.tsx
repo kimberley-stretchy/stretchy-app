@@ -18,8 +18,10 @@ type LineItem = { role: string; who: string; amount: number; email: string };
 type MoneyData = {
   session: { id: string; title: string; startsAt: string; locationName: string; state: string; hostPaidAt: string | null };
   collected: number;
+  cardFees: number;
   paidOut: number;
   mats: number;
+  onUs: number;
   lineItems: LineItem[];
 };
 
@@ -111,10 +113,11 @@ export default function SessionMoneyPage() {
               {data.session.title}
             </h1>
 
-            <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-              <StatBox label="COLLECTED" value={`$${data.collected.toFixed(2)}`} bg={T.olive} fg={T.cream} />
-              <StatBox label="PAID OUT" value={`$${data.paidOut.toFixed(2)}`} bg={T.yellow} fg={T.ink} />
-              <StatBox label="MATS" value={String(data.mats)} bg={T.blue} fg={T.cream} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+              <StatBox label="COLLECTED" value={`$${data.collected.toFixed(2)}`} />
+              <StatBox label="CARD FEES (STRIPE)" value={`$${data.cardFees.toFixed(2)}`} />
+              <StatBox label="PAID OUT" value={`$${data.paidOut.toFixed(2)}`} />
+              <StatBox label="MATS" value={String(data.mats)} note={data.onUs ? `${data.onUs} on us · ${data.mats - data.onUs} paid` : undefined} />
             </div>
 
             <div style={{ border: `2px solid ${T.ink}`, borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>
@@ -161,6 +164,24 @@ export default function SessionMoneyPage() {
                   </div>
                 ))
               )}
+            </div>
+
+            {/* What's left for Stretchy once Stripe's fees and the payouts are taken off. */}
+            <div style={{ border: `2px solid ${T.ink}`, borderRadius: 12, padding: "12px 14px", marginBottom: 24, display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>
+              {[
+                ["Collected", data.collected],
+                ["Card fees (Stripe)", -data.cardFees],
+                ["Paid out", -data.paidOut],
+              ].map(([label, n]) => (
+                <div key={label as string} style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "rgba(20,17,15,.65)" }}>{label}</span>
+                  <span style={{ fontFamily: T.mono, fontWeight: 700 }}>{(n as number) < 0 ? "−" : ""}${Math.abs(n as number).toFixed(2)}</span>
+                </div>
+              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", borderTop: `1.5px solid ${T.ink}`, paddingTop: 6, fontWeight: 700 }}>
+                <span>Net to Stretchy</span>
+                <span style={{ fontFamily: T.mono }}>${(data.collected - data.cardFees - data.paidOut).toFixed(2)}</span>
+              </div>
             </div>
 
             {/* Send remittances — tick who to notify above, then send. Nothing is
@@ -221,11 +242,12 @@ export default function SessionMoneyPage() {
   );
 }
 
-function StatBox({ label, value, bg, fg }: { label: string; value: string; bg: string; fg: string }) {
+function StatBox({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
-    <div style={{ flex: 1, background: bg, color: fg, borderRadius: 12, padding: "10px 12px" }}>
-      <p style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", opacity: 0.75, marginBottom: 4 }}>{label}</p>
+    <div style={{ border: `2px solid ${T.ink}`, color: T.ink, borderRadius: 12, padding: "10px 12px" }}>
+      <p style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", opacity: 0.6, marginBottom: 4 }}>{label}</p>
       <p style={{ fontFamily: T.mono, fontSize: 20, fontWeight: 800 }}>{value}</p>
+      {note && <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, opacity: 0.6, marginTop: 2 }}>{note}</p>}
     </div>
   );
 }
