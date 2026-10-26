@@ -89,6 +89,19 @@ function EditDetails({ p, onDone }: { p: Person; onDone: (saved: boolean) => voi
         <textarea rows={3} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} style={{ ...field, resize: "vertical" }} />
       </label>
       {err && <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#C6362E" }}>{err}</p>}
+      {/* New phone / lost their authenticator app: clear it so they can set it up again. */}
+      <button
+        type="button"
+        onClick={async () => {
+          if (!confirm(`Reset ${p.name}'s authenticator? Next time they sign in they'll scan a new QR code to set it up again.`)) return;
+          const res = await fetch("/api/admin/people/reset-mfa", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hostId: p.id }) }).catch(() => null);
+          const d = res ? await res.json().catch(() => ({})) : {};
+          alert(res && res.ok ? `Done. ${p.name} will set up their authenticator again next time they sign in.` : d.error ?? "Couldn’t reset it. Try again.");
+        }}
+        style={{ alignSelf: "flex-start", background: "none", border: "none", padding: 0, fontSize: 12.5, fontWeight: 700, color: INK, textDecoration: "underline", cursor: "pointer" }}
+      >
+        Reset their authenticator (new phone)
+      </button>
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={save} disabled={busy} style={{ height: 38, padding: "0 18px", borderRadius: 999, border: "none", background: INK, color: "#F7F0E8", fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: busy ? 0.6 : 1 }}>
           {busy ? "Saving…" : "Save details"}
@@ -105,7 +118,10 @@ function initials(name: string) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
 }
 
-export type QuickAdd = { name: string; email: string; roles: string[]; neighbourhoods: string; practiceTypes: string };
+export type QuickAdd = { name: string; email: string; phone: string; roles: string[]; neighbourhoods: string; practiceTypes: string; sendWelcome: boolean };
+
+// Labels sit above each quick-add box, so it's clear which box is which.
+const qaLabel: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", color: "rgba(20,17,15,.6)" };
 
 export default function PeopleSection({
   title, people, applyHref, applyLabel, onDecide, busyId, onCancelSession, onFindCover, sessionActionId,
@@ -127,11 +143,12 @@ export default function PeopleSection({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const emptyForm: QuickAdd = { name: "", email: "", roles: [defaultRole ?? "teacher"], neighbourhoods: "", practiceTypes: "" };
+  const emptyForm: QuickAdd = { name: "", email: "", phone: "", roles: [defaultRole ?? "teacher"], neighbourhoods: "", practiceTypes: "", sendWelcome: true };
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<QuickAdd>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [addedMsg, setAddedMsg] = useState<string | null>(null);
 
   async function submitQuickAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -141,11 +158,12 @@ export default function PeopleSection({
     const err = await onQuickAdd(form);
     setSaving(false);
     if (err) { setAddError(err); return; }
+    setAddedMsg(`${form.name} added${form.sendWelcome ? `. Sign-in email sent to ${form.email}, copied to HQ.` : "."}`);
     setForm(emptyForm);
     setAdding(false);
   }
 
-  const inputStyle: React.CSSProperties = { width: "100%", height: 38, borderRadius: 999, border: `2px solid ${INK}`, padding: "0 14px", fontSize: 13, background: "#fff", color: INK, outline: "none", boxSizing: "border-box" };
+  const inputStyle: React.CSSProperties = { width: "100%", height: 38, borderRadius: 999, border: `2px solid ${INK}`, padding: "0 14px", fontSize: 13, background: "#fff", color: INK, outline: "none", boxSizing: "border-box", fontFamily: "'Space Grotesk', system-ui, sans-serif", fontWeight: 400, letterSpacing: "normal" };
 
   return (
     <div style={{ marginBottom: 24 }}>
@@ -345,8 +363,15 @@ export default function PeopleSection({
             <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: INK, margin: 0 }}>
               {applyLabel.toUpperCase()} — APPROVED STRAIGHT AWAY
             </p>
-            <input required placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={inputStyle} />
-            <input required type="email" placeholder="Email (the one they'll log in with)" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={inputStyle} />
+            <label style={qaLabel}>FULL NAME
+              <input required placeholder="e.g. Sophie Berry" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={inputStyle} />
+            </label>
+            <label style={qaLabel}>EMAIL · THE ONE THEY&rsquo;LL SIGN IN WITH
+              <input required type="email" placeholder="name@email.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={inputStyle} />
+            </label>
+            <label style={qaLabel}>PHONE · OPTIONAL
+              <input type="tel" placeholder="e.g. 021 123 4567" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} style={inputStyle} />
+            </label>
             <div style={{ display: "flex", gap: 14, fontSize: 13, color: INK, padding: "2px 4px" }}>
               {(["teacher", "gem"] as const).map((r) => (
                 <label key={r} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
@@ -359,10 +384,18 @@ export default function PeopleSection({
                 </label>
               ))}
             </div>
-            <input placeholder="Areas (optional) — e.g. Herne Bay, Ponsonby" value={form.neighbourhoods} onChange={(e) => setForm({ ...form, neighbourhoods: e.target.value })} style={inputStyle} />
+            <label style={qaLabel}>AREAS · OPTIONAL
+              <input placeholder="e.g. Herne Bay, Ponsonby" value={form.neighbourhoods} onChange={(e) => setForm({ ...form, neighbourhoods: e.target.value })} style={inputStyle} />
+            </label>
             {form.roles.includes("teacher") && (
-              <input placeholder="Styles (optional) — e.g. Vinyasa, Yin" value={form.practiceTypes} onChange={(e) => setForm({ ...form, practiceTypes: e.target.value })} style={inputStyle} />
+              <label style={qaLabel}>STYLES · OPTIONAL
+                <input placeholder="e.g. Vinyasa, Yin" value={form.practiceTypes} onChange={(e) => setForm({ ...form, practiceTypes: e.target.value })} style={inputStyle} />
+              </label>
             )}
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: INK, padding: "4px 4px 2px", cursor: "pointer", lineHeight: 1.4 }}>
+              <input type="checkbox" checked={form.sendWelcome} onChange={(e) => setForm({ ...form, sendWelcome: e.target.checked })} style={{ marginTop: 2 }} />
+              <span>Email them how to sign in to the team view <span style={{ color: "rgba(20,17,15,.55)" }}>(copied to HQ)</span></span>
+            </label>
             {addError && <p style={{ fontSize: 12, color: "#C6362E", margin: 0 }}>{addError}</p>}
             <div style={{ display: "flex", gap: 8 }}>
               <button type="submit" disabled={saving || form.roles.length === 0} style={{ flex: 1, height: 36, borderRadius: 999, border: "none", cursor: "pointer", background: "#716F39", color: "#F7F0E8", fontSize: 13, fontWeight: 700, opacity: saving || form.roles.length === 0 ? 0.6 : 1 }}>
@@ -374,12 +407,15 @@ export default function PeopleSection({
             </div>
           </form>
         ) : (
+          <>
+          {addedMsg && <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: INK }}>✓ {addedMsg}</p>}
           <button
-            onClick={() => setAdding(true)}
+            onClick={() => { setAdding(true); setAddedMsg(null); }}
             style={{ display: "inline-block", fontSize: 13, fontWeight: 700, color: INK, background: "transparent", cursor: "pointer", border: `2px solid ${INK}`, borderRadius: 999, padding: "8px 16px" }}
           >
             + {applyLabel}
           </button>
+          </>
         )
       ) : (
             <Link

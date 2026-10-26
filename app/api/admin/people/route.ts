@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { requireAdmin } from "@/lib/adminAuth";
+import { sendTeamWelcome } from "@/lib/teamWelcomeEmail";
 
 function getAdmin() {
   return createClient(
@@ -223,6 +224,12 @@ export async function POST(request: NextRequest) {
   let roles: string[] = list(body.roles).filter((r) => r === "teacher" || r === "gem");
   let neighbourhoods = list(body.neighbourhoods);
   let practiceTypes = list(body.practiceTypes);
+  const phone = typeof body.phone === "string" ? body.phone.trim().slice(0, 30) : "";
+  if (phone && !/^[\d\s+()-]{6,30}$/.test(phone)) {
+    return NextResponse.json({ error: "That doesn’t look like a phone number." }, { status: 400 });
+  }
+  // HQ's "Email them how to sign in" tickbox (lib/teamWelcomeEmail.ts).
+  const sendWelcome = body.sendWelcome === true;
 
   if (body.applicationId) {
     const { data: app } = await admin
@@ -251,7 +258,9 @@ export async function POST(request: NextRequest) {
       .update({ roles: mergedRoles, vetting_status: "approved" })
       .eq("id", existing.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true, hostId: existing.id, existed: true });
+    if (phone) await admin.from("hosts").update({ phone }).eq("id", existing.id).then(() => {}, () => {});
+    const welcomed = sendWelcome ? await sendTeamWelcome({ name, email, roles: mergedRoles }) : false;
+    return NextResponse.json({ ok: true, hostId: existing.id, existed: true, welcomed });
   }
 
   const { data: created, error } = await admin
@@ -268,7 +277,10 @@ export async function POST(request: NextRequest) {
     .select("id")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, hostId: created.id });
+  // Phone on its own, so a missing phone column can't stop them being added.
+  if (phone) await admin.from("hosts").update({ phone }).eq("id", created.id).then(() => {}, () => {});
+  const welcomed = sendWelcome ? await sendTeamWelcome({ name, email, roles }) : false;
+  return NextResponse.json({ ok: true, hostId: created.id, welcomed });
 }
 
 // DELETE /api/admin/people?id=… — remove a teacher/GEM from HQ.
