@@ -52,6 +52,7 @@ const NAV_GROUPS = [
       { href: "/admin/feedback", label: "Feedback" },
       { href: "/admin/social", label: "stretchy.social leads" },
       { href: "/admin/social-research", label: "stretchy.social research" },
+      { href: "/admin/australia", label: "Australia waitlist 🇦🇺" },
     ],
   },
 ];

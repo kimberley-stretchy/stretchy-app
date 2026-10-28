@@ -78,11 +78,15 @@ export async function GET(request: NextRequest) {
   if ("error" in authed) return authed.error;
   const admin = getAdmin();
   const audienceId = process.env.RESEND_AUDIENCE_ID;
-  const [sessions, count, audienceName, scheduled] = await Promise.all([
+  // Stretchy Australia's own list (set RESEND_AUDIENCE_ID_AU in Vercel).
+  const auId = process.env.RESEND_AUDIENCE_ID_AU;
+  const [sessions, count, audienceName, scheduled, auCount, auName] = await Promise.all([
     upcomingSessions(admin),
     audienceId ? getAudienceCount(audienceId) : Promise.resolve(null),
     audienceId ? getAudienceName(audienceId) : Promise.resolve(null),
     audienceId ? listScheduledBroadcasts() : Promise.resolve(null),
+    auId ? getAudienceCount(auId) : Promise.resolve(null),
+    auId ? getAudienceName(auId) : Promise.resolve(null),
   ]);
   return NextResponse.json({
     sessions,
@@ -91,6 +95,7 @@ export async function GET(request: NextRequest) {
     // Who a send would reach — shown in HQ before pressing send.
     audienceName,
     subscribed: count?.subscribed ?? null,
+    au: { ready: !!auId, name: auName, subscribed: auCount?.subscribed ?? null },
     // Newsletters queued for later, soonest first.
     scheduled: scheduled ?? [],
   });
@@ -164,9 +169,11 @@ export async function POST(request: NextRequest) {
   }
 
   // mode === "send" (now) or "schedule" (later) — real broadcast to the Audience.
-  const audienceId = process.env.RESEND_AUDIENCE_ID;
+  // Which list: New Zealand (default) or Stretchy Australia.
+  const toAustralia = (body as { audience?: string }).audience === "au";
+  const audienceId = toAustralia ? process.env.RESEND_AUDIENCE_ID_AU : process.env.RESEND_AUDIENCE_ID;
   if (!audienceId) {
-    return NextResponse.json({ error: "No Audience configured — set RESEND_AUDIENCE_ID in Vercel first." }, { status: 400 });
+    return NextResponse.json({ error: toAustralia ? "No Australia list yet — set RESEND_AUDIENCE_ID_AU in Vercel first." : "No Audience configured — set RESEND_AUDIENCE_ID in Vercel first." }, { status: 400 });
   }
   const r = await sendBroadcast({ audienceId, subject: subj, html, name: subj, scheduledAt });
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: 500 });

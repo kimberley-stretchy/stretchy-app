@@ -46,6 +46,10 @@ export default function NewslettersPage() {
   const [sessions, setSessions] = useState<PickSession[]>([]);
   const [audienceReady, setAudienceReady] = useState(false);
   const [audienceName, setAudienceName] = useState<string | null>(null);
+  // Which list a send goes to: New Zealand or Stretchy Australia.
+  type ListInfo = { ready: boolean; name: string | null; subscribed: number | null };
+  const [audience, setAudience] = useState<"nz" | "au">("nz");
+  const [lists, setLists] = useState<{ nz: ListInfo; au: ListInfo } | null>(null);
   const [subscribed, setSubscribed] = useState<number | null>(null);
   const [scheduled, setScheduled] = useState<{ id: string; name: string; scheduledAt: string }[]>([]);
   const [scheduleDate, setScheduleDate] = useState("");
@@ -155,7 +159,7 @@ export default function NewslettersPage() {
 
   function loadStatus() {
     fetch("/api/admin/newsletters").then((r) => r.json()).then((d) => {
-      setSessions(d.sessions ?? []); setAudienceReady(!!d.audienceReady); setAudienceName(d.audienceName ?? null); setSubscribed(typeof d.subscribed === "number" ? d.subscribed : null);
+      setSessions(d.sessions ?? []); setLists({ nz: { ready: !!d.audienceReady, name: d.audienceName ?? null, subscribed: typeof d.subscribed === "number" ? d.subscribed : null }, au: { ready: !!d.au?.ready, name: d.au?.name ?? null, subscribed: typeof d.au?.subscribed === "number" ? d.au.subscribed : null } });
       setScheduled(Array.isArray(d.scheduled) ? d.scheduled : []);
     }).catch(() => {});
   }
@@ -221,8 +225,14 @@ export default function NewslettersPage() {
     }
   }
 
+  useEffect(() => {
+    if (!lists) return;
+    const l = lists[audience];
+    setAudienceReady(l.ready); setAudienceName(l.name); setSubscribed(l.subscribed);
+  }, [audience, lists]);
+
   const payload = (mode: string) => ({
-    mode, subject, previewText: previewText || undefined,
+    mode, audience, subject, previewText: previewText || undefined,
     closingButton: closingOn ? { label: closingLabel, url: closingUrl } : null,
     scheme, heading: heading || undefined, highlight,
     testEmail,
@@ -537,6 +547,14 @@ export default function NewslettersPage() {
             </label>
 
             <p style={{ fontSize: 12, color: "rgba(20,17,15,.55)", margin: "0 0 8px" }}>Send yourself a test to preview it in a real inbox, then send to the Audience.</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+              {([["nz", "New Zealand list"], ["au", "Australia list 🇦🇺"]] as const).map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setAudience(k)} style={{ padding: "7px 14px", borderRadius: 999, border: `2px solid ${T.ink}`, background: audience === k ? T.ink : "transparent", color: audience === k ? T.cream : T.ink, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{l}</button>
+              ))}
+            </div>
+            {audience === "au" && lists && !lists.au.ready && (
+              <p style={{ fontSize: 12.5, margin: "0 0 8px" }}>The Australia list isn&rsquo;t connected yet: create an Audience called &ldquo;Stretchy Australia&rdquo; in Resend and add its ID to Vercel as RESEND_AUDIENCE_ID_AU.</p>
+            )}
             {audienceReady && (
               <p style={{ fontSize: 13, fontWeight: 700, margin: "0 0 8px" }}>
                 {subscribed !== null

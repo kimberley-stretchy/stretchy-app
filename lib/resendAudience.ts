@@ -12,19 +12,14 @@
 
 const API = "https://api.resend.com";
 
-function config(): { key: string; audienceId: string } | null {
-  const key = process.env.RESEND_API_KEY;
-  const audienceId = process.env.RESEND_AUDIENCE_ID;
-  if (!key || !audienceId) return null;
-  return { key, audienceId };
-}
-
 export function marketingConfigured(): boolean {
   return !!(process.env.RESEND_API_KEY && process.env.RESEND_AUDIENCE_ID);
 }
 
 export interface ContactInput {
   email: string;
+  /** A different Audience (e.g. RESEND_AUDIENCE_ID_AU for Stretchy Australia). Defaults to the NZ one. */
+  audienceId?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   subscribed: boolean; // true = opted in, false = unsubscribed
@@ -33,9 +28,9 @@ export interface ContactInput {
 // Idempotent upsert: create the contact; if it already exists, PATCH it by email
 // (Resend contacts are keyed by email within an audience).
 export async function syncMarketingContact(c: ContactInput): Promise<{ ok: boolean; skipped?: boolean; error?: unknown }> {
-  const cfg = config();
-  if (!cfg || !c.email) return { ok: false, skipped: true };
-  const { key, audienceId } = cfg;
+  const key = process.env.RESEND_API_KEY;
+  const audienceId = c.audienceId === undefined ? process.env.RESEND_AUDIENCE_ID : c.audienceId;
+  if (!key || !audienceId || !c.email) return { ok: false, skipped: true };
   const headers = { Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
   const first = c.firstName?.split(" ")[0] ?? undefined;
   const body = JSON.stringify({ email: c.email, first_name: first, last_name: c.lastName ?? undefined, unsubscribed: !c.subscribed });

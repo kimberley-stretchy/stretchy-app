@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import CookieNotice from "@/components/CookieNotice";
 import AuthReturn from "@/components/AuthReturn";
+import AustraliaPopup from "@/components/AustraliaPopup";
 
 // Without this, some Android browsers (Chrome/Samsung Internet's "force dark
 // theme" setting) auto-invert the whole page to a dark palette on devices
@@ -53,6 +54,7 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <CookieNotice />
         <AuthReturn />
+        <AustraliaPopup />
         <footer className="py-4 text-center text-xs text-gray-400">
           Made with love{" "}
           <a
