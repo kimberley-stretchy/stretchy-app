@@ -3,7 +3,7 @@
 // social links and referral grouping, used by the pop-up, /australia, the
 // welcome email and HQ. Copy agreed with Kimberley, 28 Oct 2026.
 
-export const LAUNCH_LINE = "Launching soon (yes, this side of summer!)";
+export const LAUNCH_LINE = "Launching soon (yes, this side of summer! ☀️🧘)";
 
 export const LINKS = {
   auInstagram: { href: "https://www.instagram.com/stretchyyoga.au/", label: "@stretchyyoga.au" },

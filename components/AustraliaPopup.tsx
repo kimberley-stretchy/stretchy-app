@@ -2,7 +2,7 @@
 
 // The Stretchy Australia pop-up: only for visitors in Australia (Vercel tells
 // us the country), only once per device, never on HQ, the team view, the
-// waitlist itself or stretchy.social. "Not now" or joining stops it showing.
+// waitlist itself or stretchy.social. Closing it (×) or joining stops it showing.
 // Copy agreed with Kimberley, Oct 2026.
 
 import { useEffect, useState } from "react";
@@ -48,7 +48,6 @@ export default function AustraliaPopup() {
         <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5 }}>Community yoga where the price drops as more people join, then a Social Stretch over coffee after. Sydney first, with more of Australia to come soon.</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
           <a href="/australia?src=popup" onClick={() => { try { localStorage.setItem(KEY, "clicked"); } catch { /* fine */ } }} style={{ flex: "1 1 200px", height: 46, borderRadius: 999, border: `2px solid ${INK}`, color: INK, fontWeight: 800, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>Join the Sydney waitlist</a>
-          <button onClick={close} style={{ height: 46, padding: "0 18px", borderRadius: 999, border: "none", background: "transparent", color: INK, fontWeight: 700, fontSize: 14, cursor: "pointer", textDecoration: "underline" }}>Not now</button>
         </div>
         <div style={{ borderTop: `1.5px solid ${INK}`, paddingTop: 10, fontSize: 13, lineHeight: 1.6, color: INK }}>
           Follow along: <a href={LINKS.auInstagram.href} target="_blank" rel="noopener" style={{ ...link, color: INK }}>{LINKS.auInstagram.label}</a> · <a href={LINKS.tiktok.href} target="_blank" rel="noopener" style={{ ...link, color: INK, fontWeight: 600 }}>{LINKS.tiktok.label}</a><br />
