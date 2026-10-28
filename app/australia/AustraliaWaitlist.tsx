@@ -13,7 +13,7 @@ import { LAUNCH_LINE, LINKS, NZ_VIBES, SYDNEY_AREAS, TIMES, OTHER_CITIES, SOMEWH
 const INK = "#14110F";
 // Stretchy green, with black text and outlines (Kimberley, Oct 2026).
 const GREEN = "#716F39";
-const field = "w-full h-11 rounded-xl border-2 border-ink px-3 bg-white text-ink";
+const field = "w-full h-11 rounded-xl border-2 border-ink px-3 bg-transparent text-ink placeholder:text-ink/60";
 
 function Chip({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
   return (

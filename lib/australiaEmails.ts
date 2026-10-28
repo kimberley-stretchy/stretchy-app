@@ -21,7 +21,7 @@ export function renderAuWelcome(name: string): { subject: string; html: string }
   const html = page("orange", (sc) => `
     ${h1(sc, "You’re on the list. 🇦🇺")}
     ${hey(sc, esc(first))}
-    ${msg(sc, `Thanks for joining the Stretchy Australia waitlist. We’re launching in Sydney soon (yes, this side of summer!), and your answers help us choose where and when the first sessions run.`)}
+    ${msg(sc, `Thanks for joining the Stretchy Australia waitlist. We’re launching in Sydney soon (yes, this side of summer! ☀️🧘), and your answers help us choose where and when the first sessions run.`)}
     ${msg(sc, `<strong>What Stretchy is:</strong> community yoga where the price drops as more people join. If enough people book, it’s on. Then there’s a Social Stretch after: coffee and good chats with the group.`)}
     ${msg(sc, "You’ll be first to hear about launch dates. Questions? Just reply to this email.")}
     ${button(sc, LINKS.auInstagram.href, `Follow ${LINKS.auInstagram.label}`)}
