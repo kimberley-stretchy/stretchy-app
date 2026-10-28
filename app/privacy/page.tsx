@@ -99,6 +99,11 @@ export default function PrivacyPage() {
             <p className="text-muted">You can ask to see, correct, or delete your personal information at any time — email <a href="mailto:kimberley@stretchyyoga.co.nz" className="font-bold text-ink">kimberley@stretchyyoga.co.nz</a> and we&rsquo;ll respond within 20 working days, as required under the NZ Privacy Act 2020. If you&rsquo;re not happy with our response, you can complain to New Zealand&rsquo;s Office of the Privacy Commissioner.</p>
           </div>
 
+          <div id="australia" className="scroll-mt-6">
+            <h2 className="font-bold mb-2">If you&rsquo;re in Australia</h2>
+            <p className="text-muted">When you join the Stretchy Australia waitlist, we collect your name, email and the answers you choose to give. We use them only to plan and tell you about Stretchy in Australia. We handle your information in line with the Australian Privacy Principles as well as the New Zealand Privacy Act 2020. To see, correct or delete your details, email <a href="mailto:kimberley@stretchyyoga.co.nz" className="font-bold text-ink">kimberley@stretchyyoga.co.nz</a>.</p>
+          </div>
+
           <div>
             <h2 className="font-bold mb-2">If something goes wrong</h2>
             <p className="text-muted">If we ever have a privacy breach that&rsquo;s likely to cause you serious harm, we&rsquo;ll tell you and the Privacy Commissioner as soon as we reasonably can, as required by law.</p>
