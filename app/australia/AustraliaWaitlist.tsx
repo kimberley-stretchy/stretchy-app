@@ -11,6 +11,8 @@ import SMark from "@/components/SMark";
 import { LAUNCH_LINE, LINKS, NZ_VIBES, SYDNEY_AREAS, TIMES, OTHER_CITIES, SOMEWHERE_ELSE } from "@/lib/australia";
 
 const INK = "#14110F";
+// Stretchy green, with black text and outlines (Kimberley, Oct 2026).
+const GREEN = "#716F39";
 const field = "w-full h-11 rounded-xl border-2 border-ink px-3 bg-white text-ink";
 
 function Chip({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
@@ -20,7 +22,7 @@ function Chip({ label, on, onClick }: { label: string; on: boolean; onClick: () 
       onClick={onClick}
       aria-pressed={on}
       className="px-3 py-1.5 rounded-pill text-xs font-semibold border-2 text-left"
-      style={{ borderColor: INK, background: on ? INK : "transparent", color: on ? "#F7F0E8" : INK }}
+      style={{ borderColor: INK, background: on ? INK : "transparent", color: on ? GREEN : INK }}
     >
       {label}
     </button>
@@ -29,10 +31,10 @@ function Chip({ label, on, onClick }: { label: string; on: boolean; onClick: () 
 
 function Card({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-card border-2 border-ink p-4 flex flex-col gap-3">
+    <div className="rounded-card border-2 border-ink p-4 flex flex-col gap-3">
       <div className="flex flex-col gap-1">
         <p className="m-0 font-bold text-ink text-sm leading-snug">{title}</p>
-        {hint && <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted">{hint}</span>}
+        {hint && <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-ink/80">{hint}</span>}
       </div>
       {children}
     </div>
@@ -84,10 +86,10 @@ export default function AustraliaWaitlist() {
 
   if (done) {
     return (
-      <main className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 text-center gap-4">
+      <main className="min-h-screen flex flex-col items-center justify-center px-6 text-center gap-4" style={{ background: GREEN }}>
         <div className="text-ink"><SMark size={56} /></div>
         <h1 className="font-display font-bold text-ink m-0 uppercase" style={{ fontSize: "clamp(30px,9vw,44px)", letterSpacing: "-0.03em", lineHeight: 1 }}>You&rsquo;re on the list. 🇦🇺</h1>
-        <p className="text-sm text-muted max-w-xs m-0">We&rsquo;ll be in touch as Sydney gets closer. In the meantime, come say hi on Instagram.</p>
+        <p className="text-sm text-ink/80 max-w-xs m-0">We&rsquo;ll be in touch as Sydney gets closer. In the meantime, come say hi on Instagram.</p>
         <a href={LINKS.auInstagram.href} target="_blank" rel="noopener" className="h-11 px-6 rounded-pill border-2 border-ink text-ink font-bold flex items-center justify-center">Follow {LINKS.auInstagram.label}</a>
         <Socials center />
       </main>
@@ -95,7 +97,7 @@ export default function AustraliaWaitlist() {
   }
 
   return (
-    <main className="min-h-screen bg-cream pb-16">
+    <main className="min-h-screen pb-16" style={{ background: GREEN }}>
       <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
         <Link href="/" className="text-ink" aria-label="Stretchy"><SMark size={30} /></Link>
         <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink">Stretchy Australia 🇦🇺</span>
@@ -107,7 +109,7 @@ export default function AustraliaWaitlist() {
             Sydney first. More of Australia soon.
           </h1>
           <p className="m-0 text-sm text-ink font-semibold">{LAUNCH_LINE}</p>
-          <p className="m-0 text-sm text-muted">Tell us where and when suits you, and we&rsquo;ll build the first sessions around the people who sign up.</p>
+          <p className="m-0 text-sm text-ink/80">Tell us where and when suits you, and we&rsquo;ll build the first sessions around the people who sign up.</p>
         </div>
 
         <Card title="About you">
@@ -138,7 +140,7 @@ export default function AustraliaWaitlist() {
         </Card>
 
         <Card title="Are you a teacher or a GEM?" hint="Optional">
-          <p className="m-0 text-xs text-muted">GEMs are our Good Energy Managers, the people who welcome everyone and host the Social Stretch.</p>
+          <p className="m-0 text-xs text-ink/80">GEMs are our Good Energy Managers, the people who welcome everyone and host the Social Stretch.</p>
           <label className="flex items-center gap-3 text-sm text-ink cursor-pointer">
             <input type="checkbox" checked={f.is_teacher} onChange={(e) => setF({ ...f, is_teacher: e.target.checked })} className="w-5 h-5" style={{ accentColor: INK }} />
             I&rsquo;m a yoga teacher
@@ -154,7 +156,7 @@ export default function AustraliaWaitlist() {
         </Card>
 
         <Card title="Know a great location for yoga, with community pricing?" hint="Optional">
-          <p className="m-0 text-xs text-muted">School halls, community halls, parks, pop-up spaces.</p>
+          <p className="m-0 text-xs text-ink/80">School halls, community halls, parks, pop-up spaces.</p>
           <input placeholder="Where is it?" value={f.venue_tip} onChange={(e) => setF({ ...f, venue_tip: e.target.value })} className={field} style={{ fontSize: 16 }} />
         </Card>
 
@@ -173,7 +175,7 @@ export default function AustraliaWaitlist() {
         <button type="submit" disabled={sending} className="h-12 rounded-pill border-2 border-ink text-ink font-bold text-sm disabled:opacity-40">
           {sending ? "Joining…" : "Join the waitlist"}
         </button>
-        <p className="m-0 text-xs text-muted text-center">
+        <p className="m-0 text-xs text-ink/80 text-center">
           We&rsquo;ll only use your details for Stretchy Australia. <a href="/privacy#australia" target="_blank" rel="noopener" className="underline">Privacy policy ↗</a>
         </p>
         <div className="mt-3"><Socials center /></div>

@@ -10,5 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default function AustraliaPage() {
-  return <AustraliaWaitlist />;
+  return (
+    <>
+      {/* The whole page is Stretchy green, including the site's little footer strip. */}
+      <style dangerouslySetInnerHTML={{ __html: "html, body { background: #716F39 !important; } body > footer, body > footer a { color: rgba(20,17,15,.7) !important; }" }} />
+      <AustraliaWaitlist />
+    </>
+  );
 }
