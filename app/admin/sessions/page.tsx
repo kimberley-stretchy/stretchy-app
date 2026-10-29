@@ -5,6 +5,7 @@ import Link from "next/link";
 import HQShell from "@/components/hq/HQShell";
 import { calculatePrice } from "@/lib/pricing";
 import { locationTheme } from "@/lib/locationColours";
+import { byFirstName } from "@/lib/byFirstName";
 
 const T = {
   ink:    "#14110F",
@@ -623,7 +624,7 @@ function SessionCard({
               <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: "rgba(20,17,15,.6)" }}>
                 {attendees.filter((a) => a.checkedIn).reduce((n, a) => n + a.spots, 0)} HERE · {attendees.filter((a) => !a.checkedIn).reduce((n, a) => n + a.spots, 0)} NOT YET · {attendees.filter((a) => a.careNote).length} MOVING WITH CARE
               </span>
-              {attendees.map((a, i) => (
+              {[...attendees].sort(byFirstName).map((a, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13, paddingBottom: 10, borderBottom: "1px solid rgba(20,17,15,.12)" }}>
                   <button
                     type="button"
