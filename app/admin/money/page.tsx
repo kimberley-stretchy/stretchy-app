@@ -17,7 +17,7 @@ const T = {
   display: "'BN Chubb', 'Space Grotesk', sans-serif",
 };
 
-type Row = { id: string; title: string; startsAt: string; locationName: string; state: string; collected: number; cardFees: number; paidOut: number; settled: boolean };
+type Row = { id: string; title: string; startsAt: string; locationName: string; state: string; collected: number; cardFees: number; paidOut: number; perPerson: number | null; settled: boolean };
 type Totals = { totalCollected: number; cardFees: number; owedOutstanding: number; paidSettled: number; net: number };
 
 const money = (n: number) => `$${n.toFixed(2)}`;
@@ -75,7 +75,7 @@ export default function AdminMoneyPage() {
                       </p>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <p style={{ fontFamily: T.mono, fontSize: 10, color: "rgba(20,17,15,.45)", margin: 0 }}>IN {money(s.collected)} · FEES {money(s.cardFees)} · OUT {money(s.paidOut)}</p>
+                      <p style={{ fontFamily: T.mono, fontSize: 10, color: "rgba(20,17,15,.45)", margin: 0 }}>{s.perPerson != null ? `${money(s.perPerson)} PP · ` : ""}IN {money(s.collected)} · FEES {money(s.cardFees)} · OUT {money(s.paidOut)}</p>
                     </div>
                     <span style={{
                       fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",

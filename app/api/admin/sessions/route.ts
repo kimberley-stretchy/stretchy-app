@@ -95,19 +95,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Count active holds for each session — sum quantity, not row count, since
-  // one hold row can now represent more than one spot.
+  // Places booked on each session — sum quantity, not row count, since one
+  // hold row can represent more than one place. Held ("active") AND paid
+  // ("charged") both count, so a session keeps its numbers once it's run and
+  // HQ can track attendance week to week. Also: how many were checked in.
   const sessionIds = (data || []).map((s) => s.id);
   const holdCounts: Record<string, number> = {};
+  const checkedIn: Record<string, number> = {};
   if (sessionIds.length > 0) {
     const { data: holds } = await supabase
       .from("holds")
-      .select("session_id, quantity")
+      .select("session_id, quantity, checked_in_at")
       .in("session_id", sessionIds)
-      .eq("state", "active");
+      .in("state", ["active", "charged"]);
 
     (holds || []).forEach((h) => {
       holdCounts[h.session_id] = (holdCounts[h.session_id] || 0) + (h.quantity ?? 1);
+      if (h.checked_in_at) checkedIn[h.session_id] = (checkedIn[h.session_id] || 0) + (h.quantity ?? 1);
     });
   }
 
@@ -150,6 +154,7 @@ export async function GET(request: NextRequest) {
     venue_email: venueContacts[s.id]?.venue_email ?? null,
     social_venue_email: venueContacts[s.id]?.social_venue_email ?? null,
     current_holds: holdCounts[s.id] || 0,
+    checked_in: checkedIn[s.id] || 0,
     keep_alive_at: keptAlive[s.id] ?? null,
     bring_title: bring[s.id]?.bring_title ?? null,
     bring_note: bring[s.id]?.bring_note ?? null,

@@ -40,6 +40,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const hostById = new Map((hostRows ?? []).map((h) => [h.id, h]));
   const mats = (holds ?? []).reduce((n, h) => n + (h.quantity ?? 1), 0);
   const onUs = (holds ?? []).filter((h) => h.is_comp).reduce((n, h) => n + (h.quantity ?? 1), 0);
+  // What each paying person ended up paying (the final price), from what was actually charged.
+  const paidPlaces = (holds ?? []).filter((h) => h.state === "charged" && h.amount_charged_nzd).reduce((n, h) => n + (h.quantity ?? 1), 0);
   const collected = (holds ?? []).reduce((sum, h) => sum + (h.amount_charged_nzd ? h.amount_charged_nzd / 100 : 0), 0);
   // The fees Stripe actually took on this session's card payments.
   const fees = await cardFeesFor(admin, (holds ?? []).filter((h) => h.state === "charged") as FeeHold[]);
@@ -73,6 +75,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     paidOut,
     mats,
     onUs,
+    perPerson: paidPlaces ? Math.round((collected / paidPlaces) * 100) / 100 : null,
     lineItems,
   });
 }

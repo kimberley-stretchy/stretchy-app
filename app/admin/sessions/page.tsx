@@ -65,6 +65,7 @@ type Session = {
   min_attendees: number;
   max_attendees: number;
   current_holds: number;
+  checked_in?: number;
   state: string;
   is_draft: boolean;
   keep_alive_at?: string | null;
@@ -357,6 +358,8 @@ export default function AdminSessionsPage() {
 
         {/* Past sessions — everything that already ran or was cancelled. Tick to
             permanently delete. */}
+        {past.length > 0 && <WeeklyAttendance sessions={past} />}
+
         {past.length > 0 && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -493,6 +496,8 @@ function SessionCard({
   const startDate = new Date(s.starts_at);
   const currentPrice = calculatePrice(s.cost_base, s.revenue_target, Math.max(s.current_holds, s.min_attendees));
   const needsMore = s.min_attendees - s.current_holds;
+  // A session that's happened (not cancelled): show what it ended on.
+  const ran = startDate.getTime() < Date.now() && s.state !== "cancelled";
   const live = s.state !== "cancelled" && s.state !== "completed";
 
   // One panel at a time under the card: the people (with the emails they've
@@ -572,9 +577,11 @@ function SessionCard({
 
       {/* The numbers, on one line */}
       <div style={{ padding: "10px 18px", borderTop: keyline, display: "flex", gap: "6px 18px", flexWrap: "wrap", fontFamily: T.mono, fontSize: 12, fontWeight: 700 }}>
-        <span>{s.current_holds} / {s.max_attendees} IN</span>
-        <span style={{ color: "rgba(20,17,15,.6)" }}>{needsMore > 0 && live ? `${needsMore} MORE TO GO AHEAD` : `MIN ${s.min_attendees}`}</span>
-        <span>NOW ${currentPrice.toFixed(2)}</span>
+        <span>{s.current_holds} / {s.max_attendees} {ran ? "CAME" : "IN"}</span>
+        {ran
+          ? <span style={{ color: "rgba(20,17,15,.6)" }}>{s.checked_in ?? 0} CHECKED IN</span>
+          : <span style={{ color: "rgba(20,17,15,.6)" }}>{needsMore > 0 && live ? `${needsMore} MORE TO GO AHEAD` : `MIN ${s.min_attendees}`}</span>}
+        <span>{ran ? "FINAL" : "NOW"} ${currentPrice.toFixed(2)}</span>
         <span style={{ color: "rgba(20,17,15,.6)" }}>${s.cost_base} + ${s.revenue_target}</span>
       </div>
 
@@ -711,3 +718,43 @@ function SessionCard({
   );
 }
 
+
+// Weekly attendance for sessions that ran (Mon–Sun weeks, NZ time), newest
+// first: sessions, places booked and how many were checked in.
+function WeeklyAttendance({ sessions }: { sessions: Session[] }) {
+  const ran = sessions.filter((s) => s.state !== "cancelled" && new Date(s.starts_at).getTime() < Date.now());
+  const weeks = new Map<string, { label: string; sessions: number; places: number; checkedIn: number }>();
+  for (const s of ran) {
+    const nz = new Date(new Date(s.starts_at).toLocaleString("en-US", { timeZone: "Pacific/Auckland" }));
+    const monday = new Date(nz);
+    monday.setDate(nz.getDate() - ((nz.getDay() + 6) % 7));
+    const key = monday.toISOString().slice(0, 10);
+    const w = weeks.get(key) ?? { label: `WEEK OF ${monday.toLocaleDateString("en-NZ", { day: "numeric", month: "short" }).toUpperCase()}`, sessions: 0, places: 0, checkedIn: 0 };
+    w.sessions += 1;
+    w.places += s.current_holds;
+    w.checkedIn += s.checked_in ?? 0;
+    weeks.set(key, w);
+  }
+  const rows = Array.from(weeks.entries()).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 12);
+  if (rows.length === 0) return null;
+  const cell: React.CSSProperties = { padding: "8px 10px", borderTop: "1px solid rgba(20,17,15,.12)", fontFamily: T.mono, fontSize: 12, fontWeight: 700 };
+  const head: React.CSSProperties = { padding: "8px 10px", fontFamily: T.mono, fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(20,17,15,.55)", textAlign: "left" };
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+        <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: T.ink }}>ATTENDANCE BY WEEK</span>
+        <span style={{ flex: 1, height: 2, background: T.ink }} />
+      </div>
+      <div style={{ background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 16, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead><tr><th style={head}>WEEK</th><th style={head}>SESSIONS</th><th style={head}>PLACES</th><th style={head}>CHECKED IN</th></tr></thead>
+          <tbody>
+            {rows.map(([k, w]) => (
+              <tr key={k}><td style={cell}>{w.label}</td><td style={cell}>{w.sessions}</td><td style={cell}>{w.places}</td><td style={cell}>{w.checkedIn}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
