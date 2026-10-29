@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { byFirstName } from "@/lib/byFirstName";
 
 const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
   FREE: { bg: "rgba(113,111,57,0.18)", fg: "#716F39" },
@@ -180,7 +181,7 @@ export default function PeopleSection({
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
-          {people.map((p) => {
+          {[...people].sort(byFirstName).map((p) => {
             const c = STATUS_COLORS[p.status] ?? STATUS_COLORS["AWAITING REVIEW"];
             const isPending = p.status === "AWAITING REVIEW" && !!onDecide;
             const busy = busyId === p.id;

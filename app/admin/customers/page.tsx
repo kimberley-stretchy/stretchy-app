@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import HQShell from "@/components/hq/HQShell";
+import { byFirstName } from "@/lib/byFirstName";
 
 const T = {
   ink: "#14110F",
@@ -61,7 +62,7 @@ export default function CustomersPage() {
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (c.name ?? "").toLowerCase().includes(s) || (c.email ?? "").toLowerCase().includes(s);
-  });
+  }).sort(byFirstName);
 
   const fmtDate = (d: string) =>
     new Date(d).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "short", year: "numeric" });
