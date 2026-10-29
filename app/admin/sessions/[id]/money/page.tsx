@@ -22,6 +22,7 @@ type MoneyData = {
   paidOut: number;
   mats: number;
   onUs: number;
+  perPerson: number | null;
   lineItems: LineItem[];
 };
 
@@ -118,6 +119,7 @@ export default function SessionMoneyPage() {
               <StatBox label="CARD FEES (STRIPE)" value={`$${data.cardFees.toFixed(2)}`} />
               <StatBox label="PAID OUT" value={`$${data.paidOut.toFixed(2)}`} />
               <StatBox label="MATS" value={String(data.mats)} note={data.onUs ? `${data.onUs} on us · ${data.mats - data.onUs} paid` : undefined} />
+              <StatBox label="PER PERSON (FINAL)" value={data.perPerson != null ? `$${data.perPerson.toFixed(2)}` : "—"} note="incl. GST" />
             </div>
 
             <div style={{ border: `2px solid ${T.ink}`, borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>

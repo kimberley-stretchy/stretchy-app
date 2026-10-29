@@ -33,10 +33,12 @@ export async function GET(request: NextRequest) {
   const fees = await cardFeesFor(admin, booksHolds as FeeHold[]);
   const collectedBy = new Map<string, number>();
   const feesBy = new Map<string, number>();
+  const placesBy = new Map<string, number>();
   for (const h of booksHolds) {
     if (!h.session_id) continue;
     collectedBy.set(h.session_id, (collectedBy.get(h.session_id) ?? 0) + (h.amount_charged_nzd ? h.amount_charged_nzd / 100 : 0));
     feesBy.set(h.session_id, (feesBy.get(h.session_id) ?? 0) + (fees.get(h.id) ?? 0) / 100);
+    if (h.amount_charged_nzd) placesBy.set(h.session_id, (placesBy.get(h.session_id) ?? 0) + (h.quantity ?? 1));
   }
 
   const now = Date.now();
@@ -57,6 +59,7 @@ export async function GET(request: NextRequest) {
       state: s.state,
       collected,
       cardFees: feesBy.get(s.id) ?? 0,
+      perPerson: placesBy.get(s.id) ? Math.round((collected / placesBy.get(s.id)!) * 100) / 100 : null,
       paidOut,
       settled: !!s.host_paid_at,
     };
