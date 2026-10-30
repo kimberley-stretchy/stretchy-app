@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import MarketingNav from "@/components/marketing/MarketingNav";
 import Hero from "@/components/marketing/Hero";
 import WhatStretchyIs from "@/components/marketing/WhatStretchyIs";
-import HowItWorks from "@/components/marketing/HowItWorks";
+import HowItWorks, { type LastSession } from "@/components/marketing/HowItWorks";
 import WhatsOnNext, { type MarketingSession } from "@/components/marketing/WhatsOnNext";
 import SuggestBand, { type MarketingSuggestion } from "@/components/marketing/SuggestBand";
 import SocialStretchBand from "@/components/marketing/SocialStretchBand";
@@ -15,12 +15,40 @@ import StretchyFundBand from "@/components/marketing/StretchyFundBand";
 import OpportunitiesBand from "@/components/marketing/OpportunitiesBand";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
 import TestingPopup from "@/components/marketing/TestingPopup";
+import { calculatePrice } from "@/lib/pricing";
 
 function getAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
+
+// The most recent session that ran and charged: how many people joined and the
+// final price each paid. Shown in How it works step 04 as social proof, and
+// updates itself after every session. Same formula the charge uses.
+async function getLastSession(): Promise<LastSession | null> {
+  const admin = getAdmin();
+  const { data: s } = await admin
+    .from("sessions")
+    .select("id, title, starts_at, cost_base, revenue_target, min_attendees")
+    .in("state", ["locked", "completed"])
+    .eq("is_draft", false)
+    .lt("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!s) return null;
+  const { data: holds } = await admin.from("holds").select("quantity").eq("session_id", s.id).eq("state", "charged");
+  const people = (holds ?? []).reduce((n, h) => n + (h.quantity ?? 1), 0);
+  if (people < s.min_attendees) return null;
+  return {
+    title: s.title,
+    startsAt: s.starts_at,
+    people,
+    finalPrice: calculatePrice(s.cost_base, s.revenue_target, people),
+    maxPrice: calculatePrice(s.cost_base, s.revenue_target, s.min_attendees),
+  };
 }
 
 async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify: MarketingSession | null }> {
@@ -165,10 +193,11 @@ const PLACEHOLDER_SUGGESTIONS: MarketingSuggestion[] = [
 ];
 
 export default async function HomePage() {
-  const [{ open, notify }, suggestions, fundTotal] = await Promise.all([
+  const [{ open, notify }, suggestions, fundTotal, lastSession] = await Promise.all([
     getUpcomingSessions(),
     getTopSuggestions(),
     getFundTotal(),
+    getLastSession().catch(() => null),
   ]);
 
   const sessionsToShow =
@@ -206,6 +235,7 @@ export default async function HomePage() {
         revenueTarget={pricingSource.revenue_target}
         minMats={pricingSource.min_attendees}
         maxMats={pricingSource.max_attendees}
+        lastSession={lastSession}
       />
       <WhatsOnNext sessions={sessionsToShow} notifySession={notify} />
       <SuggestBand suggestions={suggestionsToShow} />
