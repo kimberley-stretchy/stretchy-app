@@ -446,6 +446,15 @@ type Attendee = {
   userId?: string; phone?: string | null; isComp?: boolean; checkedIn?: boolean;
   careNote?: string | null; careDuration?: string | null; firstTimer?: boolean; badge?: string | null;
 };
+type BookingError = { id: string; created_at: string; email: string | null; stage: string; message: string | null; code: string | null; quantity: number | null };
+// What each stage means, in plain words, for HQ.
+const BOOKING_STAGE: Record<string, string> = {
+  start: "Couldn’t start the booking",
+  details: "Name / mobile not saved",
+  card: "Card details incomplete",
+  bank: "Bank said no",
+  save: "Booking not saved",
+};
 type EmailLogRow = { id: string; recipient: string; email_type: string; subject: string | null; status: string; error: string | null; created_at: string };
 
 // Friendly names for the audit-log panel.
@@ -505,18 +514,21 @@ function SessionCard({
   const [panel, setPanel] = useState<"people" | "more" | null>(null);
   const [attendees, setAttendees] = useState<Attendee[] | null>(null);
   const [emails, setEmails] = useState<EmailLogRow[] | null>(null);
+  const [hiccups, setHiccups] = useState<BookingError[]>([]);
   const [addEmail, setAddEmail] = useState("");
   const [addName, setAddName] = useState("");
   const [adding, setAdding] = useState(false);
   const [addMsg, setAddMsg] = useState<string | null>(null);
 
   async function loadPeople() {
-    const [a, e] = await Promise.all([
+    const [a, e, b] = await Promise.all([
       fetch(`/api/admin/sessions/${s.id}/attendees`).then((r) => (r.ok ? r.json() : { attendees: [] })).catch(() => ({ attendees: [] })),
       fetch(`/api/admin/sessions/${s.id}/emails`).then((r) => (r.ok ? r.json() : { emails: [] })).catch(() => ({ emails: [] })),
+      fetch(`/api/admin/sessions/${s.id}/booking-errors`).then((r) => (r.ok ? r.json() : { errors: [] })).catch(() => ({ errors: [] })),
     ]);
     setAttendees(a.attendees ?? []);
     setEmails(e.emails ?? []);
+    setHiccups(b.errors ?? []);
   }
 
   function toggle(p: "people" | "more") {
@@ -684,6 +696,28 @@ function SessionCard({
               </div>
               {addMsg && <p style={{ fontSize: 12, marginTop: 8, color: addMsg.startsWith("✓") ? T.ink : T.red }}>{addMsg}</p>}
             </div>
+          )}
+
+          {/* What the booking pop-up told people when booking didn't go smoothly. */}
+          {hiccups.length > 0 && (
+            <details style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(20,17,15,.12)" }}>
+              <summary style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", cursor: "pointer" }}>
+                BOOKING HICCUPS · {hiccups.length}
+              </summary>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
+                {hiccups.map((h) => (
+                  <div key={h.id} style={{ fontSize: 12.5, borderBottom: "1px solid rgba(20,17,15,.08)", paddingBottom: 6 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                      <span><strong>{BOOKING_STAGE[h.stage] ?? h.stage}</strong>{h.email ? <span style={{ color: "rgba(20,17,15,.55)" }}> · {h.email}</span> : null}{h.quantity && h.quantity > 1 ? ` · ${h.quantity} places` : ""}</span>
+                      <span style={{ fontFamily: T.mono, fontSize: 10, color: "rgba(20,17,15,.45)" }}>
+                        {new Date(h.created_at).toLocaleString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })}
+                      </span>
+                    </div>
+                    {h.message && <div style={{ color: "rgba(20,17,15,.7)", marginTop: 2 }}>&ldquo;{h.message}&rdquo;</div>}
+                  </div>
+                ))}
+              </div>
+            </details>
           )}
 
           {/* Every email sent for this session, who got it, and whether it landed. */}

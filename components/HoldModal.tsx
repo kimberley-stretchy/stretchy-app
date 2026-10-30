@@ -14,6 +14,16 @@ import {
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
+// Tell HQ what the person was shown when something went wrong (see
+// /api/holds/error). Fire-and-forget: it must never get in the way.
+function reportBookingError(accessToken: string, body: { sessionId: string; stage: string; message: string; code?: string; quantity: number }) {
+  fetch("/api/holds/error", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(body),
+  }).catch(() => {});
+}
+
 const contactInput: React.CSSProperties = {
   width: "100%", height: 46, borderRadius: 12, padding: "0 14px",
   border: "1.5px solid rgba(26,26,26,0.2)", background: "#FFFFFF", color: "#14110F",
@@ -31,7 +41,7 @@ function CardForm({
   sessionId,
   attendeeId,
   authUserId,
-  paymentIntentId,
+  amountCents,
   mode,
   priceNZD,
   quantity,
@@ -39,13 +49,14 @@ function CardForm({
   late,
   askName,
   askPhone,
+  repricing,
   onClose,
 }: {
   sessionId: string;
   attendeeId: string;
   authUserId: string;
-  /** The PaymentIntent (joining after 36 hrs out) or SetupIntent (before) id. */
-  paymentIntentId: string;
+  /** What Elements was set up with (payment mode), in cents. */
+  amountCents: number;
   /** "setup" = just save the card (before 36 hrs out) · "payment" = hold the amount now. */
   mode: "setup" | "payment";
   priceNZD: number;
@@ -56,6 +67,8 @@ function CardForm({
   askName: boolean;
   /** We don't have a mobile for them — offer the field (optional). */
   askPhone: boolean;
+  /** The number of places just changed and the price is being updated. */
+  repricing: boolean;
   onClose: () => void;
 }) {
   const stripe = useStripe();
@@ -65,6 +78,11 @@ function CardForm({
   const [error, setError] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [phone, setPhone] = useState("");
+  const fail = (stage: string, message: string, code?: string) => {
+    setError(message);
+    setLoading(false);
+    reportBookingError(accessToken, { sessionId, stage, message, code, quantity });
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,25 +103,44 @@ function CardForm({
       });
       if (!contactRes.ok) {
         const data = await contactRes.json().catch(() => ({}));
-        setError(data.error ?? "Couldn’t save your details. Please try again.");
-        setLoading(false);
-        return;
+        return fail("details", data.error ?? "Couldn’t save your details. Please try again.");
       }
     }
 
-    // Before 36 hrs out the card is only saved (nothing held on the bank);
-    // after, the amount is held straight away.
+    // 1. Check the card details first. Nothing exists in Stripe until this
+    //    passes, so a half-filled form never leaves an "Incomplete" payment.
+    const { error: detailsError } = await elements.submit();
+    if (detailsError) return fail("card", detailsError.message ?? "Check your card details and try again.", detailsError.code);
+
+    // 2. Now start the booking: the server creates the SetupIntent (before
+    //    36 hrs out: card saved, nothing held) or PaymentIntent (after: the
+    //    amount is held), at today's price.
+    const startRes = await fetch("/api/holds", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ sessionId, quantity }),
+    }).catch(() => null);
+    const started = startRes ? await startRes.json().catch(() => ({})) : {};
+    if (!startRes || !startRes.ok || !started.clientSecret) return fail("start", started.error ?? "Could not start your booking. Please try again.");
+    const paymentIntentId: string = started.setupIntentId ?? started.paymentIntentId;
+    // Someone else joined in the last few seconds and the price dropped: hold the new, lower amount.
+    if (mode === "payment" && typeof started.amountCents === "number" && started.amountCents !== amountCents) {
+      elements.update({ amount: started.amountCents });
+      const { error: againError } = await elements.submit();
+      if (againError) return fail("card", againError.message ?? "Check your card details and try again.", againError.code);
+    }
+
+    // 3. Confirm with the bank.
     const confirmParams = { return_url: `${window.location.origin}/hold/${sessionId}` };
     const { error: stripeError } = mode === "setup"
-      ? await stripe.confirmSetup({ elements, redirect: "if_required", confirmParams })
-      : await stripe.confirmPayment({ elements, redirect: "if_required", confirmParams });
+      ? await stripe.confirmSetup({ elements, clientSecret: started.clientSecret, redirect: "if_required", confirmParams })
+      : await stripe.confirmPayment({ elements, clientSecret: started.clientSecret, redirect: "if_required", confirmParams });
     const intentField = mode === "setup" ? "setupIntentId" : "paymentIntentId";
 
     if (stripeError) {
       console.error("Stripe confirmPayment error:", stripeError);
       const detail = [stripeError.type, stripeError.code].filter(Boolean).join("/");
-      setError(`${stripeError.message ?? "Card error — please try again."}${detail ? ` (${detail})` : ""}`);
-      setLoading(false);
+      fail("bank", `${stripeError.message ?? "Card error — please try again."}${detail ? ` (${detail})` : ""}`, stripeError.decline_code ?? stripeError.code);
       // Tell the person (by email) and HQ. Fire-and-forget: the server checks
       // the payment itself, and never sends more than one pair per half hour.
       fetch("/api/holds/failed", {
@@ -123,12 +160,8 @@ function CardForm({
       body: JSON.stringify({ sessionId, [intentField]: paymentIntentId, attendeeId, authUserId, quantity }),
     });
 
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error ?? "Could not save your hold. Please try again.");
-      setLoading(false);
-      return;
-    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return fail("save", data.error ?? "Could not save your hold. Please try again.");
 
     // Ask for push notifications after successful hold (non-blocking)
     requestPushPermission(accessToken).catch(console.error);
@@ -207,13 +240,13 @@ function CardForm({
       )}
 
       <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
-        <button type="submit" disabled={loading || !stripe} style={{
+        <button type="submit" disabled={loading || !stripe || repricing} style={{
           width: "100%", padding: "18px", borderRadius: 999,
           background: loading ? "rgba(26,26,26,0.4)" : T.black,
           color: T.cream, border: "none", cursor: loading ? "not-allowed" : "pointer",
           fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 16, fontWeight: 700,
         }}>
-          {loading ? "Holding your place…" : "Hold my place"}
+          {loading ? "Holding your place…" : repricing ? "Updating the price…" : "Hold my place"}
         </button>
         <button type="button" onClick={onClose} disabled={loading} style={{
           width: "100%", padding: "14px", borderRadius: 999,
@@ -258,8 +291,9 @@ export default function HoldModal({
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [step, setStep] = useState<"loading" | "card" | "error">("loading");
-  const [clientSecret, setClientSecret] = useState("");
-  const [paymentIntentId, setPaymentIntentId] = useState("");
+  const [amountCents, setAmountCents] = useState(0);
+  // Changing the number of places re-prices without hiding the card form.
+  const [repricing, setRepricing] = useState(false);
   const [mode, setMode] = useState<"setup" | "payment">("payment");
   const [attendeeId, setAttendeeId] = useState("");
   const [authUserId, setAuthUserId] = useState("");
@@ -275,7 +309,8 @@ export default function HoldModal({
         "Content-Type": "application/json",
         "Authorization": `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({ sessionId, quantity }),
+      // Price only: nothing is created in Stripe until "Hold my place".
+      body: JSON.stringify({ sessionId, quantity, prepare: true }),
     })
       .then((r) => r.json())
       .then((data) => {
@@ -286,10 +321,10 @@ export default function HoldModal({
           }
           setErrorMsg(data.error);
           setStep("error");
+          reportBookingError(accessToken, { sessionId, stage: "start", message: data.error, quantity });
           return;
         }
-        setClientSecret(data.clientSecret);
-        setPaymentIntentId(data.setupIntentId ?? data.paymentIntentId);
+        setAmountCents(data.amountCents);
         setMode(data.mode === "setup" ? "setup" : "payment");
         setAttendeeId(data.attendeeId);
         setAuthUserId(data.authUserId);
@@ -297,10 +332,12 @@ export default function HoldModal({
         setAskName(!!data.profile?.needsName);
         setAskPhone(data.profile ? !data.profile.hasPhone : false);
         setStep("card");
+        setRepricing(false);
       })
       .catch(() => {
         setErrorMsg("Could not connect. Please try again.");
         setStep("error");
+        setRepricing(false);
       });
   }, [sessionId, accessToken, quantity]);
 
@@ -331,7 +368,7 @@ export default function HoldModal({
               <button
                 key={n}
                 type="button"
-                onClick={() => { if (n !== quantity) { setQuantity(n); setStep("loading"); } }}
+                onClick={() => { if (n !== quantity) { setQuantity(n); if (step === "card") setRepricing(true); else setStep("loading"); } }}
                 style={{
                   width: 36, height: 36, borderRadius: 999, border: "none", cursor: "pointer",
                   fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700,
@@ -369,12 +406,21 @@ export default function HoldModal({
           </div>
         )}
 
-        {step === "card" && clientSecret && (
+        {step === "card" && (
+          // "Deferred" Elements: the card form is shown with today's amount,
+          // and the Stripe payment itself is only created when they press
+          // "Hold my place". These settings must match lib's PaymentIntent /
+          // SetupIntent in app/api/holds/route.ts.
           <Elements
-            key={clientSecret}
+            key={mode}
             stripe={stripePromise}
             options={{
-              clientSecret,
+              ...(mode === "payment"
+                ? { mode: "payment" as const, amount: amountCents, captureMethod: "manual" as const }
+                : { mode: "setup" as const }),
+              currency: "nzd",
+              setupFutureUsage: "off_session",
+              paymentMethodTypes: ["card"],
               appearance: {
                 theme: "stripe",
                 variables: {
@@ -391,7 +437,7 @@ export default function HoldModal({
               sessionId={sessionId}
               attendeeId={attendeeId}
               authUserId={authUserId}
-              paymentIntentId={paymentIntentId}
+              amountCents={amountCents}
               mode={mode}
               priceNZD={priceNZD}
               quantity={quantity}
@@ -399,6 +445,7 @@ export default function HoldModal({
               late={late}
               askName={askName}
               askPhone={askPhone}
+              repricing={repricing}
               onClose={onClose}
             />
           </Elements>

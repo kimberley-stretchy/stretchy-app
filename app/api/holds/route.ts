@@ -64,8 +64,12 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ holds: data ?? [] });
 }
 
-// POST /api/holds — step 1: create Stripe PaymentIntent, return clientSecret
-// Body: { sessionId }
+// POST /api/holds — step 1 of booking. Body: { sessionId, quantity, prepare? }
+//   prepare: true → only work out the price and mode for the booking pop-up.
+//     Nothing is created in Stripe, so opening the pop-up or changing the
+//     number of places no longer leaves "Incomplete" payments behind.
+//   otherwise (when the person presses "Hold my place") → create the Stripe
+//     SetupIntent / PaymentIntent and return its clientSecret to confirm.
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -164,6 +168,23 @@ export async function POST(request: NextRequest) {
     attendee = newAttendee;
   }
 
+  const profile = {
+    needsName: !attendee?.name || attendee.name.includes("@") || attendee.name === (user.email ?? "").split("@")[0],
+    hasPhone: !!attendee?.phone,
+  };
+  if (body.prepare === true) {
+    return NextResponse.json({
+      mode: timePhase === "before36" ? "setup" : "payment",
+      amountCents,
+      authUserId: user.id,
+      quantity,
+      priceNZD: priceWithGST,
+      sessionTitle: session.title,
+      attendeeId: attendee?.id,
+      profile,
+    });
+  }
+
   async function createFreshCustomer() {
     const customer = await stripe.customers.create({
       email: user!.email!,
@@ -239,6 +260,7 @@ export async function POST(request: NextRequest) {
       mode: "setup",
       clientSecret: setupIntent.client_secret,
       setupIntentId: setupIntent.id,
+      amountCents,
       authUserId: user.id,
       quantity,
       priceNZD: priceWithGST,
@@ -279,6 +301,7 @@ export async function POST(request: NextRequest) {
     mode: "payment",
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
+    amountCents,
     authUserId: user.id,
     quantity,
     priceNZD: priceWithGST,
