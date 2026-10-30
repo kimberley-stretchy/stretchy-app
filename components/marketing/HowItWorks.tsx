@@ -6,7 +6,9 @@ import { NewTabLink, CANCELLATION_POLICY_HREF } from "@/components/PolicyLinks";
 
 // The five beats, in the same words used on session pages, emails and the
 // Terms (STRETCHY_WORDS.md). COPY_REFRESH_HANDOVER.md section 2.
-const CARDS: { n: string; timing: string; title: string; body: string; cta?: string; simulator?: boolean }[] = [
+export type LastSession = { title: string; startsAt: string; people: number; finalPrice: number; maxPrice: number };
+
+const CARDS: { n: string; timing: string; title: string; body: string; cta?: string; simulator?: boolean; lastTime?: boolean }[] = [
   {
     n: "01",
     timing: "NOW",
@@ -32,6 +34,7 @@ const CARDS: { n: string; timing: string; title: string; body: string; cta?: str
     timing: "2 HRS OUT",
     title: "Final price charged",
     body: "Joining closes and we charge your card the final price. The more who joined, the less it is. Never more than the max price shown.",
+    lastTime: true,
   },
   {
     n: "05",
@@ -85,16 +88,36 @@ function PriceSimulator({ costBase, revenueTarget, minMats, maxMats }: { costBas
   );
 }
 
+// Step 04's social proof: what the last session ended up at. Updates itself
+// after every session (app/page.tsx → getLastSession).
+function LastTime({ s }: { s: LastSession }) {
+  const day = new Date(s.startsAt).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" });
+  const where = s.title.split("|")[0].trim();
+  return (
+    <div className="mt-auto pt-[14px] border-t-2 border-ink">
+      <div className="font-mono text-[10px] font-extrabold tracking-[0.12em] uppercase">Last time · {where} · {day}</div>
+      <div className="font-mono text-[22px] lg:text-[20px] font-extrabold tracking-[0.02em] leading-tight mt-1.5">
+        {formatPrice(s.finalPrice)} each
+      </div>
+      <p className="m-0 mt-1 text-[12.5px] leading-[1.45]">
+        <strong>{s.people} people joined</strong>, so everyone paid {formatPrice(s.finalPrice)} instead of the {formatPrice(s.maxPrice)} max.
+      </p>
+    </div>
+  );
+}
+
 export default function HowItWorks({
   costBase = 199.49,
   revenueTarget = 120,
   minMats = 14,
   maxMats = 30,
+  lastSession = null,
 }: {
   costBase?: number;
   revenueTarget?: number;
   minMats?: number;
   maxMats?: number;
+  lastSession?: LastSession | null;
 }) {
   return (
     <div
@@ -130,6 +153,7 @@ export default function HowItWorks({
                 {c.cta}
               </a>
             )}
+            {c.lastTime && lastSession && <LastTime s={lastSession} />}
             {c.simulator && (
               <PriceSimulator costBase={costBase} revenueTarget={revenueTarget} minMats={minMats} maxMats={maxMats} />
             )}

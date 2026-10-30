@@ -78,6 +78,8 @@ function CardForm({
   const [error, setError] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [phone, setPhone] = useState("");
+  // Stripe's card form loads in a few seconds; pressing before then can't work.
+  const [formReady, setFormReady] = useState(false);
   const fail = (stage: string, message: string, code?: string) => {
     setError(message);
     setLoading(false);
@@ -226,7 +228,7 @@ function CardForm({
       {/* Stripe's own small print ("…charge your card for future payments in
           accordance with their terms") reads as open-ended. Ours says exactly
           what this card can be charged for. */}
-      <PaymentElement options={{ layout: "tabs", terms: { card: "never" } }} />
+      <PaymentElement options={{ layout: "tabs", terms: { card: "never" } }} onReady={() => setFormReady(true)} />
       <p style={{ marginTop: 12, fontSize: 13, color: "rgba(26,26,26,0.6)", lineHeight: 1.5 }}>
         By saving your card, you agree Stretchy can charge it for this booking: the final price,
         2 hours before the session, and never more than ${(priceNZD * quantity).toFixed(2)}
@@ -240,13 +242,13 @@ function CardForm({
       )}
 
       <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
-        <button type="submit" disabled={loading || !stripe || repricing} style={{
+        <button type="submit" disabled={loading || !stripe || repricing || !formReady} style={{
           width: "100%", padding: "18px", borderRadius: 999,
           background: loading ? "rgba(26,26,26,0.4)" : T.black,
           color: T.cream, border: "none", cursor: loading ? "not-allowed" : "pointer",
           fontFamily: "'Space Grotesk', system-ui, sans-serif", fontSize: 16, fontWeight: 700,
         }}>
-          {loading ? "Holding your place…" : repricing ? "Updating the price…" : "Hold my place"}
+          {loading ? "Holding your place…" : !formReady ? "Loading card form…" : repricing ? "Updating the price…" : "Hold my place"}
         </button>
         <button type="button" onClick={onClose} disabled={loading} style={{
           width: "100%", padding: "14px", borderRadius: 999,
