@@ -103,19 +103,6 @@ function EditDetails({ p, onDone }: { p: Person; onDone: (saved: boolean) => voi
       >
         Reset their authenticator (new phone)
       </button>
-      {/* Resend the "how to sign in" email (copied to HQ). */}
-      <button
-        type="button"
-        onClick={async () => {
-          if (!confirm(`Email ${p.name} how to sign in to the team view? HQ gets a copy.`)) return;
-          const res = await fetch("/api/admin/people/welcome", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hostId: p.id }) }).catch(() => null);
-          const d = res ? await res.json().catch(() => ({})) : {};
-          alert(res && res.ok ? `Sent to ${d.email}, copied to HQ.` : d.error ?? "Couldn’t send it. Try again.");
-        }}
-        style={{ alignSelf: "flex-start", background: "none", border: "none", padding: 0, fontSize: 12.5, fontWeight: 700, color: INK, textDecoration: "underline", cursor: "pointer" }}
-      >
-        Send sign-in email
-      </button>
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={save} disabled={busy} style={{ height: 38, padding: "0 18px", borderRadius: 999, border: "none", background: INK, color: "#F7F0E8", fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: busy ? 0.6 : 1 }}>
           {busy ? "Saving…" : "Save details"}
@@ -232,13 +219,32 @@ export default function PeopleSection({
 
                 {expanded && hasDetail && editingId !== p.id && (
                   <div style={{ borderTop: "1px solid rgba(20,17,15,.12)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-                    {p.editable && onEdited && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setEditingId(p.id); }}
-                        style={{ alignSelf: "flex-start", height: 30, padding: "0 14px", borderRadius: 999, border: `1.5px solid ${INK}`, background: "#FCBB16", color: INK, fontWeight: 700, fontSize: 12, cursor: "pointer" }}
-                      >
-                        Edit details
-                      </button>
+                    {p.editable && (
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {onEdited && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingId(p.id); }}
+                            style={{ height: 30, padding: "0 14px", borderRadius: 999, border: `1.5px solid ${INK}`, background: "#FCBB16", color: INK, fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+                          >
+                            Edit details
+                          </button>
+                        )}
+                        {/* Send (or resend) the "how to sign in" email, copied to HQ. */}
+                        {p.email && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm(`Email ${p.name} how to sign in to the team view? HQ gets a copy.`)) return;
+                              const res = await fetch("/api/admin/people/welcome", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hostId: p.id }) }).catch(() => null);
+                              const d = res ? await res.json().catch(() => ({})) : {};
+                              alert(res && res.ok ? `Sent to ${d.email}, copied to HQ.` : d.error ?? "Couldn’t send it. Try again.");
+                            }}
+                            style={{ height: 30, padding: "0 14px", borderRadius: 999, border: `1.5px solid ${INK}`, background: "transparent", color: INK, fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+                          >
+                            Send sign-in email
+                          </button>
+                        )}
+                      </div>
                     )}
                     <p style={{ fontSize: 12, color: "rgba(20,17,15,.7)", margin: 0 }}>
                       📞 {p.phone ? <a href={`tel:${p.phone.replace(/[^\d+]/g, "")}`} style={{ color: INK, fontWeight: 600 }}>{p.phone}</a> : <span style={{ color: "rgba(20,17,15,.45)" }}>{p.editable ? "No phone yet" : "—"}</span>}
