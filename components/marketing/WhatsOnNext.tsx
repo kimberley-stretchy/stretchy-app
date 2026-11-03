@@ -179,10 +179,10 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
 
 export default function WhatsOnNext({
   sessions,
-  notifySession,
+  notifySessions,
 }: {
   sessions: MarketingSession[];
-  notifySession: MarketingSession | null;
+  notifySessions: MarketingSession[];
 }) {
   return (
     <div id="whats-on" className="bg-cream border-t-2 border-ink px-[18px] py-[26px] lg:p-[60px_44px] flex flex-col gap-[18px] lg:gap-[26px]">
@@ -201,33 +201,33 @@ export default function WhatsOnNext({
         </div>
       )}
 
-      {notifySession && (
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-5 border-2 border-dashed border-ink/75 rounded-[18px] lg:rounded-[20px] p-[18px] lg:p-[20px_24px] text-ink/75">
+      {notifySessions.map((n) => (
+        <div key={n.id} className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-5 border-2 border-dashed border-ink/75 rounded-[18px] lg:rounded-[20px] p-[18px] lg:p-[20px_24px] text-ink/75">
           <div className="lg:min-w-[280px]">
             <div className="font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em]">ALSO COMING UP</div>
             <div className="font-display text-[22px] lg:text-[23px] leading-none mt-1.5">
-              {(notifySession.title ?? `${notifySession.location_name} | ${timeOfDay(notifySession.starts_at)}`).toUpperCase()}
+              {(n.title ?? `${n.location_name} | ${timeOfDay(n.starts_at)}`).toUpperCase()}
             </div>
             <div className="flex flex-wrap gap-1.5 mt-2.5">
               <span className="font-mono text-[10px] lg:text-[11px] font-extrabold tracking-[0.06em] uppercase border-2 border-ink/75 rounded-pill px-2.5 py-1">
-                {formatDay(notifySession.starts_at)}
+                {formatDay(n.starts_at)}
               </span>
               <span className="font-mono text-[10px] lg:text-[11px] font-extrabold tracking-[0.06em] uppercase border-2 border-ink/75 rounded-pill px-2.5 py-1">
-                {formatTimeRange(notifySession.starts_at, notifySession.duration_mins)}
+                {formatTimeRange(n.starts_at, n.duration_mins)}
               </span>
             </div>
             <div className="text-xs lg:text-[13px] font-semibold mt-2.5">
-              {formatPrice(calculatePrice(notifySession.cost_base, notifySession.revenue_target, notifySession.min_attendees))} max &middot; {notifySession.min_attendees} needed
+              {formatPrice(calculatePrice(n.cost_base, n.revenue_target, n.min_attendees))} max &middot; {n.min_attendees} needed
             </div>
           </div>
           <Link
-            href={`/sessions/${notifySession.id}`}
+            href={`/sessions/${n.id}`}
             className="w-full lg:w-auto inline-flex items-center justify-center h-11 px-6 bg-ink/75 text-cream rounded-pill text-sm font-bold whitespace-nowrap"
           >
             Hold my place
           </Link>
         </div>
-      )}
+      ))}
 
       <Link
         href="/sessions"

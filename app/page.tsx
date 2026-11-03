@@ -51,10 +51,10 @@ async function getLastSession(): Promise<LastSession | null> {
   };
 }
 
-async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify: MarketingSession | null }> {
+async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify: MarketingSession[] }> {
   const admin = getAdmin();
 
-  const { data: sessions, error } = await admin
+  const { data: all, error } = await admin
     .from("sessions")
     .select(`
       id, title, movement_type, starts_at, duration_mins, location_name,
@@ -66,10 +66,23 @@ async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify
     .eq("is_draft", false)
     .gt("starts_at", new Date().toISOString())
     .order("starts_at", { ascending: true })
-    .limit(6);
+    .limit(300);
 
   if (error) console.error("getUpcomingSessions error:", error.message);
-  if (!sessions || sessions.length === 0) return { open: [], notify: null };
+  if (!all || all.length === 0) return { open: [], notify: [] };
+
+  // The next three sessions, plus the first session of any other location /
+  // time (St Heliers | Evening, Ponsonby | Evening…) so people can see what's
+  // coming, however far out it is. New locations appear here by themselves.
+  const key = (t: string | null) => (t ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const shown = new Set(all.slice(0, 3).map((s) => key(s.title)));
+  const firstOfEach = all.slice(3).filter((s) => {
+    const k = key(s.title);
+    if (shown.has(k)) return false;
+    shown.add(k);
+    return true;
+  });
+  const sessions = [...all.slice(0, 3), ...firstOfEach];
 
   const sessionIds = sessions.map((s) => s.id);
   const { data: holds } = await admin
@@ -104,7 +117,7 @@ async function getUpcomingSessions(): Promise<{ open: MarketingSession[]; notify
 
   return {
     open: mapped.slice(0, 2),
-    notify: mapped.length > 2 ? mapped[2] : null,
+    notify: mapped.slice(2),
   };
 }
 
@@ -237,7 +250,7 @@ export default async function HomePage() {
         maxMats={pricingSource.max_attendees}
         lastSession={lastSession}
       />
-      <WhatsOnNext sessions={sessionsToShow} notifySession={notify} />
+      <WhatsOnNext sessions={sessionsToShow} notifySessions={notify} />
       <SuggestBand suggestions={suggestionsToShow} />
       <SocialStretchBand />
       <OpportunitiesBand />
