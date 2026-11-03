@@ -201,9 +201,12 @@ export default function WhatsOnNext({
         </div>
       )}
 
+      {/* Side by side on desktop (one row), stacked on phones. */}
+      {notifySessions.length > 0 && (
+      <div className={`flex flex-col gap-4 lg:grid lg:gap-5 lg:items-stretch ${notifySessions.length === 1 ? "lg:grid-cols-1" : notifySessions.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3"}`}>
       {notifySessions.map((n) => (
-        <div key={n.id} className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-5 border-2 border-dashed border-ink/75 rounded-[18px] lg:rounded-[20px] p-[18px] lg:p-[20px_24px] text-ink/75">
-          <div className="lg:min-w-[280px]">
+        <div key={n.id} className="flex flex-col justify-between gap-4 lg:gap-5 border-2 border-dashed border-ink/75 rounded-[18px] lg:rounded-[20px] p-[18px] lg:p-[20px_24px] text-ink/75">
+          <div>
             <div className="font-mono text-[9px] lg:text-[10px] font-extrabold tracking-[0.11em] lg:tracking-[0.12em]">ALSO COMING UP</div>
             <div className="font-display text-[22px] lg:text-[23px] leading-none mt-1.5">
               {(n.title ?? `${n.location_name} | ${timeOfDay(n.starts_at)}`).toUpperCase()}
@@ -222,12 +225,14 @@ export default function WhatsOnNext({
           </div>
           <Link
             href={`/sessions/${n.id}`}
-            className="w-full lg:w-auto inline-flex items-center justify-center h-11 px-6 bg-ink/75 text-cream rounded-pill text-sm font-bold whitespace-nowrap"
+            className="w-full inline-flex items-center justify-center h-11 px-6 bg-ink/75 text-cream rounded-pill text-sm font-bold whitespace-nowrap"
           >
             Hold my place
           </Link>
         </div>
       ))}
+      </div>
+      )}
 
       <Link
         href="/sessions"
