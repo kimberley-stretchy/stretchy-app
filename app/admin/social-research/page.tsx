@@ -2,14 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import HQShell from "@/components/hq/HQShell";
-import { RESEARCH_SECTIONS, RESEARCH_QUESTIONS, hasOtherBox, otherLabel } from "@/lib/socialResearch";
+import { RESEARCH_SECTIONS, RESEARCH_QUESTIONS, RETIRED_QUESTIONS, DIRECT_SOURCE, hasOtherBox, otherLabel } from "@/lib/socialResearch";
 
 // HQ → stretchy.social research: answers to the stretchy.social/research
 // survey. Tallies per question first (how many picked each answer), then the
-// written answers, then each response in full, with a CSV download.
+// written answers, then each response in full, with a CSV download. General
+// comments are feedback that came another way (email, DM, chat), added by hand
+// and tagged with themes so trends can be counted as more come in.
 
 const T = { ink: "#14110F", cream: "#F7F0E8", mono: "'JetBrains Mono', monospace", body: "'Space Grotesk', system-ui, sans-serif", display: "'BN Chubb', 'Space Grotesk', sans-serif" };
 type Item = { id: string; created_at: string; name: string | null; organisation: string | null; email: string | null; website: string | null; source: string | null; answers: Record<string, string | string[]> };
+const themesOf = (i: Item) => (Array.isArray(i.answers.themes) ? i.answers.themes : []);
 
 const when = (iso: string) => new Date(iso).toLocaleString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 const answerText = (i: Item, k: string) => {
@@ -20,27 +23,59 @@ const answerText = (i: Item, k: string) => {
 
 function csv(items: Item[]): string {
   const cell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const head = ["date", "name", "organisation", "email", "website", "source", ...RESEARCH_QUESTIONS.map((q) => `${q.n}. ${q.q}`)];
-  return [head.map(cell).join(","), ...items.map((i) => [when(i.created_at), i.name, i.organisation, i.email, i.website, i.source, ...RESEARCH_QUESTIONS.map((q) => answerText(i, q.k))].map(cell).join(","))].join("\n");
+  const head = ["date", "name", "organisation", "email", "website", "source", ...RESEARCH_QUESTIONS.map((q) => `${q.n}. ${q.q}`), ...RETIRED_QUESTIONS.map((q) => q.q), "General comment", "Themes"];
+  return [head.map(cell).join(","), ...items.map((i) => [when(i.created_at), i.name, i.organisation, i.email, i.website, i.source, ...RESEARCH_QUESTIONS.map((q) => answerText(i, q.k)), ...RETIRED_QUESTIONS.map((q) => answerText(i, q.k)), i.answers.general_comment, themesOf(i).join("; ")].map(cell).join(","))].join("\n");
 }
 
 const card: React.CSSProperties = { background: "#fff", border: `2px solid ${T.ink}`, borderRadius: 16, padding: 16 };
+const field: React.CSSProperties = { padding: "9px 12px", borderRadius: 10, border: `2px solid ${T.ink}`, background: "#fff", color: T.ink, fontFamily: T.body, fontSize: 14, outline: "none", width: "100%", boxSizing: "border-box" };
 const label: React.CSSProperties = { fontFamily: T.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: "rgba(20,17,15,.55)", textTransform: "uppercase" };
 
 export default function AdminSocialResearchPage() {
-  const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [setupMsg, setSetupMsg] = useState<string | null>(null);
-  const [view, setView] = useState<"tallies" | "responses">("tallies");
+  const [view, setView] = useState<"tallies" | "responses" | "comments">("tallies");
+  const [all, setAll] = useState<Item[]>([]);
+  const [form, setForm] = useState({ name: "", organisation: "", channel: "", comment: "", themes: "" });
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/social-research").then((r) => r.json()).then((d) => { setItems(Array.isArray(d.items) ? d.items : []); if (d.setupNeeded) setSetupMsg(d.error); }).catch(() => {}).finally(() => setLoading(false));
+    fetch("/api/admin/social-research").then((r) => r.json()).then((d) => { setAll(Array.isArray(d.items) ? d.items : []); if (d.setupNeeded) setSetupMsg(d.error); }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
+  const items = useMemo(() => all.filter((i) => i.source !== DIRECT_SOURCE), [all]);
+  const comments = useMemo(() => all.filter((i) => i.source === DIRECT_SOURCE), [all]);
   const withContact = useMemo(() => items.filter((i) => i.email || i.name).length, [items]);
+  // Themes across general comments, most mentioned first.
+  const themeCounts = useMemo(() => {
+    const m = new Map<string, { label: string; n: number }>();
+    comments.forEach((c) => themesOf(c).forEach((t) => {
+      const k = t.toLowerCase();
+      m.set(k, { label: m.get(k)?.label ?? t, n: (m.get(k)?.n ?? 0) + 1 });
+    }));
+    return Array.from(m.values()).sort((a, b) => b.n - a.n);
+  }, [comments]);
+
+  async function addComment() {
+    setSaving(true);
+    setFormError(null);
+    const res = await fetch("/api/admin/social-research", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) }).catch(() => null);
+    const d = res ? await res.json().catch(() => ({})) : {};
+    setSaving(false);
+    if (!res || !res.ok) return setFormError(d.error ?? "Couldn’t save that. Try again.");
+    setAll((a) => [d.item, ...a]);
+    setForm({ name: "", organisation: "", channel: "", comment: "", themes: "" });
+  }
+
+  async function removeComment(c: Item) {
+    if (!confirm(`Delete this comment${c.name ? ` from ${c.name}` : ""}?`)) return;
+    const res = await fetch(`/api/admin/social-research?id=${c.id}`, { method: "DELETE" }).catch(() => null);
+    if (res && res.ok) setAll((a) => a.filter((x) => x.id !== c.id));
+  }
 
   function download() {
-    const blob = new Blob([csv(items)], { type: "text/csv" });
+    const blob = new Blob([csv(all)], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "stretchy-social-research.csv";
@@ -60,18 +95,18 @@ export default function AdminSocialResearchPage() {
           </p>
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-            {(["tallies", "responses"] as const).map((v) => (
+            {(["tallies", "responses", "comments"] as const).map((v) => (
               <button key={v} onClick={() => setView(v)} style={{ padding: "8px 16px", borderRadius: 999, border: `2px solid ${T.ink}`, background: view === v ? T.ink : "transparent", color: view === v ? T.cream : T.ink, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                {v === "tallies" ? "Tallies" : "Each response"}
+                {v === "tallies" ? "Tallies" : v === "responses" ? "Each response" : `General comments · ${comments.length}`}
               </button>
             ))}
-            {items.length > 0 && (
+            {all.length > 0 && (
               <button onClick={download} style={{ marginLeft: "auto", padding: "8px 16px", borderRadius: 999, border: `2px solid ${T.ink}`, background: "transparent", color: T.ink, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Download CSV</button>
             )}
           </div>
 
           {setupMsg && <p style={{ fontSize: 14, fontWeight: 700, color: "#C6362E" }}>{setupMsg}</p>}
-          {!loading && items.length === 0 && !setupMsg && <p style={{ fontSize: 14, color: "rgba(20,17,15,.55)" }}>No responses yet.</p>}
+          {!loading && items.length === 0 && !setupMsg && view !== "comments" && <p style={{ fontSize: 14, color: "rgba(20,17,15,.55)" }}>No responses yet.</p>}
 
           {items.length > 0 && view === "tallies" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -113,6 +148,56 @@ export default function AdminSocialResearchPage() {
                   })}
                 </div>
               ))}
+              {RETIRED_QUESTIONS.map((q) => {
+                const counts = new Map<string, number>();
+                items.forEach((i) => { const v = i.answers[q.k]; if (typeof v === "string" && v) counts.set(v, (counts.get(v) ?? 0) + 1); });
+                if (counts.size === 0) return null;
+                return (
+                  <div key={q.k} style={card}>
+                    <span style={label}>No longer asked</span>
+                    <p style={{ margin: "6px 0 6px", fontWeight: 700, fontSize: 13.5 }}>{q.q}</p>
+                    {Array.from(counts.entries()).map(([a, n]) => <p key={a} style={{ margin: "2px 0", fontSize: 12.5 }}>{a}: <strong>{n}</strong></p>)}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {view === "comments" && !setupMsg && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ ...card, display: "flex", flexDirection: "column", gap: 8 }}>
+                <span style={label}>Add a comment · from an email, DM or chat</span>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 8 }}>
+                  <input placeholder="Who (optional)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={field} />
+                  <input placeholder="Organisation (optional)" value={form.organisation} onChange={(e) => setForm({ ...form, organisation: e.target.value })} style={field} />
+                  <input placeholder="How it came: email, DM, chat" value={form.channel} onChange={(e) => setForm({ ...form, channel: e.target.value })} style={field} />
+                </div>
+                <textarea rows={5} placeholder="What they said" value={form.comment} onChange={(e) => setForm({ ...form, comment: e.target.value })} style={{ ...field, resize: "vertical" }} />
+                <input list="research-themes" placeholder="Themes, separated by commas, e.g. Uses studio booking systems, Keen to beta test" value={form.themes} onChange={(e) => setForm({ ...form, themes: e.target.value })} style={field} />
+                <datalist id="research-themes">{themeCounts.map((t) => <option key={t.label} value={t.label} />)}</datalist>
+                {formError && <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#C6362E" }}>{formError}</p>}
+                <button onClick={addComment} disabled={saving || !form.comment.trim()} style={{ alignSelf: "flex-start", padding: "8px 16px", borderRadius: 999, border: `2px solid ${T.ink}`, background: "transparent", color: T.ink, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: saving || !form.comment.trim() ? 0.4 : 1 }}>{saving ? "Saving…" : "Add comment"}</button>
+              </div>
+              {themeCounts.length > 0 && (
+                <div style={{ ...card, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <span style={label}>Trends · themes across {comments.length} comment{comments.length === 1 ? "" : "s"}</span>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {themeCounts.map((t) => <span key={t.label} style={{ fontSize: 12.5, padding: "4px 10px", borderRadius: 999, border: `1.5px solid ${T.ink}` }}>{t.label} <strong>{t.n}</strong></span>)}
+                  </div>
+                </div>
+              )}
+              {comments.map((c) => (
+                <div key={c.id} style={card}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                    <strong>{[c.name, c.organisation].filter(Boolean).join(", ") || "Anonymous"}</strong>
+                    <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(20,17,15,.55)" }}>{when(c.created_at).toUpperCase()}{c.answers.channel ? ` · ${String(c.answers.channel).toUpperCase()}` : ""}</span>
+                  </div>
+                  <p style={{ margin: "8px 0 0", fontSize: 13.5, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{String(c.answers.general_comment ?? "")}</p>
+                  {themesOf(c).length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>{themesOf(c).map((t) => <span key={t} style={{ fontSize: 11.5, padding: "3px 9px", borderRadius: 999, border: `1.5px solid ${T.ink}` }}>{t}</span>)}</div>}
+                  <button onClick={() => removeComment(c)} style={{ marginTop: 8, background: "none", border: "none", padding: 0, fontSize: 12, textDecoration: "underline", color: "rgba(20,17,15,.6)", cursor: "pointer" }}>Delete</button>
+                </div>
+              ))}
+              {comments.length === 0 && !loading && <p style={{ fontSize: 14, color: "rgba(20,17,15,.55)", margin: 0 }}>No general comments yet.</p>}
             </div>
           )}
 
@@ -129,12 +214,12 @@ export default function AdminSocialResearchPage() {
                       {i.email && <a href={`mailto:${i.email}`} style={{ color: T.ink }}>{i.email}</a>}{i.email && i.website ? " · " : ""}{i.website}
                     </p>
                   )}
-                  {RESEARCH_QUESTIONS.map((q) => {
+                  {[...RESEARCH_QUESTIONS.map((q) => ({ k: q.k, q: `${q.n}. ${q.q}` })), ...RETIRED_QUESTIONS].map((q) => {
                     const t = answerText(i, q.k);
                     if (!t) return null;
                     return (
                       <p key={q.k} style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.45 }}>
-                        <span style={label}>{q.n}. {q.q}</span><br />{t}
+                        <span style={label}>{q.q}</span><br />{t}
                       </p>
                     );
                   })}
