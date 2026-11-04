@@ -70,13 +70,14 @@ export const RESEARCH_SECTIONS: ResearchSection[] = [
   {
     title: "Your priorities",
     questions: [
-      { k: "matters", n: 10, q: "What matters most when you’re organising an event, session or gathering?", type: "multi", max: 2, hint: "Select up to two.", other: true, options: [
+      { k: "why_in_person", n: 10, q: "Why do you hold in-person events, classes or offerings? Why does it matter to you and your business?", type: "text", hint: "Optional short answer." },
+      { k: "matters", n: 11, q: "What matters most when you’re organising an event, session or gathering?", type: "multi", max: 2, hint: "Select up to two.", other: true, options: [
         "Creating a great experience for everyone who takes part", "Making the experience as accessible and affordable as possible",
         "Covering our costs, with a fair amount of revenue left over", "Growing attendance and bringing more people into our community",
         "Generating as much revenue or profit as possible", "Raising as much money as possible for a cause", "Building a sustainable, ongoing programme or business",
         "Creating social impact or a positive community outcome", "Testing new ideas without taking on too much financial risk",
       ] },
-      { k: "top_priority", n: 11, q: "If you had to choose, which is your biggest priority?", type: "one", hint: "Select one.", other: true, options: [
+      { k: "top_priority", n: 12, q: "If you had to choose, which is your biggest priority?", type: "one", hint: "Select one.", other: true, options: [
         "The experience and impact we create", "Making it accessible to as many people as possible", "Covering costs and making a sustainable return",
         "Maximising revenue or profit", "Growing our community and attendance",
       ] },
@@ -89,16 +90,16 @@ export const RESEARCH_SECTIONS: ResearchSection[] = [
       "For example, a yoga class might need a certain amount of revenue to cover the teacher and venue. As more people join, that cost can be shared across the group. A community event might work towards a minimum attendance number or a shared fundraising goal.",
     ],
     questions: [
-      { k: "appeal", n: 12, q: "How appealing is this idea for the gatherings you organise?", type: "one", options: [
+      { k: "appeal", n: 13, q: "How appealing is this idea for the gatherings you organise?", type: "one", options: [
         "Very appealing", "Somewhat appealing", "Not sure — I’d need to understand how it works", "Not very appealing", "Not relevant to us",
       ] },
-      { k: "useful_for", n: 13, q: "Where could this model be useful for you?", type: "multi", hint: "Select all that apply.", other: true, options: [
+      { k: "useful_for", n: 14, q: "Where could this model be useful for you?", type: "multi", hint: "Select all that apply.", other: true, options: [
         "Making sessions or events more affordable", "Getting more people to commit and attend", "Reaching a minimum number before confirming an event",
         "Sharing fixed costs across a group", "Helping fundraise for a cause", "Encouraging people to invite friends or bring others along",
         "Testing a new event before committing to larger costs", "Making workshops or training more accessible", "I don’t see a clear use for it yet",
       ] },
-      { k: "need_to_trust", n: 14, q: "What would you need to understand or trust before trying it?", type: "text", hint: "Optional short answer." },
-      { k: "concerns", n: 15, q: "What concerns, if any, would you have?", type: "multi", hint: "Select all that apply.", other: true, options: [
+      { k: "need_to_trust", n: 15, q: "What would you need to understand or trust before trying it?", type: "text", hint: "Optional short answer." },
+      { k: "concerns", n: 16, q: "What concerns, if any, would you have?", type: "multi", hint: "Select all that apply.", other: true, options: [
         "The pricing mechanics might be confusing", "The final price might be unpredictable", "It could be difficult to explain to participants",
         "It might make budgeting harder for organisers", "Payment, cancellation or refund rules could be complicated", "It might not suit the way our events operate",
         "I don’t have any concerns",
@@ -109,7 +110,7 @@ export const RESEARCH_SECTIONS: ResearchSection[] = [
     title: "How would you use it?",
     intro: ["Stretchy is exploring a booking and payment platform that organisations could use on their own website, with their own branding, rather than having to move their community to a new marketplace."],
     questions: [
-      { k: "setup", n: 16, q: "Which booking setup would work best for your organisation?", type: "one", options: [
+      { k: "setup", n: 17, q: "Which booking setup would work best for your organisation?", type: "one", options: [
         "Embedded booking widget: booking and pricing sit directly within our existing website and brand.",
         "Our own branded booking page: a separate booking page with our logo, colours and identity, which we can link to from our website or social channels.",
         "Fully white-labelled platform: a more integrated experience under our own brand, potentially including a custom domain, deeper website integration and customised functionality.",
@@ -117,33 +118,46 @@ export const RESEARCH_SECTIONS: ResearchSection[] = [
         "A shared marketplace: people discover and book events from different organisations through one central platform.",
         "Not sure — I’d like to see the options.",
       ] },
-      { k: "pay_how", n: 17, q: "How would you prefer to pay for a platform like this?", type: "one", options: [
+      { k: "pay_how", n: 18, q: "How would you prefer to pay for a platform like this?", type: "one", options: [
         "A small flat fee each time we run a session or event", "A monthly subscription for regular use", "A combination of a monthly subscription and a lower fee per session",
         "A one-off setup fee", "Free to use, with another way to fund the platform", "We wouldn’t pay for this", "Not sure",
       ] },
-      { k: "per_session_fee", n: 18, q: "If a one-off session cost $5–$10 to run through Stretchy, excluding payment-processing fees, how would that feel?", type: "one", options: [
-        "Very affordable", "Reasonable", "A little expensive", "Too expensive", "It depends on the event or the value provided", "We would only consider a subscription", "Not sure",
+      { k: "oneoff_fee", n: 19, q: "What would you expect to pay for one-off events?", type: "one", options: [
+        "Under $5 per event", "$5–$10 per event", "$11–$20 per event", "$21–$50 per event", "More than $50 per event",
+        "A percentage of ticket sales instead", "We wouldn’t pay for this", "Not sure",
       ] },
-      { k: "monthly", n: 19, q: "What would you expect to pay for ongoing use?", type: "one", options: [
+      { k: "monthly", n: 20, q: "What would you expect to pay for ongoing use?", type: "one", options: [
         "Under $20/month", "$20–$39/month", "$40–$79/month", "$80–$149/month", "$150+/month for a more customised or white-labelled setup",
         "I’d rather pay per event", "We wouldn’t pay for this", "Not sure",
       ] },
-      { k: "try_it", n: 20, q: "What would make you most likely to try it?", type: "text", hint: "Optional short answer." },
+      { k: "try_it", n: 21, q: "What would make you most likely to try it?", type: "text", hint: "Optional short answer." },
     ],
   },
   {
     title: "What happens next?",
     questions: [
-      { k: "interest", n: 21, q: "Which best describes your interest?", type: "one", options: [
+      { k: "interest", n: 22, q: "Which best describes your interest?", type: "one", options: [
         "I’d like to take part in an early-stage pilot", "I’d be interested in beta testing the platform", "I’d like to have a conversation about how it could work for us",
         "I’d consider using it once it’s ready", "I’d just like to keep up with progress", "I’m interested in the idea, but it’s not relevant to us right now",
       ] },
-      { k: "anything_else", n: 22, q: "Anything else you’d like us to know?", type: "text", hint: "Optional open response." },
+      { k: "anything_else", n: 23, q: "Anything else you’d like us to know?", type: "text", hint: "Optional open response." },
     ],
   },
 ];
 
 export const RESEARCH_QUESTIONS = RESEARCH_SECTIONS.flatMap((s) => s.questions);
+
+// Questions no longer asked. Early responses answered them, so HQ still shows
+// those answers (and they stay in the CSV), but they aren't on the survey.
+export const RETIRED_QUESTIONS: { k: string; q: string }[] = [
+  { k: "per_session_fee", q: "Earlier wording: If a one-off session cost $5–$10 to run through Stretchy, excluding payment-processing fees, how would that feel?" },
+];
+
+// Feedback that arrives outside the survey (an email, a DM, a chat) is added in
+// HQ as a "general comment": a social_research row with this source, the words
+// in answers.general_comment, and themes in answers.themes so trends can be
+// counted as more come in.
+export const DIRECT_SOURCE = "direct";
 
 // "Somewhere else" on Q3 has its own text box too.
 export const hasOtherBox = (q: ResearchQuestion) => q.other || (q.k === "based");
