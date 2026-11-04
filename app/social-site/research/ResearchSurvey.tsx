@@ -179,6 +179,19 @@ export default function ResearchSurvey() {
               {section.intro && (
                 <div style={{ border: `2px solid ${INK}`, borderRadius: 22, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 10, background: "#FFFBF6" }}>
                   {section.intro.map((t) => <p key={t} style={{ ...body, fontSize: 14 }}>{t}</p>)}
+                  {section.useCases?.map((g) => (
+                    <div key={g.heading} style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 12, borderTop: `1.5px solid ${INK}`, marginTop: 2 }}>
+                      <span style={mono(10.5, { letterSpacing: ".12em" })}>{g.heading}</span>
+                      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                        {g.items.map((u) => (
+                          <li key={u.title} style={{ display: "flex", gap: 10, fontSize: 13.5, lineHeight: 1.5 }}>
+                            <span aria-hidden="true" style={{ flex: "none", fontSize: 16, lineHeight: 1.3 }}>{u.emoji}</span>
+                            <span><strong>{u.title}:</strong> {u.idea} <em>E.g. {u.example}</em></span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
               )}
               <div>
