@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import HQShell from "@/components/hq/HQShell";
-import { RESEARCH_SECTIONS, RESEARCH_QUESTIONS, RETIRED_QUESTIONS, DIRECT_SOURCE, hasOtherBox, otherLabel } from "@/lib/socialResearch";
+import { RESEARCH_SECTIONS, RESEARCH_QUESTIONS, RETIRED_QUESTIONS, DIRECT_SOURCE, BETA_SOURCE, BETA_INTEREST, hasOtherBox, otherLabel } from "@/lib/socialResearch";
 
 // HQ → stretchy.social research: answers to the stretchy.social/research
 // survey. Tallies per question first (how many picked each answer), then the
@@ -34,17 +34,22 @@ const label: React.CSSProperties = { fontFamily: T.mono, fontSize: 10, fontWeigh
 export default function AdminSocialResearchPage() {
   const [loading, setLoading] = useState(true);
   const [setupMsg, setSetupMsg] = useState<string | null>(null);
-  const [view, setView] = useState<"tallies" | "responses" | "comments">("tallies");
+  const [view, setView] = useState<"tallies" | "responses" | "comments" | "beta">("tallies");
+  const [betaLeads, setBetaLeads] = useState<{ id: string; created_at: string; name: string | null; email: string | null; organisation: string | null }[]>([]);
+  const [betaForm, setBetaForm] = useState({ name: "", email: "", organisation: "", note: "" });
+  const [betaSaving, setBetaSaving] = useState(false);
+  const [betaError, setBetaError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [all, setAll] = useState<Item[]>([]);
   const [form, setForm] = useState({ name: "", organisation: "", channel: "", comment: "", themes: "" });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/social-research").then((r) => r.json()).then((d) => { setAll(Array.isArray(d.items) ? d.items : []); if (d.setupNeeded) setSetupMsg(d.error); }).catch(() => {}).finally(() => setLoading(false));
+    fetch("/api/admin/social-research").then((r) => r.json()).then((d) => { setAll(Array.isArray(d.items) ? d.items : []); setBetaLeads(Array.isArray(d.betaLeads) ? d.betaLeads : []); if (d.setupNeeded) setSetupMsg(d.error); }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const items = useMemo(() => all.filter((i) => i.source !== DIRECT_SOURCE), [all]);
+  const items = useMemo(() => all.filter((i) => i.source !== DIRECT_SOURCE && i.source !== BETA_SOURCE), [all]);
   const comments = useMemo(() => all.filter((i) => i.source === DIRECT_SOURCE), [all]);
   const withContact = useMemo(() => items.filter((i) => i.email || i.name).length, [items]);
   // Themes across general comments, most mentioned first.
@@ -56,6 +61,29 @@ export default function AdminSocialResearchPage() {
     }));
     return Array.from(m.values()).sort((a, b) => b.n - a.n);
   }, [comments]);
+
+  // Everyone interested in beta testing, one row per email: added by hand,
+  // said so in the survey (with an email), or used the stretchy.social form.
+  const betaTesters = useMemo(() => {
+    const rows: { key: string; id?: string; name: string | null; organisation: string | null; email: string; how: string; note: string; at: string }[] = [];
+    const seen = new Set<string>();
+    const add = (r: (typeof rows)[number]) => { const k = r.email.toLowerCase(); if (!seen.has(k)) { seen.add(k); rows.push(r); } };
+    all.filter((i) => i.source === BETA_SOURCE && i.email).forEach((i) => add({ key: i.id, id: i.id, name: i.name, organisation: i.organisation, email: i.email!, how: "Added by HQ", note: String(i.answers.note ?? ""), at: i.created_at }));
+    items.filter((i) => i.email && BETA_INTEREST.includes(String(i.answers.interest))).forEach((i) => add({ key: i.id, name: i.name, organisation: i.organisation, email: i.email!, how: "Survey", note: String(i.answers.interest), at: i.created_at }));
+    betaLeads.filter((l) => l.email).forEach((l) => add({ key: l.id, name: l.name, organisation: l.organisation, email: l.email!, how: "stretchy.social form", note: "", at: l.created_at }));
+    return rows.sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email, "en", { sensitivity: "base" }));
+  }, [all, items, betaLeads]);
+
+  async function addBeta() {
+    setBetaSaving(true);
+    setBetaError(null);
+    const res = await fetch("/api/admin/social-research", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "beta", ...betaForm }) }).catch(() => null);
+    const d = res ? await res.json().catch(() => ({})) : {};
+    setBetaSaving(false);
+    if (!res || !res.ok) return setBetaError(d.error ?? "Couldn’t save that. Try again.");
+    setAll((a) => [d.item, ...a]);
+    setBetaForm({ name: "", email: "", organisation: "", note: "" });
+  }
 
   async function addComment() {
     setSaving(true);
@@ -75,7 +103,7 @@ export default function AdminSocialResearchPage() {
   }
 
   function download() {
-    const blob = new Blob([csv(all)], { type: "text/csv" });
+    const blob = new Blob([csv(all.filter((i) => i.source !== BETA_SOURCE))], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "stretchy-social-research.csv";
@@ -95,9 +123,9 @@ export default function AdminSocialResearchPage() {
           </p>
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-            {(["tallies", "responses", "comments"] as const).map((v) => (
+            {(["tallies", "responses", "comments", "beta"] as const).map((v) => (
               <button key={v} onClick={() => setView(v)} style={{ padding: "8px 16px", borderRadius: 999, border: `2px solid ${T.ink}`, background: view === v ? T.ink : "transparent", color: view === v ? T.cream : T.ink, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                {v === "tallies" ? "Tallies" : v === "responses" ? "Each response" : `General comments · ${comments.length}`}
+                {v === "tallies" ? "Tallies" : v === "responses" ? "Each response" : v === "comments" ? `General comments · ${comments.length}` : `Beta testers · ${betaTesters.length}`}
               </button>
             ))}
             {all.length > 0 && (
@@ -106,7 +134,7 @@ export default function AdminSocialResearchPage() {
           </div>
 
           {setupMsg && <p style={{ fontSize: 14, fontWeight: 700, color: "#C6362E" }}>{setupMsg}</p>}
-          {!loading && items.length === 0 && !setupMsg && view !== "comments" && <p style={{ fontSize: 14, color: "rgba(20,17,15,.55)" }}>No responses yet.</p>}
+          {!loading && items.length === 0 && !setupMsg && view !== "comments" && view !== "beta" && <p style={{ fontSize: 14, color: "rgba(20,17,15,.55)" }}>No responses yet.</p>}
 
           {items.length > 0 && view === "tallies" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -160,6 +188,42 @@ export default function AdminSocialResearchPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {view === "beta" && !setupMsg && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ ...card, display: "flex", flexDirection: "column", gap: 8 }}>
+                <span style={label}>Add a future beta tester</span>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 8 }}>
+                  <input placeholder="Name" value={betaForm.name} onChange={(e) => setBetaForm({ ...betaForm, name: e.target.value })} style={field} />
+                  <input type="email" placeholder="Email" value={betaForm.email} onChange={(e) => setBetaForm({ ...betaForm, email: e.target.value })} style={field} />
+                  <input placeholder="Organisation (optional)" value={betaForm.organisation} onChange={(e) => setBetaForm({ ...betaForm, organisation: e.target.value })} style={field} />
+                </div>
+                <input placeholder="Note (optional), e.g. said so by message" value={betaForm.note} onChange={(e) => setBetaForm({ ...betaForm, note: e.target.value })} style={field} />
+                {betaError && <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#C6362E" }}>{betaError}</p>}
+                <button onClick={addBeta} disabled={betaSaving || !betaForm.email.trim()} style={{ alignSelf: "flex-start", padding: "8px 16px", borderRadius: 999, border: `2px solid ${T.ink}`, background: "transparent", color: T.ink, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: betaSaving || !betaForm.email.trim() ? 0.4 : 1 }}>{betaSaving ? "Saving…" : "Add beta tester"}</button>
+              </div>
+              {betaTesters.length > 0 && (
+                <button
+                  onClick={async () => { await navigator.clipboard.writeText(betaTesters.map((b) => b.email).join(", ")); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                  style={{ alignSelf: "flex-start", padding: "8px 16px", borderRadius: 999, border: `2px solid ${T.ink}`, background: "transparent", color: T.ink, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                >
+                  {copied ? "Copied ✓" : "Copy all emails"}
+                </button>
+              )}
+              {betaTesters.map((b) => (
+                <div key={b.key} style={card}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                    <strong>{[b.name, b.organisation].filter(Boolean).join(", ") || b.email}</strong>
+                    <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(20,17,15,.55)" }}>{b.how.toUpperCase()} · {when(b.at).toUpperCase()}</span>
+                  </div>
+                  <a href={`mailto:${b.email}`} style={{ color: T.ink, fontSize: 13, wordBreak: "break-all" }}>{b.email}</a>
+                  {b.note && <p style={{ margin: "6px 0 0", fontSize: 13, lineHeight: 1.45 }}>{b.note}</p>}
+                  {b.id && <button onClick={() => { if (confirm(`Remove ${b.name || b.email} from the list?`)) fetch(`/api/admin/social-research?id=${b.id}`, { method: "DELETE" }).then((r) => { if (r.ok) setAll((a) => a.filter((x) => x.id !== b.id)); }); }} style={{ display: "block", marginTop: 8, background: "none", border: "none", padding: 0, fontSize: 12, textDecoration: "underline", color: "rgba(20,17,15,.6)", cursor: "pointer" }}>Remove</button>}
+                </div>
+              ))}
+              {betaTesters.length === 0 && !loading && <p style={{ fontSize: 14, color: "rgba(20,17,15,.55)", margin: 0 }}>No beta testers yet.</p>}
             </div>
           )}
 

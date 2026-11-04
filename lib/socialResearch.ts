@@ -170,6 +170,12 @@ export const RETIRED_QUESTIONS: { k: string; q: string }[] = [
 // counted as more come in.
 export const DIRECT_SOURCE = "direct";
 
+// People HQ adds to the future Beta testers list by hand (a social_research row
+// with this source: name, email, organisation, and answers.note).
+export const BETA_SOURCE = "beta";
+/** Survey answers to "Which best describes your interest?" that count as a beta tester. */
+export const BETA_INTEREST = ["I’d like to take part in an early-stage pilot", "I’d be interested in beta testing the platform"];
+
 // "Somewhere else" on Q3 has its own text box too.
 export const hasOtherBox = (q: ResearchQuestion) => q.other || (q.k === "based");
 export const otherLabel = (q: ResearchQuestion) => (q.k === "based" ? "Somewhere else" : OTHER);
