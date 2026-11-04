@@ -2,11 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { page, h1, hey, msg, label, box, button, row, FROM, REPLY_TO, APP_URL } from "@/lib/stretchy-email";
 import { logEmail } from "@/lib/emailLog";
-import { calculatePrice } from "@/lib/pricing";
 
 // The "It's on" heads-up: HQ → Future sessions → Email heads-up. Tells the people
 // who asked to hear about a suggested session that it's now on the schedule,
-// pulling the real dates, times and price from the sessions themselves. A
+// pulling the real dates, times and Social Stretch from the sessions themselves. A
 // "group" is every upcoming session with the same title (Ōrākei | Morning).
 // The email log records who got which group, so nobody is told twice.
 
@@ -17,7 +16,8 @@ const tidy = (v: string | null | undefined) => (v ?? "").replace(/\s+/g, " ").tr
 
 type SessionRow = {
   id: string; title: string; starts_at: string; duration_mins: number | null; location_name: string | null;
-  location_address: string | null; description: string | null; cost_base: number; revenue_target: number; min_attendees: number;
+  location_address: string | null; description: string | null; min_attendees: number;
+  social_stretch_venue: string | null; social_stretch_note: string | null;
 };
 export type SessionGroup = { key: string; title: string; sessions: SessionRow[] };
 
@@ -27,7 +27,7 @@ export const headsUpType = (key: string) => `suggestion_heads_up_${key}`;
 export async function upcomingGroups(admin: SupabaseClient): Promise<SessionGroup[]> {
   const { data } = await admin
     .from("sessions")
-    .select("id, title, starts_at, duration_mins, location_name, location_address, description, cost_base, revenue_target, min_attendees")
+    .select("id, title, starts_at, duration_mins, location_name, location_address, description, min_attendees, social_stretch_venue, social_stretch_note")
     .in("state", ["open", "confirmed"])
     .eq("is_draft", false)
     .gt("starts_at", new Date().toISOString())
@@ -95,7 +95,7 @@ export function renderHeadsUp(g: SessionGroup, name?: string | null): { subject:
   const [where, when] = g.title.split("|").map((p) => p.trim());
   const plural = when ? `${when.toLowerCase()}s` : "sessions";
   const firstName = name && !name.includes("@") ? name.trim().split(" ")[0] : "there";
-  const price = calculatePrice(first.cost_base, first.revenue_target, first.min_attendees);
+  const social = [tidy(first.social_stretch_venue), tidy(first.social_stretch_note)].filter(Boolean).join(" · ");
   const scheme = SCHEMES.find(([k]) => plain(where).includes(k))?.[1] ?? "orange";
   const subject = `From ${day(first.starts_at)}: ${where} ${plural} are on 🙌`;
   const more = g.sessions.length - SHOW;
@@ -104,7 +104,7 @@ export function renderHeadsUp(g: SessionGroup, name?: string | null): { subject:
     ${h1(sc, "It’s happening. 🙌")}
     ${hey(sc, esc(firstName))}
     ${msg(sc, `You asked us to let you know if this one went ahead. Good news: <strong>${esc(where)} ${esc(plural)}</strong> are on the schedule, starting <strong>${esc(startsPhrase(first.starts_at))}</strong>.`)}
-    ${button(sc, `${APP_URL}/sessions/${first.id}`, "Book now")}
+    ${button(sc, `${APP_URL}/sessions/${first.id}`, "Hold my place")}
     ${box(sc, `
       ${label(sc, "The schedule")}
       ${g.sessions.slice(0, SHOW).map((s) => row(sc, `<strong>${esc(day(s.starts_at))}</strong> · ${esc(timeRange(s))}`)).join("")}
@@ -114,9 +114,10 @@ export function renderHeadsUp(g: SessionGroup, name?: string | null): { subject:
       ${label(sc, "The details")}
       ${first.location_name ? row(sc, `<strong>Where:</strong> ${esc(tidy(first.location_name))}${first.location_address ? `, ${esc(tidy(first.location_address))}` : ""}`) : ""}
       ${first.description ? row(sc, `<strong>What:</strong> ${esc(tidy(first.description))}`) : ""}
-      ${row(sc, `<strong>Price:</strong> $${price.toFixed(2)} max per person, and it drops as more people join.`)}
+      ${social ? row(sc, `<strong>Social Stretch after:</strong> ${esc(social)}`) : ""}
     `)}
-    ${msg(sc, `If we get ${first.min_attendees} people, we’re on. Not enough people? You pay nothing. So bring your mates: the more who join, the better for everyone.`)}
+    ${msg(sc, `Hold your place now and see <strong>people-powered pricing</strong> in action: the more who join, the better for everyone. So bring your mates!`)}
+    ${msg(sc, `If we get ${first.min_attendees} people, we’re on. Not enough people? You pay nothing.`)}
     <p style="color:${sc.text};font-size:15px;line-height:1.55;margin:0 0 18px;">See you there,<br>The Stretchy team</p>
     <p style="color:${sc.text};font-size:12px;line-height:1.5;margin:0 0 6px;opacity:.8;">You’re getting this one-off email because you asked to hear if this session went ahead. Questions? Just reply.</p>
     <p style="font-size:12px;margin:0 0 6px;"><a href="${APP_URL}/#how-it-works" style="color:${sc.text};">How it works ↗</a> · <a href="${APP_URL}/terms#cancellation" style="color:${sc.text};">Cancellation policy ↗</a></p>
