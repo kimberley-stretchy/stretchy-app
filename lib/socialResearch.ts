@@ -20,7 +20,14 @@ export type ResearchQuestion = {
   placeholder?: string;
 };
 
-export type ResearchSection = { title: string; intro?: string[]; questions: ResearchQuestion[] };
+export type ResearchUseCase = { emoji: string; title: string; idea: string; example: string };
+export type ResearchSection = {
+  title: string;
+  intro?: string[];
+  /** Grouped examples shown under the intro, in the same words as the stretchy.social homepage. */
+  useCases?: { heading: string; items: ResearchUseCase[] }[];
+  questions: ResearchQuestion[];
+};
 
 export const RESEARCH_SECTIONS: ResearchSection[] = [
   {
@@ -95,6 +102,24 @@ export const RESEARCH_SECTIONS: ResearchSection[] = [
     intro: [
       "People-powered pricing is the idea behind Stretchy Social. Instead of charging a fixed price per person from the outset, an organiser sets a shared goal or attendance threshold. As more people join, the price can improve for everyone.",
       "For example, a yoga class might need a certain amount of revenue to cover the teacher and venue. As more people join, that cost can be shared across the group. A community event might work towards a minimum attendance number or a shared fundraising goal.",
+    ],
+    useCases: [
+      {
+        heading: "Ongoing sessions",
+        items: [
+          { emoji: "📚", title: "Community clubs", idea: "Bring people together around a shared interest, with a model designed to support your costs and revenue goals.", example: "A book club or craft night." },
+          { emoji: "🏃", title: "Movement communities", idea: "Create experiences that extend beyond the activity itself, with simpler ways to organise and manage participation.", example: "A run club." },
+          { emoji: "🧘", title: "Movement and wellbeing studios", idea: "For those wanting to bring the world some good, while covering their base costs. No third-party class marketplace needed.", example: "Off-peak timetable slots." },
+        ],
+      },
+      {
+        heading: "One-off, casual events",
+        items: [
+          { emoji: "💛", title: "Charities and fundraisers", idea: "Bring people together around a shared cause and a fundraising goal everyone can see.", example: "Set a $1,000 charity goal and split it between everyone who comes to the picnic." },
+          { emoji: "💃", title: "Public or private events", idea: "Share the cost fairly, so the more who come, the less everyone pays.", example: "A private line-dancing party, split by those attending." },
+          { emoji: "🎤", title: "Event organisers", idea: "Manage scheduling, bookings and payments without committing to a costly, ongoing platform.", example: "A workshop or supper club." },
+        ],
+      },
     ],
     questions: [
       { k: "appeal", n: 16, q: "How appealing is this idea for the gatherings you organise?", type: "one", options: [
