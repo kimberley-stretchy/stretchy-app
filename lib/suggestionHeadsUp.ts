@@ -116,9 +116,7 @@ export function renderHeadsUp(g: SessionGroup, name?: string | null): { subject:
       ${first.description ? row(sc, `<strong>What:</strong> ${esc(tidy(first.description))}`) : ""}
       ${social ? row(sc, `<strong>Social Stretch after:</strong> ${esc(social)}`) : ""}
     `)}
-    ${msg(sc, `Hold your place now and see <strong>people-powered pricing</strong> in action: the more who join, the better for everyone. So bring your mates!`)}
-    ${msg(sc, `If we get ${first.min_attendees} people, we’re on. Not enough people? You pay nothing.`)}
-    <p style="color:${sc.text};font-size:15px;line-height:1.55;margin:0 0 18px;">See you there,<br>The Stretchy team</p>
+    ${msg(sc, `Hold your place now and see <strong>people-powered pricing</strong> in action: the more who join, the better for everyone. So bring your mates!`)}    <p style="color:${sc.text};font-size:15px;line-height:1.55;margin:0 0 18px;">See you there,<br>The Stretchy team</p>
     <p style="color:${sc.text};font-size:12px;line-height:1.5;margin:0 0 6px;opacity:.8;">You’re getting this one-off email because you asked to hear if this session went ahead. Questions? Just reply.</p>
     <p style="font-size:12px;margin:0 0 6px;"><a href="${APP_URL}/#how-it-works" style="color:${sc.text};">How it works ↗</a> · <a href="${APP_URL}/terms#cancellation" style="color:${sc.text};">Cancellation policy ↗</a></p>
   `, { highlight: false });
