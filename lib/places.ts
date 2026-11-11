@@ -67,6 +67,16 @@ export function moreToGoAhead(held: number, min: number): string | null {
   return need > 0 ? `${need} more to go ahead` : null;
 }
 
+/**
+ * Going ahead but still under the minimum (HQ kept it alive): the price holds
+ * at the at-minimum price until the minimum is reached, then drops with the
+ * next person. "12 more people, then the price drops".
+ */
+export function untilPriceDrops(held: number, min: number): string | null {
+  const need = Math.max(0, min - held);
+  return need > 0 ? `${need} more ${need === 1 ? "person" : "people"}, then the price drops` : null;
+}
+
 /** "17 in · still room to join" */
 export function inAndRoom(held: number): string {
   return `${held} in · still room to join`;
@@ -75,6 +85,7 @@ export function inAndRoom(held: number): string {
 /**
  * The one-line "how's the room doing" label used on every card, above the dots:
  *   under the minimum            → "10 more to go ahead"
+ *   confirmed, under the minimum → "Going ahead ✓ · 12 more people, then the price drops"
  *   confirmed (36 hrs out or HQ) → "Going ahead ✓ · still room to join"
  *   minimum reached, not yet 36  → "17 in · still room to join"
  *   every place taken            → "Full" / "Going ahead ✓ · full"
@@ -84,7 +95,11 @@ export function inAndRoom(held: number): string {
  */
 export function roomLabel(held: number, min: number, max: number, confirmed: boolean): string {
   const full = held >= max;
-  if (confirmed) return full ? "Going ahead ✓ · full" : "Going ahead ✓ · still room to join";
+  if (confirmed) {
+    if (full) return "Going ahead ✓ · full";
+    const drops = untilPriceDrops(held, min);
+    return drops ? `Going ahead ✓ · ${drops}` : "Going ahead ✓ · still room to join";
+  }
   if (full) return "Full";
   return moreToGoAhead(held, min) ?? inAndRoom(held);
 }

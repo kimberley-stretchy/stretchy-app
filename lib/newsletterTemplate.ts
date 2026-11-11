@@ -38,7 +38,9 @@ export interface NewsletterInput {
 
 function sessionBlock(sc: Scheme, s: NewsletterSession): string {
   const status = s.confirmed
-    ? `✅ Going ahead — <strong>${s.going}</strong> coming`
+    ? s.going < s.min
+      ? `✅ Going ahead · <strong>${s.min - s.going}</strong> more ${s.min - s.going === 1 ? "person" : "people"}, then the price drops`
+      : `✅ Going ahead — <strong>${s.going}</strong> coming`
     : s.going >= s.min
       ? `<strong>${s.going}</strong> coming — it's on`
       : `<strong>${s.going}</strong> in${s.going < s.min ? ` · needs ${s.min - s.going} more to go ahead` : ""}`;
@@ -47,8 +49,8 @@ function sessionBlock(sc: Scheme, s: NewsletterSession): string {
     ${row(sc, `🗓 ${s.dateStr}`)}
     ${s.venue ? row(sc, `📍 ${s.venue}`) : ""}
     ${row(sc, `🙌 ${status}`)}
-    ${s.price ? row(sc, `💸 From ${s.price} — drops as more join`) : ""}
-    ${button(sc, s.url, "Grab a spot →")}`);
+    ${s.price ? row(sc, `💸 Never more than ${s.price} — drops as more join`) : ""}
+    ${button(sc, s.url, "Hold my place")}`);
 }
 
 function imageBlock(sc: Scheme, url: string, frame: "black" | "cream"): string {

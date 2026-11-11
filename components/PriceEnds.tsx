@@ -13,6 +13,7 @@ export default function PriceEnds({
   max,
   className,
   showEnds = true,
+  minLine,
 }: {
   openingPrice: number;
   floorPrice: number;
@@ -23,6 +24,9 @@ export default function PriceEnds({
   className: string;
   /** false = only the CURRENT label (cards that don't show the end prices). */
   showEnds?: boolean;
+  /** Going ahead under the minimum: repeat the at-minimum price under the
+   *  dashed minimum line, to show it holds until then and drops after. */
+  minLine?: { min: number; price: number };
 }) {
   const showNow = nowPrice != null && held > 0 && held < max && priceHasDropped(nowPrice, openingPrice);
   // Where the latest person's dot sits, 0 (first dot) → 1 (last dot).
@@ -30,13 +34,21 @@ export default function PriceEnds({
   // Too close to either end and it would sit on top of the end prices, so it
   // drops onto its own line instead.
   const fitsUnderDot = !showEnds || (at >= 0.22 && at <= 0.78);
-  if (!showEnds && !showNow) return null;
+  // The dashed line sits between dot {min} and dot {min + 1}.
+  const minAt = minLine && max > 1 && minLine.min > 0 && minLine.min < max && held < minLine.min ? (minLine.min - 0.5) / (max - 1) : null;
+  const showMin = minAt != null && minAt >= 0.22 && minAt <= 0.78;
+  if (!showEnds && !showNow && !showMin) return null;
   const current = showNow ? <span className="whitespace-nowrap text-ink">CURRENT {formatPrice(nowPrice!)} PP</span> : null;
 
   return (
     <div className={className}>
       <div className="relative flex justify-between gap-2.5">
         <span className={showEnds ? "" : "invisible"}>{formatPrice(openingPrice)}</span>
+        {showMin && (
+          <span className="absolute top-0 whitespace-nowrap text-ink" style={{ left: `${minAt! * 100}%`, transform: "translateX(-50%)" }}>
+            {formatPrice(minLine!.price)}
+          </span>
+        )}
         {current && fitsUnderDot && (
           <span className="absolute top-0" style={{ left: `${at * 100}%`, transform: `translateX(-${at * 100}%)` }}>
             {current}
