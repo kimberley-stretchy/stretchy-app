@@ -102,6 +102,7 @@ function SessionCard({ s }: { s: DBSession }) {
             held={holds}
             max={s.max_attendees}
             showEnds={false}
+            minLine={confirmed && holds < s.min_attendees ? { min: s.min_attendees, price: status.price } : undefined}
           />
         </div>
         <div className="flex items-center justify-between">

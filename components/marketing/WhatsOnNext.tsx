@@ -66,6 +66,9 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
   // or HQ kept it alive) — reaching the minimum earlier isn't a promise yet.
   const confirmed = s.state === "confirmed";
   const label = roomLabel(holds, s.min_attendees, s.max_attendees, confirmed).toUpperCase();
+  // The photo pill stays short; the long "…then the price drops" line sits above the dots.
+  const underMin = confirmed && holds < s.min_attendees;
+  const pill = underMin ? "GOING AHEAD ✓" : label;
   // The big price is the most this person can pay: the at-minimum price until
   // 36 hrs out, the current price after (lib/pricing.ts → maxPriceToPromise).
   const price = maxPriceToPromise(s.cost_base, s.revenue_target, s.min_attendees, holds, phase(s.starts_at, s.state) === "before36");
@@ -109,7 +112,7 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
           className="rounded-pill px-[11px] lg:px-3.5 py-1.5 lg:py-2 font-mono text-[9px] lg:text-[11px] font-extrabold whitespace-nowrap"
           style={{ backgroundColor: accent, color: onAccent }}
         >
-          {label}
+          {pill}
         </span>
       </div>
 
@@ -170,6 +173,7 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
             nowPrice={s.isPlaceholder ? undefined : now}
             held={holds}
             max={s.max_attendees}
+            minLine={underMin ? { min: s.min_attendees, price: openingPrice } : undefined}
           />
         </div>
       </div>

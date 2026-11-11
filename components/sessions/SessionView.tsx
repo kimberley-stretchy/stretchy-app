@@ -4,7 +4,7 @@ import PolicyLinks from "@/components/PolicyLinks";
 import { calculatePrice, formatPrice, maxPriceToPromise, priceRightNow } from "@/lib/pricing";
 import { sessionTimes } from "@/lib/sessionTimes";
 import { styleAndLevel, suburbOf } from "@/lib/sessionDisplay";
-import { moreToGoAhead, inAndRoom } from "@/lib/places";
+import { moreToGoAhead, inAndRoom, untilPriceDrops } from "@/lib/places";
 import { locationTheme } from "@/lib/locationColours";
 
 // The session page, top to bottom (COPY_REFRESH_HANDOVER.md section 4): title,
@@ -67,7 +67,10 @@ export default function SessionView({
   // The most this person can pay: the at-minimum price until 36 hrs out, the
   // current price after that (when nobody can cancel, so it can only drop).
   const maxPrice = maxPriceToPromise(s.cost_base, s.revenue_target, s.min_attendees, holds, before36);
-  const roomLine = before36 ? moreToGoAhead(holds, s.min_attendees) ?? inAndRoom(holds) : full ? `${holds} in · full` : inAndRoom(holds);
+  const dropsLine = goingAhead && !full ? untilPriceDrops(holds, s.min_attendees) : null;
+  const roomLine = dropsLine
+    ? `Going ahead ✓ · ${dropsLine}`
+    : before36 ? moreToGoAhead(holds, s.min_attendees) ?? inAndRoom(holds) : full ? `${holds} in · full` : inAndRoom(holds);
 
   const { style, level } = styleAndLevel(s.description, s.movement_type);
   const suburb = suburbOf(s);
@@ -114,6 +117,7 @@ export default function SessionView({
           max={s.max_attendees}
           openingPrice={openingPrice}
           floorPrice={floorPrice}
+          goingAhead={goingAhead}
         />
 
         {/* 4. Hold my place — directly under the box, not sticky */}

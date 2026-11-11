@@ -16,6 +16,7 @@ export default function PriceBox({
   floorPrice,
   accent = "#902F8A",
   nowPrice,
+  goingAhead = false,
 }: {
   /** The big number: the most this person can pay (lib/pricing → maxPriceToPromise). */
   price: number;
@@ -31,6 +32,8 @@ export default function PriceBox({
   accent?: string;
   /** The price right now (lib/pricing → priceRightNow). Shown big once it's below the cap. */
   nowPrice?: number;
+  /** Confirmed — under the minimum this adds the price under the minimum line. */
+  goingAhead?: boolean;
 }) {
   return (
     <div className="border-2 border-ink rounded-[22px] p-4 flex flex-col gap-[10px] bg-cream">
@@ -54,6 +57,7 @@ export default function PriceBox({
         nowPrice={nowPrice}
         held={held}
         max={max}
+        minLine={goingAhead ? { min, price: openingPrice } : undefined}
       />
     </div>
   );
