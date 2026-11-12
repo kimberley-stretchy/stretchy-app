@@ -404,7 +404,7 @@ export default function NewslettersPage() {
             <label style={mono10}>BRAND COLOUR</label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "6px 0 16px" }}>
               {SCHEMES.map((s) => (
-                <button key={s.id} onClick={() => setScheme(s.id)} title={s.label}
+                <button key={s.id} data-swatch onClick={() => setScheme(s.id)} title={s.label}
                   style={{ width: 30, height: 30, borderRadius: "50%", cursor: "pointer", background: s.bg, border: scheme === s.id ? `3px solid ${T.ink}` : "2px solid rgba(20,17,15,.2)" }} />
               ))}
             </div>
