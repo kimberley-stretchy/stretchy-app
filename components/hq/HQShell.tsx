@@ -102,7 +102,8 @@ function NavLink({ href, label, isActive }: { href: string; label: string; isAct
 // keylines, one colour at most. Coloured fills on buttons and pill badges in
 // any HQ page become ink outlines here, so pages don't each need restyling.
 // Ink-filled buttons stay: that's the "selected" look on toggles.
-const NOT_NEUTRAL = ':not([style*="background: rgb(20, 17, 15)"]):not([style*="background: rgb(255, 255, 255)"]):not([style*="background: rgb(247, 240, 232)"])';
+const NOT_NEUTRAL = ':not([style*="background: rgb(20, 17, 15)"]):not([style*="background: rgb(255, 255, 255)"]):not([style*="background: rgb(247, 240, 232)"]):not([data-swatch])';
+// (data-swatch = a colour picker circle, e.g. Newsletters "Brand colour": it IS the colour, so it keeps its fill.)
 const HQ_LOOK_CSS = `
 .hq-content button[style*="background: rgb"]${NOT_NEUTRAL},
 .hq-content a[style*="border-radius: 999px"][style*="background: rgb"]${NOT_NEUTRAL} {
