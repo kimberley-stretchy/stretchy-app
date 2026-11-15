@@ -14,7 +14,7 @@ const T = {
   mono: "'JetBrains Mono', monospace",
 };
 
-type LineItem = { role: string; who: string; amount: number; email: string };
+type LineItem = { role: string; who: string; amount: number; email: string; paidAt: string | null };
 type MoneyData = {
   session: { id: string; title: string; startsAt: string; locationName: string; state: string; hostPaidAt: string | null };
   collected: number;
@@ -38,6 +38,10 @@ export default function SessionMoneyPage() {
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
   const [remitMsg, setRemitMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // "Paid" ticks: what's saved vs. what's on screen. Save writes the difference.
+  const [paid, setPaid] = useState<Record<number, boolean>>({});
+  const [savingPaid, setSavingPaid] = useState(false);
+  const [paidMsg, setPaidMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/admin/sessions/${params.id}/money`);
@@ -50,13 +54,33 @@ export default function SessionMoneyPage() {
   // Seed the editable email fields from what we could resolve (Teacher/GEM).
   useEffect(() => {
     if (data) setEmails(Object.fromEntries(data.lineItems.map((l, i) => [i, l.email ?? ""])));
+    if (data) setPaid(Object.fromEntries(data.lineItems.map((l, i) => [i, !!l.paidAt])));
   }, [data]);
+
+  const paidChanges = data ? Object.fromEntries(data.lineItems.map((l, i) => [i, !!paid[i]]).filter(([i, v]) => v !== !!data.lineItems[i as number].paidAt)) : {};
+  const unsavedPaid = Object.keys(paidChanges).length > 0;
+
+  async function savePaid() {
+    setSavingPaid(true); setPaidMsg(null);
+    try {
+      const res = await fetch(`/api/admin/sessions/${params.id}/money`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paid: paidChanges }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) { await load(); setPaidMsg({ ok: true, text: "Saved." }); }
+      else setPaidMsg({ ok: false, text: d.error ?? "Couldn't save." });
+    } catch { setPaidMsg({ ok: false, text: "Couldn't save." }); }
+    setSavingPaid(false);
+  }
+
+  const paidOn = (iso: string | null) => iso ? new Date(iso).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", day: "numeric", month: "short" }) : "";
 
   const toggleSel = (i: number) => setSel((prev) => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; });
 
   async function sendRemittance() {
     if (!data) return;
-    const items = data.lineItems.map((l, i) => ({ role: l.role, name: l.who, email: emails[i] ?? "", amount: l.amount, invoiceNo: invoiceNos[i] ?? "" })).filter((_, i) => sel.has(i));
+    const items = data.lineItems.map((l, i) => ({ role: l.role, name: l.who, email: emails[i] ?? "", amount: l.amount, invoiceNo: invoiceNos[i] ?? "", index: i })).filter((_, i) => sel.has(i));
     if (items.length === 0) { setRemitMsg({ ok: false, text: "Tick who to send to first." }); return; }
     setSending(true); setRemitMsg(null);
     try {
@@ -69,6 +93,8 @@ export default function SessionMoneyPage() {
         const fails = (d.results ?? []).filter((r: { ok: boolean }) => !r.ok);
         setRemitMsg({ ok: d.failed === 0, text: `Sent ${d.sent}${d.failed ? ` · ${d.failed} skipped/failed (${fails.map((f: { name: string }) => f.name).join(", ")})` : ""}` });
         if (d.failed === 0) setSel(new Set());
+        // Whoever was sent a remittance is now ticked as paid (saved by the server).
+        if (d.sent > 0) await load();
       } else setRemitMsg({ ok: false, text: d.error ?? "Send failed." });
     } catch { setRemitMsg({ ok: false, text: "Request failed." }); }
     setSending(false);
@@ -123,10 +149,12 @@ export default function SessionMoneyPage() {
             </div>
 
             <div style={{ border: `2px solid ${T.ink}`, borderRadius: 12, overflow: "hidden", marginBottom: 24 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", padding: "8px 14px", background: T.ink }}>
+              <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto auto 64px", alignItems: "center", gap: 12, padding: "8px 14px", background: T.ink }}>
+                <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, color: "rgba(247,240,232,.6)", letterSpacing: "0.1em", width: 30 }}>SEND</span>
                 <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, color: "rgba(247,240,232,.6)", letterSpacing: "0.1em" }}>WHO</span>
-                <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, color: "rgba(247,240,232,.6)", letterSpacing: "0.1em", marginRight: 24 }}>ROLE</span>
+                <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, color: "rgba(247,240,232,.6)", letterSpacing: "0.1em" }}>ROLE</span>
                 <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, color: "rgba(247,240,232,.6)", letterSpacing: "0.1em" }}>AMOUNT</span>
+                <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, color: "rgba(247,240,232,.6)", letterSpacing: "0.1em", textAlign: "center" }}>PAID</span>
               </div>
               {data.lineItems.length === 0 ? (
                 <div style={{ padding: 16, fontSize: 13, color: "rgba(20,17,15,.5)" }}>No cost lines recorded for this session.</div>
@@ -140,11 +168,19 @@ export default function SessionMoneyPage() {
                       background: sel.has(i) ? "rgba(113,111,57,.08)" : "transparent",
                     }}
                   >
-                    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto auto", alignItems: "center", gap: 12 }}>
-                      <input type="checkbox" checked={sel.has(i)} onChange={() => toggleSel(i)} title="Tick to send a remittance" style={{ width: 16, height: 16, accentColor: T.olive }} />
+                    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto auto 64px", alignItems: "center", gap: 12 }}>
+                      <span style={{ width: 30, display: "flex" }}>
+                        <input type="checkbox" checked={sel.has(i)} onChange={() => toggleSel(i)} title="Tick to send a remittance" style={{ width: 16, height: 16, accentColor: T.olive }} />
+                      </span>
                       <span style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>{l.who}</span>
                       <span style={{ fontSize: 13, color: "rgba(20,17,15,.55)" }}>{l.role}</span>
                       <span style={{ fontFamily: T.mono, fontSize: 14, fontWeight: 700, color: T.ink }}>${l.amount.toFixed(2)}</span>
+                      <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, cursor: "pointer" }} title="Tick once they've been paid, then Save">
+                        <input type="checkbox" checked={!!paid[i]} onChange={(e) => { setPaid((m) => ({ ...m, [i]: e.target.checked })); setPaidMsg(null); }} style={{ width: 18, height: 18, accentColor: T.olive }} />
+                        <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 800, color: T.olive, minHeight: 11 }}>
+                          {paid[i] ? (l.paidAt ? paidOn(l.paidAt).toUpperCase() : "UNSAVED") : ""}
+                        </span>
+                      </label>
                     </div>
                     {sel.has(i) && (
                       <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
@@ -167,6 +203,19 @@ export default function SessionMoneyPage() {
                 ))
               )}
             </div>
+            {data.lineItems.length > 0 && (
+              <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, margin: "-14px 0 24px" }}>
+                {paidMsg && <span style={{ fontSize: 12.5, color: paidMsg.ok ? T.olive : "#C6362E" }}>{paidMsg.text}</span>}
+                {!paidMsg && unsavedPaid && <span style={{ fontSize: 12.5, color: "rgba(20,17,15,.55)" }}>Unsaved changes</span>}
+                <button
+                  onClick={savePaid}
+                  disabled={savingPaid || !unsavedPaid}
+                  style={{ padding: "9px 22px", borderRadius: 999, border: `2px solid ${T.ink}`, cursor: unsavedPaid ? "pointer" : "default", background: unsavedPaid ? T.ink : "transparent", color: unsavedPaid ? T.cream : T.ink, fontFamily: T.mono, fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", opacity: unsavedPaid ? 1 : 0.45 }}
+                >
+                  {savingPaid ? "SAVING…" : "SAVE"}
+                </button>
+              </div>
+            )}
 
             {/* What's left for Stretchy once Stripe's fees and the payouts are taken off. */}
             <div style={{ border: `2px solid ${T.ink}`, borderRadius: 12, padding: "12px 14px", marginBottom: 24, display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>

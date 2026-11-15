@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { keepPaid } from "@/lib/costLinePaid";
 import { sendAttendeeBatch } from "@/lib/stretchy-email";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
@@ -294,6 +295,10 @@ export async function PATCH(request: NextRequest) {
   const { id, venue_email, social_venue_email, ...updates } = body;
 
   if (!id) return NextResponse.json({ error: "Missing session id" }, { status: 400 });
+  if (Array.isArray(updates.cost_lines)) {
+    const { data: prev } = await supabase.from("sessions").select("cost_lines").eq("id", id).single();
+    updates.cost_lines = keepPaid(updates.cost_lines, Array.isArray(prev?.cost_lines) ? prev.cost_lines : []);
+  }
   // Saved on their own, so a missing column can never fail the whole edit.
   await saveVenueContacts(supabase, id, { venue_email, social_venue_email });
   if (Object.keys(updates).length === 0) {

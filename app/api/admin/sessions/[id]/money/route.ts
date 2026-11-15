@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/adminAuth";
 import { cardFeesFor, type FeeHold } from "@/lib/stripeFees";
+import { withPaid, type CostLine } from "@/lib/costLinePaid";
 
 function getAdmin() {
   return createClient(
@@ -47,7 +48,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const fees = await cardFeesFor(admin, (holds ?? []).filter((h) => h.state === "charged") as FeeHold[]);
   const cardFees = Array.from(fees.values()).reduce((s, c) => s + c, 0) / 100;
 
-  const costLines: { role: string; name: string; amount: number }[] = Array.isArray(session.cost_lines) ? session.cost_lines : [];
+  const costLines: CostLine[] = Array.isArray(session.cost_lines) ? session.cost_lines : [];
+  // Remittances sent before paid ticks existed count as paid (matched by email + role).
+  const { data: remits } = await admin
+    .from("email_log").select("recipient, email_type, created_at")
+    .eq("session_id", id).like("email_type", "remittance_%").eq("status", "sent");
+  const remitAt = (role: string, email: string) =>
+    email ? (remits ?? []).find((r) => r.email_type === `remittance_${role.toLowerCase().replace(/[^a-z]/g, "")}` && (r.recipient ?? "").toLowerCase() === email.toLowerCase())?.created_at ?? null : null;
+  const ticksSaved = costLines.some((l) => "paidAt" in l);
   const lineItems = costLines.map((l) => {
     const host =
       l.role === "Teacher" && session.host_id ? hostById.get(session.host_id) :
@@ -57,6 +65,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       who: host?.name ?? l.name,
       email: host?.email ?? "",   // prefilled for Teacher/GEM; HQ fills the rest
       amount: l.amount,
+      paidAt: l.paidAt ?? (ticksSaved ? null : remitAt(l.role, host?.email ?? "")),
     };
   });
   const paidOut = lineItems.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
@@ -95,4 +104,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
+}
+
+// PUT /api/admin/sessions/[id]/money — save the "Paid" ticks.
+// Body: { paid: { [lineIndex]: true | false } }
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authed = await requireAdmin(request);
+  if ("error" in authed) return authed.error;
+
+  const { id } = await params;
+  const admin = getAdmin();
+  const body = await request.json().catch(() => ({}));
+  const raw = body && typeof body.paid === "object" && body.paid ? body.paid as Record<string, unknown> : {};
+  const changes: Record<number, boolean> = {};
+  for (const [k, v] of Object.entries(raw)) if (/^\d+$/.test(k)) changes[Number(k)] = !!v;
+
+  const { data: session } = await admin.from("sessions").select("cost_lines").eq("id", id).single();
+  if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  const lines: CostLine[] = Array.isArray(session.cost_lines) ? session.cost_lines : [];
+  // Every line gets an explicit paidAt (null = not paid) once saved, so the
+  // remittance fallback above stops applying and an un-tick sticks.
+  const saved = withPaid(lines, changes).map((l) => ({ ...l, paidAt: l.paidAt ?? null }));
+
+  const { error } = await admin.from("sessions").update({ cost_lines: saved }).eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true, paid: saved.map((l) => l.paidAt ?? null) });
 }

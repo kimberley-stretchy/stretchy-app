@@ -5,6 +5,7 @@ import { Resend } from "resend";
 import { buildRemittanceEmail, FROM, REPLY_TO, HQ_EMAIL } from "@/lib/stretchy-email";
 import { buildRemittancePdf } from "@/lib/remittancePdf";
 import { logEmail } from "@/lib/emailLog";
+import { withPaid, type CostLine } from "@/lib/costLinePaid";
 
 function getAdmin() {
   return createClient(
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
   const admin = getAdmin();
   const body = await request.json().catch(() => ({}));
-  const items: { role: string; name: string; email: string; amount: number; invoiceNo?: string }[] = Array.isArray(body.items) ? body.items : [];
+  const items: { role: string; name: string; email: string; amount: number; invoiceNo?: string; index?: number }[] = Array.isArray(body.items) ? body.items : [];
   const copyHq: boolean = !!body.copyHq;
   const note: string | undefined = typeof body.note === "string" && body.note.trim() ? body.note.trim() : undefined;
 
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { data: session } = await admin
     .from("sessions")
-    .select("title, starts_at, location_name")
+    .select("title, starts_at, location_name, cost_lines")
     .eq("id", id)
     .single();
   if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -97,6 +98,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       note: `Remittances sent to: ${sent.map((r) => r.name).join(", ") || "—"}.`, forHQ: true,
     });
     await resend.emails.send({ from: FROM, to: HQ_EMAIL, reply_to: REPLY_TO, subject, html }).catch(() => {});
+  }
+
+  // A remittance means they've been paid: tick them on the session.
+  const sentIdx = items.filter((it, i) => results[i]?.ok && Number.isInteger(it.index)).map((it) => it.index as number);
+  if (sentIdx.length) {
+    const lines: CostLine[] = Array.isArray(session.cost_lines) ? session.cost_lines : [];
+    const saved = withPaid(lines, Object.fromEntries(sentIdx.map((i) => [i, true]))).map((l) => ({ ...l, paidAt: l.paidAt ?? null }));
+    await admin.from("sessions").update({ cost_lines: saved }).eq("id", id);
   }
 
   const okCount = results.filter((r) => r.ok).length;
