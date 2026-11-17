@@ -13,7 +13,7 @@ import { formatDayTime } from "@/lib/sessionTimes";
 //
 // Only ever for the signed-in person's own booking, and only while that booking
 // is marked card_failed_at on a session that's going ahead. It places a hold on
-// the card; the final price is still charged 2 hours out.
+// the card; the final price is still charged 30 mins out.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const CARD_FIX_SESSION_COLS = "id, title, starts_at, state, location_name, min_attendees, cost_base, revenue_target, social_stretch_venue, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram, confirmed_headcount";

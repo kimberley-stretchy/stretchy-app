@@ -18,7 +18,7 @@ const FAQS = [
   },
   {
     q: "When do I get charged?",
-    a: "2 hours before the session, at the final price. When you hold your place we save your card; nothing is held or charged. Once it's going ahead (36 hours before), your bank may show a pending amount. That's a hold, not a payment.",
+    a: "30 minutes before the session, at the final price. When you hold your place we save your card; nothing is held or charged. Once it's going ahead (36 hours before), your bank may show a pending amount. That's a hold, not a payment.",
   },
   {
     q: "What if I need to cancel?",
@@ -26,7 +26,7 @@ const FAQS = [
   },
   {
     q: "Can I still join after 36 hours?",
-    a: "Yes, up to 2 hours before, if there's room. It's already going ahead, so there's no free cancelling once you join.",
+    a: "Yes, up to 30 minutes before, if there's room. It's already going ahead, so there's no free cancelling once you join.",
   },
   {
     q: "What if a session doesn't reach its minimum?",
@@ -34,7 +34,7 @@ const FAQS = [
   },
   {
     q: "Why is there a pending amount on my bank?",
-    a: "Once a session is going ahead (36 hours before), we place a temporary hold for the most you'll pay. It isn't a payment and the unused part drops off on its own. You're only charged the final price, 2 hours before.",
+    a: "Once a session is going ahead (36 hours before), we place a temporary hold for the most you'll pay. It isn't a payment and the unused part drops off on its own. You're only charged the final price, 30 minutes before.",
   },
   {
     q: "I'm holding more than one place. How does that work?",

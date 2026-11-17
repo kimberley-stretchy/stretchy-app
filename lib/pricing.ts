@@ -16,10 +16,11 @@
  * min 14, max 32 → opening price (201.25+200)/14 = $28.66.
  *
  * Timeline: places open at 36 hours before the session (go/no-go on the
- * minimum); final price locks and cards are charged at 2 hours before.
+ * minimum); final price locks and cards are charged at 30 minutes before.
  */
 
 import type { PricingState, PriceCurvePoint, SessionPhase, MovementType } from "@/types";
+import { finalCharge } from "@/lib/sessionTimes";
 
 export const DEFAULT_CURRENCY = "NZD";
 
@@ -233,7 +234,7 @@ export function getHostPricingPrompt(
  * Used to drive UI state and automation triggers.
  *
  * Places open 36 hours before the session (go/no-go on the minimum);
- * the final price locks and cards are charged 2 hours before.
+ * the final price locks and cards are charged 30 minutes before.
  */
 export function getSessionPhase(
   startsAt: Date,
@@ -247,10 +248,10 @@ export function getSessionPhase(
 
   const now = new Date();
   const sessionTime = new Date(startsAt);
-  const twoHoursBefore = new Date(sessionTime.getTime() - 2 * 60 * 60 * 1000);
+  const finalChargeAt = finalCharge(sessionTime); // joining closes + final charge (30 mins out)
   const thirtySixHoursBefore = new Date(sessionTime.getTime() - 36 * 60 * 60 * 1000);
 
-  if (lockedAt || now >= twoHoursBefore) return "LOCKED";
+  if (lockedAt || now >= finalChargeAt) return "LOCKED";
   if (confirmedAt) return "CONFIRMED";
   if (now >= thirtySixHoursBefore && !confirmedAt) return "CANCELLED"; // auto-cancel — minimum wasn't met
   if (peopleHolding >= minimumMats) return "HOLD_DROPPING";

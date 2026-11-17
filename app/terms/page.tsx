@@ -23,7 +23,7 @@ export default function TermsPage() {
         <div className="bg-white rounded-card border-2 border-ink p-5 space-y-4 text-sm text-ink leading-relaxed">
           <div>
             <h2 className="font-bold mb-2">The short version</h2>
-            <p className="text-muted">Stretchy connects people who want to move with people who teach. You hold a place, the price drops as the room fills, and everyone pays the same final price, charged 2 hours before the session. If a session doesn&rsquo;t reach its minimum by 36 hours before, it&rsquo;s called off and you pay nothing.</p>
+            <p className="text-muted">Stretchy connects people who want to move with people who teach. You hold a place, the price drops as the room fills, and everyone pays the same final price, charged 30 minutes before the session. If a session doesn&rsquo;t reach its minimum by 36 hours before, it&rsquo;s called off and you pay nothing.</p>
           </div>
 
           {/* Every "Cancellation policy ↗" link on the site and in emails lands here.
@@ -37,9 +37,9 @@ export default function TermsPage() {
               <li><strong className="text-ink">Hold your place.</strong> We save your card and show you the most you&rsquo;ll pay. Nothing is held or charged yet.</li>
               <li><strong className="text-ink">Up to 36 hours before: free to cancel.</strong> No charge, no questions.</li>
               <li><strong className="text-ink">36 hours before: going ahead, or not.</strong> If we have the minimum number of people, we&rsquo;re on. If not, it&rsquo;s called off and you pay nothing. Free cancelling ends here.</li>
-              <li><strong className="text-ink">36 hours before: we confirm your card.</strong> If it&rsquo;s going ahead, we place a hold on your card for the most you&rsquo;ll pay, so your bank may show a pending amount until the final price is charged. That&rsquo;s a hold, not a payment. If it doesn&rsquo;t go through, we&rsquo;ll email you. If we still don&rsquo;t have a working card 12 hours before, your place goes back to the group.</li>
-              <li><strong className="text-ink">36 to 2 hours before: still room to join.</strong> More people can join and the price keeps dropping for everyone. If you join in this window, it&rsquo;s already going ahead, so there&rsquo;s no free cancelling.</li>
-              <li><strong className="text-ink">2 hours before: final price charged.</strong> Joining closes and we charge your card the final price. It&rsquo;s never more than the max price shown. You&rsquo;ll get a receipt.</li>
+              <li><strong className="text-ink">36 hours before: we confirm your card.</strong> If it&rsquo;s going ahead, we place a hold on your card for the most you&rsquo;ll pay, so your bank may show a pending amount until the final price is charged. That&rsquo;s a hold, not a payment. If it doesn&rsquo;t go through, we&rsquo;ll email you. If we still don&rsquo;t have a working card 130 minutes before, your place goes back to the group.</li>
+              <li><strong className="text-ink">36 hours to 30 minutes before: still room to join.</strong> More people can join and the price keeps dropping for everyone. If you join in this window, it&rsquo;s already going ahead, so there&rsquo;s no free cancelling.</li>
+              <li><strong className="text-ink">30 minutes before: final price charged.</strong> Joining closes and we charge your card the final price. It&rsquo;s never more than the max price shown. You&rsquo;ll get a receipt.</li>
               <li><strong className="text-ink">Can&rsquo;t make it after 36 hours?</strong> The price stands. We don&rsquo;t refund change-of-mind cancellations after this point, because by then we&rsquo;ve committed to your teacher, your GEM and your venue. That&rsquo;s what keeps the pricing fair for everyone who shows up. (This doesn&rsquo;t affect your legal rights. See below.)</li>
               <li><strong className="text-ink">If we cancel, you don&rsquo;t pay.</strong> If you&rsquo;ve already been charged, we refund you in full, back to the card you paid with.</li>
               <li><strong className="text-ink">Something serious come up?</strong> Illness, an emergency, life. Get in touch and we&rsquo;ll look at it case by case.</li>

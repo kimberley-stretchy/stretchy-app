@@ -57,7 +57,7 @@ export async function notifyBookingCardFailed(
 ): Promise<{ sent: boolean; reason?: string }> {
   // Only a first-time booking attempt: not the automatic re-authorisations when
   // someone changes their number of places, and not the lock-in charge (HQ's
-  // "Starting in ~2h" email covers that one).
+  // "Starting in ~30 mins" email covers that one).
   const meta = pi.metadata ?? {};
   if (!meta.session_id || !meta.attendee_id) return { sent: false, reason: "not a booking" };
   if (meta.kind === "reauth" || meta.replaces_pi) return { sent: false, reason: "not a first attempt" };

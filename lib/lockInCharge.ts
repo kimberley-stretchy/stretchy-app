@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Taking the final payment for one booking, 2 hours before a session.
+// Taking the final payment for one booking, 30 minutes before a session.
 //
 // When someone holds a place we place a card authorisation (a PaymentIntent with
 // manual capture) and save their card. At charge time one of three things is true:

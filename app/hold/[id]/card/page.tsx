@@ -10,7 +10,7 @@ import { NewTabLink, CANCELLATION_POLICY_HREF } from "@/components/PolicyLinks";
 
 // "Update my card" — reached from the "We couldn't confirm your card" email.
 // Shows a card form for exactly the most this person can pay for their places.
-// Nothing is charged here; the final price is still charged 2 hours out.
+// Nothing is charged here; the final price is still charged 30 mins out.
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 const INK = "#14110F";
@@ -59,7 +59,7 @@ function CardForm({ sessionId, start, accessToken, onDone }: { sessionId: string
       <PaymentElement options={{ layout: "tabs", terms: { card: "never" } }} />
       <p className="m-0 text-[13px] leading-normal" style={{ color: "rgba(20,17,15,.6)" }}>
         By saving your card, you agree Stretchy can charge it for this booking: the final price,
-        2 hours before the session, and never more than ${start.maxTotal.toFixed(2)}
+        30 minutes before the session, and never more than ${start.maxTotal.toFixed(2)}
         {start.quantity > 1 ? ` for your ${start.quantity} places` : ""}.{" "}
         <NewTabLink href={CANCELLATION_POLICY_HREF}>Cancellation policy</NewTabLink>
       </p>
@@ -128,7 +128,7 @@ export default function UpdateCardPage({ params }: { params: { id: string } }) {
   </>);
   if (start.status === "no_hold" || start.status === "closed") return shell(<>
     {title("This place isn’t held any more.")}
-    <p className="text-sm text-muted leading-relaxed">If there&rsquo;s still room, you can join again up to 2 hours before it starts.</p>
+    <p className="text-sm text-muted leading-relaxed">If there&rsquo;s still room, you can join again up to 30 minutes before it starts.</p>
     {back(`/sessions/${params.id}`, "See the session")}
   </>);
 

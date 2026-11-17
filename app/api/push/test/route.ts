@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
   await sendPushToUser(user.id, {
     title: "Stretchy push test 🧘",
-    body: "Push notifications are working! You'll get these at 36h and 2h before sessions.",
+    body: "Push notifications are working! You'll get these at 36 hours and 30 minutes before sessions.",
     url: "/sessions",
   });
 

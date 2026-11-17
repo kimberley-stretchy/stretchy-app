@@ -11,7 +11,7 @@ import { sendPushToUsers } from "@/lib/push-server";
 // The card step of the 36-hour "it's going ahead" moment.
 //
 // For every paying booking on the session: if the authorisation placed at
-// booking can't be relied on to still be alive at charge time (2 hours out), put
+// booking can't be relied on to still be alive at charge time (30 mins out), put
 // a fresh one on the saved card now, for the most that person can pay. If the
 // card says no, the booking is marked (holds.card_failed_at) so the person can be
 // asked to fix it and HQ knows — 34 hours ahead, not at 4am on the day.
@@ -118,7 +118,7 @@ export async function confirmCards(
 // ── Following up a card that couldn't be confirmed ───────────────────────────
 // Run by the session-check job every 15 minutes. For each booking still marked
 // card_failed_at on a session that's going ahead: one reminder at 20 hours out,
-// and at 12 hours out the place is released (nothing charged) and the person and
+// and at 130 mins out the place is released (nothing charged) and the person and
 // HQ are told. The timing rule is cardFollowUp() in lib/authoriseAtConfirm.ts.
 const nameOf = (n: string | null | undefined) => (n && !n.includes("@") ? n.split(" ")[0] : "there");
 
@@ -196,7 +196,7 @@ export async function followUpFailedCards(
 }
 
 // ── The night-before card summary, for HQ ────────────────────────────────────
-// At 12 hours out (6:15pm the evening before a 6:15am session), once any
+// At 130 mins out (6:15pm the evening before a 6:15am session), once any
 // unfixed places have been released, HQ gets ONE email: either "all cards
 // confirmed, nothing to do tonight" or who needs a look. Sent once per session
 // (checked against the email log).
@@ -255,12 +255,12 @@ export async function nightBeforeCardSummary(admin: SupabaseClient, now: Date = 
         sessionId: s.id,
         rows: [
           allGood
-            ? `<strong>Nothing for you to do tonight.</strong> Every booking for ${s.title} has a confirmed card, and the final price is charged by itself 2 hours before.`
+            ? `<strong>Nothing for you to do tonight.</strong> Every booking for ${s.title} has a confirmed card, and the final price is charged by itself 30 minutes before.`
             : `<strong>These bookings still don't have a working card:</strong><br>${unfixed.map((h) => who(h.user_id as string)).join("<br>")}<br>Worth a message tonight.`,
           `<strong>${places}</strong> place${places === 1 ? "" : "s"} held (minimum ${s.min_attendees}).`,
           ...active.map((h) => `${who(h.user_id as string)} · ${h.quantity ?? 1} place${(h.quantity ?? 1) === 1 ? "" : "s"} · ${h.is_comp ? "on us" : h.card_failed_at ? "<strong>card not confirmed</strong>" : "card confirmed"}`),
           ...(released.length ? [`Released (no working card in time): ${released.map((h) => who(h.user_id as string)).join(", ")}`] : []),
-          `You'll still get the usual "Starting in ~2h" email in the early hours. It can wait until after the session unless it's marked ⚠️.`,
+          `You'll still get the usual "Starting in ~30 mins" email just before it starts. It can wait until after the session unless it's marked ⚠️.`,
         ],
       });
       sent++;

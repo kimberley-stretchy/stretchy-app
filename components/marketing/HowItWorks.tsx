@@ -24,14 +24,14 @@ const CARDS: { n: string; timing: string; title: string; body: string; cta?: str
   },
   {
     n: "03",
-    timing: "36 → 2 HRS OUT",
+    timing: "36 HRS → 30 MINS OUT",
     title: "Still room to join",
     body: "More people can join, and the price keeps dropping for everyone.",
     simulator: true,
   },
   {
     n: "04",
-    timing: "2 HRS OUT",
+    timing: "30 MINS OUT",
     title: "Final price charged",
     body: "Joining closes and we charge your card the final price. The more who joined, the less it is. Never more than the max price shown.",
     lastTime: true,

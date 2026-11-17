@@ -77,7 +77,7 @@ export default function PushButton({ accessToken }: { accessToken: string | null
       <div className="bg-white rounded-card border-2 border-ink p-4 flex items-center justify-between">
         <div>
           <p className="font-semibold text-sm text-ink">Push notifications</p>
-          <p className="text-xs text-muted mt-0.5">{msg || "You'll get alerts at 36h and 2h before sessions"}</p>
+          <p className="text-xs text-muted mt-0.5">{msg || "You'll get alerts at 36 hours and 30 minutes before sessions"}</p>
         </div>
         {status !== "done" && permission === "granted" && (
           <button onClick={enable} disabled={status === "loading"} className="font-mono text-xs font-bold px-3 py-1.5 rounded-pill" style={{ background: "rgba(26,26,26,0.06)", color: "#14110F" }}>
