@@ -118,7 +118,7 @@ export async function confirmCards(
 // ── Following up a card that couldn't be confirmed ───────────────────────────
 // Run by the session-check job every 15 minutes. For each booking still marked
 // card_failed_at on a session that's going ahead: one reminder at 20 hours out,
-// and at 130 mins out the place is released (nothing charged) and the person and
+// and at 12 hrs out the place is released (nothing charged) and the person and
 // HQ are told. The timing rule is cardFollowUp() in lib/authoriseAtConfirm.ts.
 const nameOf = (n: string | null | undefined) => (n && !n.includes("@") ? n.split(" ")[0] : "there");
 
@@ -196,7 +196,7 @@ export async function followUpFailedCards(
 }
 
 // ── The night-before card summary, for HQ ────────────────────────────────────
-// At 130 mins out (6:15pm the evening before a 6:15am session), once any
+// At 12 hrs out (6:15pm the evening before a 6:15am session), once any
 // unfixed places have been released, HQ gets ONE email: either "all cards
 // confirmed, nothing to do tonight" or who needs a look. Sent once per session
 // (checked against the email log).

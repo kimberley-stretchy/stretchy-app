@@ -421,7 +421,7 @@ function cardFailed(p: AttendeeEmailPayload, c: Ctx) {
 // 11 — We couldn't confirm your card (36 hrs out: it's going ahead, their card said no)
 function cardConfirmFailed(p: AttendeeEmailPayload, c: Ctx) {
   const places = c.n === 1 ? "your place" : `your ${c.n} places`;
-  const by = p.cardDeadline ? `by <strong>${esc(p.cardDeadline)}</strong>` : "at least 130 minutes before it starts";
+  const by = p.cardDeadline ? `by <strong>${esc(p.cardDeadline)}</strong>` : "at least 12 hours before it starts";
   const html = page("cream", (sc) => `
     ${h1(sc, "We couldn’t confirm your card.")}
     ${intro(sc, p, [
@@ -438,7 +438,7 @@ function cardConfirmFailed(p: AttendeeEmailPayload, c: Ctx) {
 // 12 — Reminder: still no working card
 function cardConfirmReminder(p: AttendeeEmailPayload, c: Ctx) {
   const places = c.n === 1 ? "your place" : `your ${c.n} places`;
-  const by = p.cardDeadline ? `by <strong>${esc(p.cardDeadline)}</strong>` : "at least 130 minutes before it starts";
+  const by = p.cardDeadline ? `by <strong>${esc(p.cardDeadline)}</strong>` : "at least 12 hours before it starts";
   const html = page("cream", (sc) => `
     ${h1(sc, "Your place still needs a card.")}
     ${intro(sc, p, [
