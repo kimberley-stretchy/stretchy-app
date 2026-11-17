@@ -94,7 +94,7 @@ export function renderVenueHold(s: SessionRow, which: Which, held: number) {
       ${row(sc, `🗓 ${p.when}`)}
       ${row(sc, `📍 ${esc(p.event.location)}`)}
       ${row(sc, goingAhead
-        ? `👥 ${held} booked so far, ${s.max_attendees} at most. People can join until 2 hours before.`
+        ? `👥 ${held} booked so far, ${s.max_attendees} at most. People can join until 30 minutes before.`
         : `👥 Goes ahead with ${s.min_attendees} people, ${s.max_attendees} at most.`)}`)}
     ${goingAhead ? "" : msg(sc, "<strong>We’ll confirm 36 hours before, either way</strong>, so you’re never left guessing.")}
     ${button(sc, googleCalendarUrl(p.event), "Add to Google Calendar →")}
@@ -120,7 +120,7 @@ export function renderVenueUpdate(s: SessionRow, which: Which, kind: "confirmed"
     ${box(sc, `${label(sc, on ? "The details" : "The hold to release")}
       ${row(sc, `🗓 ${p.when}`)}
       ${row(sc, `📍 ${esc(p.event.location)}`)}
-      ${on ? row(sc, `👥 <strong>${held} booked so far</strong>, ${s.max_attendees} at most. People can join until 2 hours before, so the number may grow.`) : ""}`)}
+      ${on ? row(sc, `👥 <strong>${held} booked so far</strong>, ${s.max_attendees} at most. People can join until 30 minutes before, so the number may grow.`) : ""}`)}
     ${msg(sc, "Any questions? Just reply to this email.")}
     ${msg(sc, "Ngā mihi,<br>Kimberley and the Stretchy team")}
   `, { highlight: false });

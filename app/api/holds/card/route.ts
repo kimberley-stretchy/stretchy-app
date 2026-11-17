@@ -22,7 +22,7 @@ import { notifyHQ } from "@/lib/notifyLifecycle";
 //                                         the "it's going ahead" email.
 //
 // Same shape as booking itself (app/api/holds POST then PATCH). It only places
-// a hold on the card; the final price is still charged 2 hours out.
+// a hold on the card; the final price is still charged 30 mins out.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function getAdmin() {

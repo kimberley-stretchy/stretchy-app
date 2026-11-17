@@ -135,10 +135,10 @@ function SetupForm({
           <strong>36 hours before: going ahead, or not.</strong> If we have the minimum number of people, we&rsquo;re on. If not, it&rsquo;s called off and you pay nothing. Free cancelling ends here.
         </p>
         <p className="text-xs leading-[1.6] mb-2.5" style={{ color: "#14110F" }}>
-          <strong>36 to 2 hours before: still room to join.</strong> More people can join and the price keeps dropping for everyone.
+          <strong>36 hours to 30 minutes before: still room to join.</strong> More people can join and the price keeps dropping for everyone.
         </p>
         <p className="text-xs leading-[1.6] mb-2.5" style={{ color: "#14110F" }}>
-          <strong>2 hours before: final price charged.</strong> Joining closes and we charge your card the final price. It&rsquo;s never more than the max price shown.
+          <strong>30 minutes before: final price charged.</strong> Joining closes and we charge your card the final price. It&rsquo;s never more than the max price shown.
         </p>
         <p className="text-xs leading-[1.6]" style={{ color: "#14110F" }}>
           If we ever cancel, you don&rsquo;t pay. Something serious come up? Get in touch.{" "}

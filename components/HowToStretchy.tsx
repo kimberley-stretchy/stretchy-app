@@ -15,7 +15,7 @@ const STEPS = [
   { n: "03", title: "Still room to join.", body: "More people can join, and the price keeps dropping for everyone." },
   {
     n: "04",
-    title: "2 hours out: final price charged.",
+    title: "30 mins out: final price charged.",
     body: "Joining closes and we charge your card the final price. The more who joined, the less it is. Never more than the max price shown.",
   },
   {

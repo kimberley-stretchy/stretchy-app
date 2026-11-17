@@ -4,7 +4,7 @@
 //
 // Every Stretchy has two moments, both counted back from its start time:
 //   36 hours out — go / no-go on the minimum; free cancelling ends
-//    2 hours out — joining closes; the final price is charged
+//    30 mins out — joining closes; the final price is charged
 //
 // All formatting is in New Zealand time (Pacific/Auckland) and is daylight-
 // saving safe: it uses the real time zone, never a fixed +12 / +13 offset.
@@ -16,7 +16,8 @@ const HOUR = 60 * 60 * 1000;
 const MINUTE = 60 * 1000;
 
 export const GO_NO_GO_HOURS = 36;
-export const FINAL_CHARGE_HOURS = 2;
+// 30 minutes (changed from 2 hours, Nov 2026): people kept turning up last minute.
+export const FINAL_CHARGE_HOURS = 0.5;
 
 type DateInput = string | number | Date;
 const toDate = (d: DateInput) => (d instanceof Date ? d : new Date(d));
@@ -28,7 +29,7 @@ export function goNoGo(startsAt: DateInput): Date {
   return new Date(toDate(startsAt).getTime() - GO_NO_GO_HOURS * HOUR);
 }
 
-/** When joining closes and the final price is charged: 2 hours before. */
+/** When joining closes and the final price is charged: 30 minutes before. */
 export function finalCharge(startsAt: DateInput): Date {
   return new Date(toDate(startsAt).getTime() - FINAL_CHARGE_HOURS * HOUR);
 }
@@ -48,8 +49,8 @@ export function minutesBefore(startsAt: DateInput, minutes: number): Date {
 /**
  * Where a session is in its life:
  *   before36  — more than 36 hrs out. Free to cancel.
- *   between   — 36 → 2 hrs out. Still room to join; no free cancelling.
- *   after2    — inside 2 hrs (or already started). Joining closed, price charged.
+ *   between   — 36 hrs → 30 mins out. Still room to join; no free cancelling.
+ *   after2    — inside 30 mins (or already started). Joining closed, price charged.
  *   cancelled — called off.
  */
 export type SessionTimePhase = "before36" | "between" | "after2" | "cancelled";

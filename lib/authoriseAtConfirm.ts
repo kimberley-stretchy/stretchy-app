@@ -5,7 +5,7 @@ import type Stripe from "stripe";
 //
 // Booking only SAVES the card (no pending amount on anyone's bank). When a
 // session is confirmed at 36 hours out, we place the authorisation then, for the
-// most the person can pay. It is captured at 2 hours out, well inside the 5–7
+// most the person can pay. It is captured at 30 mins out, well inside the 5–7
 // days an authorisation lasts — so nothing lapses, and a card problem shows up
 // 34 hours ahead, not at 4am on the day.
 //
@@ -91,7 +91,7 @@ export const SAFE_AUTH_AGE_MS = 4.5 * 24 * 60 * 60 * 1000;
 
 /**
  * True if the authorisation placed at booking can't be relied on to still be
- * alive at capture time (2 hours before the session): it has already lapsed or
+ * alive at capture time (30 minutes before the session): it has already lapsed or
  * been cancelled, or it will be too old by then.
  */
 export function needsFreshAuthorisation(

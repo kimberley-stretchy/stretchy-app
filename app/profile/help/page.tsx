@@ -41,11 +41,11 @@ const FAQS = [
   },
   {
     q: "When does my card actually get charged?",
-    a: "2 hours before the session, at the final price. Joining closes at the same time, and everyone pays the same.",
+    a: "30 minutes before the session, at the final price. Joining closes at the same time, and everyone pays the same.",
   },
   {
     q: "How does the price drop?",
-    a: "Every session shows a max price, the most you'll pay. Once enough people are in, it's on, and everyone who joins after makes it cheaper for the whole room, right up to 2 hours before.",
+    a: "Every session shows a max price, the most you'll pay. Once enough people are in, it's on, and everyone who joins after makes it cheaper for the whole room, right up to 30 minutes before.",
   },
   {
     q: "What happens if the minimum isn't met?",

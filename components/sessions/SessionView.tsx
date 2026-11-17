@@ -137,11 +137,11 @@ export default function SessionView({
                     grey: `If we get ${s.min_attendees} people, we’re on. Not enough people? You pay nothing.`,
                   },
                   {
-                    label: "36 → 2 hrs out",
+                    label: "36 hrs → 30 mins out",
                     bold: "Still room to join",
                     grey: "More people can join and the price keeps dropping. No free cancelling from here.",
                   },
-                  { label: "2 hrs out", bold: "Final price charged", grey: `Never more than ${formatPrice(openingPrice)}.` },
+                  { label: "30 mins out", bold: "Final price charged", grey: `Never more than ${formatPrice(openingPrice)}.` },
                 ]
               : [
                   {
@@ -150,14 +150,14 @@ export default function SessionView({
                     grey: goingAhead ? "Free cancelling has closed." : undefined,
                   },
                   joiningClosed
-                    ? { label: "36 → 2 hrs out", bold: "Joining has closed" }
+                    ? { label: "36 hrs → 30 mins out", bold: "Joining has closed" }
                     : {
-                        label: "36 → 2 hrs out",
+                        label: "36 hrs → 30 mins out",
                         bold: "Still room to join, right now",
                         grey: "Join now and you’re in straight away. The price keeps dropping.",
                       },
                   {
-                    label: "2 hrs out",
+                    label: "30 mins out",
                     bold: "Final price charged",
                     grey: `${joiningClosed ? "" : "Joining closes. "}Never more than ${formatPrice(maxPrice)}.`,
                   },

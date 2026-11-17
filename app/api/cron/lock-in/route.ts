@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { sendPushToUsers } from "@/lib/push-server";
 import { calculatePrice } from "@/lib/pricing";
 import { settlePaymentIntent } from "@/lib/lockInCharge";
+import { FINAL_CHARGE_HOURS } from "@/lib/sessionTimes";
 import { headcountForPrice } from "@/lib/authoriseAtConfirm";
 import { notifyHQ } from "@/lib/notifyLifecycle";
 import { sendAttendeeBatch } from "@/lib/stretchy-email";
@@ -13,7 +14,7 @@ import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailCont
  * GET /api/cron/lock-in
  *
  * Runs every 10 minutes via Vercel Cron.
- * Checks sessions starting in 1h50m–2h10m (the 2h window) and:
+ * Checks confirmed sessions inside 30 mins of their start (lib/sessionTimes FINAL_CHARGE_HOURS) and:
  *  - Captures each Stripe PaymentIntent (actual charge)
  *  - Updates holds to "charged" with the final amount
  *  - Marks session as "locked"
@@ -45,10 +46,14 @@ export async function GET(request: NextRequest) {
   const stripe = getStripe();
 
   const now = new Date();
-  const windowStart = new Date(now.getTime() + 110 * 60 * 1000); // 1h50m
-  const windowEnd   = new Date(now.getTime() + 130 * 60 * 1000); // 2h10m
+  // Every confirmed session at or past its final-charge moment (30 mins out).
+  // Runs every 10 mins, so cards are charged 20–30 mins before the start, and
+  // never before joining has closed. The lower bound catches a missed run up to
+  // 3 hours late; "confirmed" means not yet charged, so nothing is charged twice.
+  const windowStart = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+  const windowEnd   = new Date(now.getTime() + FINAL_CHARGE_HOURS * 60 * 60 * 1000);
 
-  // Find confirmed sessions starting in the 2h window
+  // Find confirmed sessions inside the final-charge window
   const { data: sessions } = await admin
     .from("sessions")
     .select("id, title, starts_at, location_name, cost_base, revenue_target, min_attendees, max_attendees, social_stretch_venue, state, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram, confirmed_headcount")
@@ -57,7 +62,7 @@ export async function GET(request: NextRequest) {
     .lte("starts_at", windowEnd.toISOString());
 
   if (!sessions || sessions.length === 0) {
-    return NextResponse.json({ locked: 0, message: "No sessions in 2h window" });
+    return NextResponse.json({ locked: 0, message: "No sessions in the final-charge window" });
   }
 
   const results = [];
@@ -196,18 +201,18 @@ export async function GET(request: NextRequest) {
     const holderUserIds = holds.filter(h => !unpaidHoldIds.has(h.id)).map(h => h.user_id);
     await sendPushToUsers(holderUserIds, {
       title: "Final price charged",
-      body: `${session.title}: $${finalPrice.toFixed(2)} each. See you in 2 hours!`,
+      body: `${session.title}: $${finalPrice.toFixed(2)} each. See you soon!`,
       url: `/sessions/${session.id}`,
       requireInteraction: true,
     }).catch(console.error);
 
-    // 2-hour heads-up for HQ only — teacher and GEM don't need a 2h email
+    // Final heads-up for HQ only — teacher and GEM don't need this email
     // (they got the confirm + calendar invite when it locked in at 36h).
     await notifyHQ({
-      subject: `${failed ? "⚠️ Payment failed · " : ""}Starting in ~2h: ${session.title}`,
+      subject: `${failed ? "⚠️ Payment failed · " : ""}Starting in ~30 mins: ${session.title}`,
       scheme: "orange",
       kicker: "Stretchy HQ · Starting soon",
-      heading: `${session.title} — in ~2 hours`,
+      heading: `${session.title} — in ~30 minutes`,
       sessionId: session.id,
       rows: [
         `<strong>${totalHolds}</strong> attendee${totalHolds === 1 ? "" : "s"} · ${charged} charged${failed ? ` · <strong>${failed} NOT charged</strong>` : ""}.`,

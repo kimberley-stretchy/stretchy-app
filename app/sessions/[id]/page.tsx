@@ -194,14 +194,28 @@ export default function SessionDetailPage() {
             >
               {myPlaces === 1 ? "Your place is held" : `Your ${myPlaces} places are held`} · Manage my booking
             </Link>
-          ) : joiningClosed ? (
-            <p className="m-0 w-full text-center rounded-pill py-[13px] px-[18px] font-bold text-[15px] border-2 border-ink/40 text-ink/60">
-              Joining has closed for this one
-            </p>
           ) : full ? (
-            <p className="m-0 w-full text-center rounded-pill py-[13px] px-[18px] font-bold text-[15px] border-2 border-ink/40 text-ink/60">
-              This one&rsquo;s full
-            </p>
+            // Every place taken: no walk-ins either.
+            <div className="flex flex-col gap-2">
+              <p className="m-0 w-full text-center rounded-pill py-[13px] px-[18px] font-bold text-[15px] border-2 border-ink/40 text-ink/60">
+                This one&rsquo;s full
+              </p>
+              <p className="m-0 text-[13px] text-ink/70 text-center">
+                This session is at capacity. We hope to see you at a future Stretchy instead.{" "}
+                <Link href="/sessions" className="font-bold underline">See what&rsquo;s on</Link>
+              </p>
+            </div>
+          ) : joiningClosed ? (
+            // Joining closes 30 mins out, but there's still room: walk-ins welcome.
+            <div className="flex flex-col gap-2">
+              <p className="m-0 w-full text-center rounded-pill py-[13px] px-[18px] font-bold text-[15px] border-2 border-ink/40 text-ink/60">
+                Joining has closed for this one
+              </p>
+              <p className="m-0 text-[13px] text-ink/70 text-center">
+                <strong className="text-ink">Joining closed? Just turn up and say kia ora.</strong> Speak to the Good Energy Manager at the door, or email{" "}
+                <a href="mailto:kimberley@stretchyyoga.co.nz" className="font-bold underline">kimberley@stretchyyoga.co.nz</a> and we&rsquo;ll sort payment after the fact.
+              </p>
+            </div>
           ) : !accessToken ? (
             <Link
               href={`/login?next=/sessions/${params.id}`}

@@ -75,7 +75,7 @@ function GoingAheadContent() {
             <span className="font-display font-bold text-ink" style={{ fontSize: "52px", letterSpacing: "-0.03em" }}>${currentPrice.toFixed(2)}</span>
             <span className="font-mono text-sm font-bold text-muted">max per person · incl. GST</span>
           </div>
-          <p className="text-xs text-muted">{holds} in · still room to join. Final price charged 2 hours before, never more than this.</p>
+          <p className="text-xs text-muted">{holds} in · still room to join. Final price charged 30 minutes before, never more than this.</p>
         </div>
 
         {/* Session details */}

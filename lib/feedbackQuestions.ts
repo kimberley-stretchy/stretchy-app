@@ -19,7 +19,7 @@ export type FeedbackQuestion = {
 export const FEEDBACK_QUESTIONS: FeedbackQuestion[] = [
   { k: "overall", q: "How was your overall experience?", options: ["Loved it", "Really good", "It was OK", "Not for me"], other: true },
   { k: "booking", q: "How was the booking experience?", options: ["Easy", "Mostly easy", "A bit confusing", "Hard"], other: true },
-  { k: "pricing", q: "People-powered Pricing: what did you think?", options: ["Got it, love it", "Got it", "Not sure I understand it", "Don’t get it yet"], other: true },
+  { k: "pricing", q: "People-powered Pricing: what did you think?", options: ["Got it, love it", "Got it", "Not sure I understand it", "Don’t get it yet", "I’d just rather pay a set fee"], other: true },
   { k: "social", q: "How was the Social Stretch?", options: ["Loved it", "Good chats", "Didn’t stay this time", "Not for me"], other: true },
   { k: "feeling", q: "What was your overall feeling of Stretchy?", options: ["Welcoming", "Fun", "Calm", "Social", "Energising", "Good value", "A bit much"], multi: true, other: true },
   { k: "improve", q: "What can we do to improve?", options: ["Times", "Locations", "Booking", "Price", "The class", "Social Stretch", "Communication"], multi: true, other: true, more: true },

@@ -502,7 +502,7 @@ export default function SocialSite() {
                   <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.45, fontWeight: 600 }}>22 of us are moving together, so the price dropped for everyone.</p>
                   <div style={{ border: `2px solid ${CREAM}`, borderRadius: 18, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
                     <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 30, lineHeight: 1 }}>$14.52</span>
-                    <span style={{ fontSize: 9.5, opacity: 0.85 }}>charged 2 hours out · incl. GST</span>
+                    <span style={{ fontSize: 9.5, opacity: 0.85 }}>charged 30 mins out · incl. GST</span>
                     <div style={{ display: "flex", justifyContent: "space-between", fontFamily: MONO, fontSize: 9, fontWeight: 700 }}><span>22 IN</span><span>30 MAX</span></div>
                     <Dots count={30} filled={22} dark />
                   </div>

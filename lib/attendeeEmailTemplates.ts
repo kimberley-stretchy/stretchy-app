@@ -8,7 +8,7 @@
 // Rules that hold for every email:
 //   • "Hey {name}," → a warm intro → "See you there, The Stretchy team".
 //   • Links at the bottom are only How it works ↗ and Cancellation policy ↗.
-//   • No real dates or times for the 36 hr / 2 hr moments.
+//   • No real dates or times for the 36 hr / 30 min moments.
 //   • Every detail comes from the session; an empty value hides its row.
 //   • Words follow STRETCHY_WORDS.md.
 // Layout is table-based so mail clients render it reliably.
@@ -226,10 +226,10 @@ function priceNowRow(c: Ctx): Row | null {
     : { label: "Price now", bold: `${money(totalCents / 100)} max for your ${c.n} places`, second: `${money(c.maxNow)} max per person. ${room}.${drop}` };
 }
 const ROW_FREE = (c: Ctx): Row => ({ label: "Up to 36 hrs out", bold: "Free to cancel", second: `If we get ${c.min} people, we’re on. Not enough people? You pay nothing.` });
-const ROW_ROOM: Row = { label: "36 → 2 hrs out", bold: "Still room to join", second: "More people can join and the price keeps dropping. No free cancelling from here." };
-const ROW_FINAL = (c: Ctx, tail = ""): Row => ({ label: "2 hrs out", bold: "Final price charged", second: `${c.opening != null ? `Never more than ${money(c.before36 ? c.opening : c.maxNow ?? c.opening)}.` : "Never more than the max price shown."}${tail}` });
-const ROW_ROOM_NOW: Row = { label: "36 → 2 hrs out", bold: "Still room to join, right now", second: "Join now and you’re in straight away. The price keeps dropping." };
-const ROW_FINAL_LATE = (c: Ctx): Row => ({ label: "2 hrs out", bold: "Final price charged", second: `Joining closes.${c.maxNow != null ? ` Never more than ${money(c.maxNow)}.` : ""}` });
+const ROW_ROOM: Row = { label: "36 hrs → 30 mins out", bold: "Still room to join", second: "More people can join and the price keeps dropping. No free cancelling from here." };
+const ROW_FINAL = (c: Ctx, tail = ""): Row => ({ label: "30 mins out", bold: "Final price charged", second: `${c.opening != null ? `Never more than ${money(c.before36 ? c.opening : c.maxNow ?? c.opening)}.` : "Never more than the max price shown."}${tail}` });
+const ROW_ROOM_NOW: Row = { label: "36 hrs → 30 mins out", bold: "Still room to join, right now", second: "Join now and you’re in straight away. The price keeps dropping." };
+const ROW_FINAL_LATE = (c: Ctx): Row => ({ label: "30 mins out", bold: "Final price charged", second: `Joining closes.${c.maxNow != null ? ` Never more than ${money(c.maxNow)}.` : ""}` });
 // Option C: nothing is held when you book; the hold goes on at 36 hrs out.
 const PENDING = " Nothing is held on your card until it’s going ahead.";
 
@@ -304,7 +304,7 @@ function goingAhead(p: AttendeeEmailPayload, c: Ctx) {
     ${dayBox(sc, p, c)}
     ${outlineButton(sc, c.manageUrl, "Manage my booking")}
     ${!p.isComp && c.maxNow != null ? priceBlock(sc, { big: money(c.maxNow), caption: "max per person · incl. GST", leftLabel: inAndRoom(c.held), c, endPrices: true }) : ""}
-    ${p.isComp ? "" : greyRows(sc, [ROW_ROOM, { label: "2 hrs out", bold: "Final price charged", second: c.maxNow != null ? `Never more than ${money(c.maxNow)}.` : null }])}
+    ${p.isComp ? "" : greyRows(sc, [ROW_ROOM, { label: "30 mins out", bold: "Final price charged", second: c.maxNow != null ? `Never more than ${money(c.maxNow)}.` : null }])}
     ${filledButton(sc, c.shareUrl, "Share with a mate")}
     ${links(sc)}
   `);
@@ -316,7 +316,7 @@ function stillRoom(p: AttendeeEmailPayload, c: Ctx) {
   const hitMin = c.min > 0 && c.held >= c.min;
   const html = page("orange", (sc) => `
     ${h1(sc, "It’s going ahead, and there’s still room. 📉")}
-    ${intro(sc, p, [`${esc(p.sessionTitle)} ${hitMin ? `hit ${c.min}, so it’s` : "is"} going ahead. There’s still room, and you can join up to <strong>2 hours before</strong>. Come move with us.`])}
+    ${intro(sc, p, [`${esc(p.sessionTitle)} ${hitMin ? `hit ${c.min}, so it’s` : "is"} going ahead. There’s still room, and you can join up to <strong>30 minutes before</strong>. Come move with us.`])}
     ${c.maxNow != null ? priceBlock(sc, { big: money(c.maxNow), caption: "max per person · incl. GST", leftLabel: inAndRoom(c.held), c, endPrices: true }) : ""}
     ${filledButton(sc, c.sessionUrl, "Hold my place")}
     <div style="height:6px;"></div>
@@ -326,7 +326,7 @@ function stillRoom(p: AttendeeEmailPayload, c: Ctx) {
   return { subject: `${subjectDate(p.startsAt)}It’s going ahead — ${p.sessionTitle}. Still room 🎉`, html };
 }
 
-// 6 / 6b — Your final price (2 hrs out)
+// 6 / 6b — Your final price (30 mins out)
 function finalPrice(p: AttendeeEmailPayload, c: Ctx) {
   // The exact amount charged comes from the lock-in job; the fallback is the
   // same sum it does (final price at the headcount, never under the minimum).
@@ -421,7 +421,7 @@ function cardFailed(p: AttendeeEmailPayload, c: Ctx) {
 // 11 — We couldn't confirm your card (36 hrs out: it's going ahead, their card said no)
 function cardConfirmFailed(p: AttendeeEmailPayload, c: Ctx) {
   const places = c.n === 1 ? "your place" : `your ${c.n} places`;
-  const by = p.cardDeadline ? `by <strong>${esc(p.cardDeadline)}</strong>` : "at least 12 hours before it starts";
+  const by = p.cardDeadline ? `by <strong>${esc(p.cardDeadline)}</strong>` : "at least 130 minutes before it starts";
   const html = page("cream", (sc) => `
     ${h1(sc, "We couldn’t confirm your card.")}
     ${intro(sc, p, [
@@ -438,7 +438,7 @@ function cardConfirmFailed(p: AttendeeEmailPayload, c: Ctx) {
 // 12 — Reminder: still no working card
 function cardConfirmReminder(p: AttendeeEmailPayload, c: Ctx) {
   const places = c.n === 1 ? "your place" : `your ${c.n} places`;
-  const by = p.cardDeadline ? `by <strong>${esc(p.cardDeadline)}</strong>` : "at least 12 hours before it starts";
+  const by = p.cardDeadline ? `by <strong>${esc(p.cardDeadline)}</strong>` : "at least 130 minutes before it starts";
   const html = page("cream", (sc) => `
     ${h1(sc, "Your place still needs a card.")}
     ${intro(sc, p, [
@@ -457,7 +457,7 @@ function cardPlaceReleased(p: AttendeeEmailPayload, c: Ctx) {
     ${h1(sc, c.n === 1 ? "Your place has been released." : "Your places have been released.")}
     ${intro(sc, p, [
       `We couldn’t confirm a card for <strong>${esc(p.sessionTitle)}</strong> in time, so ${c.n === 1 ? "your place has" : `your ${c.n} places have`} gone back to the group.`,
-      "Still keen? If there’s still room, you can join again up to 2 hours before it starts.",
+      "Still keen? If there’s still room, you can join again up to 30 minutes before it starts.",
     ])}
     ${filledButton(sc, c.sessionUrl, "Hold my place")}
     ${links(sc)}

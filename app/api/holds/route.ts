@@ -108,10 +108,10 @@ export async function POST(request: NextRequest) {
   if (sErr || !session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
   if (session.state === "cancelled") return NextResponse.json({ error: "This one’s been called off, so there’s nothing to hold." }, { status: 400 });
 
-  // Joining closes 2 hours before the session, when the final price is charged.
+  // Joining closes 30 minutes before the session, when the final price is charged.
   const timePhase = phase(session.starts_at, session.state);
   if (timePhase === "after2" || session.state === "locked") {
-    return NextResponse.json({ error: "Joining has closed for this one. It closes 2 hours before the session starts." }, { status: 400 });
+    return NextResponse.json({ error: "Joining closed? Just turn up and say kia ora. Speak to the Good Energy Manager at the door, or email kimberley@stretchyyoga.co.nz and we'll sort payment after the fact." }, { status: 400 });
   }
 
   // Count current holds to calculate price — sum quantity, not row count,
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
 
   // OPTION C — before 36 hrs out, booking only SAVES the card: nothing is held
   // on anyone's bank yet. The hold for the most they can pay is placed when the
-  // session is confirmed at 36 hrs out (lib/confirmCards.ts) and charged 2 hrs
+  // session is confirmed at 36 hrs out (lib/confirmCards.ts) and charged 30 mins
   // out. Joining after 36 hrs out (it's already going ahead) still holds the
   // amount straight away, below.
   if (timePhase === "before36") {
@@ -359,7 +359,7 @@ export async function DELETE(request: NextRequest) {
   if (hoursUntil <= 36) {
     // The one place the real dates for these two moments are shown.
     return NextResponse.json({
-      error: `Free cancelling closed 36 hours out (${formatDayTime(goNoGo(session.starts_at))}). Your place is confirmed and the final price is charged 2 hours before (${formatDayTime(finalCharge(session.starts_at))}). Something serious come up? Get in touch.`
+      error: `Free cancelling closed 36 hours out (${formatDayTime(goNoGo(session.starts_at))}). Your place is confirmed and the final price is charged 30 minutes before (${formatDayTime(finalCharge(session.starts_at))}). Something serious come up? Get in touch.`
     }, { status: 400 });
   }
 

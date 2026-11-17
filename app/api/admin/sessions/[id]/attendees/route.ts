@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const supabase = getSupabase();
 
   // Active before the final charge, "charged" after it — so the list is still
-  // here on the day (it used to go empty 2 hours before the session).
+  // here on the day (it used to go empty at the final charge the session).
   const { data: holds, error } = await supabase
     .from("holds")
     .select("id, user_id, state, created_at, quantity, is_comp, checked_in_at")

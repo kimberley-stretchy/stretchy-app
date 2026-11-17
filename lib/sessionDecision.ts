@@ -204,7 +204,7 @@ export async function confirmSession(
   if (interestedIds.length > 0) {
     await sendPushToUsers(interestedIds, {
       title: "It's on 🎉",
-      body: `${session.title} is going ahead. Still room to join, up to 2 hours before.`,
+      body: `${session.title} is going ahead. Still room to join, up to 30 minutes before.`,
       url: `/sessions/${session.id}`,
     }).catch(console.error);
   }
@@ -227,7 +227,7 @@ export async function confirmSession(
         : `<strong>${holds}</strong> holds — minimum met. Teacher and GEM have been notified.`,
       `🗓 ${dateStr}`,
       `📍 ${session.location_name ?? "TBC"}`,
-      `Final price at lock-in (2h before): ${finalPrice}.`,
+      `Final price at lock-in (30 mins before): ${finalPrice}.`,
       cardSummaryRow(cards, holders, deadlineStr),
     ],
   });

@@ -110,7 +110,7 @@ export default function NotificationsPage() {
           <div className="bg-white rounded-card border-2 border-ink p-8 text-center">
             <p className="text-3xl mb-3">🧘</p>
             <p className="font-bold text-ink mb-2">No holds yet</p>
-            <p className="text-sm text-muted mb-5">Browse sessions and hold your first place. It's free to cancel up to 36 hours out, and nothing's charged until 2 hours before.</p>
+            <p className="text-sm text-muted mb-5">Browse sessions and hold your first place. It's free to cancel up to 36 hours out, and nothing's charged until 30 minutes before.</p>
             <Link href="/sessions" className="font-semibold px-6 py-3 rounded-pill" style={{ backgroundColor: "#14110F", color: "#F7F0E8" }}>
               Browse sessions →
             </Link>
