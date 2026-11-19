@@ -393,7 +393,10 @@ export default function GemRunSheetPage() {
             <li>Yoga mats, the sounds, interesting viewpoints (an upside-down tree, anyone?)</li>
           </ul>
           <p className="m-0 mt-2 text-[13px] text-ink/70">
-            Send them to Kimberley: <a href="mailto:kimberley@stretchyyoga.co.nz?subject=Photos%20from%20today" className="font-bold underline">kimberley@stretchyyoga.co.nz</a>
+            WhatsApp or email them to Kimberley:{" "}
+            <a href="https://wa.me/64212090435" target="_blank" rel="noopener noreferrer" className="font-bold underline">WhatsApp +64 21 209 0435</a>
+            {" · "}
+            <a href="mailto:kimberley@stretchyyoga.co.nz?subject=Photos%20from%20today" className="font-bold underline">kimberley@stretchyyoga.co.nz</a>
           </p>
         </div>
 
