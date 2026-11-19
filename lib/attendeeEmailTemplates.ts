@@ -18,7 +18,7 @@ import { page, h1, hey, msg, label, APP_URL, type Scheme, type AttendeeEmailType
 import { sessionTimes, subjectDate } from "@/lib/sessionTimes";
 import { calculatePrice, maxPriceToPromise, priceRightNow, priceHasDropped } from "@/lib/pricing";
 import { venueLine, meetLine } from "@/lib/sessionDisplay";
-import { placeCount, yourPlaces, youOrCrew, bringNote, moreToGoAhead, inAndRoom } from "@/lib/places";
+import { placeCount, yourPlaces, youOrCrew, bringNote, moreToGoAhead, inAndRoom, untilPriceDrops } from "@/lib/places";
 
 const MONO = "'JetBrains Mono',ui-monospace,Menlo,monospace";
 const money = (n: number) => `$${n.toFixed(2)}`;
@@ -35,6 +35,8 @@ function context(p: AttendeeEmailPayload) {
   const hasNumbers = p.costBase != null && p.revenueTarget != null && min > 0 && max > 0;
   const t = p.startsAt ? sessionTimes({ starts_at: p.startsAt, duration_mins: p.durationMins, state: p.sessionState }) : null;
   const before36 = t ? t.phase === "before36" : true;
+  // Confirmed (36 hrs out, or HQ kept it alive): it's going ahead, whatever the numbers.
+  const goingAhead = p.sessionState === "confirmed" || p.sessionState === "locked";
   const opening = hasNumbers ? calculatePrice(p.costBase!, p.revenueTarget!, min) : null;
   const floor = hasNumbers ? calculatePrice(p.costBase!, p.revenueTarget!, max) : null;
   // The most this person can pay: at-minimum price before 36 hrs out, current after.
@@ -44,7 +46,7 @@ function context(p: AttendeeEmailPayload) {
   // next to the cap once more than the minimum are in.
   const rightNow = hasNumbers ? priceRightNow(p.costBase!, p.revenueTarget!, min, held) : null;
   return {
-    n, min, max, held, hasNumbers, t, before36, opening, floor, maxNow, rightNow,
+    n, min, max, held, hasNumbers, t, before36, goingAhead, opening, floor, maxNow, rightNow,
     sessionUrl: id ? `${APP_URL}/sessions/${id}` : `${APP_URL}/sessions`,
     manageUrl: id ? `${APP_URL}/hold/${id}` : `${APP_URL}/sessions`,
     shareUrl: id ? `${APP_URL}/hold/${id}?share=1` : `${APP_URL}/sessions`,
@@ -210,11 +212,23 @@ function dayBox(sc: Scheme, p: AttendeeEmailPayload, c: Ctx, extra?: { row: Row;
   `);
 }
 
+// How the room's doing, in the session page's words:
+//   going ahead, under the minimum → "Going ahead ✓ · 2 more people, then the price drops"
+//   going ahead                    → "Going ahead ✓ · 17 in · still room to join"
+//   before 36 hrs out              → "10 more to go ahead" / "17 in · still room to join"
+function roomNow(c: Ctx): string {
+  if (c.goingAhead) {
+    const drops = c.min > 0 ? untilPriceDrops(c.held, c.min) : null;
+    return drops ? `Going ahead ✓ · ${drops}` : `Going ahead ✓ · ${inAndRoom(c.held)}`;
+  }
+  return c.before36 ? moreToGoAhead(c.held, c.min) ?? inAndRoom(c.held) : inAndRoom(c.held);
+}
+
 // The "price now" row + the grey timing rows, in the session page's words.
 function priceNowRow(c: Ctx): Row | null {
   if (c.maxNow == null) return null;
   const totalCents = Math.round(c.maxNow * 100) * c.n;
-  const room = c.before36 ? moreToGoAhead(c.held, c.min) ?? inAndRoom(c.held) : inAndRoom(c.held);
+  const room = roomNow(c);
   const drop = c.floor != null && c.held < c.max ? ` Drops to ${money(c.floor)}${c.n > 1 ? " each" : ""} if all ${c.max} fill.` : "";
   if (c.rightNow != null && priceHasDropped(c.rightNow, c.maxNow)) {
     return c.n === 1
@@ -395,8 +409,10 @@ function placeOnUs(p: AttendeeEmailPayload, c: Ctx) {
   const places = c.n === 1 ? "a place" : `${c.n} places`;
   const html = page("purple", (sc) => `
     ${h1(sc, c.n === 1 ? "A place on us. 💛" : `${c.n} places on us. 💛`)}
-    ${intro(sc, p, [`Stretchy HQ has saved you ${places}, on us. Nothing to pay. ${c.min > 0 ? `It still needs ${c.min} people to go ahead, and we’ll` : "We’ll"} email you 36 hours out either way.`])}
-    ${dayBox(sc, p, c, { row: { label: c.n === 1 ? "Your place" : "Your places", bold: "On us", second: need ? `${need}.` : c.held > 0 ? `${inAndRoom(c.held)}.` : null }, dots: c.max > 0 })}
+    ${intro(sc, p, [c.goingAhead
+      ? `Stretchy HQ has saved you ${places}, on us. Nothing to pay. <strong>It’s going ahead</strong>, so you’re all set. Here’s all the deets for the day.`
+      : `Stretchy HQ has saved you ${places}, on us. Nothing to pay. ${need ? `It needs ${need.replace(" to go ahead", "")} people to go ahead, and we’ll` : "We’ll"} email you 36 hours out either way.`])}
+    ${dayBox(sc, p, c, { row: { label: c.n === 1 ? "Your place" : "Your places", bold: "On us", second: c.goingAhead ? `${roomNow(c)}.` : need ? `${need}.` : c.held > 0 ? `${inAndRoom(c.held)}.` : null }, dots: c.max > 0 })}
     ${p.newAccount ? filledButton(sc, loginUrl, "Set up my account") : filledButton(sc, c.manageUrl, "Manage my booking")}
     ${links(sc)}
   `);
