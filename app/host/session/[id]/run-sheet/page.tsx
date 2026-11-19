@@ -50,7 +50,11 @@ export default function GemRunSheetPage() {
   const [addingNotice, setAddingNotice] = useState(false);
   const [showNoticeForm, setShowNoticeForm] = useState(false);
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [sent, setSent] = useState<string | null>(null);
+  const [sendErr, setSendErr] = useState<string | null>(null);
+  const [walkIns, setWalkIns] = useState(0);
+  const [walkInNames, setWalkInNames] = useState("");
+  const [dayNote, setDayNote] = useState("");
 
   const load = useCallback(
     async (token: string) => {
@@ -121,16 +125,21 @@ export default function GemRunSheetPage() {
     setAddingNotice(false);
   }
 
+  // "Submit today's check-in": HQ gets a snapshot of the day by email.
   async function sendRunSheet() {
-    if (!accessToken) return;
-    setSending(true);
-    await fetch(`/api/host/session/${params.id}/send-run-sheet`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    if (!accessToken || sending) return;
+    setSending(true); setSendErr(null);
+    try {
+      const res = await fetch(`/api/host/session/${params.id}/send-run-sheet`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ walkIns, walkInNames, note: dayNote }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) setSent(`Sent to HQ ✓ ${d.total} on the mat today. Thank you!`);
+      else setSendErr(d.error ?? "Couldn't send it. Try again in a moment.");
+    } catch { setSendErr("Couldn't send it. Try again in a moment."); }
     setSending(false);
-    setSent(true);
-    setTimeout(() => setSent(false), 3000);
   }
 
   function sharePlaylist() {
@@ -374,15 +383,51 @@ export default function GemRunSheetPage() {
           })}
         </div>
 
-        <div className="flex flex-col gap-2.5 mt-2">
+        {/* Photo nudge: low-key shots HQ can use on socials. */}
+        <div className="mt-4 border-2 border-dashed border-ink/40 rounded-2xl p-4">
+          <p className="m-0 font-mono text-[10px] font-extrabold tracking-[0.12em] text-ink/60">📸 SNAP A FEW PHOTOS</p>
+          <p className="m-0 mt-2 text-sm font-bold">Low-key, incognito vibes, please.</p>
+          <ul className="m-0 mt-1.5 pl-4 text-[13px] text-ink/70 leading-relaxed list-disc">
+            <li>During practice: people unrecognisable, from behind or far away</li>
+            <li>At the Social Stretch: something larger and wider</li>
+            <li>Yoga mats, the sounds, interesting viewpoints (an upside-down tree, anyone?)</li>
+          </ul>
+          <p className="m-0 mt-2 text-[13px] text-ink/70">
+            Send them to Kimberley: <a href="mailto:kimberley@stretchyyoga.co.nz?subject=Photos%20from%20today" className="font-bold underline">kimberley@stretchyyoga.co.nz</a>
+          </p>
+        </div>
+
+        {/* Submit today's check-in: walk-ins + notes, then a snapshot to HQ. */}
+        <div className="mt-4 border-2 border-ink rounded-2xl p-4 flex flex-col gap-3">
+          <p className="m-0 font-mono text-[10px] font-extrabold tracking-[0.12em] text-ink/60">SUBMIT TODAY&rsquo;S CHECK-IN</p>
+          <p className="m-0 text-[13px] text-ink/70">Once everyone&rsquo;s ticked off, send HQ a snapshot of the day.</p>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-bold">Walk-ins (not booked)</span>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setWalkIns((n) => Math.max(0, n - 1))} className="w-9 h-9 rounded-full border-2 border-ink font-bold" aria-label="One fewer walk-in">−</button>
+              <span className="font-mono font-extrabold w-6 text-center">{walkIns}</span>
+              <button type="button" onClick={() => setWalkIns((n) => n + 1)} className="w-9 h-9 rounded-full border-2 border-ink font-bold" aria-label="One more walk-in">+</button>
+            </div>
+          </div>
+          {walkIns > 0 && (
+            <input value={walkInNames} onChange={(e) => setWalkInNames(e.target.value)} placeholder="Their names / emails, so HQ can sort payment"
+              className="w-full rounded-xl border-2 border-ink/20 px-3 py-2.5 text-base bg-white outline-none" />
+          )}
+          <textarea value={dayNote} onChange={(e) => setDayNote(e.target.value)} rows={3} placeholder="Anything HQ should know? (optional) How it went, the vibe, any issues."
+            className="w-full rounded-xl border-2 border-ink/20 px-3 py-2.5 text-base bg-white outline-none resize-y" />
           <button
             onClick={sendRunSheet}
             disabled={sending}
             className="h-12 rounded-pill text-sm font-bold disabled:opacity-60"
             style={{ background: "#14110F", color: "#F7F0E8" }}
           >
-            {sent ? "Sent ✓" : sending ? "Sending…" : "Send the run sheet to HQ"}
+            {sending ? "Sending…" : sent ? "Send again" : `Submit check-in to HQ · ${hereCount + walkIns} on the mat`}
           </button>
+          {sent && <p className="m-0 text-[13px] font-bold" style={{ color: "#716F39" }}>{sent}</p>}
+          {sendErr && <p className="m-0 text-[13px] font-bold" style={{ color: "#C6362E" }}>{sendErr}</p>}
+        </div>
+
+        <div className="flex flex-col gap-2.5 mt-4">
           <button
             onClick={sharePlaylist}
             disabled={!session.spotifyPlaylistUrl}
