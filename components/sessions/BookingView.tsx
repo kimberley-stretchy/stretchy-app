@@ -10,7 +10,7 @@ import { googleCalendarUrl, downloadIcs, sessionCalendarEvent } from "@/lib/cale
 import { calculatePrice, formatPrice, maxPriceToPromise, priceRightNow, priceHasDropped } from "@/lib/pricing";
 import { sessionTimes } from "@/lib/sessionTimes";
 import { styleAndLevel, venueLine, meetLine } from "@/lib/sessionDisplay";
-import { heldHeadline, priceRow, bringNote, moreToGoAhead, inAndRoom } from "@/lib/places";
+import { heldHeadline, priceRow, bringNote, moreToGoAhead, inAndRoom, untilPriceDrops } from "@/lib/places";
 import { locationTheme } from "@/lib/locationColours";
 
 // Manage my booking — what someone holding a place sees. Purely presentational:
@@ -102,9 +102,12 @@ export default function BookingView({
     ? { bold: capRow.bold, greyLead: `${capRow.greyLead ? `${capRow.greyLead} ` : ""}Current ${formatPrice(nowPrice)}${myQty > 1 ? " each" : ""}.` }
     : capRow;
   const need = before36 ? moreToGoAhead(holds, session.min_attendees) : null;
+  // Confirmed (36 hrs out, or HQ kept it alive) but still under the minimum.
+  const goingAhead = session.state === "confirmed" || session.state === "locked";
+  const drops = goingAhead ? untilPriceDrops(holds, session.min_attendees) : null;
   const priceGrey = [
     price.greyLead,
-    need ? `${need}.` : `${inAndRoom(holds)}.`,
+    drops ? `Going ahead ✓ · ${drops}.` : need ? `${need}.` : `${inAndRoom(holds)}.`,
     holds < session.max_attendees ? `Drops to ${formatPrice(floorPrice)}${myQty > 1 ? " each" : ""} if all ${session.max_attendees} fill.` : null,
   ].filter(Boolean).join(" ");
 
