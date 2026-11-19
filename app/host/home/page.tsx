@@ -194,7 +194,9 @@ export default function HostHomePage() {
             <div className="flex flex-col gap-2.5">
               {sessions.map((s) => {
                 const { asTeacher, asGem } = s;
-                const going = s.held >= s.min;
+                // Confirmed (36 hrs out or HQ kept it alive) counts as going ahead, whatever the numbers.
+                const confirmed = s.state === "confirmed" || s.state === "locked";
+                const going = confirmed || s.held >= s.min;
                 const when = new Date(s.startsAt);
                 const day = when.toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "short", day: "numeric", month: "short" });
                 const t = (iso: string) => new Date(iso).toLocaleTimeString("en-NZ", { timeZone: "Pacific/Auckland", hour: "numeric", minute: "2-digit", hour12: true }).replace(/\s/g, "").toLowerCase();
@@ -217,7 +219,7 @@ export default function HostHomePage() {
                     <div className="mt-3 rounded-xl p-3" style={{ background: "#F7F0E8" }}>
                       <div className="flex items-baseline justify-between">
                         <span className="font-mono text-[10px] font-extrabold tracking-[0.08em]">
-                          {s.held} BOOKED · {going ? `${s.max - s.held} SPOTS LEFT` : `${s.min - s.held} MORE TO GO AHEAD`}
+                          {s.held} BOOKED · {confirmed ? `GOING AHEAD ✓ · ${Math.max(0, s.max - s.held)} PLACES LEFT` : going ? `${s.max - s.held} PLACES LEFT` : `${s.min - s.held} MORE TO GO AHEAD`}
                         </span>
                         <span className="font-mono text-[10px] text-ink/55">MIN {s.min} · MAX {s.max}</span>
                       </div>
