@@ -14,7 +14,17 @@ export async function GET(request: NextRequest) {
   if ("error" in gate) return gate.error;
   const { host } = gate;
 
-  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  // no-store: always the live numbers, never a cached copy.
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    global: { fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }) },
+  });
+
+  // Keep today's sessions on the list all day (NZ time), so a GEM can still
+  // open the roster and check people in after the session has started.
+  const nzToday = new Date().toLocaleDateString("en-CA", { timeZone: "Pacific/Auckland" }); // YYYY-MM-DD
+  const nzOffset = new Intl.DateTimeFormat("en-US", { timeZone: "Pacific/Auckland", timeZoneName: "longOffset" })
+    .formatToParts(new Date()).find((p) => p.type === "timeZoneName")?.value.replace("GMT", "") || "+13:00";
+  const startOfToday = new Date(`${nzToday}T00:00:00${nzOffset}`).toISOString();
 
   const { data: sessions } = await admin
     .from("sessions")
@@ -22,7 +32,7 @@ export async function GET(request: NextRequest) {
     .or(`host_id.eq.${host.id},gem_host_id.eq.${host.id}`)
     .eq("is_draft", false)
     .neq("state", "cancelled")
-    .gt("starts_at", new Date().toISOString())
+    .gte("starts_at", startOfToday)
     .order("starts_at", { ascending: true });
 
   if (!sessions || sessions.length === 0) return NextResponse.json({ sessions: [] });
@@ -30,7 +40,9 @@ export async function GET(request: NextRequest) {
   const ids = sessions.map((s) => s.id);
   const hostIds = Array.from(new Set(sessions.flatMap((s) => [s.host_id, s.gem_host_id]).filter(Boolean))) as string[];
   const [{ data: holds }, { data: people }] = await Promise.all([
-    admin.from("holds").select("session_id, quantity").in("session_id", ids).eq("state", "active"),
+    // Active before the final charge, charged after it: count both, or the
+    // numbers drop to 0 thirty minutes before the session.
+    admin.from("holds").select("session_id, quantity").in("session_id", ids).in("state", ["active", "confirmed", "charged"]),
     admin.from("hosts").select("id, name, email").in("id", hostIds),
   ]);
 
