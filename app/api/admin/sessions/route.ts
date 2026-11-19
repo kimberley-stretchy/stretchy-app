@@ -385,6 +385,16 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
+    // Booking history is kept for Insights (year on year, retention) and the
+    // money records: a session anyone ever booked can't be deleted. Cancelling
+    // it is enough; it's hidden from customers.
+    const { count: bookings } = await supabase.from("holds").select("id", { count: "exact", head: true }).eq("session_id", id);
+    if ((bookings ?? 0) > 0) {
+      return NextResponse.json(
+        { error: "People booked this session, so it's kept for your records and Insights. It can't be permanently deleted.", kept: true },
+        { status: 400 }
+      );
+    }
     // Release any still-active card authorisations before deleting the holds.
     const { data: activeHolds } = await supabase
       .from("holds").select("stripe_pi_id").eq("session_id", id).eq("state", "active");

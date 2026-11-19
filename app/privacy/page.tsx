@@ -88,7 +88,8 @@ export default function PrivacyPage() {
             <h2 className="font-bold mb-2">How long we keep your information</h2>
             <ul className="text-muted space-y-1 list-disc pl-4">
               <li>Payment and financial records: 7 years, as required under New Zealand&rsquo;s tax record-keeping rules (Tax Administration Act 1994)</li>
-              <li>Your account details: for as long as your account is active, and for a reasonable period afterwards in case you come back — we&rsquo;re working towards a fixed number here and will update this section once it&rsquo;s confirmed</li>
+              <li>Your account details: for as long as your account is active. If you delete your account, your name and contact details are removed</li>
+              <li>Your booking history (which sessions you came to): kept so we can see how Stretchy is growing year on year, like how many people come and come back. If you delete your account, it&rsquo;s kept without your name or details, as numbers only</li>
               <li>Care notes: kept only as long as they&rsquo;re useful for your safety in sessions, and removed sooner if you ask us to</li>
               <li>You can ask us to delete your information at any time, and we will, unless we&rsquo;re required to keep something (like financial records, for tax purposes)</li>
             </ul>

@@ -22,6 +22,7 @@ const NAV_GROUPS = [
       { href: "/admin/sessions", label: "Sessions" },
       { href: "/admin/customers", label: "Customers / Accounts" },
       { href: "/admin/money", label: "Money" },
+      { href: "/admin/insights", label: "Insights" },
     ],
   },
   {
