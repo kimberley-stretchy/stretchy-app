@@ -141,6 +141,25 @@ export default function NewslettersPage() {
     setMsg({ ok: true, text: "Opened a copy of a sent newsletter. Save it to keep it as a new draft." });
   }
 
+  // Duplicate: saves a copy as a new draft ("Copy of …"). The original stays as it was.
+  async function duplicateDraft(id: string) {
+    setBusy("open"); setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/newsletters/drafts?id=${encodeURIComponent(id)}`);
+      const d = await res.json();
+      if (!res.ok || !d.draft?.data) throw new Error(d.error);
+      const subject = `Copy of ${d.draft.subject}`;
+      const save = await fetch("/api/admin/newsletters/drafts", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject, data: { ...d.draft.data, subject } }),
+      });
+      if (!save.ok) throw new Error();
+      setMsg({ ok: true, text: `Saved "${subject}" in Drafts.` });
+      loadDrafts();
+    } catch { setMsg({ ok: false, text: "Couldn't duplicate that one." }); }
+    setBusy(null);
+  }
+
   async function deleteDraft(id: string, name: string) {
     if (!confirm(`Delete the draft "${name}"? This can't be undone.`)) return;
     await fetch(`/api/admin/newsletters/drafts?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
@@ -344,6 +363,7 @@ export default function NewslettersPage() {
                       </div>
                       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                         <button onClick={() => openDraft(d.id)} disabled={busy !== null || d.id === draftId} style={{ ...chip(false), padding: "4px 10px", opacity: d.id === draftId ? 0.4 : 1 }}>OPEN</button>
+                        <button onClick={() => duplicateDraft(d.id)} disabled={busy !== null} title="Save a copy as a new draft" style={{ ...chip(false), padding: "4px 10px" }}>DUPLICATE</button>
                         <button onClick={() => markSent(d.id, d.subject)} disabled={busy !== null} title="Already sent this one? File it under SENT." style={{ ...chip(false), padding: "4px 10px" }}>MOVE TO SENT</button>
                         <button onClick={() => deleteDraft(d.id, d.subject)} disabled={busy !== null} style={{ ...chip(false), padding: "4px 10px", color: T.red, borderColor: T.red }}>DELETE</button>
                       </div>
@@ -372,6 +392,7 @@ export default function NewslettersPage() {
                         </div>
                         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                           <button onClick={() => openAsCopy(d.id)} disabled={busy !== null} title="Open a copy to reuse — the sent one stays as it was." style={{ ...chip(false), padding: "4px 10px" }}>REUSE</button>
+                          <button onClick={() => duplicateDraft(d.id)} disabled={busy !== null} title="Save a copy as a new draft" style={{ ...chip(false), padding: "4px 10px" }}>DUPLICATE</button>
                           <button onClick={() => deleteDraft(d.id, d.subject)} disabled={busy !== null} style={{ ...chip(false), padding: "4px 10px", color: T.red, borderColor: T.red }}>DELETE</button>
                         </div>
                       </div>
