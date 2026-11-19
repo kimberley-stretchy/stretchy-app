@@ -146,8 +146,9 @@ export async function notifyHostConfirmed({
       ${label(sc, "Stretchy HQ · Confirmed")}
       ${h1(sc, "It's on. ✅")}
       ${hey(sc, firstName)}
-      ${msg(sc, `Good news — this one hit its minimum and is going ahead. You're confirmed for ${roleWord(role)} it.`)}
-      ${msg(sc, "Check out the attendees &amp; any flagged wellbeing considerations.")}
+      ${msg(sc, `Good news — this one is going ahead. You're confirmed for ${roleWord(role)} it.`)}
+      ${msg(sc, "Check out the attendees &amp; any flagged wellbeing considerations. On the day, tick people off on your run sheet and press <strong>Submit check-in</strong> so HQ gets a snapshot.")}
+      ${msg(sc, "📸 <strong>Snap a few photos for us.</strong> Low-key, incognito vibes: people unrecognisable during practice, something larger and wider at the Social Stretch. Yoga mats, sounds and interesting viewpoints are always great too. Send them to Kimberley.")}
       ${msg(sc, "Have fun and enjoy your Stretchy session! Any issues, let Kimberley know.")}
       ${msg(sc, "Cheers,<br>Stretchy")}
       ${hostSessionBox(sc, { title: session.title, dateStr, locationName: session.locationName, style, gemName: role === "teacher" ? gemName : undefined, details })}
