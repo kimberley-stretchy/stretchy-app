@@ -149,18 +149,20 @@ export default function AdminSessionsPage() {
   async function deleteSelectedPast() {
     const ids = Array.from(selectedPast);
     if (ids.length === 0 || deletingPast) return;
-    if (!confirm(`Permanently delete ${ids.length} session${ids.length === 1 ? "" : "s"}? This removes the session and its records and can't be undone.`)) return;
+    if (!confirm(`Permanently delete ${ids.length} session${ids.length === 1 ? "" : "s"}? Only sessions nobody ever booked can be deleted. Any with bookings are kept for your records and Insights.`)) return;
     setDeletingPast(true);
     const deleted: string[] = [];
+    let kept = 0;
     for (const id of ids) {
       try {
         const res = await fetch(`/api/admin/sessions?id=${id}&hard=true`, { method: "DELETE" });
-        if (res.ok) deleted.push(id);
-      } catch { /* skip */ }
+        if (res.ok) deleted.push(id); else kept += 1;
+      } catch { kept += 1; }
     }
     setSessions((prev) => prev.filter((s) => !deleted.includes(s.id)));
     setSelectedPast(new Set());
     setDeletingPast(false);
+    if (kept) alert(`${deleted.length} deleted. ${kept} kept: people booked ${kept === 1 ? "it" : "them"}, so ${kept === 1 ? "it stays" : "they stay"} in your records and Insights.`);
   }
 
   const [confirming, setConfirming] = useState<string | null>(null);
