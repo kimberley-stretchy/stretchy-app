@@ -42,23 +42,25 @@ export default function PriceEnds({
 
   return (
     <div className={className}>
-      <div className="relative flex justify-between gap-2.5">
-        {/* Under the minimum the big price above already says this, and the
-            "drops from here" marker needs the room, so the left price steps aside. */}
-        <span className={showEnds && !showMin ? "" : "invisible"}>{formatPrice(openingPrice)}</span>
-        {showMin && (
-          <span className="absolute top-0 whitespace-nowrap text-ink" style={{ left: `${minAt! * 100}%`, transform: "translateX(-50%)" }}>
-            ↓ PRICE DROPS FROM HERE
-          </span>
-        )}
+      {(showEnds || current) && <div className="relative flex justify-between gap-2.5">
+        <span className={showEnds ? "" : "invisible"}>{formatPrice(openingPrice)}</span>
         {current && fitsUnderDot && (
           <span className="absolute top-0" style={{ left: `${at * 100}%`, transform: `translateX(-${at * 100}%)` }}>
             {current}
           </span>
         )}
         <span className={showEnds ? "" : "invisible"}>{formatPrice(floorPrice)}</span>
-      </div>
+      </div>}
       {current && !fitsUnderDot && <div className="mt-1 text-right">{current}</div>}
+      {showMin && (
+        // Its own line, and the words START at the dashed line (arrow right
+        // under it), so it doesn't read as if the price drops before the minimum.
+        // When the line sits far right, the words wrap onto a second line
+        // rather than running off the card.
+        <div className="mt-0.5 text-ink" style={{ paddingLeft: `calc(${minAt! * 100}% - 0.35em)`, textWrap: "balance" } as React.CSSProperties}>
+          ↓ PRICE DROPS FROM HERE
+        </div>
+      )}
     </div>
   );
 }
