@@ -53,6 +53,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Couldn't save that — try again." }, { status: 500 });
   }
 
+  // Real people only: different emails on this one. The public vote_count
+  // includes made-up starting numbers, so HQ never sees it as a headcount.
+  const { data: people } = await admin.from("suggestion_contacts").select("email").eq("suggestion_id", id);
+  const real = new Set((people ?? []).map((p) => (p.email as string).toLowerCase())).size;
+
   if (process.env.RESEND_API_KEY) {
     const summary = [suggestion.session_type?.replace(/_/g, " "), suggestion.preferred_neighbourhood, suggestion.preferred_time]
       .filter(Boolean)
@@ -62,7 +67,7 @@ export async function POST(request: NextRequest) {
         from: "Stretchy <hello@stretchyyoga.co.nz>",
         to: "kimberley@stretchyyoga.co.nz",
         subject: `Me too — ${summary}`,
-        text: `${email} said "me too" and wants to hear if this one goes ahead.\n\n${summary}\n${suggestion.vote_count} want it so far.\n\nView the board: https://www.stretchyyoga.co.nz/admin/suggestions`,
+        text: `${email} said "me too" and wants to hear if this one goes ahead.\n\n${summary}\n${real} real ${real === 1 ? "person has" : "people have"} left their email for this one so far.\n\nView the board: https://www.stretchyyoga.co.nz/admin/suggestions`,
       })
       .catch((e) => console.error("Me-too notify email error:", e));
   }
