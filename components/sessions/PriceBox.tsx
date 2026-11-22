@@ -57,7 +57,7 @@ export default function PriceBox({
         nowPrice={nowPrice}
         held={held}
         max={max}
-        minLine={goingAhead ? { min, price: openingPrice } : undefined}
+        minLine={{ min, price: openingPrice }}
       />
     </div>
   );

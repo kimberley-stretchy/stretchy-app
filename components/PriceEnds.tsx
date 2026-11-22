@@ -24,7 +24,7 @@ export default function PriceEnds({
   className: string;
   /** false = only the CURRENT label (cards that don't show the end prices). */
   showEnds?: boolean;
-  /** Going ahead under the minimum: repeat the at-minimum price under the
+  /** Under the minimum (every session): repeat the at-minimum price under the
    *  dashed minimum line, to show it holds until then and drops after. */
   minLine?: { min: number; price: number };
 }) {

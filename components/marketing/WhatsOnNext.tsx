@@ -173,7 +173,7 @@ function SessionCard({ s, index }: { s: MarketingSession; index: number }) {
             nowPrice={s.isPlaceholder ? undefined : now}
             held={holds}
             max={s.max_attendees}
-            minLine={underMin ? { min: s.min_attendees, price: openingPrice } : undefined}
+            minLine={{ min: s.min_attendees, price: openingPrice }}
           />
         </div>
       </div>
