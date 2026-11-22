@@ -24,6 +24,9 @@ type Suggestion = {
   contacts?: { name: string | null; email: string; notify: boolean; kind?: string }[];
 };
 
+/** Different people who left their email on this suggestion (suggested it or said me too). */
+const realPeople = (s: Suggestion) => new Set((s.contacts ?? []).map((c) => c.email.toLowerCase())).size;
+
 type Group = { key: string; title: string; count: number; firstAt: string };
 type HeadsUpData = { groups: Group[]; sent: Record<string, string[]>; suggested: Record<string, string | null> };
 
@@ -166,7 +169,11 @@ export default function AdminSuggestionsPage() {
                   {s.preferred_neighbourhood && <span style={{ fontSize: 11, color: "rgba(20,17,15,.55)" }}>{s.preferred_neighbourhood}</span>}
                   {s.preferred_time && <span style={{ fontSize: 11, color: "rgba(20,17,15,.45)" }}>· {s.preferred_time}</span>}
                   <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 800, color: T.purple }}>{s.vote_count} {s.vote_count === 1 ? "vote" : "votes"}</span>
+                    {/* Real = different people who left their email on this one. The public
+                        board's number started from made-up starting counts and
+                        anonymous taps can't be checked, so it's shown greyed. */}
+                    <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 800, color: T.purple }}>{realPeople(s)} real {realPeople(s) === 1 ? "person" : "people"}</span>
+                    <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: "rgba(20,17,15,.4)" }}>· board shows {s.vote_count}</span>
                   </span>
                 </div>
                 {s.notes && <p style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 8, color: T.ink }}>{s.notes}</p>}
