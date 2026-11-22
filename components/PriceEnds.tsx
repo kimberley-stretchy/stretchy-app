@@ -43,10 +43,12 @@ export default function PriceEnds({
   return (
     <div className={className}>
       <div className="relative flex justify-between gap-2.5">
-        <span className={showEnds ? "" : "invisible"}>{formatPrice(openingPrice)}</span>
+        {/* Under the minimum the big price above already says this, and the
+            "drops from here" marker needs the room, so the left price steps aside. */}
+        <span className={showEnds && !showMin ? "" : "invisible"}>{formatPrice(openingPrice)}</span>
         {showMin && (
           <span className="absolute top-0 whitespace-nowrap text-ink" style={{ left: `${minAt! * 100}%`, transform: "translateX(-50%)" }}>
-            {formatPrice(minLine!.price)}
+            ↓ PRICE DROPS FROM HERE
           </span>
         )}
         {current && fitsUnderDot && (
