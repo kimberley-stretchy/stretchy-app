@@ -92,7 +92,8 @@ function BuildAStretchyForm() {
   const [venueEmail, setVenueEmail] = useState("");
   const [socialVenueEmail, setSocialVenueEmail] = useState("");
   const [gemId, setGemId] = useState("");
-  const [gemRate, setGemRate] = useState(18);
+  // Standard two-hour GEM session (from 23 Nov 2026).
+  const [gemRate, setGemRate] = useState(52.67);
   const [charityName, setCharityName] = useState("Stretchy Donation");
   const [charityRate, setCharityRate] = useState(10);
   const [extraLines, setExtraLines] = useState<{ name: string; amount: number }[]>([]);
