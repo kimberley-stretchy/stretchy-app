@@ -18,8 +18,14 @@ check("Sun 6:59pm → still fine", at("2026-10-25T05:59:00Z"));
 check("Sun 7:00pm → wait for tomorrow", !at("2026-10-25T06:00:00Z"));
 check("a week and a bit later → too late, never sent", !at("2026-10-31T21:00:00Z"));
 
-const e = renderAttendeeEmail("first_stretchy_followup", { to: "you@example.com", name: "Amelia", sessionTitle: "Herne Bay | Morning", date: "", sessionId: "preview" });
+const e = renderAttendeeEmail("first_stretchy_followup", {
+  to: "you@example.com", name: "Amelia", sessionTitle: "Herne Bay | Morning", date: "", sessionId: "preview",
+  attendeeCount: 22, unitPriceCents: 1452, costBase: 250.31, revenueTarget: 69.17, minAttendees: 14, maxAttendees: 32,
+});
 writeFileSync("docs/follow-up-email/how-was-your-first-stretchy.html", e.html);
-check(`renders: "${e.subject}"`, e.html.includes("/suggest") && e.html.includes("tell ya mates") && e.html.includes("/rate/preview") && e.html.includes("Rate it quick-smart"));
+check(`renders: "${e.subject}"`, e.html.includes("/suggest") && e.html.includes("/rate/preview") && e.html.includes("Rate your Stretchy") && e.html.includes("Same time next week?"));
+check("shows how far the price moved", e.html.includes("22 OF YOU CAME") && e.html.includes("$22.82 → $14.52 EACH"));
+const flat = renderAttendeeEmail("first_stretchy_followup", { to: "you@example.com", name: "Amelia", sessionTitle: "Herne Bay | Morning", date: "", sessionId: "preview" });
+check("no price box when the numbers aren't known", !flat.html.includes("You moved the price"));
 console.log(fail ? `\n${fail} FAILED` : "\nall passed");
 process.exit(fail ? 1 : 0);

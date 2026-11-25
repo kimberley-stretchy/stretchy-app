@@ -7,7 +7,8 @@ import { cleanAnswers } from "@/lib/feedbackQuestions";
 // name and email are optional. If the person is signed in anyway, answering
 // again updates their earlier answers. Spam: a hidden honeypot field and a
 // light per-address limit.
-// Body: { sessionId, answers, name?, email?, hp? }
+// Body: { sessionId, answers, name?, email?, hp?, emailType? }
+// emailType: they came from "Tell us more" in an email footer (which email).
 const recent = new Map<string, number[]>();
 
 export async function POST(request: NextRequest) {
@@ -42,7 +43,8 @@ export async function POST(request: NextRequest) {
     userId = data.user?.id ?? null;
   }
 
-  const row = { session_id: sessionId, user_id: userId, name, email, answers, updated_at: new Date().toISOString() };
+  const emailType = typeof b.emailType === "string" && /^[a-z0-9_]{2,60}$/.test(b.emailType) ? b.emailType : null;
+  const row = { session_id: sessionId, user_id: userId, name, email, answers, updated_at: new Date().toISOString(), ...(emailType ? { email_type: emailType } : {}) };
   let error;
   const existing = userId && sessionId
     ? (await admin.from("session_feedback").select("id").eq("session_id", sessionId).eq("user_id", userId).maybeSingle()).data
