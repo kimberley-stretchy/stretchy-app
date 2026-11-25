@@ -12,6 +12,7 @@ import { sessionTimes } from "@/lib/sessionTimes";
 import { styleAndLevel, venueLine, meetLine } from "@/lib/sessionDisplay";
 import { heldHeadline, priceRow, bringNote, moreToGoAhead, inAndRoom, untilPriceDrops } from "@/lib/places";
 import { locationTheme } from "@/lib/locationColours";
+import { useIsPhone, smsLink, whatsappLink } from "@/components/ShareRow";
 
 // Manage my booking — what someone holding a place sees. Purely presentational:
 // the page (app/hold/[id]) loads the session and owns cancelling; this draws it.
@@ -69,6 +70,7 @@ export default function BookingView({
 }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareMsg, setShareMsg] = useState<string | null>(null);
+  const isPhone = useIsPhone();
 
   // "Share with a mate" in the emails links here with ?share=1 — open the share
   // options straight away so it's one tap from the email.
@@ -121,9 +123,9 @@ export default function BookingView({
   const whereGrey = [session.location_address, session.getting_there].map((v) => (v ?? "").trim()).filter(Boolean).join(". ").replace(/\.\./g, ".");
 
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/sessions/${session.id}`;
-  const shareText = `Join me at ${session.title} — the more of us who go, the cheaper it gets.`;
-  const isIOS = typeof navigator !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent);
-  const smsHref = `sms:${isIOS ? "&" : "?"}body=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
+  const shareText = `Fancy a Stretchy with me? The more who join, the better it gets — the price, the vibes, the community.`;
+  const waHref = whatsappLink(`${shareText} ${shareUrl}`);
+  const smsHref = smsLink(`${shareText} ${shareUrl}`);
   const mailHref = `mailto:?subject=${encodeURIComponent(`Join me at ${session.title}`)}&body=${encodeURIComponent(`${shareText}\n\n${shareUrl}`)}`;
   const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
   const calendarEvent = sessionCalendarEvent(session, { teacherName: session.teacherName, gemName: session.gemName });
@@ -209,9 +211,10 @@ export default function BookingView({
             >
               Copy invite link · {formatPrice(maxPrice)} max
             </button>
-            <div className="flex justify-between gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "Text", href: smsHref },
+                { label: "WhatsApp", href: waHref },
+                ...(isPhone ? [{ label: "Text", href: smsHref }] : []),
                 { label: "Email", href: mailHref },
                 { label: "Facebook", href: fbHref },
               ].map((c) => (

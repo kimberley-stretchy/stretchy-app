@@ -466,7 +466,7 @@ const EMAIL_LABELS: Record<string, string> = {
   session_going_ahead: "36h — it's happening",
   session_confirmed_open: "It's on (interested)",
   session_cancelled: "Cancelled",
-  price_locked: "2h — final price charged",
+  price_locked: "30 mins — final price charged",
   hold_cancelled: "Hold cancelled",
   comp_hold_confirmed: "Comp — on us",
   hq_digest: "HQ digest",
@@ -687,7 +687,7 @@ function SessionCard({
           )}
 
           {/* Comp someone in — Stretchy covers it, no charge. They get the full
-              "you're in — on us" email + the 38h / 36h / 2h reminders. */}
+              "you're in — on us" email + the 38h / 36h / 30 min reminders. */}
           {live && (
             <div style={{ marginTop: 14 }}>
               <p style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 800, color: "rgba(20,17,15,.5)", letterSpacing: "0.1em", margin: "0 0 8px" }}>ADD SOMEONE · ON US</p>

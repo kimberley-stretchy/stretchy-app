@@ -1,19 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import SMark from "@/components/SMark";
+import ShareRow from "@/components/ShareRow";
+import { createClient } from "@/lib/supabase/client";
 
-const INVITE_URL = "https://stretchy.club/join?ref=marlee-fisher-gk72";
+// Invite a mate: each person's own link, stretchyyoga.co.nz/i/{code}.
+// We only count how many people join through it, never who.
+// SOCIAL_BOOKING_BRIEF.md 0d.
+
+const SITE = "https://www.stretchyyoga.co.nz";
+const SHARE_LINE = "The more who join, the better it gets — the price, the vibes, the community.";
+
+type State =
+  | { kind: "loading" }
+  | { kind: "signedOut" }
+  | { kind: "error"; message: string }
+  | { kind: "ready"; code: string; joined: number };
 
 export default function InvitePage() {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<State>({ kind: "loading" });
 
-  function copyLink() {
-    navigator.clipboard.writeText(INVITE_URL).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  }
+  useEffect(() => {
+    const supabase = createClient();
+    let done = false;
+    const load = (token: string | null) => {
+      if (done) return;
+      if (!token) { setState({ kind: "signedOut" }); return; }
+      done = true;
+      fetch("/api/profile/invite", { headers: { Authorization: `Bearer ${token}` } })
+        .then(async (r) => {
+          const data = await r.json().catch(() => ({}));
+          if (r.ok && data.code) setState({ kind: "ready", code: data.code, joined: data.joined ?? 0 });
+          else setState({ kind: "error", message: data.error ?? "Your invite link isn’t ready yet. Try again soon." });
+        })
+        .catch(() => setState({ kind: "error", message: "Your invite link isn’t ready yet. Try again soon." }));
+    };
+    supabase.auth.getSession().then(({ data }) => load(data.session?.access_token ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session?.access_token) load(session.access_token);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const url = state.kind === "ready" ? `${SITE}/i/${state.code}` : "";
+  const message = `Have you heard of Stretchy? Yoga, then a Social Stretch (coffee or drinks, and chats) after. ${SHARE_LINE} ${url}`;
 
   return (
     <main className="min-h-screen bg-cream pb-20">
@@ -31,17 +63,12 @@ export default function InvitePage() {
 
       <div className="px-4 max-w-lg mx-auto space-y-5">
 
-        <div>
-          <p className="font-mono text-xs font-bold uppercase tracking-[0.20em] text-muted mb-2">
-            Bigger group · better price for all
-          </p>
-          <h1
-            className="font-display font-bold text-ink"
-            style={{ fontSize: "clamp(40px,11vw,54px)", letterSpacing: "-0.04em", lineHeight: "0.92" }}
-          >
-            Bring your<br />mates.
-          </h1>
-        </div>
+        <h1
+          className="font-display font-bold text-ink"
+          style={{ fontSize: "clamp(40px,11vw,54px)", letterSpacing: "-0.04em", lineHeight: "0.92" }}
+        >
+          Invite your<br />mates.
+        </h1>
 
         {/* Mechanic card */}
         <div
@@ -54,8 +81,8 @@ export default function InvitePage() {
           <div className="space-y-3">
             {[
               { icon: "🔗", text: "Share your personal link below." },
-              { icon: "🧘", text: "Your mate joins and holds their first spot." },
-              { icon: "📉", text: "More people = lower price for everyone in the session." },
+              { icon: "🧘", text: "Your mate joins and holds their first place." },
+              { icon: "🙌", text: SHARE_LINE },
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-3">
                 <span className="text-xl flex-shrink-0 mt-0.5">{item.icon}</span>
@@ -66,69 +93,36 @@ export default function InvitePage() {
         </div>
 
         {/* Link card */}
-        <div className="bg-white rounded-card border-2 border-ink p-4 space-y-3">
+        <div className="bg-white rounded-card border-2 border-ink p-4 space-y-4">
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">Your link</p>
 
-          {/* URL display */}
-          <div
-            className="flex items-center gap-2 px-4 py-3.5 rounded-pill"
-            style={{ backgroundColor: "#F7F0E8" }}
-          >
-            <p className="flex-1 font-mono text-xs text-ink truncate min-w-0">{INVITE_URL}</p>
-          </div>
+          {state.kind === "loading" && <p className="text-sm text-muted">Getting your link…</p>}
 
-          {/* Copy button */}
-          <button
-            onClick={copyLink}
-            className="w-full font-semibold rounded-pill transition-all hover:brightness-110 active:scale-[0.98]"
-            style={{
-              backgroundColor: copied ? "#716F39" : "#14110F",
-              color: "#F7F0E8",
-              height: "54px",
-              fontSize: "15px",
-            }}
-          >
-            {copied ? "✓ Copied!" : "Copy link"}
-          </button>
+          {state.kind === "signedOut" && (
+            <p className="text-sm text-ink">
+              <Link href="/login?next=/profile/invite" className="font-bold underline">Log in</Link> to get your invite link.
+            </p>
+          )}
+
+          {state.kind === "error" && <p className="text-sm text-ink">{state.message}</p>}
+
+          {state.kind === "ready" && (
+            <>
+              <div className="flex items-center gap-2 px-4 py-3.5 rounded-pill" style={{ backgroundColor: "#F7F0E8" }}>
+                <p className="flex-1 font-mono text-xs text-ink truncate min-w-0 select-all">{url.replace("https://www.", "")}</p>
+              </div>
+              <ShareRow message={message} url={url} emailSubject="Have you heard of Stretchy?" />
+            </>
+          )}
         </div>
 
-        {/* Share options */}
-        <div>
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-2">Share via</p>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: "Messages",   icon: "💬", bg: "#E8F5F0", color: "#2D6A4A" },
-              { label: "Instagram",  icon: "📸", bg: "#F3E8FF", color: "#7C3AED" },
-              { label: "WhatsApp",   icon: "📱", bg: "#E8F5F0", color: "#16A34A" },
-              { label: "More",       icon: "⬆",  bg: "#F7F0E8", color: "#14110F" },
-            ].map((opt) => (
-              <button
-                key={opt.label}
-                className="flex items-center gap-2.5 px-4 py-3.5 rounded-card font-semibold text-sm transition-all hover:brightness-95 active:scale-[0.98]"
-                style={{ backgroundColor: opt.bg, color: opt.color, border: "2px solid #14110F" }}
-              >
-                <span className="text-xl">{opt.icon}</span>
-                <span>{opt.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        {state.kind === "ready" && state.joined > 0 && (
+          <p className="text-center font-bold text-ink" style={{ textWrap: "balance" } as React.CSSProperties}>
+            {state.joined === 1 ? "1 person has" : `${state.joined} people have`} come to Stretchy through you 💛
+          </p>
+        )}
 
-        {/* Stats */}
-        <div className="bg-white rounded-card border-2 border-ink p-4">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted mb-3">Your impact</p>
-          <div className="flex gap-4">
-            <div className="text-center flex-1">
-              <p className="font-mono font-black text-ink" style={{ fontSize: "36px", lineHeight: "1", letterSpacing: "-0.04em" }}>4</p>
-              <p className="font-mono text-xs text-muted mt-1">MATES JOINED</p>
-            </div>
-            <div className="w-px bg-border" />
-            <div className="text-center flex-1">
-              <p className="font-mono font-black text-ink" style={{ fontSize: "36px", lineHeight: "1", letterSpacing: "-0.04em" }}>27</p>
-              <p className="font-mono text-xs text-muted mt-1">SESSIONS TOGETHER</p>
-            </div>
-          </div>
-        </div>
+        <p className="text-xs text-muted text-center">We only count how many join through your link.</p>
       </div>
     </main>
   );

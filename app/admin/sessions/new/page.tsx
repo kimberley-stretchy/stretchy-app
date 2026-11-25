@@ -515,7 +515,7 @@ function BuildAStretchyForm() {
           </div>
 
           <p style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.5, marginBottom: 20 }}>
-            Go/no-go checked 36h out. Final price locked and cards charged 2h out.
+            Go/no-go checked 36h out. Final price locked and cards charged 30 mins out.
           </p>
 
           {editId ? (

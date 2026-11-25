@@ -119,7 +119,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 // Attaches to their existing account by email; if none exists we create the
 // account (they finish setup by logging in) so the hold has somewhere to live.
 // They then flow through the normal lifecycle: this "you're in — on us" email
-// now, plus the 38h / 36h / 2h nudges like any other holder.
+// now, plus the 38h / 36h / 30 min nudges like any other holder.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const authed = await requireAdmin(request);
   if ("error" in authed) return authed.error;

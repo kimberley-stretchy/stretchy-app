@@ -25,8 +25,15 @@ Use these words on every screen, email, push notification and error message. Fin
 | Arriving | **Say kia ora** · meet your teacher, then your GEM | — |
 | Emails | "Hey {name}," · sign-off "See you there, The Stretchy team" | — |
 | Charity | **Cancer Support NZ**, homepage band only | charity lines anywhere else |
+| Meeting people | **Say hello to someone new** (once per screen or email, not more) | — |
+| Share line | **"The more who join, the better it gets — the price, the vibes, the community."** | cheaper, "the cheaper it gets" |
+| Who it's for | **Every body welcome** | gentle |
+| Coming alone | **Come solo, leave with a crew** | — |
+| Social Stretch | **coffee and chats** (morning) / **drinks and chats** (evening) | — |
+| The three share actions | **Share with a mate** · **Shout a mate** · **Buddy me up** | Bring a mate, spot |
 
 ## Rules
+- **Keep it short.** One idea per line. No line repeats another nearby.
 - Labels use "HRS" / "MINS" (UP TO 36 HRS OUT, 30 MINS OUT). Sentences use "hours" / "minutes" ("we'll confirm 36 hours out", "charged 30 minutes before").
 - Before 36 hrs out, "never more than $X" uses the price at the minimum. After 36 hrs, the current price.
 - Session pages and emails describe the 36 hr / 30 min moments without dates. The exact time only appears in the "you can't cancel now" message.
