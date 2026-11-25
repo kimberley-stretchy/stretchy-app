@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
-import { calculatePrice } from "@/lib/pricing";
+import { offerSchema, priceSentence } from "@/lib/searchPricing";
 
 function getAdmin() {
   return createClient(
@@ -24,9 +24,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const s = await getSession(id);
   if (!s) return { title: "Session — Stretchy" };
 
-  const price = calculatePrice(s.cost_base, s.revenue_target, s.min_attendees);
   const dateStr = new Date(s.starts_at).toLocaleDateString("en-NZ", { timeZone: "Pacific/Auckland", weekday: "long", day: "numeric", month: "long" });
-  const description = `${s.title} — ${dateStr} at ${s.location_name}. Starts from $${price.toFixed(2)}, and the price drops as more people join. ${s.description ?? ""}`.trim();
+  // Never "starts from": search and AI tools repeat it as a starting price.
+  const description = `${s.title} — ${dateStr} at ${(s.location_name ?? "").trim()}. ${priceSentence(s)}${s.description ? ` ${s.description.trim()}.` : ""}`;
 
   return {
     title: `${s.title} — Stretchy`,
@@ -51,12 +51,13 @@ export default async function SessionLayout({
 
   if (!s) return children;
 
-  const price = calculatePrice(s.cost_base, s.revenue_target, s.min_attendees);
+  const base = process.env.NEXT_PUBLIC_APP_URL || "https://www.stretchyyoga.co.nz";
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Event",
     name: s.title,
     startDate: s.starts_at,
+    ...(s.duration_mins ? { endDate: new Date(new Date(s.starts_at).getTime() + s.duration_mins * 60_000).toISOString() } : {}),
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus:
       s.state === "cancelled"
@@ -64,21 +65,17 @@ export default async function SessionLayout({
         : "https://schema.org/EventScheduled",
     location: {
       "@type": "Place",
-      name: s.location_name,
+      name: (s.location_name ?? "").trim(),
       address: s.location_address || s.location_name,
     },
-    description: s.description || `${s.title} — a Stretchy community movement session.`,
-    offers: {
-      "@type": "Offer",
-      price: price.toFixed(2),
-      priceCurrency: "NZD",
-      availability: "https://schema.org/InStock",
-      url: `${process.env.NEXT_PUBLIC_APP_URL || "https://www.stretchyyoga.co.nz"}/sessions/${s.id}`,
-    },
+    description: `${s.description ? `${s.description.trim()}.` : `${s.title}: a Stretchy community yoga session in Auckland, with a Social Stretch after.`} ${priceSentence(s)}`,
+    // A price RANGE (full room → the most you'll pay), so search and AI tools
+    // don't quote the maximum as a "from" price.
+    offers: offerSchema(s, `${base}/sessions/${s.id}`),
     organizer: {
       "@type": "Organization",
-      name: "Stretchy",
-      url: process.env.NEXT_PUBLIC_APP_URL || "https://www.stretchyyoga.co.nz",
+      name: "Stretchy Yoga",
+      url: base,
     },
   };
 

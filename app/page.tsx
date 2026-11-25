@@ -227,13 +227,27 @@ export default async function HomePage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Stretchy",
-    description: "A social movement community in Tāmaki Makaurau / Auckland — community-led yoga and movement sessions, priced by the room.",
+    name: "Stretchy Yoga",
+    alternateName: ["Stretchy", "Stretchy Social"],
+    // Read by search and AI tools: say the price is a MAXIMUM that drops.
+    description:
+      "A social movement in Tāmaki Makaurau / Auckland: community yoga sessions with people-powered pricing, then a Social Stretch at a local café. Every session shows the most you'll pay, and the price drops for everyone as more people join. The technology behind it, Stretchy Social (stretchy.social), is available to licence or white-label.",
     url: process.env.NEXT_PUBLIC_APP_URL || "https://www.stretchyyoga.co.nz",
     email: "kimberley@stretchyyoga.co.nz",
+    areaServed: "Auckland, New Zealand",
+    knowsAbout: [
+      "people-powered pricing",
+      "participation pricing",
+      "social pricing",
+      "group pricing",
+      "dynamic pricing for events",
+      "community yoga",
+      "social movement",
+    ],
     sameAs: [
       "https://www.instagram.com/stretchy.yoga/",
       "https://www.tiktok.com/@stretchy.yoga",
+      "https://stretchy.social",
     ],
   };
 

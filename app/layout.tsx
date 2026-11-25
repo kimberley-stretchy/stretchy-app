@@ -15,7 +15,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Stretchy — A Social Movement",
   description:
-    "Community movement classes where the price drops as more people join. Yoga, pilates, breathwork and more across Auckland.",
+    "Community yoga across Auckland with people-powered pricing: every session shows the most you'll pay, and the price drops for everyone as more people join. Then a Social Stretch after.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.stretchyyoga.co.nz"),
   openGraph: {
     title: "Stretchy — A Social Movement",

@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
   if (SOCIAL_HOSTS.has(host)) {
     // Files (fonts, images, the share card) are shared with the main site and
     // load as they are; robots.txt and sitemap.xml are stretchy.social's own.
-    const isFile = /\.[a-z0-9]+$/i.test(pathname) && pathname !== "/robots.txt" && pathname !== "/sitemap.xml";
+    const isFile = /\.[a-z0-9]+$/i.test(pathname) && !["/robots.txt", "/sitemap.xml", "/llms.txt"].includes(pathname);
     if (isFile || pathname.startsWith("/_next")) return NextResponse.next();
     const url = request.nextUrl.clone();
     url.pathname = pathname.startsWith(SOCIAL_PREFIX) ? pathname : `${SOCIAL_PREFIX}${pathname === "/" ? "" : pathname}`;
