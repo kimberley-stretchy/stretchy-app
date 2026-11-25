@@ -14,14 +14,14 @@ function socialDrink(startsAt: string) {
   return formatTime(startsAt).endsWith("am") ? "coffee" : "drinks";
 }
 
-/** For one session: "Stretchy social yoga, Fri 27 Nov, 6:15am at … Keen to join me?" */
+/** For one session: "hey! I'm going to Stretchy social yoga, Fri 27 Nov, 6:15am at … Keen to join me?" */
 export function sessionShareMessage(s: ShareSession, url: string): { subject: string; body: string } {
   const where = (s.location_name ?? "").trim();
   const when = `${formatDay(s.starts_at)}, ${formatTime(s.starts_at)}${where ? ` at ${where}` : ""}`;
   return {
     subject: "Keen to join me at Stretchy?",
     body: [
-      `Stretchy social yoga, ${when}. Keen to join me?`,
+      `hey!\nI'm going to Stretchy social yoga, ${when}. Keen to join me?`,
       `Stretchy is an hour of yoga with a great teacher, then a Social Stretch (${socialDrink(s.starts_at)} and chats) after. Every body welcome.`,
       SHARE_LINE,
       `Hold your place:\n${url}`,
