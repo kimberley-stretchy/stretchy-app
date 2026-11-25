@@ -13,6 +13,7 @@ import { styleAndLevel, venueLine, meetLine } from "@/lib/sessionDisplay";
 import { heldHeadline, priceRow, bringNote, moreToGoAhead, inAndRoom, untilPriceDrops } from "@/lib/places";
 import { locationTheme } from "@/lib/locationColours";
 import { useIsPhone, smsLink, whatsappLink } from "@/components/ShareRow";
+import { sessionShareMessage, mailtoLink } from "@/lib/shareMessage";
 
 // Manage my booking — what someone holding a place sees. Purely presentational:
 // the page (app/hold/[id]) loads the session and owns cancelling; this draws it.
@@ -123,10 +124,10 @@ export default function BookingView({
   const whereGrey = [session.location_address, session.getting_there].map((v) => (v ?? "").trim()).filter(Boolean).join(". ").replace(/\.\./g, ".");
 
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/sessions/${session.id}`;
-  const shareText = `Fancy a Stretchy with me? The more who join, the better it gets — the price, the vibes, the community.`;
-  const waHref = whatsappLink(`${shareText} ${shareUrl}`);
-  const smsHref = smsLink(`${shareText} ${shareUrl}`);
-  const mailHref = `mailto:?subject=${encodeURIComponent(`Join me at ${session.title}`)}&body=${encodeURIComponent(`${shareText}\n\n${shareUrl}`)}`;
+  const share = sessionShareMessage(session, shareUrl);
+  const waHref = whatsappLink(share.body);
+  const smsHref = smsLink(share.body);
+  const mailHref = mailtoLink(share);
   const fbHref = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
   const calendarEvent = sessionCalendarEvent(session, { teacherName: session.teacherName, gemName: session.gemName });
 
