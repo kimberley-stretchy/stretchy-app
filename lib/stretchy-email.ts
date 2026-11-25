@@ -230,6 +230,8 @@ export interface AttendeeEmailPayload {
   isHolder?: boolean;
   isComp?: boolean;
   newAccount?: boolean;
+  /** "on us" place claimed from someone's gift link: "Daisy has shouted you a place". */
+  giftFrom?: string;
   teacherName?: string;
   teacherStyle?: string;
   gemName?: string;
