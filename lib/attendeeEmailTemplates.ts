@@ -407,11 +407,12 @@ function placeOnUs(p: AttendeeEmailPayload, c: Ctx) {
   const loginUrl = `${APP_URL}/login${p.sessionId ? `?next=/hold/${p.sessionId}` : ""}`;
   const need = c.min > 0 ? moreToGoAhead(c.held, c.min) : null;
   const places = c.n === 1 ? "a place" : `${c.n} places`;
+  const saved = p.giftFrom ? `${esc(p.giftFrom)} has shouted you ${places}, on Stretchy.` : `Stretchy HQ has saved you ${places}, on us.`;
   const html = page("purple", (sc) => `
     ${h1(sc, c.n === 1 ? "A place on us. 💛" : `${c.n} places on us. 💛`)}
     ${intro(sc, p, [c.goingAhead
-      ? `Stretchy HQ has saved you ${places}, on us. Nothing to pay. <strong>It’s going ahead</strong>, so you’re all set. Here’s all the deets for the day.`
-      : `Stretchy HQ has saved you ${places}, on us. Nothing to pay. ${need ? `It needs ${need.replace(" to go ahead", "")} people to go ahead, and we’ll` : "We’ll"} email you 36 hours out either way.`])}
+      ? `${saved} Nothing to pay. <strong>It’s going ahead</strong>, so you’re all set. Here’s all the deets for the day.`
+      : `${saved} Nothing to pay. ${need ? `It needs ${need.replace(" to go ahead", "")} people to go ahead, and we’ll` : "We’ll"} email you 36 hours out either way.`])}
     ${dayBox(sc, p, c, { row: { label: c.n === 1 ? "Your place" : "Your places", bold: "On us", second: c.goingAhead ? `${roomNow(c)}.` : need ? `${need}.` : c.held > 0 ? `${inAndRoom(c.held)}.` : null }, dots: c.max > 0 })}
     ${p.newAccount ? filledButton(sc, loginUrl, "Set up my account") : filledButton(sc, c.manageUrl, "Manage my booking")}
     ${links(sc)}
