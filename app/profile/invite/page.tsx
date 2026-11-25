@@ -5,6 +5,7 @@ import Link from "next/link";
 import SMark from "@/components/SMark";
 import ShareRow from "@/components/ShareRow";
 import { createClient } from "@/lib/supabase/client";
+import { generalShareMessage } from "@/lib/shareMessage";
 
 // Invite a mate: each person's own link, stretchyyoga.co.nz/i/{code}.
 // We only count how many people join through it, never who.
@@ -45,7 +46,7 @@ export default function InvitePage() {
   }, []);
 
   const url = state.kind === "ready" ? `${SITE}/i/${state.code}` : "";
-  const message = `Have you heard of Stretchy? Yoga, then a Social Stretch (coffee or drinks, and chats) after. ${SHARE_LINE} ${url}`;
+  const share = generalShareMessage(url);
 
   return (
     <main className="min-h-screen bg-cream pb-20">
@@ -111,7 +112,7 @@ export default function InvitePage() {
               <div className="flex items-center gap-2 px-4 py-3.5 rounded-pill" style={{ backgroundColor: "#F7F0E8" }}>
                 <p className="flex-1 font-mono text-xs text-ink truncate min-w-0 select-all">{url.replace("https://www.", "")}</p>
               </div>
-              <ShareRow message={message} url={url} emailSubject="Have you heard of Stretchy?" />
+              <ShareRow message={share.body} url={url} emailSubject={share.subject} />
             </>
           )}
         </div>
