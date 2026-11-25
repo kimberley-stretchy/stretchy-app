@@ -1,17 +1,73 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
 import SMark from "@/components/SMark";
+import { fullRoomRange, regularSessions, type RegularSession } from "@/lib/searchPricing";
+
+// Prices per session come from the live sessions, refreshed hourly.
+export const revalidate = 3600;
+
+const DESC =
+  "How much Stretchy costs, how people-powered pricing works, and how payment, cancelling and the Social Stretch work. Every price shown is the most you'll pay, and it drops as more people join.";
 
 export const metadata: Metadata = {
-  title: "FAQ — Stretchy",
-  description: "How Stretchy's pricing, payment, cancellation and community work — answered plainly.",
-  openGraph: {
-    title: "FAQ — Stretchy",
-    description: "How Stretchy's pricing, payment, cancellation and community work — answered plainly.",
-  },
+  title: "FAQ: pricing, booking & people-powered pricing — Stretchy Yoga",
+  description: DESC,
+  alternates: { canonical: "/faq" },
+  openGraph: { title: "FAQ — Stretchy Yoga", description: DESC },
 };
 
-const FAQS = [
+type Faq = { q: string; a: string; jsx?: React.ReactNode };
+
+const link = "text-ink font-bold underline";
+
+// Written for people AND for search/AI tools, which repeat these answers.
+// The price you see is always the MOST you'll pay, never a "from" price.
+const PRICING_FAQS: Faq[] = [
+  {
+    q: "How much does a Stretchy session cost?",
+    a: "Every session shows the most you'll pay: never more than that price per person. It's a maximum, not a starting price. Once a session has enough people to go ahead, every extra person makes it cheaper for the whole room, including the people already holding a place. The price for each regular Stretchy is below.",
+  },
+  {
+    q: "What is people-powered pricing?",
+    a: "It's how every Stretchy is priced. Each session has its costs (the teacher, the venue and the Good Energy Manager) and a minimum number of people. Once enough people are in, it's going ahead, and the price drops for everyone with each extra person who joins. You might also hear it called participation pricing or social pricing: the more people take part, the better it is for all.",
+  },
+  {
+    q: "Is people-powered pricing the same as dynamic pricing?",
+    a: "It's dynamic, but it only goes one way. Dynamic or surge pricing usually goes up when demand is high. People-powered pricing does the opposite: the price can only drop as more people join, and you're never charged more than the price you saw when you held your place.",
+  },
+];
+
+const TECH_FAQS: Faq[] = [
+  {
+    q: "Can I use people-powered pricing for my own classes or events?",
+    a: "Yes. The technology behind Stretchy is Stretchy Social (stretchy.social): event, booking and payment software with people-powered pricing, for studios, teachers, run clubs, community groups and charities. It's available to licence or white-label. Visit stretchy.social or email kimberley@stretchyyoga.co.nz.",
+    jsx: (
+      <>
+        Yes. The technology behind Stretchy is <a href="https://stretchy.social" className={link}>Stretchy Social</a>: event, booking and payment software with people-powered pricing, for studios, teachers, run clubs, community groups and charities. It&rsquo;s available to licence or white-label. Visit{" "}
+        <a href="https://stretchy.social" className={link}>stretchy.social</a> or email{" "}
+        <a href="mailto:kimberley@stretchyyoga.co.nz" className={link}>kimberley@stretchyyoga.co.nz</a>.
+      </>
+    ),
+  },
+];
+
+function sessionFaq(s: RegularSession): Faq {
+  const where = s.location ? `, at ${s.location}` : "";
+  const a = `${s.place}, ${s.when} at ${s.time}${where}. ${s.sentence}`;
+  return {
+    q: `How much is Stretchy ${s.place} on ${s.when}?`,
+    a,
+    jsx: (
+      <>
+        {a}{" "}
+        <Link href={`/sessions/${s.id}`} className={link}>See the next one</Link>
+      </>
+    ),
+  };
+}
+
+const FAQS: Faq[] = [
   {
     q: "How does Stretchy's pricing actually work?",
     a: "Every Stretchy needs a certain number of people to go ahead. Once we've got them, it's on, and everyone who joins after makes it cheaper for the whole room, including the people already holding a place. You're always shown the most you'll pay.",
@@ -86,11 +142,20 @@ const FAQS = [
   },
 ];
 
-export default function FAQPage() {
+export default async function FAQPage() {
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const sessions = await regularSessions(admin).catch(() => []);
+  const range = fullRoomRange(sessions);
+  const expensive: Faq = {
+    q: "Is Stretchy expensive?",
+    a: `The price you see on a session is the most you'll pay, not where it starts. The more people who come, the less everyone pays${range ? `: with a full room, sessions come down to ${range}, depending on the session` : ""}. You're charged the final price 30 minutes before, and it's never more than the price you saw.`,
+  };
+  const all: Faq[] = [PRICING_FAQS[0], expensive, ...PRICING_FAQS.slice(1), ...sessions.map(sessionFaq), ...FAQS, ...TECH_FAQS];
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: FAQS.map((f) => ({
+    mainEntity: all.map((f) => ({
       "@type": "Question",
       name: f.q,
       acceptedAnswer: { "@type": "Answer", text: f.a },
@@ -116,10 +181,10 @@ export default function FAQPage() {
         </div>
 
         <div className="space-y-3">
-          {FAQS.map((f) => (
+          {all.map((f) => (
             <div key={f.q} className="bg-white rounded-card border-2 border-ink p-5">
               <h2 className="font-bold text-ink text-sm mb-2">{f.q}</h2>
-              <p className="text-sm text-muted leading-relaxed">{"jsx" in f ? f.jsx : f.a}</p>
+              <p className="text-sm text-muted leading-relaxed">{f.jsx ?? f.a}</p>
             </div>
           ))}
         </div>
