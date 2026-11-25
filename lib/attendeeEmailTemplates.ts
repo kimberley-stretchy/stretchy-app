@@ -14,15 +14,48 @@
 // Layout is table-based so mail clients render it reliably.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { page, h1, hey, msg, label, APP_URL, type Scheme, type AttendeeEmailType, type AttendeeEmailPayload } from "@/lib/stretchy-email";
+import { page as basePage, h1, hey, msg, label, APP_URL, type Scheme, type AttendeeEmailType, type AttendeeEmailPayload, type EmailFooter } from "@/lib/stretchy-email";
 import { sessionTimes, subjectDate } from "@/lib/sessionTimes";
 import { calculatePrice, maxPriceToPromise, priceRightNow, priceHasDropped } from "@/lib/pricing";
 import { venueLine, meetLine } from "@/lib/sessionDisplay";
+import { generalShareMessage } from "@/lib/shareMessage";
 import { placeCount, yourPlaces, youOrCrew, bringNote, moreToGoAhead, inAndRoom, untilPriceDrops } from "@/lib/places";
 
 const MONO = "'JetBrains Mono',ui-monospace,Menlo,monospace";
+const CHUBB = "'BN Chubb','Arial Black',Arial,sans-serif";
 const money = (n: number) => `$${n.toFixed(2)}`;
 const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// Every attendee email gets the standard footer (how was this email, why
+// you're getting it, your data). renderAttendeeEmail sets it for the email
+// being built; page() below adds it.
+let currentFooter: EmailFooter | undefined;
+const page: typeof basePage = (scheme, inner, opts = {}) => basePage(scheme, inner, { ...opts, footer: currentFooter });
+
+const HELD = "you held a place at Stretchy.";
+const SAVED = "you saved this session at Stretchy.";
+function footerFor(type: AttendeeEmailType, p: AttendeeEmailPayload): EmailFooter {
+  switch (type) {
+    case "almost_there":
+    case "session_cancelled":
+      return { type, reason: p.isHolder === false ? SAVED : HELD };
+    case "session_confirmed_open": return { type, reason: SAVED };
+    case "hold_cancelled": return { type, reason: "you cancelled a place at Stretchy." };
+    case "booking_card_failed": return { type, reason: "you tried to hold a place at Stretchy." };
+    case "first_stretchy_followup": return { type, reason: "you came to Stretchy." };
+    case "shout_sent":
+      return { type, reason: "you shouted someone a place at Stretchy.", data: `We only use ${esc(p.shoutTo ?? "their")}${p.shoutTo ? "'s" : ""} email for their place. We never sell or share details.` };
+    case "shout_received":
+      return {
+        type,
+        reason: `${esc(p.shoutFrom ?? "A mate")} shouted you a place. We only use your email for this place.`,
+        settings: { href: `mailto:hello@stretchyyoga.co.nz?subject=${encodeURIComponent("Don't email me again")}`, text: "Don't email me again" },
+      };
+    case "buddy_intro":
+      return { type, reason: "you switched on Buddy me up for this session.", data: "We delete your buddy match after the session. We never sell or share your details." };
+    default: return { type, reason: HELD };
+  }
+}
 
 // ── Everything a template needs, worked out once from the payload ────────────
 function context(p: AttendeeEmailPayload) {
@@ -166,8 +199,42 @@ function greyRows(sc: Scheme, list: (Row | null | false | undefined)[]) {
 function filledButton(sc: Scheme, href: string, text: string) {
   return `<a href="${href}" style="display:block;text-align:center;background:${sc.text};color:${sc.bg} !important;-webkit-text-fill-color:${sc.bg} !important;text-decoration:none;font-size:15px;font-weight:800;padding:15px 24px;border-radius:999px;margin:0 0 10px;"><span style="color:${sc.bg} !important;-webkit-text-fill-color:${sc.bg} !important;text-decoration:none;">${text}</span></a>`;
 }
-function outlineButton(sc: Scheme, href: string, text: string) {
-  return `<a href="${href}" style="display:block;text-align:center;background:transparent;border:2px solid ${sc.text};color:${sc.text} !important;-webkit-text-fill-color:${sc.text} !important;text-decoration:none;font-size:15px;font-weight:800;padding:13px 24px;border-radius:999px;margin:0 0 16px;"><span style="color:${sc.text} !important;-webkit-text-fill-color:${sc.text} !important;text-decoration:none;">${text}</span></a>`;
+function outlineButton(sc: Scheme, href: string, text: string, bottom = 16) {
+  return `<a href="${href}" style="display:block;text-align:center;background:transparent;border:2px solid ${sc.text};color:${sc.text} !important;-webkit-text-fill-color:${sc.text} !important;text-decoration:none;font-size:15px;font-weight:800;padding:13px 24px;border-radius:999px;margin:0 0 ${bottom}px;"><span style="color:${sc.text} !important;-webkit-text-fill-color:${sc.text} !important;text-decoration:none;">${text}</span></a>`;
+}
+
+/**
+ * Shout a mate and Buddy me up go live later (SOCIAL_BOOKING_BRIEF.md 4 and 6).
+ * Until then their buttons stay out of real emails so nobody taps through to
+ * nothing. Test sends set EMAIL_PREVIEW_ALL_ACTIONS=1 to see the full card.
+ */
+export const SHOUT_LIVE = false;
+export const BUDDY_LIVE = false;
+const previewAll = () => process.env.EMAIL_PREVIEW_ALL_ACTIONS === "1";
+
+/** Small pill buttons in one row (filled: text colour, with background-colour text). */
+function pillRow(sc: Scheme, items: { href: string; text: string }[], margin?: string) {
+  const w = `${Math.floor(100 / items.length)}%`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"${margin ? ` style="margin:${margin};"` : ""}><tr>${items.map((b) =>
+    `<td width="${w}" style="padding:0 4px;"><a href="${b.href}" style="display:block;text-align:center;background:${sc.text};color:${sc.bg} !important;-webkit-text-fill-color:${sc.bg} !important;text-decoration:none;font-size:13px;font-weight:800;padding:11px 6px;border-radius:999px;"><span style="color:${sc.bg} !important;-webkit-text-fill-color:${sc.bg} !important;">${b.text}</span></a></td>`
+  ).join("")}</tr></table>`;
+}
+
+/**
+ * "Who's coming with you?" + Share with a mate · Shout a mate · Buddy me up,
+ * each opening the hold page with that step open. Hidden for people who
+ * turned share prompts off.
+ */
+function whoCard(sc: Scheme, p: AttendeeEmailPayload, c: Ctx) {
+  if (p.sharePromptsOff) return "";
+  const base = c.manageUrl;
+  const join = base.includes("?") ? "&" : "?";
+  const items = [
+    { href: c.shareUrl, text: "Share with a mate" },
+    (SHOUT_LIVE || previewAll()) && { href: `${base}${join}shout=1`, text: "Shout a mate" },
+    (BUDDY_LIVE || previewAll()) && { href: `${base}${join}buddy=1`, text: "Buddy me up" },
+  ].filter(Boolean) as { href: string; text: string }[];
+  return `<div style="border:2px solid ${sc.text};border-radius:16px;padding:14px 12px;margin:0 0 12px;"><p style="margin:0 4px 10px;font-family:${CHUBB};font-weight:900;font-size:20px;line-height:1;text-transform:uppercase;color:${sc.text};">Who's coming with you?</p>${pillRow(sc, items)}</div>`;
 }
 
 /** The only links at the bottom of every email. */
@@ -176,6 +243,26 @@ function links(sc: Scheme) {
     `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:${sc.text};font-weight:700;text-decoration:underline;">${text} ↗</a>`;
   // Same tint as the timing rows above them.
   return `<p style="font-size:13px;color:${sc.text};margin:6px 0 4px;opacity:${TINT};">${a(`${APP_URL}/#how-it-works`, "How it works")} &nbsp;&nbsp; ${a(`${APP_URL}/terms#cancellation`, "Cancellation policy")}</p>`;
+}
+
+/** Outlined card (social booking emails). */
+function card(sc: Scheme, inner: string) {
+  return `<div style="border:2px solid ${sc.text};border-radius:16px;padding:18px;margin:0 0 16px;background:transparent;">${inner}</div>`;
+}
+/** Small mono label at the top of a card. */
+function cardLabel(sc: Scheme, text: string) {
+  return `<p style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:${sc.text};margin:0 0 8px;">${text}</p>`;
+}
+/** Big display line (BN Chubb). */
+function display(sc: Scheme, text: string, size: number, margin: string, upper = false) {
+  return `<p style="margin:${margin};font-family:${CHUBB};font-weight:900;font-size:${size}px;line-height:1;${upper ? "text-transform:uppercase;" : ""}color:${sc.text};">${text}</p>`;
+}
+/** A quote in a card: "Ask me about my sourdough disaster." */
+function quote(sc: Scheme, text: string, by?: string) {
+  return `<p style="margin:0;font-size:17px;line-height:1.4;color:${sc.text};font-style:italic;">"${esc(text)}"${by ? ` <span style="font-style:normal;font-size:13px;">— ${esc(by)}</span>` : ""}</p>`;
+}
+function signOff(sc: Scheme, words = "See you there") {
+  return `<p style="color:${sc.text};font-size:15px;line-height:1.55;margin:16px 0 22px;">${words},<br>The Stretchy team</p>`;
 }
 
 /**
@@ -196,7 +283,7 @@ function dayBox(sc: Scheme, p: AttendeeEmailPayload, c: Ctx, extra?: { row: Row;
   const list: (Row | null | false | undefined)[] = [
     hasBring && { label: "Bring with you", bold: esc(bringTitle || "For the day"), second: bringSecond ? esc(bringSecond) : null },
     t && (p.venue || where) && { label: t.parkTime, bold: `Arrive at ${esc(p.venue ?? "the venue")}`, second: where ? esc(where) : null },
-    t && meet && { label: t.arriveTime, bold: "Say kia ora", second: esc(meet) },
+    t && meet && { label: t.arriveTime, bold: "Say kia ora", second: `${esc(meet)} Say hello to someone new.` },
     t && classTitle && { label: t.startTime, bold: esc(classTitle), second: `${p.durationMins || 60} minutes. Go at your own pace.` },
     t && social && { label: t.endTime, bold: `Social Stretch at ${esc(social)}`, second: "Coffee and chats. Pay your own way." },
     extra?.row,
@@ -258,15 +345,14 @@ function placeHeld(p: AttendeeEmailPayload, c: Ctx) {
   const html = page("blue", (sc) => `
     ${h1(sc, headline)}
     ${intro(sc, p, late
-      ? [`<strong>We look forward to seeing ${youOrCrew(c.n)} at Stretchy.</strong> This one’s already going ahead, so you’re in straight away. Here’s all the deets you need to know, and the more people who join, the better it gets for all.`]
+      ? [`<strong>We look forward to seeing ${youOrCrew(c.n)} at Stretchy.</strong> This one’s already going ahead, so you’re in straight away.`]
       : [
           c.min > 0 && c.held >= c.min
             ? `<strong>We look forward to seeing ${youOrCrew(c.n)} at Stretchy.</strong> We’ve hit the minimum of ${c.min} people, so it’s on track to go ahead. ${places.charAt(0).toUpperCase() + places.slice(1)} ${c.n === 1 ? "is" : "are"} held and <strong>we’ll confirm 36 hours out</strong>. Nothing’s charged yet.`
             : `<strong>We look forward to seeing ${youOrCrew(c.n)} at Stretchy.</strong> We haven’t hit the minimum number of people yet, so ${places} ${c.n === 1 ? "is" : "are"} held and <strong>we’ll confirm 36 hours out</strong>. Nothing’s charged yet.`,
-          "Here’s all the deets you need to know. And don’t forget, the more people who move together, the better it gets for all. So share Stretchy around!",
         ])}
     ${dayBox(sc, p, c, priceNowRow(c) ? { row: priceNowRow(c)!, dots: true } : undefined)}
-    ${filledButton(sc, c.shareUrl, "Share with a mate")}
+    ${whoCard(sc, p, c)}
     ${outlineButton(sc, c.manageUrl, "Manage my booking")}
     ${greyRows(sc, late
       ? [{ label: "Up to 36 hrs out", bold: "Going ahead ✓", second: "Free cancelling has closed." }, ROW_ROOM_NOW, ROW_FINAL_LATE(c)]
@@ -289,7 +375,7 @@ function soClose(p: AttendeeEmailPayload, c: Ctx) {
       ${h1(sc, "So close. 👀")}
       ${intro(sc, p, [`We need <strong>${people}</strong> before <strong>36 hours out</strong> for this one to go ahead. Know someone who’d love it? Now’s the time to send it their way.${p.isComp ? " Your place is on us, so there’s nothing to pay." : ""}`])}
       ${price(sc)}
-      ${filledButton(sc, c.shareUrl, "Share with a mate")}
+      ${whoCard(sc, p, c)}
       ${outlineButton(sc, c.manageUrl, "Manage my booking")}
       ${p.isComp ? "" : greyRows(sc, [ROW_FREE(c), ROW_FINAL(c)])}
       ${links(sc)}
@@ -319,7 +405,7 @@ function goingAhead(p: AttendeeEmailPayload, c: Ctx) {
     ${outlineButton(sc, c.manageUrl, "Manage my booking")}
     ${!p.isComp && c.maxNow != null ? priceBlock(sc, { big: money(c.maxNow), caption: "max per person · incl. GST", leftLabel: inAndRoom(c.held), c, endPrices: true }) : ""}
     ${p.isComp ? "" : greyRows(sc, [ROW_ROOM, { label: "30 mins out", bold: "Final price charged", second: c.maxNow != null ? `Never more than ${money(c.maxNow)}.` : null }])}
-    ${filledButton(sc, c.shareUrl, "Share with a mate")}
+    ${whoCard(sc, p, c)}
     ${links(sc)}
   `);
   return { subject: `${subjectDate(p.startsAt)}It’s going ahead 🎉 ${p.sessionTitle}`, html };
@@ -483,23 +569,65 @@ function cardPlaceReleased(p: AttendeeEmailPayload, c: Ctx) {
 }
 
 // 14 — How was your first Stretchy? (two days after someone's first session)
-// Two ways to answer: the quick questions at /rate/[session] ("Rate it quick-smart"), or simply reply to the email (replies go to Kimberley).
-function firstStretchyFollowUp(p: AttendeeEmailPayload) {
+// "You moved the price": how many came and how far the price dropped (only
+// when it did). Then rate it, same time next week, suggest, and share.
+function firstStretchyFollowUp(p: AttendeeEmailPayload, c: Ctx) {
+  const came = p.attendeeCount ?? 0;
+  const final = p.unitPriceCents != null ? p.unitPriceCents / 100 : null;
+  const moved = came > 0 && c.opening != null && final != null && final < c.opening;
+  const share = generalShareMessage(APP_URL);
   const html = page("purple", (sc) => `
-    ${h1(sc, "How was your first Stretchy? ☀️☕🍷")}
-    ${hey(sc, esc(p.name))}
-    ${msg(sc, "Thanks for coming to Stretchy. We’d love to hear how it went.")}
-    ${p.sessionId ? filledButton(sc, `${APP_URL}/rate/${p.sessionId}`, "Rate it quick-smart") : ""}
-    ${msg(sc, `Or email us back here with any feedback you may have (on the session, the experience, the booking system or whatever you like). You can also suggest where and how we show up next: <a href="${APP_URL}/suggest" style="color:${sc.text};font-weight:700;">Suggest a Stretchy</a>.`)}
-    ${outlineButton(sc, `${APP_URL}/suggest`, "Suggest a Stretchy")}
-    ${msg(sc, "And if you really enjoyed it, tell ya mates and help us grow the Stretchy community.")}
-    ${outlineButton(sc, `${APP_URL}/sessions`, "See what’s on next")}
-    <p style="color:${sc.text};font-size:15px;line-height:1.55;margin:0 0 22px;">With gratitude,<br>The Stretchy team</p>
-  `, { highlight: false });
+    ${h1(sc, "How was your first Stretchy? ☀️☕🍷")}${hey(sc, esc(p.name))}${moved ? card(sc, `${cardLabel(sc, "You moved the price 🙌")}${display(sc, `${came} OF YOU CAME`, 34, "0 0 6px")}${display(sc, `${money(c.opening!)} → ${money(final!)} EACH`, 22, "0 0 6px")}<p style="margin:0;font-size:14px;color:${sc.text};">More people, more vibes, more connection. 💛</p>`) : ""}${p.sessionId ? filledButton(sc, `${APP_URL}/rate/${p.sessionId}`, "⭐ Rate your Stretchy") : ""}${outlineButton(sc, p.nextSessionId ? `${APP_URL}/sessions/${p.nextSessionId}` : `${APP_URL}/sessions`, "🗓️ Same time next week?", 10)}${outlineButton(sc, `${APP_URL}/suggest`, "💡 Suggest a Stretchy", 10)}<div style="height:8px"></div>${card(sc, `${cardLabel(sc, "Share Stretchy 💛")}${display(sc, "STRETCHYYOGA.CO.NZ", 26, "0 0 12px")}${pillRow(sc, [
+      { href: `https://wa.me/?text=${encodeURIComponent(share.body)}`, text: "WhatsApp" },
+      { href: `sms:?&body=${encodeURIComponent(share.body)}`, text: "Text" },
+      { href: `mailto:?subject=${encodeURIComponent(share.subject)}&body=${encodeURIComponent(share.body)}`, text: "Email" },
+    ], "0 0 4px")}`)}${msg(sc, "👋 Did you say hello to someone new?")}${signOff(sc, "With gratitude")}
+  `);
   return { subject: "How was your first Stretchy? ☀️☕🍷", html };
 }
 
+// 15 — Shout sent (to the person who shouted a mate a place). SOCIAL_BOOKING_BRIEF.md 4.
+function shoutSent(p: AttendeeEmailPayload, c: Ctx) {
+  const to = esc(p.shoutTo ?? "your mate");
+  const html = page("olive", (sc) => `
+    ${h1(sc, "What a treat. 🎁")}${hey(sc, esc(p.name))}${msg(sc, `You've shouted ${to} a place at <strong>${esc(p.sessionTitle)}</strong>.`)}${card(sc, `<p style="margin:0;font-size:15px;line-height:1.5;color:${sc.text};">📣 <strong>Give ${to} a heads-up</strong>, and ask them to check junk.</p>`)}${dayBox(sc, p, c)}${p.shoutPaid ? card(sc, `${cardLabel(sc, "What you paid")}${display(sc, esc(p.shoutPaid), 32, "0 0 4px")}<p style="margin:0;font-size:13px;color:${sc.text};">Today, never more. Any difference comes back to your card 30 mins before.</p>`) : ""}${filledButton(sc, `${c.manageUrl}?shout=manage`, "Manage my shout")}${msg(sc, `We'll let you know when ${to} claims it.`)}${signOff(sc)}
+  `);
+  return { subject: `You've shouted ${p.shoutTo ?? "a mate"} a place 🎁`, html };
+}
+
+// 16 — Shout received (to the mate; the only email unless they claim). SOCIAL_BOOKING_BRIEF.md 4.
+function shoutReceived(p: AttendeeEmailPayload, c: Ctx) {
+  const from = esc(p.shoutFrom ?? "A mate");
+  const html = page("orange", (sc) => `
+    ${h1(sc, `${from} has a treat for you. 🎁`)}${hey(sc, esc(p.name))}${msg(sc, `${from} has shouted you a place at <strong>${esc(p.sessionTitle)}</strong>. It's all paid for.`)}${p.shoutNote ? card(sc, quote(sc, p.shoutNote, p.shoutFrom)) : ""}${dayBox(sc, p, c)}${msg(sc, "🧘 Yoga, then ☕ a Social Stretch.<br>💛 Never done yoga? Perfect. Every body welcome.")}${filledButton(sc, `${c.sessionUrl}?claim=1`, "Claim my place")}${msg(sc, `Takes a minute. No card needed.<br>Can't make it? <a href="${c.sessionUrl}?claim=no" style="color:${sc.text};font-weight:700;">Let ${from} know</a>. We won't email you again.`)}${signOff(sc)}
+  `);
+  return { subject: `${p.shoutFrom ?? "A mate"} shouted you a place at Stretchy 🎁`, html };
+}
+
+// 17 — Meet your Stretchy Buddy (at 36 hrs out, once it's going ahead). SOCIAL_BOOKING_BRIEF.md 6.
+function buddyIntro(p: AttendeeEmailPayload) {
+  const buddies = p.buddies ?? [];
+  const manage = p.sessionId ? `${APP_URL}/hold/${p.sessionId}` : `${APP_URL}/sessions`;
+  const html = page("blue", (sc) => `
+    ${h1(sc, "Meet your Stretchy Buddy. 👋")}${hey(sc, esc(p.name))}${msg(sc, `${esc(p.sessionTitle)} is on. ${buddies.length > 1 ? "Your buddies are" : "Your buddy is"}`)}${card(sc, buddies.map((b, i) => `${display(sc, esc(b.name), 22, b.hello ? "0 0 12px" : "0", true)}${b.hello ? quote(sc, b.hello) : ""}`).join(`<div style="height:14px"></div>`))}${msg(sc, "👀 Look out for each other, then grab a ☕ at the Social Stretch.")}${card(sc, `<p style="margin:0;font-size:13px;line-height:1.5;color:${sc.text};">🔒 We only shared first names and Say hello lines. Want to stay in touch? Connect in person, the old fashioned way.<br>Uneven numbers? Some of you are in a small group instead of a pair.</p>`)}${pillRow(sc, [
+      { href: `${manage}?buddy=1`, text: "Change my hello" },
+      { href: `${manage}?buddy=off`, text: "Turn off buddy" },
+      { href: `mailto:hello@stretchyyoga.co.nz?subject=${encodeURIComponent("Stretchy Buddy: something's not right")}`, text: "Something not right?" },
+    ], "0 0 4px")}${signOff(sc)}
+  `);
+  return { subject: "Meet your Stretchy Buddy 👋", html };
+}
+
 export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject: string; html: string } {
+  currentFooter = footerFor(type, p);
+  try {
+    return renderBody(type, p);
+  } finally {
+    currentFooter = undefined;
+  }
+}
+
+function renderBody(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject: string; html: string } {
   const c = context(p);
   switch (type) {
     case "hold_confirmed": return placeHeld(p, c);
@@ -511,9 +639,12 @@ export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPay
     case "hold_cancelled": return holdCancelled(p);
     case "comp_hold_confirmed": return placeOnUs(p, c);
     case "booking_card_failed": return cardFailed(p, c);
-    case "first_stretchy_followup": return firstStretchyFollowUp(p);
+    case "first_stretchy_followup": return firstStretchyFollowUp(p, c);
     case "card_confirm_failed": return cardConfirmFailed(p, c);
     case "card_confirm_reminder": return cardConfirmReminder(p, c);
     case "card_place_released": return cardPlaceReleased(p, c);
+    case "shout_sent": return shoutSent(p, c);
+    case "shout_received": return shoutReceived(p, c);
+    case "buddy_intro": return buddyIntro(p);
   }
 }

@@ -93,7 +93,17 @@ function Question({ q, answers, setAnswers }: { q: FeedbackQuestion; answers: An
   );
 }
 
-export default function RateForm({ sessionId }: { sessionId?: string }) {
+export default function RateForm({
+  sessionId,
+  emailType,
+  rated,
+}: {
+  sessionId?: string;
+  /** Came from "How was this email?" in an email footer: which email it was. */
+  emailType?: string;
+  /** …and whether they tapped Good or Not great first. */
+  rated?: "good" | "not_great";
+}) {
   const [session, setSession] = useState<Session | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Answers>({});
@@ -120,7 +130,7 @@ export default function RateForm({ sessionId }: { sessionId?: string }) {
     const res = await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ sessionId, answers, name, email, hp }),
+      body: JSON.stringify({ sessionId, answers, name, email, hp, emailType }),
     }).catch(() => null);
     const d = res ? await res.json().catch(() => ({})) : {};
     setSending(false);
@@ -158,9 +168,11 @@ export default function RateForm({ sessionId }: { sessionId?: string }) {
         <div className="flex flex-col gap-2 mb-1">
           {day && <p className="m-0 font-mono text-xs font-bold uppercase tracking-[0.16em] text-muted">{day} · {session?.location_name}</p>}
           <h1 className="font-display font-bold text-ink m-0" style={{ fontSize: "clamp(26px,7vw,36px)", letterSpacing: "-0.03em", lineHeight: 1 }}>
-            {sessionId ? "How was your Stretchy?" : "How\u2019s Stretchy going?"}
+            {rated ? "Thanks for letting us know." : sessionId ? "How was your Stretchy?" : "How\u2019s Stretchy going?"}
           </h1>
-          <p className="m-0 text-sm text-muted">About 30 seconds. Tap what fits, skip anything you like.</p>
+          <p className="m-0 text-sm text-muted">
+            {rated ? "Want to tell us more? About 30 seconds. Tap what fits, skip anything you like." : "About 30 seconds. Tap what fits, skip anything you like."}
+          </p>
         </div>
 
         {FEEDBACK_QUESTIONS.map((q) => <Question key={q.k} q={q} answers={answers} setAnswers={setAnswers} />)}

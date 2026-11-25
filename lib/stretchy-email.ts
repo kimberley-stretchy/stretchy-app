@@ -104,9 +104,33 @@ function signoff(sc: Scheme, text: string) {
   return `<p style="color:${sc.text};font-size:15px;line-height:1.55;margin:16px 0 0;">${text},<br>Stretchy</p>`;
 }
 
-export function brandFooter(sc: Scheme) {
+/**
+ * The standard lines at the top of every customer email's footer
+ * (SOCIAL_BOOKING_BRIEF.md section 8): how was this email, why you're getting
+ * it, and your data. Good / Not great record the email type in one tap
+ * (/api/feedback/email), then open /feedback for "Tell us more".
+ */
+export type EmailFooter = {
+  /** The email type, recorded with the rating: "hold_confirmed". */
+  type: string;
+  /** "you held a place at Stretchy." */
+  reason: string;
+  /** Replaces "We never sell or share your details." when an email needs its own line. */
+  data?: string;
+  /** Replaces the Email settings link (e.g. "Don't email me again" for a shout recipient). */
+  settings?: { href: string; text: string };
+};
+
+function footerLines(sc: Scheme, f: EmailFooter) {
+  const rate = (r: string) => `${APP_URL}/api/feedback/email?msg=${encodeURIComponent(f.type)}&r=${r}`;
+  const pill = `color:${sc.text};text-decoration:none;border:1px solid ${sc.text};border-radius:999px;padding:2px 10px;`;
+  const settings = f.settings ?? { href: `${APP_URL}/profile/notifications`, text: "Email settings" };
+  return `<p style="font-size:13px;color:${sc.text};margin:0 0 10px;"><strong>How was this email?</strong> <a href="${rate("good")}" style="${pill}">Good</a> <a href="${rate("not_great")}" style="${pill}">Not great</a> · <a href="${APP_URL}/feedback?msg=${encodeURIComponent(f.type)}" style="color:${sc.text};font-weight:700;">Tell us more</a></p><p style="font-size:12px;color:${sc.text};margin:0 0 6px;"><strong>Why you're getting this:</strong> ${f.reason}</p><p style="font-size:12px;color:${sc.text};margin:0 0 14px;"><strong>Your data, your call.</strong> ${f.data ?? "We never sell or share your details."} <a href="${APP_URL}/privacy" style="color:${sc.text};">Privacy policy</a> · <a href="${settings.href}" style="color:${sc.text};">${settings.text}</a></p>`;
+}
+
+export function brandFooter(sc: Scheme, footer?: EmailFooter) {
   return `<div style="max-width:520px;margin:0 auto;padding:26px 26px 34px;text-align:center;">
-    <p style="font-size:12px;color:${sc.text};margin:0 0 10px;">Questions? <a href="mailto:${HELLO}" style="color:${sc.text};font-weight:700;text-decoration:none;">${HELLO}</a></p>
+    ${footer ? footerLines(sc, footer) : ""}<p style="font-size:12px;color:${sc.text};margin:0 0 10px;">Questions? <a href="mailto:${HELLO}" style="color:${sc.text};font-weight:700;text-decoration:none;">${HELLO}</a></p>
     <p style="font-size:12px;margin:0 0 8px;"><a href="${IG}" style="color:${sc.text};text-decoration:none;font-weight:700;">@stretchy.yoga</a> · <a href="https://www.tiktok.com/@stretchy.yoga" style="color:${sc.text};text-decoration:none;font-weight:700;">TikTok</a></p>
     <p style="font-size:11px;color:${sc.text};margin:0 0 8px;">Made with Love by <a href="https://studiodawn.org" style="color:${sc.text};text-decoration:underline;">Studio Dawn</a></p>
     <p style="font-size:12px;margin:0 0 8px;"><a href="https://stretchyyoga.co.nz" style="color:${sc.text};text-decoration:none;">stretchyyoga.co.nz</a></p>
@@ -131,7 +155,7 @@ export function page(
   schemeName: string,
   inner: (sc: Scheme) => string,
   // afterFooter: a last line under the footer (newsletters put Unsubscribe here).
-  opts: { highlight?: boolean; afterFooter?: (sc: Scheme) => string } = {}
+  opts: { highlight?: boolean; afterFooter?: (sc: Scheme) => string; footer?: EmailFooter } = {}
 ) {
   const sc = SCHEMES[schemeName] ?? SCHEMES.cream;
   const showHighlight = opts.highlight !== false;
@@ -141,7 +165,7 @@ export function page(
       ${inner(sc)}
     </div>
     ${showHighlight ? highlightBlock(sc) : ""}
-    ${brandFooter(sc)}
+    ${brandFooter(sc, opts.footer)}
     ${opts.afterFooter ? opts.afterFooter(sc) : ""}
   </div>`;
 }
@@ -213,7 +237,10 @@ export type AttendeeEmailType =
   | "first_stretchy_followup"
   | "card_confirm_failed"
   | "card_confirm_reminder"
-  | "card_place_released";
+  | "card_place_released"
+  | "shout_sent"
+  | "shout_received"
+  | "buddy_intro";
 
 export interface AttendeeEmailPayload {
   to: string;
@@ -232,6 +259,17 @@ export interface AttendeeEmailPayload {
   newAccount?: boolean;
   /** "on us" place claimed from someone's gift link: "Daisy has shouted you a place". */
   giftFrom?: string;
+  /** They tapped "Don't show me this again": no "Who's coming with you?" card. */
+  sharePromptsOff?: boolean;
+  /** First-Stretchy follow-up: the next session in the same series ("Same time next week?"). */
+  nextSessionId?: string;
+  /** Shout emails: the giver's and recipient's first names, the note, and what the giver paid. */
+  shoutFrom?: string;
+  shoutTo?: string;
+  shoutNote?: string;
+  shoutPaid?: string;
+  /** Buddy intro: first names + Say hello lines (one for a pair, more for a small group). */
+  buddies?: { name: string; hello?: string }[];
   teacherName?: string;
   teacherStyle?: string;
   gemName?: string;
