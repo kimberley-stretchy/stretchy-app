@@ -1,7 +1,9 @@
 /**
  * POST /api/stripe/charge-all
  *
- * Called 2 hours before a session starts (by a cron job / Supabase Edge Function).
+ * NOT USED (Nov 2026): an early placeholder. Nothing calls it; the real final
+ * charge runs 30 minutes before each session from /api/cron/lock-in.
+ * Originally: called before a session starts (by a cron job / Supabase Edge Function).
  * - Locks the final price for all confirmed holders
  * - Captures all PaymentIntents (converts "authorized" → "charged")
  * - Sends receipt emails via Resend

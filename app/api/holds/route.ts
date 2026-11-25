@@ -8,6 +8,7 @@ import { maxPriceToPromise } from "@/lib/pricing";
 import { goNoGo, finalCharge, formatDayTime, phase } from "@/lib/sessionTimes";
 import { sendAttendeeEmail } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
+import { recordInvite } from "@/lib/invites";
 
 // Age in whole years from a YYYY-MM-DD date-of-birth string.
 function ageFromDob(dob: string): number | null {
@@ -640,6 +641,7 @@ export async function PATCH(request: NextRequest) {
     hold = holds?.[0];
   }
 
+  await recordInvite(admin, holdUserId);
   // finalPi.amount is the TOTAL for every spot — the email shows the per-spot price.
   await sendPlaceHeld(admin, holdUserId, sessionId, finalPi.amount / combinedQuantity, combinedQuantity);
 
@@ -786,6 +788,7 @@ async function confirmSavedCardBooking(o: {
 
   // The email shows the most they can pay: the price at the minimum.
   const perSpot = maxPriceToPromise(session.cost_base, session.revenue_target, session.min_attendees, heldNow + quantity, true);
+  await recordInvite(admin, userId);
   await sendPlaceHeld(admin, userId, sessionId, Math.round(perSpot * 100), combined);
   return NextResponse.json({ holdId });
 }
