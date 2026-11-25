@@ -148,7 +148,7 @@ export default async function FAQPage() {
   const range = fullRoomRange(sessions);
   const expensive: Faq = {
     q: "Is Stretchy expensive?",
-    a: `The price you see on a session is the most you'll pay, not where it starts. The more people who come, the less everyone pays${range ? `: with a full room, sessions come down to ${range}, depending on the session` : ""}. You're charged the final price 30 minutes before, and it's never more than the price you saw.`,
+    a: `Stretchy is priced to be fair to everyone involved. Every session pays its teacher, its GEM (the Good Energy Manager who looks after the community on the day) and its venue properly, gives a donation to Cancer Support NZ, and keeps Stretchy going. The price you see is the most you'll pay, not where it starts. Once enough people are in, those costs are shared by more of us, so every person who joins brings the price down for the whole room${range ? `: with a full room, sessions come down to ${range}` : ""}. More people, more energy, more connection, and a fairer price for all.`,
   };
   const all: Faq[] = [PRICING_FAQS[0], expensive, ...PRICING_FAQS.slice(1), ...sessions.map(sessionFaq), ...FAQS, ...TECH_FAQS];
 
