@@ -52,7 +52,8 @@ function footerFor(type: AttendeeEmailType, p: AttendeeEmailPayload): EmailFoote
         settings: { href: `mailto:hello@stretchyyoga.co.nz?subject=${encodeURIComponent("Don't email me again")}`, text: "Don't email me again" },
       };
     case "buddy_intro":
-      return { type, reason: "you switched on Buddy me up for this session.", data: "We delete your buddy match after the session. We never sell or share your details." };
+    case "buddy_solo":
+      return { type, reason: "you switched on Buddy me up for this session.", data: "We delete your buddy match a week after the session. We never sell or share your details." };
     default: return { type, reason: HELD };
   }
 }
@@ -209,7 +210,7 @@ function outlineButton(sc: Scheme, href: string, text: string, bottom = 16) {
  * nothing. Test sends set EMAIL_PREVIEW_ALL_ACTIONS=1 to see the full card.
  */
 export const SHOUT_LIVE = false;
-export const BUDDY_LIVE = false;
+export const BUDDY_LIVE = true;
 const previewAll = () => process.env.EMAIL_PREVIEW_ALL_ACTIONS === "1";
 
 /** Small pill buttons in one row (filled: text colour, with background-colour text). */
@@ -618,6 +619,18 @@ function buddyIntro(p: AttendeeEmailPayload) {
   return { subject: "Meet your Stretchy Buddy 👋", html };
 }
 
+// 18 — Only one buddy-upper (at 36 hrs out). SOCIAL_BOOKING_BRIEF.md 6.
+function buddySolo(p: AttendeeEmailPayload) {
+  const manage = p.sessionId ? `${APP_URL}/hold/${p.sessionId}` : `${APP_URL}/sessions`;
+  const html = page("blue", (sc) => `
+    ${h1(sc, "Just you this time. 👋")}${hey(sc, esc(p.name))}${msg(sc, `${esc(p.sessionTitle)} is on. You're our only buddy-upper this time, so we'll pair you up next time.`)}${msg(sc, "If someone else switches on Buddy me up before joining closes, we'll match you up and let you know.")}${msg(sc, "👋 Say kia ora to your teacher and GEM. They'll look after you.")}${pillRow(sc, [
+      { href: manage, text: "Manage my booking" },
+      { href: `${manage}?buddy=off`, text: "Turn off buddy" },
+    ], "0 0 4px")}${signOff(sc)}
+  `);
+  return { subject: "Buddy me up: just you this time", html };
+}
+
 export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject: string; html: string } {
   currentFooter = footerFor(type, p);
   try {
@@ -646,5 +659,6 @@ function renderBody(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject
     case "shout_sent": return shoutSent(p, c);
     case "shout_received": return shoutReceived(p, c);
     case "buddy_intro": return buddyIntro(p);
+    case "buddy_solo": return buddySolo(p);
   }
 }

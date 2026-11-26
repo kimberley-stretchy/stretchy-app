@@ -17,7 +17,7 @@ export default function TermsPage() {
           <h1 className="font-display font-bold text-ink mb-1" style={{ fontSize: "36px", letterSpacing: "-0.03em" }}>
             Terms &amp; conditions
           </h1>
-          <p className="font-mono text-xs text-muted uppercase tracking-widest">Last updated October 2026</p>
+          <p className="font-mono text-xs text-muted uppercase tracking-widest">Last updated November 2026</p>
         </div>
 
         <div className="bg-white rounded-card border-2 border-ink p-5 space-y-4 text-sm text-ink leading-relaxed">
@@ -59,6 +59,11 @@ export default function TermsPage() {
           <div>
             <h2 className="font-bold mb-2">Health, safety &amp; &ldquo;moving with care&rdquo;</h2>
             <p className="text-muted">Stretchy is a movement community, not a medical service. Sharing a care note helps your teacher and GEM look after you, but it isn&rsquo;t medical advice and we&rsquo;re not responsible for assessing your fitness to take part — that&rsquo;s between you and your own judgement (and your doctor, if it&rsquo;s a serious call). Many of our teachers and GEMs hold a current First Aid qualification, and we&rsquo;re working towards this for everyone running sessions. If you&rsquo;re injured by accident during a Stretchy session in New Zealand, you may be covered by ACC (New Zealand&rsquo;s no-fault accident compensation scheme) — ACC&rsquo;s own rules determine what&rsquo;s actually covered, and this isn&rsquo;t a guarantee of cover.</p>
+          </div>
+
+          <div id="buddy" className="scroll-mt-6">
+            <h2 className="font-bold mb-2">Buddy me up</h2>
+            <p className="text-muted">Buddy me up is optional and for over-18s. We match people by session only, and we don&rsquo;t check or vouch for anyone you&rsquo;re matched with. Please be kind and respectful, keep it friendly, and only share contact details if you want to. Anything you arrange after the session is up to you. If something doesn&rsquo;t feel right, tell your GEM on the day or email <a href="mailto:hello@stretchyyoga.co.nz" className="font-bold text-ink">hello@stretchyyoga.co.nz</a>. We may switch off Buddy me up for anyone who makes others feel unsafe. See our <Link href="/privacy#buddy" className="font-bold text-ink underline">Privacy Policy</Link> for what we share.</p>
           </div>
 
           <div>
