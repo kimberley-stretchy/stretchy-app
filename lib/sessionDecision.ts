@@ -10,6 +10,7 @@ import { notifyVenues } from "@/lib/notifyVenue";
 import { confirmCards, type CardOutcome } from "@/lib/confirmCards";
 import { cardDeadline } from "@/lib/authoriseAtConfirm";
 import { friendlyDeclineCode } from "@/lib/cardFailed";
+import { runBuddyMatching } from "@/lib/buddy";
 
 // The go/cancel decision lives here — NOT inline in the cron — so the hourly
 // automation and HQ's manual "Keep it alive & confirm" override run the exact
@@ -182,6 +183,14 @@ export async function confirmSession(
     url: `/notifications/going-ahead?session=${session.id}`,
     requireInteraction: true,
   }).catch(console.error);
+
+  // Buddy me up: match everyone who switched it on. Contained, so it can never
+  // stop the rest of "going ahead".
+  try {
+    await runBuddyMatching(admin, { id: session.id, title: session.title, starts_at: session.starts_at, state: "confirmed" });
+  } catch (e) {
+    console.error(`Buddy matching failed for session ${session.id}:`, e);
+  }
 
   const interestedIds = (await getInterestedUserIds(admin, session.id)).filter((uid) => !userIds.includes(uid));
   const interested = await getAttendees(admin, interestedIds);

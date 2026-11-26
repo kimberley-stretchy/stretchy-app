@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { sessionTimes } from "@/lib/sessionTimes";
 import { cancelLabel } from "@/lib/places";
 import CareNoteCard from "@/components/CareNoteCard";
+import BuddyCard from "@/components/BuddyCard";
 
 type Session = BookingSession;
 
@@ -179,6 +180,7 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
             </Link>
           </div>
         )}
+        <BuddyCard session={session} goingAhead={session.state === "confirmed" || session.state === "locked"} />
         <CareNoteCard />
         {cancelMsg && <p className="m-0 text-center text-sm font-bold">{cancelMsg}</p>}
 

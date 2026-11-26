@@ -240,7 +240,8 @@ export type AttendeeEmailType =
   | "card_place_released"
   | "shout_sent"
   | "shout_received"
-  | "buddy_intro";
+  | "buddy_intro"
+  | "buddy_solo";
 
 export interface AttendeeEmailPayload {
   to: string;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendPushToUsers } from "@/lib/push-server";
 import { sendAttendeeBatch, APP_URL } from "@/lib/stretchy-email";
+import { runBuddyMatching, clearFinishedBuddies } from "@/lib/buddy";
 import { notifyHostRecruit, notifyHQ } from "@/lib/notifyLifecycle";
 import { buildSessionEmailExtras, movementLabel } from "@/lib/sessionEmailContext";
 import {
@@ -326,5 +327,28 @@ export async function GET(request: NextRequest) {
     console.error("Venue holds error:", e);
   }
 
-  return NextResponse.json({ nudged, checked: (sessions ?? []).length, results, cards, followUps, venueHolds });
+  // ── G) BUDDY ME UP ──────────────────────────────────────────────────────────
+  // Anyone who switched it on after 36 hrs out is matched up, until joining
+  // closes. Then everything is deleted once the session is over.
+  let buddies = { matched: 0, cleared: 0 };
+  try {
+    const { data: going } = await admin
+      .from("sessions")
+      .select("id, title, starts_at, state")
+      .eq("state", "confirmed")
+      .gt("starts_at", now.toISOString())
+      .lte("starts_at", hoursFromNow(now, DECISION_HOURS));
+    for (const s of going ?? []) {
+      try {
+        buddies.matched += (await runBuddyMatching(admin, s, now)).matched;
+      } catch (e) {
+        console.error(`Buddy matching error for session ${s.id}:`, e);
+      }
+    }
+    buddies.cleared = await clearFinishedBuddies(admin, now);
+  } catch (e) {
+    console.error("Buddy me up error:", e);
+  }
+
+  return NextResponse.json({ nudged, checked: (sessions ?? []).length, results, cards, followUps, venueHolds, buddies });
 }
