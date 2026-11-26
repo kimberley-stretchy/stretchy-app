@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           <h1 className="font-display font-bold text-ink mb-1" style={{ fontSize: "36px", letterSpacing: "-0.03em" }}>
             Privacy policy
           </h1>
-          <p className="font-mono text-xs text-muted uppercase tracking-widest">NZ Privacy Act 2020 · Last updated October 2026</p>
+          <p className="font-mono text-xs text-muted uppercase tracking-widest">NZ Privacy Act 2020 · Last updated November 2026</p>
         </div>
 
         <div className="bg-white rounded-card border-2 border-ink p-5 space-y-4 text-sm text-ink leading-relaxed">
@@ -29,6 +29,10 @@ export default function PrivacyPage() {
               <li>Payment method (held securely by Stripe — we never see or store your card number)</li>
               <li>Session holds and ratings</li>
               <li>Anything you tell us under &ldquo;moving with care&rdquo; — an optional note about an injury, pregnancy, surgery, or anything else you&rsquo;d like your teacher and GEM to know</li>
+              <li>If you switch on <a href="#buddy" className="font-bold text-ink underline">Buddy me up</a>: your optional Say hello line, and who you&rsquo;re matched with</li>
+              <li>If you open a mate&rsquo;s invite link: which link it was, so we can count it if you book</li>
+              <li>If you claim a place someone has gifted you: the name and email you give us, and which session you chose</li>
+              <li>If you tap 👍 or 👎 on one of our emails: which email it was and your answer, with no name or email attached</li>
               <li>Usage data (which sessions you view, when you log in)</li>
               <li>If you teach or GEM for us: your qualifications, First Aid training status, availability, and banking details for payouts</li>
             </ul>
@@ -54,6 +58,8 @@ export default function PrivacyPage() {
               <li><strong>Vercel</strong> — app hosting (vercel.com/legal/privacy-policy)</li>
               <li><strong>Google</strong> — if you choose to sign in with your Google account, or once Google Calendar sync is switched on for your sessions</li>
               <li><strong>Your teacher and GEM</strong> — your first name, and any care note, for sessions you hold a place in</li>
+              <li><strong>Your buddy or buddy group</strong> — only if you switch on Buddy me up for a session: your first name and Say hello line, nothing else</li>
+              <li><strong>The mate who invited you</strong> — they see how many people joined through their link, never who</li>
             </ul>
             <p className="text-muted mt-2">We do not knowingly sell your data, and we do not use it for advertising.</p>
             <p className="text-muted mt-2">Some of the services above store data outside New Zealand. We choose providers who meet strong privacy and security standards wherever they&rsquo;re based, in line with our obligations under the Privacy Act around sending information overseas.</p>
@@ -64,14 +70,20 @@ export default function PrivacyPage() {
             <p className="text-muted">Anything you share with us under &ldquo;moving with care&rdquo; is treated as sensitive. It&rsquo;s visible to your teacher and the GEM running your session, and Stretchy HQ can also see it at our discretion — for example, to help resolve a safety concern. It&rsquo;s protected by database-level access controls, and you can edit or remove it at any time. We are not a medical service, and this note isn&rsquo;t medical advice. It&rsquo;s ultimately up to you to move within your own limits, and to seek professional medical, health or wellness advice where you need it.</p>
           </div>
 
+          <div id="buddy" className="scroll-mt-6">
+            <h2 className="font-bold mb-2">Buddy me up</h2>
+            <p className="text-muted">Buddy me up is optional and off unless you switch it on, one session at a time. When the session goes ahead, we match you with one or a few others who switched it on too. We only share your first name and your Say hello line with them. We never share your surname, email, phone number or care note. Your Say hello line can&rsquo;t include phone numbers, emails or social handles: swap those in person if you like. Your Say hello line and match are deleted one week after the session (or straight away if it&rsquo;s called off). You can switch it off any time before joining closes. Buddy me up is for over-18s.</p>
+          </div>
+
           <div id="cookies" className="scroll-mt-6">
             <h2 className="font-bold mb-2">Cookies 🍪</h2>
             <p className="text-muted">The short version: we only use the essentials. No ads, no analytics, no following you around the internet.</p>
             <p className="text-muted mt-2">Cookies are tiny files a website pops on your device so it can remember you. Here&rsquo;s everything Stretchy uses:</p>
             <ul className="text-muted space-y-1 list-disc pl-4 mt-2">
               <li><strong>Keeping you logged in</strong> — when you sign in, a cookie remembers it&rsquo;s you so you don&rsquo;t have to log in on every page. It&rsquo;s cleared when you log out.</li>
-              <li><strong>Keeping payments safe</strong> — when you hold a spot or add a card, our payment provider Stripe sets its own cookies to process your payment securely and help stop fraud (stripe.com/privacy).</li>
+              <li><strong>Keeping payments safe</strong> — when you hold a place or add a card, our payment provider Stripe sets its own cookies to process your payment securely and help stop fraud (stripe.com/privacy).</li>
               <li><strong>Remembering little things</strong> — your browser&rsquo;s local storage notes that you&rsquo;ve closed a pop-up or this cookie note, and which Stretchy suggestions you&rsquo;ve voted for. This stays on your device and isn&rsquo;t sent to us.</li>
+              <li><strong>Remembering who invited you</strong> — if you open a mate&rsquo;s invite link, a cookie keeps their link code for 30 days. If you hold your first place in that time, we count it towards their invites. It&rsquo;s never used for ads or tracking.</li>
               <li><strong>Signing in with Google</strong> — only if you choose that option, Google sets its own cookies while it signs you in.</li>
               <li><strong>Fonts</strong> — our typefaces load from Google Fonts. That means Google sees your device&rsquo;s IP address to deliver them, but no cookies are set.</li>
             </ul>
@@ -90,6 +102,9 @@ export default function PrivacyPage() {
               <li>Payment and financial records: 7 years, as required under New Zealand&rsquo;s tax record-keeping rules (Tax Administration Act 1994)</li>
               <li>Your account details: for as long as your account is active. If you delete your account, your name and contact details are removed</li>
               <li>Your booking history (which sessions you came to): kept so we can see how Stretchy is growing year on year, like how many people come and come back. If you delete your account, it&rsquo;s kept without your name or details, as numbers only</li>
+              <li>Buddy me up (Say hello lines and matches): deleted one week after the session</li>
+              <li>Gifted places: the email given to claim a place is only used for that place, never added to our newsletter</li>
+              <li>Email 👍 / 👎 answers: kept as counts only, with no name or email</li>
               <li>Care notes: kept only as long as they&rsquo;re useful for your safety in sessions, and removed sooner if you ask us to</li>
               <li>You can ask us to delete your information at any time, and we will, unless we&rsquo;re required to keep something (like financial records, for tax purposes)</li>
             </ul>
@@ -112,7 +127,7 @@ export default function PrivacyPage() {
 
           <div>
             <h2 className="font-bold mb-2">Under 18s</h2>
-            <p className="text-muted">Stretchy is for adults 18 and over. If you&rsquo;re under 18, you can only join a Stretchy session if you&rsquo;re accompanied by a paying parent or legal guardian who attends the session with you — a guardian&rsquo;s permission alone isn&rsquo;t enough, they need to be there and to have paid for you. This doesn&rsquo;t apply to any session or event we specifically host for children or teens — those will always be clearly marketed as such, with their own age guidance. Some sessions are held at licensed venues (like bars or restaurants) — those venues have their own rules about where under-18s can go on the premises, even with a guardian present, and those rules apply on top of ours.</p>
+            <p className="text-muted">Stretchy is for adults 18 and over. If you&rsquo;re under 18, you can only join a Stretchy session if you&rsquo;re accompanied by a paying parent or legal guardian who attends the session with you — a guardian&rsquo;s permission alone isn&rsquo;t enough, they need to be there and to have paid for you. This doesn&rsquo;t apply to any session or event we specifically host for children or teens — those will always be clearly marketed as such, with their own age guidance. Buddy me up is for over-18s only. Some sessions are held at licensed venues (like bars or restaurants) — those venues have their own rules about where under-18s can go on the premises, even with a guardian present, and those rules apply on top of ours.</p>
           </div>
 
           <div>

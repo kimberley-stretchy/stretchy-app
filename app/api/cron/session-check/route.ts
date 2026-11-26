@@ -329,7 +329,7 @@ export async function GET(request: NextRequest) {
 
   // ── G) BUDDY ME UP ──────────────────────────────────────────────────────────
   // Anyone who switched it on after 36 hrs out is matched up, until joining
-  // closes. Then everything is deleted once the session is over.
+  // closes. Everything is deleted one week after the session.
   let buddies = { matched: 0, cleared: 0 };
   try {
     const { data: going } = await admin

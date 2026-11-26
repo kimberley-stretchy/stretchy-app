@@ -53,7 +53,7 @@ function footerFor(type: AttendeeEmailType, p: AttendeeEmailPayload): EmailFoote
       };
     case "buddy_intro":
     case "buddy_solo":
-      return { type, reason: "you switched on Buddy me up for this session.", data: "We delete your buddy match after the session. We never sell or share your details." };
+      return { type, reason: "you switched on Buddy me up for this session.", data: "We delete your buddy match a week after the session. We never sell or share your details." };
     default: return { type, reason: HELD };
   }
 }

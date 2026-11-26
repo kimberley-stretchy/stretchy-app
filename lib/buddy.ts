@@ -13,7 +13,7 @@ import { finalCharge } from "@/lib/sessionTimes";
 // the next 15-minute run, until joining closes 30 mins before.
 //
 // Only first names and Say hello lines are ever shared. Everything is deleted
-// once the session is over (clearFinishedBuddies).
+// one week after the session (clearFinishedBuddies), or when it's called off.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { HELLO_MAX, NO_CONTACT_DETAILS } from "@/lib/buddyWords";
@@ -64,6 +64,9 @@ function shuffled<T>(a: T[]): T[] {
   }
   return out;
 }
+
+/** Buddy info is kept for one week after the session. */
+export const BUDDY_KEEP_MS = 7 * 24 * 60 * 60 * 1000;
 
 const firstName = (name: string | null | undefined) => (name ?? "").trim().split(/\s+/)[0] || "A Stretchy-goer";
 
@@ -175,16 +178,16 @@ export async function myBuddies(admin: SupabaseClient, sessionId: string, userId
   return others.map((u) => ({ name: firstName(people.find((p) => p.auth_user_id === u)?.name), hello: helloOf.get(u) }));
 }
 
-/** Delete every buddy opt-in and match for sessions that are over or called off. */
+/** Delete every buddy opt-in and match one week after the session, or once it's called off. */
 export async function clearFinishedBuddies(admin: SupabaseClient, now = new Date()): Promise<number> {
   const { data: rows } = await admin.from("buddy_optins").select("session_id");
   const { data: mrows } = await admin.from("buddy_matches").select("session_id");
   const ids = Array.from(new Set([...(rows ?? []), ...(mrows ?? [])].map((r) => r.session_id)));
   if (ids.length === 0) return 0;
   const { data: sessions } = await admin.from("sessions").select("id, starts_at, duration_mins, state").in("id", ids);
-  // Over = 4 hours after the start (covers the class and the Social Stretch).
+  // Kept for one week after the session starts, then deleted (Kimberley, 26 Nov 2026).
   const done = (sessions ?? [])
-    .filter((s) => s.state === "cancelled" || new Date(s.starts_at).getTime() + 4 * 60 * 60 * 1000 < now.getTime())
+    .filter((s) => s.state === "cancelled" || new Date(s.starts_at).getTime() + BUDDY_KEEP_MS < now.getTime())
     .map((s) => s.id);
   // A session that no longer exists has already taken its rows with it (on delete cascade).
   if (done.length === 0) return 0;

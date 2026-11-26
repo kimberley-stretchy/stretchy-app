@@ -168,7 +168,7 @@ export default function BuddyCard({
       {data.open && switchOn && (
         <div className="flex flex-col gap-3 animate-slide-down motion-reduce:animate-none">
           <p className="m-0 text-sm" style={{ color: GREY }}>
-            We only share your <strong style={{ color: INK }}>first name</strong> and <strong style={{ color: INK }}>Say hello</strong> line. Deleted after the session. For over-18s.
+            We only share your <strong style={{ color: INK }}>first name</strong> and <strong style={{ color: INK }}>Say hello</strong> line. Deleted a week after the session. For over-18s.
           </p>
 
           <label className="flex flex-col gap-1.5">

@@ -8,8 +8,8 @@
 --                switch it on later are matched up until joining closes.
 -- sessions.buddy_matched_at: when matching first ran for that session.
 --
--- Both tables are emptied for a session once it has finished (the 15-minute
--- session-check job does this). Only the server (service role) reads or writes.
+-- Both tables are emptied for a session one week after it (or when it's called
+-- off): the 15-minute session-check job does this. Only the server (service role) reads or writes.
 -- ─────────────────────────────────────────────────────────────────────────────
 create table if not exists public.buddy_optins (
   session_id        uuid not null references public.sessions(id) on delete cascade,
