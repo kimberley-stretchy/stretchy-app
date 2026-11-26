@@ -19,6 +19,7 @@ import { sessionTimes, subjectDate } from "@/lib/sessionTimes";
 import { calculatePrice, maxPriceToPromise, priceRightNow, priceHasDropped } from "@/lib/pricing";
 import { venueLine, meetLine } from "@/lib/sessionDisplay";
 import { generalShareMessage } from "@/lib/shareMessage";
+import { SHOUT_LIVE, shoutPath, claimPath } from "@/lib/shoutWords";
 import { placeCount, yourPlaces, youOrCrew, bringNote, moreToGoAhead, inAndRoom, untilPriceDrops } from "@/lib/places";
 
 const MONO = "'JetBrains Mono',ui-monospace,Menlo,monospace";
@@ -51,6 +52,9 @@ function footerFor(type: AttendeeEmailType, p: AttendeeEmailPayload): EmailFoote
         reason: `${esc(p.shoutFrom ?? "A mate")} shouted you a place. We only use your email for this place.`,
         settings: { href: `mailto:hello@stretchyyoga.co.nz?subject=${encodeURIComponent("Don't email me again")}`, text: "Don't email me again" },
       };
+    case "shout_claimed":
+    case "shout_final":
+      return { type, reason: "you shouted someone a place at Stretchy." };
     case "buddy_intro":
     case "buddy_solo":
       return { type, reason: "you switched on Buddy me up for this session.", data: "We delete your buddy match a week after the session. We never sell or share your details." };
@@ -205,11 +209,11 @@ function outlineButton(sc: Scheme, href: string, text: string, bottom = 16) {
 }
 
 /**
- * Shout a mate and Buddy me up go live later (SOCIAL_BOOKING_BRIEF.md 4 and 6).
- * Until then their buttons stay out of real emails so nobody taps through to
- * nothing. Test sends set EMAIL_PREVIEW_ALL_ACTIONS=1 to see the full card.
+ * Shout a mate goes live later (SOCIAL_BOOKING_BRIEF.md 4; the switch is in
+ * lib/shoutWords.ts). Until then its button stays out of real emails so nobody
+ * taps through to nothing. Test sends set EMAIL_PREVIEW_ALL_ACTIONS=1.
  */
-export const SHOUT_LIVE = false;
+export { SHOUT_LIVE };
 export const BUDDY_LIVE = true;
 const previewAll = () => process.env.EMAIL_PREVIEW_ALL_ACTIONS === "1";
 
@@ -232,7 +236,7 @@ function whoCard(sc: Scheme, p: AttendeeEmailPayload, c: Ctx) {
   const join = base.includes("?") ? "&" : "?";
   const items = [
     { href: c.shareUrl, text: "Share with a mate" },
-    (SHOUT_LIVE || previewAll()) && { href: `${base}${join}shout=1`, text: "Shout a mate" },
+    (SHOUT_LIVE || previewAll()) && { href: p.sessionId ? `${APP_URL}${shoutPath(p.sessionId)}` : `${APP_URL}/sessions`, text: "Shout a mate" },
     (BUDDY_LIVE || previewAll()) && { href: `${base}${join}buddy=1`, text: "Buddy me up" },
   ].filter(Boolean) as { href: string; text: string }[];
   return `<div style="border:2px solid ${sc.text};border-radius:16px;padding:14px 12px;margin:0 0 12px;"><p style="margin:0 4px 10px;font-family:${CHUBB};font-weight:900;font-size:20px;line-height:1;text-transform:uppercase;color:${sc.text};">Who's coming with you?</p>${pillRow(sc, items)}</div>`;
@@ -374,7 +378,7 @@ function soClose(p: AttendeeEmailPayload, c: Ctx) {
   if (p.isHolder) {
     const html = page("purple", (sc) => `
       ${h1(sc, "So close. 👀")}
-      ${intro(sc, p, [`We need <strong>${people}</strong> before <strong>36 hours out</strong> for this one to go ahead. Know someone who’d love it? Now’s the time to send it their way.${p.isComp ? " Your place is on us, so there’s nothing to pay." : ""}`])}
+      ${intro(sc, p, [`We need <strong>${people}</strong> before <strong>36 hours out</strong> for this one to go ahead. Know someone who’d love it? Now’s the time to send it their way.${p.isComp ? ` ${nothingToPay(p)}` : ""}`])}
       ${price(sc)}
       ${whoCard(sc, p, c)}
       ${outlineButton(sc, c.manageUrl, "Manage my booking")}
@@ -401,7 +405,7 @@ function goingAhead(p: AttendeeEmailPayload, c: Ctx) {
   const hitMin = c.min > 0 && c.held >= c.min;
   const html = page("olive", (sc) => `
     ${h1(sc, "It’s going ahead. 🎉")}
-    ${intro(sc, p, [`${hitMin ? `We hit ${c.min}, so it’s` : "It’s"} going ahead and ${places} confirmed.${p.isComp ? " It’s on us, so there’s nothing to pay." : ""} Here’s all the deets for the day.`])}
+    ${intro(sc, p, [`${hitMin ? `We hit ${c.min}, so it’s` : "It’s"} going ahead and ${places} confirmed.${p.isComp ? ` ${nothingToPay(p)}` : ""} Here’s all the deets for the day.`])}
     ${dayBox(sc, p, c)}
     ${outlineButton(sc, c.manageUrl, "Manage my booking")}
     ${!p.isComp && c.maxNow != null ? priceBlock(sc, { big: money(c.maxNow), caption: "max per person · incl. GST", leftLabel: inAndRoom(c.held), c, endPrices: true }) : ""}
@@ -441,18 +445,30 @@ function finalPrice(p: AttendeeEmailPayload, c: Ctx) {
     : c.n === 1 ? `Your final price: ${each} — ${p.sessionTitle}` : `Your final price: ${total} for ${c.n} — ${p.sessionTitle}`;
   const html = page("orange", (sc) => `
     ${h1(sc, p.isComp ? "See you shortly. 🕺" : "Your final price. 🕺")}
-    ${intro(sc, p, [`<strong>See you${crew} shortly! ${c.held} of us are moving together ${dayWord}${p.isComp ? ". Your place is on us, so there’s nothing to pay." : ", so the price dropped for everyone."} Here’s everything you need for today.</strong>`])}
+    ${intro(sc, p, [`<strong>See you${crew} shortly! ${c.held} of us are moving together ${dayWord}${p.isComp ? `. ${nothingToPay(p)}` : ", so the price dropped for everyone."} Here’s everything you need for today.</strong>`])}
     ${priceBlock(sc, {
-      big: p.isComp ? "On us" : (c.n === 1 ? each : total),
+      big: p.isComp ? (p.shoutFrom ? "Paid for" : "On us") : (c.n === 1 ? each : total),
       caption: p.isComp ? "nothing to pay" : c.n === 1 ? "charged now · incl. GST" : `charged now for ${c.n} places · ${each} each · incl. GST`,
       leftLabel: `${c.held} in`,
       c,
     })}
+    ${shoutLinesBox(sc, p)}
     ${dayBox(sc, p, c)}
     ${outlineButton(sc, c.manageUrl, "Manage my booking")}
     ${links(sc)}
   `);
   return { subject, html };
+}
+
+/** "Your place is on us" / "Sam shouted you this one" — for places with nothing to pay. */
+function nothingToPay(p: AttendeeEmailPayload) {
+  return p.shoutFrom ? `${esc(p.shoutFrom)} shouted you this one, so there’s nothing to pay.` : "Your place is on us, so there’s nothing to pay.";
+}
+
+/** The giver's shouts, settled 30 mins out. */
+function shoutLinesBox(sc: Scheme, p: AttendeeEmailPayload) {
+  if (!p.shoutLines?.length) return "";
+  return card(sc, p.shoutLines.map((l) => `<p style="margin:0 0 6px;font-size:14px;line-height:1.5;color:${sc.text};">🎁 ${esc(l)}</p>`).join(""));
 }
 
 // 7 — Not this time (36 hrs out, called off)
@@ -494,17 +510,17 @@ function placeOnUs(p: AttendeeEmailPayload, c: Ctx) {
   const loginUrl = `${APP_URL}/login${p.sessionId ? `?next=/hold/${p.sessionId}` : ""}`;
   const need = c.min > 0 ? moreToGoAhead(c.held, c.min) : null;
   const places = c.n === 1 ? "a place" : `${c.n} places`;
-  const saved = p.giftFrom ? `${esc(p.giftFrom)} has shouted you ${places}, on Stretchy.` : `Stretchy HQ has saved you ${places}, on us.`;
+  const saved = p.shoutFrom ? `${esc(p.shoutFrom)} has shouted you ${places}. It’s all paid for.` : p.giftFrom ? `${esc(p.giftFrom)} has shouted you ${places}, on Stretchy.` : `Stretchy HQ has saved you ${places}, on us.`;
   const html = page("purple", (sc) => `
-    ${h1(sc, c.n === 1 ? "A place on us. 💛" : `${c.n} places on us. 💛`)}
+    ${h1(sc, p.shoutFrom ? "You’re in. 🎁" : c.n === 1 ? "A place on us. 💛" : `${c.n} places on us. 💛`)}
     ${intro(sc, p, [c.goingAhead
       ? `${saved} Nothing to pay. <strong>It’s going ahead</strong>, so you’re all set. Here’s all the deets for the day.`
       : `${saved} Nothing to pay. ${need ? `It needs ${need.replace(" to go ahead", "")} people to go ahead, and we’ll` : "We’ll"} email you 36 hours out either way.`])}
-    ${dayBox(sc, p, c, { row: { label: c.n === 1 ? "Your place" : "Your places", bold: "On us", second: c.goingAhead ? `${roomNow(c)}.` : need ? `${need}.` : c.held > 0 ? `${inAndRoom(c.held)}.` : null }, dots: c.max > 0 })}
+    ${dayBox(sc, p, c, { row: { label: c.n === 1 ? "Your place" : "Your places", bold: p.shoutFrom ? `Shouted by ${esc(p.shoutFrom)}` : "On us", second: c.goingAhead ? `${roomNow(c)}.` : need ? `${need}.` : c.held > 0 ? `${inAndRoom(c.held)}.` : null }, dots: c.max > 0 })}
     ${p.newAccount ? filledButton(sc, loginUrl, "Set up my account") : filledButton(sc, c.manageUrl, "Manage my booking")}
     ${links(sc)}
   `);
-  return { subject: `${subjectDate(p.startsAt)}We’ve held you ${places} — on us 💛`, html };
+  return { subject: p.shoutFrom ? `${subjectDate(p.startsAt)}You’re in — ${p.shoutFrom} shouted you 🎁` : `${subjectDate(p.startsAt)}We’ve held you ${places} — on us 💛`, html };
 }
 
 // 10 — Your card didn't go through (a booking attempt that failed at the card step)
@@ -590,8 +606,15 @@ function firstStretchyFollowUp(p: AttendeeEmailPayload, c: Ctx) {
 // 15 — Shout sent (to the person who shouted a mate a place). SOCIAL_BOOKING_BRIEF.md 4.
 function shoutSent(p: AttendeeEmailPayload, c: Ctx) {
   const to = esc(p.shoutTo ?? "your mate");
+  const claimUrl = p.shoutCode ? `${APP_URL}${claimPath(p.shoutCode)}` : null;
+  const manageUrl = p.sessionId ? `${APP_URL}${shoutPath(p.sessionId)}` : `${APP_URL}/sessions`;
   const html = page("olive", (sc) => `
-    ${h1(sc, "What a treat. 🎁")}${hey(sc, esc(p.name))}${msg(sc, `You've shouted ${to} a place at <strong>${esc(p.sessionTitle)}</strong>.`)}${card(sc, `<p style="margin:0;font-size:15px;line-height:1.5;color:${sc.text};">📣 <strong>Give ${to} a heads-up</strong>, and ask them to check junk.</p>`)}${dayBox(sc, p, c)}${p.shoutPaid ? card(sc, `${cardLabel(sc, "What you paid")}${display(sc, esc(p.shoutPaid), 32, "0 0 4px")}<p style="margin:0;font-size:13px;color:${sc.text};">Today, never more. Any difference comes back to your card 30 mins before.</p>`) : ""}${filledButton(sc, `${c.manageUrl}?shout=manage`, "Manage my shout")}${msg(sc, `We'll let you know when ${to} claims it.`)}${signOff(sc)}
+    ${h1(sc, "What a treat. 🎁")}${hey(sc, esc(p.name))}${msg(sc, `You've shouted ${to} a place at <strong>${esc(p.sessionTitle)}</strong>.`)}${p.shoutDeliver === "link" && claimUrl
+      ? card(sc, `${cardLabel(sc, `One-time gift link for ${to}`)}<p style="margin:0 0 12px;font-size:14px;line-height:1.5;color:${sc.text};word-break:break-all;"><a href="${claimUrl}" style="color:${sc.text};font-weight:700;">${claimUrl}</a></p>${pillRow(sc, [
+          { href: `https://wa.me/?text=${encodeURIComponent(`I've shouted you a place at Stretchy 🎁 Claim it here: ${claimUrl}`)}`, text: "WhatsApp" },
+          { href: `sms:?&body=${encodeURIComponent(`I've shouted you a place at Stretchy 🎁 Claim it here: ${claimUrl}`)}`, text: "Text" },
+        ], "0 0 4px")}`)
+      : card(sc, `<p style="margin:0;font-size:15px;line-height:1.5;color:${sc.text};">📣 <strong>Give ${to} a heads-up</strong>, and ask them to check junk.</p>`)}${dayBox(sc, p, c)}${p.shoutPaid ? card(sc, `${cardLabel(sc, "What you paid")}${display(sc, esc(p.shoutPaid), 32, "0 0 4px")}<p style="margin:0;font-size:13px;color:${sc.text};">Today, never more. Any difference comes back to your card 30 mins before.</p>`) : ""}${filledButton(sc, manageUrl, "Manage my shout")}${msg(sc, `We'll let you know when ${to} claims it.`)}${signOff(sc)}
   `);
   return { subject: `You've shouted ${p.shoutTo ?? "a mate"} a place 🎁`, html };
 }
@@ -599,10 +622,29 @@ function shoutSent(p: AttendeeEmailPayload, c: Ctx) {
 // 16 — Shout received (to the mate; the only email unless they claim). SOCIAL_BOOKING_BRIEF.md 4.
 function shoutReceived(p: AttendeeEmailPayload, c: Ctx) {
   const from = esc(p.shoutFrom ?? "A mate");
+  const claimUrl = p.shoutCode ? `${APP_URL}${claimPath(p.shoutCode)}` : c.sessionUrl;
   const html = page("orange", (sc) => `
-    ${h1(sc, `${from} has a treat for you. 🎁`)}${hey(sc, esc(p.name))}${msg(sc, `${from} has shouted you a place at <strong>${esc(p.sessionTitle)}</strong>. It's all paid for.`)}${p.shoutNote ? card(sc, quote(sc, p.shoutNote, p.shoutFrom)) : ""}${dayBox(sc, p, c)}${msg(sc, "🧘 Yoga, then ☕ a Social Stretch.<br>💛 Never done yoga? Perfect. Every body welcome.")}${filledButton(sc, `${c.sessionUrl}?claim=1`, "Claim my place")}${msg(sc, `Takes a minute. No card needed.<br>Can't make it? <a href="${c.sessionUrl}?claim=no" style="color:${sc.text};font-weight:700;">Let ${from} know</a>. We won't email you again.`)}${signOff(sc)}
+    ${h1(sc, `${from} has a treat for you. 🎁`)}${hey(sc, esc(p.name))}${msg(sc, `${from} has shouted you a place at <strong>${esc(p.sessionTitle)}</strong>. It's all paid for.`)}${p.shoutNote ? card(sc, quote(sc, p.shoutNote, p.shoutFrom)) : ""}${dayBox(sc, p, c)}${msg(sc, "🧘 Yoga, then ☕ a Social Stretch.<br>💛 Never done yoga? Perfect. Every body welcome.")}${filledButton(sc, claimUrl, "Claim my place")}${msg(sc, `Takes a minute. No card needed.<br>Can't make it? <a href="${claimUrl}?cant=1" style="color:${sc.text};font-weight:700;">Let ${from} know</a>. We won't email you again.`)}${signOff(sc)}
   `);
   return { subject: `${p.shoutFrom ?? "A mate"} shouted you a place at Stretchy 🎁`, html };
+}
+
+// 16b — Your shout was claimed (to the giver). SOCIAL_BOOKING_BRIEF.md 4.
+function shoutClaimed(p: AttendeeEmailPayload, c: Ctx) {
+  const to = esc(p.shoutTo ?? "Your mate");
+  const html = page("olive", (sc) => `
+    ${h1(sc, `${to} claimed your shout. 🙌`)}${hey(sc, esc(p.name))}${msg(sc, `${to} is in for <strong>${esc(p.sessionTitle)}</strong>. We've sent them all the details for the day.`)}${dayBox(sc, p, c)}${filledButton(sc, p.sessionId ? `${APP_URL}${shoutPath(p.sessionId)}` : `${APP_URL}/sessions`, "Manage my shout")}${signOff(sc)}
+  `);
+  return { subject: `${p.shoutTo ?? "Your mate"} claimed your shout 🙌`, html };
+}
+
+// 16c — Your shout's final price (to a giver who isn't coming themselves; givers
+// who are coming get the same lines in their final-price email).
+function shoutFinal(p: AttendeeEmailPayload) {
+  const html = page("olive", (sc) => `
+    ${h1(sc, "Your shout's final price. 🎁")}${hey(sc, esc(p.name))}${msg(sc, `<strong>${esc(p.sessionTitle)}</strong> starts soon, so the final price is in.`)}${shoutLinesBox(sc, p)}${signOff(sc)}
+  `);
+  return { subject: `Your shout's final price — ${p.sessionTitle}`, html };
 }
 
 // 17 — Meet your Stretchy Buddy (at 36 hrs out, once it's going ahead). SOCIAL_BOOKING_BRIEF.md 6.
@@ -658,6 +700,8 @@ function renderBody(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject
     case "card_place_released": return cardPlaceReleased(p, c);
     case "shout_sent": return shoutSent(p, c);
     case "shout_received": return shoutReceived(p, c);
+    case "shout_claimed": return shoutClaimed(p, c);
+    case "shout_final": return shoutFinal(p);
     case "buddy_intro": return buddyIntro(p);
     case "buddy_solo": return buddySolo(p);
   }

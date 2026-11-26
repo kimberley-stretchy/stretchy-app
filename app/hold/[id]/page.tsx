@@ -9,6 +9,7 @@ import { sessionTimes } from "@/lib/sessionTimes";
 import { cancelLabel } from "@/lib/places";
 import CareNoteCard from "@/components/CareNoteCard";
 import BuddyCard from "@/components/BuddyCard";
+import { SHOUT_LIVE, shoutPath } from "@/lib/shoutWords";
 
 type Session = BookingSession;
 
@@ -179,6 +180,11 @@ export default function PlaceHeldPage({ params }: { params: { id: string } }) {
               Update my card
             </Link>
           </div>
+        )}
+        {SHOUT_LIVE && sessionTimes(session).phase !== "after2" && (
+          <Link href={shoutPath(params.id)} className={`${filledBtn} border-2`} style={{ background: "transparent", borderColor: INK, color: INK }}>
+            Shout a mate
+          </Link>
         )}
         <BuddyCard session={session} goingAhead={session.state === "confirmed" || session.state === "locked"} />
         <CareNoteCard />

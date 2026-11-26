@@ -45,10 +45,11 @@ export async function confirmCards(
 
   const { data: holds } = await admin
     .from("holds")
-    .select("id, user_id, quantity, stripe_pi_id, is_comp")
+    .select("id, user_id, quantity, stripe_pi_id, is_comp, shout_id")
     .eq("session_id", session.id)
     .eq("state", "active");
-  const paying = (holds ?? []).filter((h) => !h.is_comp && h.user_id);
+  // Shouted places are already paid for: no card to confirm.
+  const paying = (holds ?? []).filter((h) => !h.is_comp && !h.shout_id && h.user_id);
   if (paying.length === 0) return { ran: true, outcomes: [] };
 
   const { data: attendees } = await admin
@@ -230,7 +231,7 @@ export async function nightBeforeCardSummary(admin: SupabaseClient, now: Date = 
 
       const { data: holds } = await admin
         .from("holds")
-        .select("user_id, quantity, is_comp, state, card_failed_at")
+        .select("user_id, quantity, is_comp, shout_id, state, card_failed_at")
         .eq("session_id", s.id)
         .or("state.eq.active,card_failed_at.not.is.null");
       const rows = holds ?? [];
@@ -258,7 +259,7 @@ export async function nightBeforeCardSummary(admin: SupabaseClient, now: Date = 
             ? `<strong>Nothing for you to do tonight.</strong> Every booking for ${s.title} has a confirmed card, and the final price is charged by itself 30 minutes before.`
             : `<strong>These bookings still don't have a working card:</strong><br>${unfixed.map((h) => who(h.user_id as string)).join("<br>")}<br>Worth a message tonight.`,
           `<strong>${places}</strong> place${places === 1 ? "" : "s"} held (minimum ${s.min_attendees}).`,
-          ...active.map((h) => `${who(h.user_id as string)} · ${h.quantity ?? 1} place${(h.quantity ?? 1) === 1 ? "" : "s"} · ${h.is_comp ? "on us" : h.card_failed_at ? "<strong>card not confirmed</strong>" : "card confirmed"}`),
+          ...active.map((h) => `${h.user_id ? who(h.user_id as string) : "Unclaimed shout"} · ${h.quantity ?? 1} place${(h.quantity ?? 1) === 1 ? "" : "s"} · ${h.is_comp ? "on us" : h.shout_id ? "shouted (paid)" : h.card_failed_at ? "<strong>card not confirmed</strong>" : "card confirmed"}`),
           ...(released.length ? [`Released (no working card in time): ${released.map((h) => who(h.user_id as string)).join(", ")}`] : []),
           `You'll still get the usual "Starting in ~30 mins" email just before it starts. It can wait until after the session unless it's marked ⚠️.`,
         ],

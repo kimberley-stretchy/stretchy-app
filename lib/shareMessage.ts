@@ -10,7 +10,7 @@ const SHARE_LINE = "The more who join, the better it gets — the price, the vib
 type ShareSession = { starts_at: string; location_name?: string | null };
 
 /** "coffee" for morning sessions, "drinks" from midday on. */
-function socialDrink(startsAt: string) {
+export function socialDrink(startsAt: string) {
   return formatTime(startsAt).endsWith("am") ? "coffee" : "drinks";
 }
 

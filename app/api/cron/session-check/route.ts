@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     try {
       if (s.nudge_sent_at) continue; // once-only, but only stamped after a send succeeds (below)
 
-      const { count, userIds, compUserIds, spotsByUser } = await getHoldSummary(admin, s.id);
+      const { count, userIds, compUserIds, spotsByUser, shoutFromByUser } = await getHoldSummary(admin, s.id);
       const due = stepsDue({
         hoursUntil: hoursUntil(s.starts_at, now),
         held: count,
@@ -140,6 +140,7 @@ export async function GET(request: NextRequest) {
           sessionId: s.id,
           isHolder: true,
           isComp: compUserIds.has(a.auth_user_id),
+          shoutFrom: shoutFromByUser.get(a.auth_user_id),
           cancelUrl: `${APP_URL}/hold/${s.id}`,
           spots: spotsByUser.get(a.auth_user_id),
           socialStretchVenue: s.social_stretch_venue ?? undefined,

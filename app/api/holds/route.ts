@@ -367,7 +367,7 @@ export async function DELETE(request: NextRequest) {
   // Find the active hold for this user + session (one row, quantity holds the spot count)
   const { data: hold } = await admin
     .from("holds")
-    .select("id, stripe_pi_id, quantity")
+    .select("id, stripe_pi_id, quantity, shout_id")
     .eq("session_id", sessionId)
     .eq("user_id", user.id)
     .eq("state", "active")
@@ -375,6 +375,12 @@ export async function DELETE(request: NextRequest) {
 
   if (!hold) {
     return NextResponse.json({ error: "No active hold found" }, { status: 404 });
+  }
+
+  // A place a mate shouted you was paid for by them. Letting them know you
+  // can't make it (and refunding them) is its own step: SOCIAL_BOOKING_BRIEF.md 4.
+  if (hold.shout_id) {
+    return NextResponse.json({ error: "A mate shouted you this place, so it can’t be cancelled here. Email hello@stretchyyoga.co.nz and we’ll sort it with them." }, { status: 400 });
   }
 
   const remainingQty = cancelQty !== null ? hold.quantity - cancelQty : 0;
