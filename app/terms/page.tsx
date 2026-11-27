@@ -75,8 +75,8 @@ export default function TermsPage() {
           </div>
 
           <div id="buddy" className="scroll-mt-6">
-            <h2 className="font-bold mb-2">Buddy me up</h2>
-            <p className="text-muted">Buddy me up is optional and for over-18s. We match people by session only, and we don&rsquo;t check or vouch for anyone you&rsquo;re matched with. Please be kind and respectful, keep it friendly, and only share contact details if you want to. Anything you arrange after the session is up to you. If something doesn&rsquo;t feel right, tell your GEM on the day or email <a href="mailto:hello@stretchyyoga.co.nz" className="font-bold text-ink">hello@stretchyyoga.co.nz</a>. We may switch off Buddy me up for anyone who makes others feel unsafe. See our <Link href="/privacy#buddy" className="font-bold text-ink underline">Privacy Policy</Link> for what we share.</p>
+            <h2 className="font-bold mb-2">Buddy Me Up</h2>
+            <p className="text-muted">Buddy Me Up is optional and for over-18s. We match people by session only, and we don&rsquo;t check or vouch for anyone you&rsquo;re matched with. Please be kind and respectful, keep it friendly, and only share contact details if you want to. Anything you arrange after the session is up to you. If something doesn&rsquo;t feel right, tell your GEM on the day or email <a href="mailto:hello@stretchyyoga.co.nz" className="font-bold text-ink">hello@stretchyyoga.co.nz</a>. We may switch off Buddy Me Up for anyone who makes others feel unsafe. See our <Link href="/privacy#buddy" className="font-bold text-ink underline">Privacy Policy</Link> for what we share.</p>
           </div>
 
           <div>
