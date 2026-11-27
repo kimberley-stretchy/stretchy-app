@@ -19,7 +19,7 @@ import { sessionTimes, subjectDate } from "@/lib/sessionTimes";
 import { calculatePrice, maxPriceToPromise, priceRightNow, priceHasDropped } from "@/lib/pricing";
 import { venueLine, meetLine } from "@/lib/sessionDisplay";
 import { generalShareMessage } from "@/lib/shareMessage";
-import { SHOUT_LIVE, shoutPath, claimPath } from "@/lib/shoutWords";
+import { SHOUT_LIVE, shoutPath, claimPath, againPath } from "@/lib/shoutWords";
 import { placeCount, yourPlaces, youOrCrew, bringNote, moreToGoAhead, inAndRoom, untilPriceDrops } from "@/lib/places";
 
 const MONO = "'JetBrains Mono',ui-monospace,Menlo,monospace";
@@ -54,7 +54,14 @@ function footerFor(type: AttendeeEmailType, p: AttendeeEmailPayload): EmailFoote
       };
     case "shout_claimed":
     case "shout_final":
+    case "shout_released":
+    case "shout_unclaimed_nudge":
+    case "shout_refunded":
       return { type, reason: "you shouted someone a place at Stretchy." };
+    case "shout_called_off":
+      return p.shoutRole === "mate"
+        ? { type, reason: `${esc(p.shoutFrom ?? "A mate")} shouted you a place at Stretchy.` }
+        : { type, reason: "you shouted someone a place at Stretchy." };
     case "buddy_intro":
     case "buddy_solo":
       return { type, reason: "you switched on Buddy me up for this session.", data: "We delete your buddy match a week after the session. We never sell or share your details." };
@@ -647,6 +654,69 @@ function shoutFinal(p: AttendeeEmailPayload) {
   return { subject: `Your shout's final price — ${p.sessionTitle}`, html };
 }
 
+// 16d — Called off (SOCIAL_BOOKING_BRIEF.md 4, "Cancelling").
+//   giver: we called the session off. Re-book {Name} or a refund, their choice.
+//   mate:  the giver cancelled the shout they'd claimed. Told kindly.
+function shoutCalledOff(p: AttendeeEmailPayload, c: Ctx) {
+  if (p.shoutRole === "mate") {
+    const from = esc(p.shoutFrom ?? "Your mate");
+    const html = page("cream", (sc) => `
+    ${h1(sc, "Change of plan. 💛")}${hey(sc, esc(p.name))}${msg(sc, `${from} can't shout you a place at <strong>${esc(p.sessionTitle)}</strong> after all, so it's been cancelled. You don't pay a thing.`)}${msg(sc, "Still keen? There's often room. Hold your own place, and the price keeps dropping as more people join.")}${filledButton(sc, c.sessionUrl, "Have a look")}${signOff(sc, "Hope to see you soon")}
+  `);
+    return { subject: `Change of plan — ${p.sessionTitle}`, html };
+  }
+  const to = esc(p.shoutTo ?? "your mate");
+  const again = p.shoutId ? `${APP_URL}${againPath(p.shoutId)}` : `${APP_URL}/sessions`;
+  const html = page("cream", (sc) => `
+    ${h1(sc, "Not this time. 💛")}${hey(sc, esc(p.name))}${msg(sc, `We've had to call off <strong>${esc(p.sessionTitle)}</strong>, so ${to}'s place won't go ahead. If ${to} claimed it, we've let them know.`)}${p.shoutPaid ? card(sc, `${cardLabel(sc, "What you paid")}${display(sc, esc(p.shoutPaid), 32, "0 0 4px")}<p style="margin:0;font-size:13px;color:${sc.text};">Re-book ${to} at another session, or get it all back. Your choice.</p>`) : ""}${filledButton(sc, again, `Re-book ${to}`)}${outlineButton(sc, `${again}?refund=1`, "Refund me", 10)}${msg(sc, `No choice in 7 days? We'll refund you in full.`)}${signOff(sc, "Sorry about this")}
+  `);
+  return { subject: `Called off — ${p.shoutTo ?? "your mate"}'s place at ${p.sessionTitle}`, html };
+}
+
+// 16e — Your mate can't make it (to the giver). Up to 36 hrs out: refunded.
+// Inside 36 hrs: no free cancelling, so the place is theirs to pass on.
+function shoutReleased(p: AttendeeEmailPayload, c: Ctx) {
+  const to = esc(p.shoutTo ?? "Your mate");
+  const manageUrl = p.sessionId ? `${APP_URL}${shoutPath(p.sessionId)}` : `${APP_URL}/sessions`;
+  const claimUrl = p.shoutCode ? `${APP_URL}${claimPath(p.shoutCode)}` : null;
+  const html = page("cream", (sc) => p.shoutRefund ? `
+    ${h1(sc, `${to} can't make it. 💛`)}${hey(sc, esc(p.name))}${msg(sc, `${to} can't make it to <strong>${esc(p.sessionTitle)}</strong>, so we've let their place go.`)}${card(sc, `${cardLabel(sc, "Back to your card")}${display(sc, esc(p.shoutRefund), 32, "0 0 4px")}<p style="margin:0;font-size:13px;color:${sc.text};">Refunded in full. It can take a few days to show.</p>`)}${filledButton(sc, manageUrl, "Shout someone else")}${signOff(sc)}
+  ` : `
+    ${h1(sc, `${to} can't make it. 💛`)}${hey(sc, esc(p.name))}${msg(sc, `${to} can't make it to <strong>${esc(p.sessionTitle)}</strong>. It's inside 36 hours, so no free cancelling, but the place is still yours to pass on.`)}${claimUrl ? card(sc, `${cardLabel(sc, "Send your gift link to someone else")}<p style="margin:0 0 12px;font-size:14px;line-height:1.5;color:${sc.text};word-break:break-all;"><a href="${claimUrl}" style="color:${sc.text};font-weight:700;">${claimUrl}</a></p>${pillRow(sc, [
+      { href: `https://wa.me/?text=${encodeURIComponent(`I've shouted you a place at Stretchy 🎁 Claim it here: ${claimUrl}`)}`, text: "WhatsApp" },
+      { href: `sms:?&body=${encodeURIComponent(`I've shouted you a place at Stretchy 🎁 Claim it here: ${claimUrl}`)}`, text: "Text" },
+    ], "0 0 4px")}`) : ""}${msg(sc, "Any difference from the final price comes back to your card 30 mins before.")}${outlineButton(sc, manageUrl, "Manage my shout", 10)}${signOff(sc)}
+  `);
+  return { subject: `${p.shoutTo ?? "Your mate"} can't make it — ${p.sessionTitle}`, html };
+}
+
+// 16f — Still unclaimed, 48 hrs out (to the giver, once).
+function shoutUnclaimedNudge(p: AttendeeEmailPayload, c: Ctx) {
+  const to = esc(p.shoutTo ?? "Your mate");
+  const manageUrl = p.sessionId ? `${APP_URL}${shoutPath(p.sessionId)}` : `${APP_URL}/sessions`;
+  const claimUrl = p.shoutCode ? `${APP_URL}${claimPath(p.shoutCode)}` : null;
+  const html = page("olive", (sc) => `
+    ${h1(sc, `${to} hasn't claimed it yet.`)}${hey(sc, esc(p.name))}${msg(sc, `The place you shouted ${to} at <strong>${esc(p.sessionTitle)}</strong> is still waiting. A quick nudge?`)}${claimUrl ? card(sc, `${cardLabel(sc, `Gift link for ${to}`)}<p style="margin:0 0 12px;font-size:14px;line-height:1.5;color:${sc.text};word-break:break-all;"><a href="${claimUrl}" style="color:${sc.text};font-weight:700;">${claimUrl}</a></p>${pillRow(sc, [
+      { href: `https://wa.me/?text=${encodeURIComponent(`I've shouted you a place at Stretchy 🎁 Claim it here: ${claimUrl}`)}`, text: "WhatsApp" },
+      { href: `sms:?&body=${encodeURIComponent(`I've shouted you a place at Stretchy 🎁 Claim it here: ${claimUrl}`)}`, text: "Text" },
+    ], "0 0 4px")}`) : ""}${dayBox(sc, p, c)}${filledButton(sc, manageUrl, p.shoutDeliver === "email" ? "Send it again" : "Manage my shout")}${msg(sc, `Send it to someone else, or cancel. Free to cancel until 36 hours out.`)}${signOff(sc)}
+  `);
+  return { subject: `${p.shoutTo ?? "Your mate"} hasn't claimed their place yet`, html };
+}
+
+// 16g — Refunded (to the giver): they cancelled, chose a refund, or didn't choose in 7 days.
+function shoutRefunded(p: AttendeeEmailPayload) {
+  const to = esc(p.shoutTo ?? "your mate");
+  const why =
+    p.shoutWhy === "giver" ? `You've cancelled ${to}'s place at <strong>${esc(p.sessionTitle)}</strong>.${p.shoutDeliver === "link" ? " The gift link won't work any more." : ""}` :
+    p.shoutWhy === "expired" ? `We called off <strong>${esc(p.sessionTitle)}</strong> a week ago, so we've refunded ${to}'s place.` :
+    `Here's your refund for ${to}'s place at <strong>${esc(p.sessionTitle)}</strong>.`;
+  const html = page("cream", (sc) => `
+    ${h1(sc, "Refunded. 💛")}${hey(sc, esc(p.name))}${msg(sc, why)}${p.shoutRefund ? card(sc, `${cardLabel(sc, "Back to your card")}${display(sc, esc(p.shoutRefund), 32, "0 0 4px")}<p style="margin:0;font-size:13px;color:${sc.text};">Refunded in full. It can take a few days to show.</p>`) : ""}${filledButton(sc, `${APP_URL}/sessions`, "What's on")}${signOff(sc, "Hope to see you soon")}
+  `);
+  return { subject: `Refunded — ${p.shoutTo ?? "your mate"}'s place at ${p.sessionTitle}`, html };
+}
+
 // 17 — Meet your Stretchy Buddy (at 36 hrs out, once it's going ahead). SOCIAL_BOOKING_BRIEF.md 6.
 function buddyIntro(p: AttendeeEmailPayload) {
   const buddies = p.buddies ?? [];
@@ -702,6 +772,10 @@ function renderBody(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject
     case "shout_received": return shoutReceived(p, c);
     case "shout_claimed": return shoutClaimed(p, c);
     case "shout_final": return shoutFinal(p);
+    case "shout_called_off": return shoutCalledOff(p, c);
+    case "shout_released": return shoutReleased(p, c);
+    case "shout_unclaimed_nudge": return shoutUnclaimedNudge(p, c);
+    case "shout_refunded": return shoutRefunded(p);
     case "buddy_intro": return buddyIntro(p);
     case "buddy_solo": return buddySolo(p);
   }

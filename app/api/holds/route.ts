@@ -9,6 +9,7 @@ import { goNoGo, finalCharge, formatDayTime, phase } from "@/lib/sessionTimes";
 import { sendAttendeeEmail } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
 import { recordInvite } from "@/lib/invites";
+import { mateCancelsClaimed } from "@/lib/shoutCancel";
 
 // Age in whole years from a YYYY-MM-DD date-of-birth string.
 function ageFromDob(dob: string): number | null {
@@ -377,10 +378,12 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "No active hold found" }, { status: 404 });
   }
 
-  // A place a mate shouted you was paid for by them. Letting them know you
-  // can't make it (and refunding them) is its own step: SOCIAL_BOOKING_BRIEF.md 4.
+  // A place a mate shouted you was paid for by them: cancelling it lets the
+  // place go and refunds them, and they're told (SOCIAL_BOOKING_BRIEF.md 4).
   if (hold.shout_id) {
-    return NextResponse.json({ error: "A mate shouted you this place, so it can’t be cancelled here. Email hello@stretchyyoga.co.nz and we’ll sort it with them." }, { status: 400 });
+    const r = await mateCancelsClaimed(admin, stripe, hold.shout_id, user.id);
+    if ("error" in r) return NextResponse.json({ error: r.error }, { status: r.status });
+    return NextResponse.json({ ok: true, cancelledSpots: 1, remainingSpots: 0 });
   }
 
   const remainingQty = cancelQty !== null ? hold.quantity - cancelQty : 0;

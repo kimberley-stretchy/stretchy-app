@@ -31,6 +31,18 @@ export default function ShoutClaim(p: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ newAccount: boolean; sessionId: string } | null>(null);
+  const [told, setTold] = useState(false);
+
+  // "I can't make it": the giver is told (and refunded, up to 36 hrs out).
+  async function cantMakeIt() {
+    setBusy(true);
+    setError(null);
+    const r = await fetch(`/api/shout/cant/${encodeURIComponent(p.code)}`, { method: "POST" }).catch(() => null);
+    const d = r ? await r.json().catch(() => ({})) : {};
+    setBusy(false);
+    if (!r || !r.ok) return setError(d.error ?? "Something went wrong. Please try again.");
+    setTold(true);
+  }
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("cant") === "1") setCant(true);
@@ -49,6 +61,17 @@ export default function ShoutClaim(p: {
     setBusy(false);
     if (!r || !r.ok) return setError(d.error ?? "Something went wrong. Please try again.");
     setDone(d);
+  }
+
+  if (told) {
+    return (
+      <>
+        <h1 className="font-display font-bold" style={{ fontSize: "clamp(40px,11vw,54px)", letterSpacing: "-0.04em", lineHeight: 0.92 }}>Thanks for letting us know. 💛</h1>
+        <p className="text-sm">We&rsquo;ve told {p.giver}, so they can shout someone else. We won&rsquo;t email you again.</p>
+        <p className="text-sm">Fancy another time? Have a look at what&rsquo;s on.</p>
+        <Link href="/sessions" className={button} style={{ background: INK, color: CREAM }}>What&rsquo;s on</Link>
+      </>
+    );
   }
 
   if (done) {
@@ -104,8 +127,10 @@ export default function ShoutClaim(p: {
       {cant ? (
         <div className="rounded-card border-2 border-ink p-5 bg-white space-y-3">
           <p className="font-bold">No worries.</p>
-          <p className="text-sm">Let {p.giver} know you can&rsquo;t make it, so they can shout someone else. Changed your mind? You can still claim it.</p>
-          <button type="button" onClick={() => { setCant(false); setOpen(true); }} className={button} style={{ background: INK, color: CREAM }}>Claim my place</button>
+          <p className="text-sm">We&rsquo;ll let {p.giver} know you can&rsquo;t make it, so they can shout someone else.</p>
+          {error && <p className="text-sm font-bold" role="alert">{error}</p>}
+          <button type="button" onClick={cantMakeIt} disabled={busy} className={button} style={{ background: INK, color: CREAM }}>{busy ? "Letting them know…" : `Let ${p.giver} know`}</button>
+          <button type="button" onClick={() => { setCant(false); setOpen(true); }} disabled={busy} className="block mx-auto font-bold text-sm underline underline-offset-2">Changed my mind, claim it</button>
         </div>
       ) : (
         <>

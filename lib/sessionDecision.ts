@@ -11,6 +11,7 @@ import { confirmCards, type CardOutcome } from "@/lib/confirmCards";
 import { cardDeadline } from "@/lib/authoriseAtConfirm";
 import { friendlyDeclineCode } from "@/lib/cardFailed";
 import { runBuddyMatching } from "@/lib/buddy";
+import { callOffShouts } from "@/lib/shoutCancel";
 
 // The go/cancel decision lives here — NOT inline in the cron — so the hourly
 // automation and HQ's manual "Keep it alive & confirm" override run the exact
@@ -286,6 +287,8 @@ export async function cancelSession(
   await admin.from("sessions").update({ state: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", session.id);
   await admin.from("sessions").update({ grace_started_at: null }).eq("id", session.id).then(undefined, () => {});
   await admin.from("holds").update({ state: "released" }).eq("session_id", session.id).eq("state", "active");
+  // Shouted places: each giver chooses re-book or refund (SOCIAL_BOOKING_BRIEF.md 4).
+  const shouts = await callOffShouts(admin, session.id).catch((e) => { console.error("Call off shouts error:", e); return 0; });
 
   const dateStr = fmtDate(session.starts_at);
   const holders = await getAttendees(admin, userIds);
@@ -323,6 +326,7 @@ export async function cancelSession(
     sessionId: session.id,
     rows: [
       `Only <strong>${holds}</strong> of ${session.min_attendees} holds — cancelled. All holds released, nothing charged.`,
+      ...(shouts > 0 ? [`🎁 ${shouts} shouted place${shouts === 1 ? "" : "s"}: each giver has been asked to re-book or take a refund (refunded automatically after 7 days).`] : []),
       `🗓 ${dateStr}`,
       `📍 ${session.location_name ?? "TBC"}`,
       `Teacher and GEM have been notified.`,

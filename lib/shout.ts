@@ -22,7 +22,7 @@ import { MAX_SHOUTS, SHOUT_NOTE_MAX } from "@/lib/shoutWords";
 //   4. settleShouts   30 mins out (the lock-in job): the final price is known,
 //                     the difference goes back to the giver's card.
 //
-// Cancelling (giver, mate, or us) is part B.
+// Cancelling (giver, mate, or us), the 48-hr nudge and re-booking: lib/shoutCancel.ts.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type ShoutRow = {
@@ -44,7 +44,7 @@ export type ShoutRow = {
   claimed_user_id: string | null;
 };
 
-const SESSION_COLS =
+export const SESSION_COLS =
   "id, title, starts_at, state, cost_base, revenue_target, min_attendees, max_attendees, location_name, social_stretch_venue, host_id, gem_host_id, movement_type, duration_mins, getting_there, venue_instagram, social_venue_instagram";
 
 const CODE_CHARS = "abcdefghjkmnpqrstuvwxyz23456789";
@@ -94,6 +94,8 @@ export type ShoutInput = {
   permission?: boolean;
   hidePrice?: boolean;
   note?: string;
+  /** Re-booking a mate after we called a session off: the old shout's id. */
+  rebookOf?: string;
 };
 
 /** Check step 1. Returns the tidied details, or what to fix. */
@@ -110,7 +112,8 @@ export function checkShoutInput(b: Record<string, unknown>): { ok: ShoutInput } 
   }
   const note = String(b.note ?? "").replace(/\s+/g, " ").trim();
   if (note.length > SHOUT_NOTE_MAX) return { error: `Keep the note to ${SHOUT_NOTE_MAX} characters.` };
-  return { ok: { sessionId: String(b.sessionId ?? ""), name, deliver, email, permission: b.permission === true, hidePrice: b.hidePrice === true, note: note || undefined } };
+  const rebookOf = typeof b.rebookOf === "string" && /^[0-9a-f-]{36}$/i.test(b.rebookOf) ? b.rebookOf : undefined;
+  return { ok: { sessionId: String(b.sessionId ?? ""), name, deliver, email, permission: b.permission === true, hidePrice: b.hidePrice === true, note: note || undefined, rebookOf } };
 }
 
 /** The card they used last, if Stripe still has it. */
@@ -138,6 +141,11 @@ export async function startShout(
 > {
   const quote = await shoutQuote(admin, input.sessionId);
   if ("error" in quote) return { error: quote.error!, status: quote.status };
+  if (input.rebookOf) {
+    const { data: old } = await admin.from("shouts").select("giver_user_id, state, session_id").eq("id", input.rebookOf).maybeSingle();
+    if (!old || old.giver_user_id !== giver.userId || old.state !== "cancelled") return { error: "That shout can’t be re-booked any more.", status: 400 };
+    if (old.session_id === input.sessionId) return { error: "Pick another session.", status: 400 };
+  }
   if ((await shoutsLeft(admin, input.sessionId, giver.userId)) < 1) {
     return { error: `You can shout up to ${MAX_SHOUTS} places at one session.`, status: 400 };
   }
@@ -154,6 +162,7 @@ export async function startShout(
       hide_price: !!input.hidePrice,
       note: input.note ?? null,
       amount_cents: quote.amountCents,
+      rebook_of: input.rebookOf ?? null,
     })
     .select("id")
     .single();
@@ -240,10 +249,18 @@ export async function finaliseShout(
   await admin.from("shouts").update({ hold_id: hold.id }).eq("id", shout.id);
 
   await sendShoutEmails(admin, { ...shout, state: "paid", hold_id: hold.id }, session).catch((e) => console.error("shout emails error:", e));
+
+  // A re-booked shout: the one we called off is refunded in full now.
+  const rebookOf = (shout as ShoutRow & { rebook_of?: string | null }).rebook_of;
+  if (rebookOf) {
+    const { refundCalledOff } = await import("@/lib/shoutCancel");
+    const r = await refundCalledOff(admin, stripe, rebookOf, shout.giver_user_id, "rebooked");
+    if ("error" in r) console.error(`Re-book refund for ${rebookOf}:`, r.error);
+  }
   return { shout: { ...shout, state: "paid", hold_id: hold.id } };
 }
 
-async function giverOf(admin: SupabaseClient, userId: string) {
+export async function giverOf(admin: SupabaseClient, userId: string) {
   const { data } = await admin.from("attendees").select("name, email").eq("auth_user_id", userId).maybeSingle();
   return { first: firstNameOnly(data?.name) || "A mate", email: data?.email ?? null };
 }
@@ -386,10 +403,10 @@ export async function settleShouts(
 export async function myShouts(admin: SupabaseClient, sessionId: string, giverId: string) {
   const { data } = await admin
     .from("shouts")
-    .select("id, code, recipient_name, deliver, state, amount_cents, final_cents, refund_cents, hide_price")
+    .select("id, code, recipient_name, recipient_email, deliver, state, amount_cents, final_cents, refund_cents, hide_price, note, declined_at, resent_at")
     .eq("session_id", sessionId)
     .eq("giver_user_id", giverId)
-    .in("state", ["paid", "claimed", "settled"])
+    .neq("state", "pending")
     .order("created_at");
   return data ?? [];
 }

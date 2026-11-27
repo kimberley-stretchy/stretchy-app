@@ -11,12 +11,15 @@ import { formatDay, formatTime } from "@/lib/sessionTimes";
 import { suburbOf } from "@/lib/sessionDisplay";
 import { useIsPhone, smsLink, whatsappLink } from "@/components/ShareRow";
 import { NewTabLink, CANCELLATION_POLICY_HREF } from "@/components/PolicyLinks";
-import { SHOUT_NOTE_MAX, claimPath } from "@/lib/shoutWords";
+import { SHOUT_NOTE_MAX, claimPath, againPath } from "@/lib/shoutWords";
 
 // Shout a mate (SOCIAL_BOOKING_BRIEF.md section 4): pay for one place at this
 // session for someone else. Three steps on one page, each revealed once the
 // part above it is done. Anyone signed in can shout (they needn't be coming).
-// Also "Manage my shout": shouts already made here are listed at the top.
+// Also "Manage my shout": shouts already made here are listed at the top, with
+// Copy link / Send it again / Cancel (free up to 36 hrs out). ?rebook={shoutId}
+// re-books a mate after we called their session off: their details are filled
+// in, and once this one's paid the old one is refunded in full.
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 const INK = "#14110F";
@@ -28,8 +31,9 @@ const field = "w-full px-4 py-3 rounded-xl border-2 bg-white text-ink outline-no
 const reveal = "animate-slide-down motion-reduce:animate-none";
 
 type Session = { id: string; title: string; starts_at: string; location_name: string | null; location_address: string | null; state: string };
-type MyShout = { id: string; code: string; recipient_name: string; deliver: string; state: string; amount_cents: number; final_cents: number | null; refund_cents: number | null };
-type Info = { open: boolean; closedReason: string | null; amountCents: number | null; savedCard: { brand: string; last4: string } | null; shoutsLeft: number; myShouts: MyShout[] };
+type MyShout = { id: string; code: string; recipient_name: string; deliver: string; state: string; amount_cents: number; final_cents: number | null; refund_cents: number | null; declined_at: string | null; resent_at: string | null };
+type Rebook = { id: string; name: string; deliver: "email" | "link"; email: string | null; hidePrice: boolean; note: string | null };
+type Info = { open: boolean; closedReason: string | null; amountCents: number | null; savedCard: { brand: string; last4: string } | null; shoutsLeft: number; myShouts: MyShout[]; freeCancel: boolean; rebook: Rebook | null };
 type Done = { code: string; deliver: "email" | "link"; name: string; email: string | null };
 
 const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -53,14 +57,28 @@ export default function ShoutPage({ params }: { params: { id: string } }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [stepError, setStepError] = useState<string | null>(null);
 
+  const [rebook, setRebook] = useState<Rebook | null>(null);
+
   async function load(t: string) {
+    const rebookId = new URLSearchParams(window.location.search).get("rebook");
     const [s, i] = await Promise.all([
       fetch(`/api/sessions/${params.id}`, { cache: "no-store", headers: { Authorization: `Bearer ${t}` } }).then((r) => (r.ok ? r.json() : null)),
-      fetch(`/api/shout?sessionId=${params.id}`, { cache: "no-store", headers: { Authorization: `Bearer ${t}` } }).then((r) => (r.ok ? r.json() : null)),
+      fetch(`/api/shout?sessionId=${params.id}${rebookId ? `&rebook=${encodeURIComponent(rebookId)}` : ""}`, { cache: "no-store", headers: { Authorization: `Bearer ${t}` } }).then((r) => (r.ok ? r.json() : null)),
     ]);
     if (!s || !i) { setLoadError("We couldn’t load this session."); return; }
     setSession(s);
     setInfo(i);
+    // Re-booking a mate after a call-off: their details, filled in once.
+    if (i.rebook && !rebook) {
+      const r: Rebook = i.rebook;
+      setRebook(r);
+      setName(r.name);
+      setDeliver(r.deliver);
+      setEmail(r.email ?? "");
+      setPermission(r.deliver === "email");
+      setHidePrice(r.hidePrice);
+      if (r.note) { setNote(r.note); setNoteOpen(true); }
+    }
   }
 
   useEffect(() => {
@@ -114,7 +132,7 @@ export default function ShoutPage({ params }: { params: { id: string } }) {
     <div className="border-2 rounded-[22px] p-4 flex flex-col gap-2 bg-white" style={{ borderColor: INK }}>
       <p className="m-0 font-mono text-[10px] font-extrabold tracking-[0.1em] uppercase">Your shouts here</p>
       {mine.map((m) => (
-        <ShoutLine key={m.id} m={m} />
+        <ShoutLine key={m.id} m={m} token={token!} freeCancel={info.freeCancel} onChanged={() => load(token!)} />
       ))}
     </div>
   );
@@ -146,6 +164,12 @@ export default function ShoutPage({ params }: { params: { id: string } }) {
       <h1 className="font-display font-bold m-0 uppercase" style={{ fontSize: "clamp(32px, 9vw, 40px)", lineHeight: 0.92 }}>Shout someone a place</h1>
       <p className="m-0 mt-2 text-sm" style={{ color: GREY }}>{when}. All paid for.</p>
     </div>
+    {rebook && !closed && (
+      <div className="rounded-[22px] p-4" style={{ background: YELLOW }}>
+        <p className="m-0 font-bold text-[15px]">Re-booking {rebook.name}.</p>
+        <p className="m-0 mt-1 text-sm">Once this one&rsquo;s paid, we refund the one we called off in full.</p>
+      </div>
+    )}
     {myShoutsBox}
 
     {closed ? (
@@ -214,36 +238,87 @@ export default function ShoutPage({ params }: { params: { id: string } }) {
         amountCents={info.amountCents!}
         savedCard={info.savedCard}
         who={first || "them"}
-        details={{ name: name.trim(), deliver: deliver!, email: email.trim(), permission, hidePrice, note: noteOpen ? note : "" }}
+        details={{ name: name.trim(), deliver: deliver!, email: email.trim(), permission, hidePrice, note: noteOpen ? note : "", rebookOf: rebook?.id }}
         onBack={() => setStep(1)}
-        onDone={(d) => { setDone(d); load(token!); }}
+        onDone={(d) => { setDone(d); setRebook(null); load(token!); }}
       />
     )}
   </>);
 }
 
-function ShoutLine({ m }: { m: MyShout }) {
+function ShoutLine({ m, token, freeCancel, onChanged }: { m: MyShout; token: string; freeCancel: boolean; onChanged: () => void }) {
   const [copied, setCopied] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const waiting = m.state === "paid";
+  const live = m.state === "paid" || m.state === "claimed";
   const status =
     m.state === "claimed" ? "Claimed ✓" :
     m.state === "settled" ? `Final price ${money(m.final_cents ?? m.amount_cents)}${m.refund_cents ? ` · ${money(m.refund_cents)} back to your card` : ""}` :
+    m.state === "released" ? `Can’t make it · ${money(m.refund_cents ?? m.amount_cents)} refunded` :
+    m.state === "refunded" ? `Cancelled · ${money(m.refund_cents ?? m.amount_cents)} refunded` :
+    m.state === "cancelled" ? "Called off · re-book or refund, your choice" :
+    m.declined_at ? "Can’t make it · pass the link on" :
     "Waiting to be claimed";
+
+  async function act(action: "cancel" | "resend") {
+    setBusy(true);
+    setNote(null);
+    const r = await fetch("/api/shout/manage", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ shoutId: m.id, action }) }).catch(() => null);
+    const d = r ? await r.json().catch(() => ({})) : {};
+    setBusy(false);
+    setConfirming(false);
+    if (!r || !r.ok) return setNote(d.error ?? "Something went wrong. Please try again.");
+    if (action === "resend") setNote(`Sent. Ask ${m.recipient_name} to check junk.`);
+    onChanged();
+  }
+
+  const chip = "rounded-pill px-3 py-1.5 font-bold text-[13px] border-2 flex-shrink-0 disabled:opacity-50";
   return (
-    <div className="flex items-center justify-between gap-3 py-1">
-      <div>
-        <p className="m-0 font-bold text-sm">{m.recipient_name}</p>
-        <p className="m-0 text-[13px]" style={{ color: GREY }}>{status}</p>
+    <div className="py-1 flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="m-0 font-bold text-sm">{m.recipient_name}</p>
+          <p className="m-0 text-[13px]" style={{ color: GREY }}>{status}</p>
+        </div>
+        {m.state === "cancelled" && (
+          <Link href={againPath(m.id)} className={chip} style={{ borderColor: INK }}>Choose</Link>
+        )}
       </div>
-      {m.state === "paid" && m.deliver === "link" && (
-        <button
-          type="button"
-          onClick={() => navigator.clipboard.writeText(`${window.location.origin}${claimPath(m.code)}`).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {})}
-          className="rounded-pill px-3 py-1.5 font-bold text-[13px] border-2 flex-shrink-0"
-          style={{ borderColor: INK }}
-        >
-          {copied ? "Copied" : "Copy link"}
-        </button>
+      {live && !confirming && (
+        <div className="flex flex-wrap gap-2">
+          {waiting && (
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.writeText(`${window.location.origin}${claimPath(m.code)}`).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {})}
+              className={chip}
+              style={{ borderColor: INK }}
+            >
+              {copied ? "Copied" : "Copy link"}
+            </button>
+          )}
+          {waiting && m.deliver === "email" && !m.resent_at && !m.declined_at && (
+            <button type="button" disabled={busy} onClick={() => act("resend")} className={chip} style={{ borderColor: INK }}>Send it again</button>
+          )}
+          {freeCancel && (
+            <button type="button" disabled={busy} onClick={() => setConfirming(true)} className={chip} style={{ borderColor: INK }}>Cancel</button>
+          )}
+        </div>
       )}
+      {confirming && (
+        <div className={`rounded-xl border-2 p-3 flex flex-col gap-2 ${reveal}`} style={{ borderColor: INK }}>
+          <p className="m-0 text-sm">
+            Cancel {m.recipient_name}&rsquo;s place? You get {money(m.amount_cents)} back.{" "}
+            {m.state === "claimed" ? `We’ll let ${m.recipient_name} know.` : "The gift link stops working."}
+          </p>
+          <div className="flex gap-2">
+            <button type="button" disabled={busy} onClick={() => act("cancel")} className={chip} style={{ borderColor: INK, background: INK, color: YELLOW }}>{busy ? "Cancelling…" : "Yes, cancel"}</button>
+            <button type="button" disabled={busy} onClick={() => setConfirming(false)} className={chip} style={{ borderColor: INK }}>Keep it</button>
+          </div>
+        </div>
+      )}
+      {note && <p className="m-0 text-[13px] font-bold" role="status">{note}</p>}
     </div>
   );
 }
@@ -274,7 +349,7 @@ function GiftLink({ name, url }: { name: string; url: string }) {
   );
 }
 
-type Details = { name: string; deliver: "email" | "link"; email: string; permission: boolean; hidePrice: boolean; note: string };
+type Details = { name: string; deliver: "email" | "link"; email: string; permission: boolean; hidePrice: boolean; note: string; rebookOf?: string };
 
 function PayStep(props: { sessionId: string; token: string; amountCents: number; savedCard: Info["savedCard"]; who: string; details: Details; onBack: () => void; onDone: (d: Done) => void }) {
   const [useSaved, setUseSaved] = useState(!!props.savedCard);

@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/adminAuth";
 import { notifyHostScheduled, notifyHostCancelled } from "@/lib/notifyHostScheduled";
 import { sendVenueHolds, notifyVenues } from "@/lib/notifyVenue";
 import { movementLabel } from "@/lib/sessionEmailContext";
+import { callOffShouts } from "@/lib/shoutCancel";
 
 // Create inside each request handler so env vars are always available at runtime
 function getSupabase() {
@@ -437,6 +438,9 @@ export async function DELETE(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Shouted places: each giver chooses re-book or refund (SOCIAL_BOOKING_BRIEF.md 4).
+  await callOffShouts(supabase, id).catch((e) => console.error("Call off shouts error:", e));
+
   // Notify the assigned teacher/GEM too — skip the auto-provisioned Kimberley
   // placeholder host (unassigned sessions default to her record), same
   // distinction the create-session route already makes for "scheduled" emails.
@@ -454,7 +458,8 @@ export async function DELETE(request: NextRequest) {
 
   // Email every affected attendee — fire and forget, don't block the response.
   if ((holds ?? []).length > 0 && process.env.RESEND_API_KEY) {
-    const userIds = Array.from(new Set((holds ?? []).map((h) => h.user_id)));
+    // An unclaimed shout has no person yet (its giver is emailed by callOffShouts).
+    const userIds = Array.from(new Set((holds ?? []).map((h) => h.user_id).filter(Boolean)));
     const { data: attendees } = await supabase
       .from("attendees")
       .select("auth_user_id, name, email")

@@ -14,3 +14,5 @@ export const SHOUT_NOTE_MAX = 140;
 
 export const shoutPath = (sessionId: string) => `/sessions/${sessionId}/shout`;
 export const claimPath = (code: string) => `/shout/${code}`;
+/** After we call a session off: the giver picks re-book or refund. */
+export const againPath = (shoutId: string) => `/shout/again/${shoutId}`;

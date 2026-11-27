@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { signedInUser, serviceClient } from "@/lib/routeAuth";
 import { shoutQuote, shoutsLeft, savedCard, checkShoutInput, startShout, myShouts } from "@/lib/shout";
+import { calledOffShout } from "@/lib/shoutCancel";
+import { phase } from "@/lib/sessionTimes";
 
-// GET  /api/shout?sessionId=…  → today's price for one place, saved card, how many left, my shouts here
+// GET  /api/shout?sessionId=…[&rebook=…]  → today's price for one place, saved card, how many left,
+//      my shouts here, whether it's still free to cancel, and (re-booking) the called-off shout's details
 // POST /api/shout  { sessionId, name, deliver, email?, permission?, hidePrice?, note?, useSavedCard }
 //      → { shoutId, clientSecret, status, amountCents }  (status "succeeded" = paid with the saved card)
 // Shout a mate, SOCIAL_BOOKING_BRIEF.md section 4. Anyone signed in can shout.
@@ -18,11 +21,14 @@ export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("sessionId");
   if (!isUuid(sessionId)) return NextResponse.json({ error: "Missing session" }, { status: 400 });
   const admin = serviceClient();
-  const [quote, left, mine, { data: attendee }] = await Promise.all([
+  const rebookId = request.nextUrl.searchParams.get("rebook");
+  const [quote, left, mine, { data: attendee }, { data: session }, old] = await Promise.all([
     shoutQuote(admin, sessionId),
     shoutsLeft(admin, sessionId, user.id),
     myShouts(admin, sessionId, user.id),
     admin.from("attendees").select("stripe_customer_id").eq("auth_user_id", user.id).maybeSingle(),
+    admin.from("sessions").select("starts_at, state").eq("id", sessionId).maybeSingle(),
+    isUuid(rebookId) ? calledOffShout(admin, rebookId, user.id) : Promise.resolve(null),
   ]);
   const card = await savedCard(stripe(), attendee?.stripe_customer_id);
   return NextResponse.json({
@@ -32,6 +38,10 @@ export async function GET(request: NextRequest) {
     savedCard: card ? { brand: card.brand, last4: card.last4 } : null,
     shoutsLeft: left,
     myShouts: mine,
+    freeCancel: !!session && phase(session.starts_at, session.state) === "before36",
+    rebook: old && old.state === "cancelled" && old.session_id !== sessionId
+      ? { id: old.id, name: old.recipient_name, deliver: old.deliver, email: old.recipient_email, hidePrice: old.hide_price, note: old.note }
+      : null,
   });
 }
 
