@@ -61,6 +61,19 @@ export default function TermsPage() {
             <p className="text-muted">Stretchy is a movement community, not a medical service. Sharing a care note helps your teacher and GEM look after you, but it isn&rsquo;t medical advice and we&rsquo;re not responsible for assessing your fitness to take part — that&rsquo;s between you and your own judgement (and your doctor, if it&rsquo;s a serious call). Many of our teachers and GEMs hold a current First Aid qualification, and we&rsquo;re working towards this for everyone running sessions. If you&rsquo;re injured by accident during a Stretchy session in New Zealand, you may be covered by ACC (New Zealand&rsquo;s no-fault accident compensation scheme) — ACC&rsquo;s own rules determine what&rsquo;s actually covered, and this isn&rsquo;t a guarantee of cover.</p>
           </div>
 
+          <div id="shout" className="scroll-mt-6">
+            <h2 className="font-bold mb-2">Shout a mate</h2>
+            <p className="text-muted mb-2">You can pay for a place for someone else: one place per shout. Your mate never pays.</p>
+            <ul className="text-muted space-y-1.5 list-disc pl-5">
+              <li><strong className="text-ink">You pay today&rsquo;s max, straight away.</strong> 30 minutes before, the final price is charged as usual and any difference comes back to your card.</li>
+              <li><strong className="text-ink">One place, claimed once.</strong> Your mate can open the gift link as often as they like, on any device, but the place can only be claimed once. So only send it to the person it&rsquo;s for. Claiming means your mate agrees to these terms.</li>
+              <li><strong className="text-ink">Up to 36 hours before: free to cancel.</strong> Full refund. If your mate tells us they can&rsquo;t make it in this time, we let the place go and refund you.</li>
+              <li><strong className="text-ink">After 36 hours: no free cancelling,</strong> the same as any place. If your mate can&rsquo;t make it, the place is still yours to pass on. If nobody claims it, you pay the final price and the place stays empty.</li>
+              <li><strong className="text-ink">If we cancel:</strong> re-book your mate at another session, or get a full refund. Your choice. If you don&rsquo;t choose within 7 days, we refund you in full.</li>
+            </ul>
+            <p className="text-muted mt-2">Refunds go back to the card you paid with. Everything else works as in <a href="#cancellation" className="font-bold text-ink underline">Payment &amp; cancellation</a>. See our <Link href="/privacy#shout" className="font-bold text-ink underline">Privacy Policy</Link> for how we use your mate&rsquo;s details.</p>
+          </div>
+
           <div id="buddy" className="scroll-mt-6">
             <h2 className="font-bold mb-2">Buddy me up</h2>
             <p className="text-muted">Buddy me up is optional and for over-18s. We match people by session only, and we don&rsquo;t check or vouch for anyone you&rsquo;re matched with. Please be kind and respectful, keep it friendly, and only share contact details if you want to. Anything you arrange after the session is up to you. If something doesn&rsquo;t feel right, tell your GEM on the day or email <a href="mailto:hello@stretchyyoga.co.nz" className="font-bold text-ink">hello@stretchyyoga.co.nz</a>. We may switch off Buddy me up for anyone who makes others feel unsafe. See our <Link href="/privacy#buddy" className="font-bold text-ink underline">Privacy Policy</Link> for what we share.</p>

@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import SMark from "@/components/SMark";
 import HoldModal from "@/components/HoldModal";
+import { SHOUT_LIVE, shoutPath } from "@/lib/shoutWords";
 import SessionView, { sessionStatus } from "@/components/sessions/SessionView";
 import { createClient } from "@/lib/supabase/client";
 
@@ -233,6 +234,15 @@ export default function SessionDetailPage() {
             >
               {holding ? "Holding your place…" : held ? "Held ✓" : "Hold my place"}
             </button>
+          )}
+          {/* Shout a mate: anyone can pay for a place for someone else. */}
+          {SHOUT_LIVE && !full && !joiningClosed && (
+            <Link
+              href={accessToken ? shoutPath(params.id) : `/login?next=${shoutPath(params.id)}`}
+              className="block w-full text-center rounded-pill py-[11px] px-[18px] font-bold text-[15px] border-2 border-ink text-ink mt-2"
+            >
+              Shout someone a place
+            </Link>
           )}
     </>
   );

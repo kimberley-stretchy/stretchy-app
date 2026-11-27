@@ -11,6 +11,7 @@ import { confirmCards, type CardOutcome } from "@/lib/confirmCards";
 import { cardDeadline } from "@/lib/authoriseAtConfirm";
 import { friendlyDeclineCode } from "@/lib/cardFailed";
 import { runBuddyMatching } from "@/lib/buddy";
+import { callOffShouts } from "@/lib/shoutCancel";
 
 // The go/cancel decision lives here — NOT inline in the cron — so the hourly
 // automation and HQ's manual "Keep it alive & confirm" override run the exact
@@ -50,22 +51,33 @@ export function fmtDate(startsAt: string): string {
 export async function getHoldSummary(
   admin: SupabaseClient,
   sessionId: string
-): Promise<{ count: number; userIds: string[]; compUserIds: Set<string>; spotsByUser: Map<string, number> }> {
+): Promise<{ count: number; userIds: string[]; compUserIds: Set<string>; spotsByUser: Map<string, number>; shoutFromByUser: Map<string, string> }> {
   const { data } = await admin
     .from("holds")
-    .select("user_id, quantity, is_comp")
+    .select("user_id, quantity, is_comp, shout_id")
     .eq("session_id", sessionId)
     .eq("state", "active");
   const rows = data ?? [];
   const count = rows.reduce((s, h) => s + (h.quantity ?? 1), 0);
   const userIds = Array.from(new Set(rows.map((h) => h.user_id).filter(Boolean)));
-  const compUserIds = new Set(rows.filter((h) => h.is_comp && h.user_id).map((h) => h.user_id as string));
+  // Places with nothing to pay: on us, or shouted by a mate (already paid).
+  const compUserIds = new Set(rows.filter((h) => (h.is_comp || h.shout_id) && h.user_id).map((h) => h.user_id as string));
+  // Who shouted each claimed place, so their emails say "Sam shouted you this one".
+  const shoutFromByUser = new Map<string, string>();
+  const shoutIds = rows.filter((h) => h.shout_id && h.user_id).map((h) => h.shout_id as string);
+  if (shoutIds.length > 0) {
+    const { data: shouts } = await admin.from("shouts").select("id, giver_user_id, claimed_user_id").in("id", shoutIds);
+    const givers = Array.from(new Set((shouts ?? []).map((s) => s.giver_user_id)));
+    const { data: people } = givers.length ? await admin.from("attendees").select("auth_user_id, name").in("auth_user_id", givers) : { data: [] };
+    const nameOf = new Map((people ?? []).map((p) => [p.auth_user_id, (p.name ?? "").trim().split(/\s+/)[0]]));
+    for (const s of shouts ?? []) if (s.claimed_user_id && nameOf.get(s.giver_user_id)) shoutFromByUser.set(s.claimed_user_id, nameOf.get(s.giver_user_id)!);
+  }
   const spotsByUser = new Map<string, number>();
   for (const h of rows) {
     if (!h.user_id) continue;
     spotsByUser.set(h.user_id, (spotsByUser.get(h.user_id) ?? 0) + (h.quantity ?? 1));
   }
-  return { count, userIds, compUserIds, spotsByUser };
+  return { count, userIds, compUserIds, spotsByUser, shoutFromByUser };
 }
 
 export async function getAttendees(
@@ -100,7 +112,7 @@ export async function confirmSession(
     .eq("id", session.id);
   await admin.from("sessions").update({ grace_started_at: null }).eq("id", session.id).then(undefined, () => {});
 
-  const { count: holds, userIds, compUserIds, spotsByUser } = await getHoldSummary(admin, session.id);
+  const { count: holds, userIds, compUserIds, spotsByUser, shoutFromByUser } = await getHoldSummary(admin, session.id);
   const dateStr = fmtDate(session.starts_at);
   const finalPrice = `$${calculatePrice(
     session.cost_base,
@@ -161,6 +173,7 @@ export async function confirmSession(
         socialStretchVenue: session.social_stretch_venue ?? undefined,
         sessionId: session.id,
         isComp: compUserIds.has(a.auth_user_id),
+        shoutFrom: shoutFromByUser.get(a.auth_user_id),
         isFirstStretchy: await isFirstStretchy(admin, a.auth_user_id),
         spots: spotsByUser.get(a.auth_user_id),
         ...emailExtras,
@@ -274,6 +287,8 @@ export async function cancelSession(
   await admin.from("sessions").update({ state: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", session.id);
   await admin.from("sessions").update({ grace_started_at: null }).eq("id", session.id).then(undefined, () => {});
   await admin.from("holds").update({ state: "released" }).eq("session_id", session.id).eq("state", "active");
+  // Shouted places: each giver chooses re-book or refund (SOCIAL_BOOKING_BRIEF.md 4).
+  const shouts = await callOffShouts(admin, session.id).catch((e) => { console.error("Call off shouts error:", e); return 0; });
 
   const dateStr = fmtDate(session.starts_at);
   const holders = await getAttendees(admin, userIds);
@@ -311,6 +326,7 @@ export async function cancelSession(
     sessionId: session.id,
     rows: [
       `Only <strong>${holds}</strong> of ${session.min_attendees} holds — cancelled. All holds released, nothing charged.`,
+      ...(shouts > 0 ? [`🎁 ${shouts} shouted place${shouts === 1 ? "" : "s"}: each giver has been asked to re-book or take a refund (refunded automatically after 7 days).`] : []),
       `🗓 ${dateStr}`,
       `📍 ${session.location_name ?? "TBC"}`,
       `Teacher and GEM have been notified.`,

@@ -9,6 +9,7 @@ import { headcountForPrice } from "@/lib/authoriseAtConfirm";
 import { notifyHQ } from "@/lib/notifyLifecycle";
 import { sendAttendeeBatch } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
+import { settleShouts, money as centsMoney } from "@/lib/shout";
 
 /**
  * GET /api/cron/lock-in
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
     // Get all active holds
     const { data: holds } = await admin
       .from("holds")
-      .select("id, user_id, stripe_pi_id, is_comp, quantity")
+      .select("id, user_id, stripe_pi_id, is_comp, quantity, shout_id")
       .eq("session_id", session.id)
       .eq("state", "active");
 
@@ -133,7 +134,7 @@ export async function GET(request: NextRequest) {
 
     // A paying hold with no PaymentIntent at all can't be charged either.
     for (const h of holds) {
-      if (!h.is_comp && !h.stripe_pi_id) {
+      if (!h.is_comp && !h.shout_id && !h.stripe_pi_id) {
         failed += qtyOf(h);
         unpaidHoldIds.add(h.id);
       }
@@ -144,6 +145,27 @@ export async function GET(request: NextRequest) {
     const compHoldIds = holds.filter((h) => h.is_comp).map((h) => h.id);
     if (compHoldIds.length > 0) {
       await admin.from("holds").update({ state: "charged", amount_charged_nzd: 0 }).in("id", compHoldIds);
+    }
+
+    // Shouted places were paid when they were shouted: settle each at the final
+    // price and send the difference back to the giver's card. Contained, so a
+    // refund problem can't stop the session locking or anyone's email.
+    const shoutFrom = new Map<string, string>(); // claimed hold id → giver's first name
+    const linesByGiver = new Map<string, string[]>();
+    try {
+      const { data: shoutRows } = await admin.from("shouts").select("hold_id, giver_user_id").eq("session_id", session.id).in("state", ["paid", "claimed"]);
+      const giverIds = Array.from(new Set((shoutRows ?? []).map((r) => r.giver_user_id)));
+      const { data: givers } = giverIds.length ? await admin.from("attendees").select("auth_user_id, name").in("auth_user_id", giverIds) : { data: [] };
+      const first = (uid: string) => ((givers ?? []).find((g) => g.auth_user_id === uid)?.name ?? "").trim().split(/\s+/)[0];
+      for (const r of shoutRows ?? []) if (r.hold_id && first(r.giver_user_id)) shoutFrom.set(r.hold_id, first(r.giver_user_id));
+
+      for (const sh of await settleShouts(admin, stripe, session.id, finalAmountCents)) {
+        const line = `Your shout for ${sh.recipient}: final price ${centsMoney(sh.finalCents)}.${sh.refundCents > 0 ? ` We've sent ${centsMoney(sh.refundCents)} back to your card.` : ""}`;
+        linesByGiver.set(sh.giverUserId, [...(linesByGiver.get(sh.giverUserId) ?? []), line]);
+        charged += 1;
+      }
+    } catch (e) {
+      console.error(`Shout settle error for session ${session.id}:`, e);
     }
 
     // Mark session as locked
@@ -158,6 +180,7 @@ export async function GET(request: NextRequest) {
     const lockItems = [];
     const unpaidPeople: string[] = [];
     for (const hold of holds) {
+      if (!hold.user_id) continue; // an unclaimed shout: nobody to email
       const { data: attendee } = await admin
         .from("attendees")
         .select("name, email")
@@ -183,7 +206,9 @@ export async function GET(request: NextRequest) {
           venue: session.location_name,
           socialStretchVenue: session.social_stretch_venue ?? undefined,
           sessionId: session.id,
-          isComp: !!hold.is_comp,
+          isComp: !!hold.is_comp || !!hold.shout_id,
+          shoutFrom: hold.shout_id ? shoutFrom.get(hold.id) : undefined,
+          shoutLines: linesByGiver.get(hold.user_id),
           isFirstStretchy: firstTimer,
           spots,
           totalPrice: `$${(finalPrice * spots).toFixed(2)} incl. GST`,
@@ -197,8 +222,19 @@ export async function GET(request: NextRequest) {
     }
     await sendAttendeeBatch(lockItems);
 
+    // Givers who aren't coming themselves get their shout lines on their own.
+    const emailedGivers = new Set(holds.filter((h) => !unpaidHoldIds.has(h.id) && h.user_id).map((h) => h.user_id as string));
+    const otherGivers = Array.from(linesByGiver.keys()).filter((g) => !emailedGivers.has(g));
+    if (otherGivers.length > 0) {
+      const { data: gs } = await admin.from("attendees").select("auth_user_id, name, email").in("auth_user_id", otherGivers);
+      await sendAttendeeBatch((gs ?? []).filter((g) => g.email).map((g) => ({
+        type: "shout_final" as const,
+        payload: { to: g.email!, name: (g.name ?? "").split(" ")[0] || "there", sessionTitle: session.title, date: dateStr, sessionId: session.id, shoutLines: linesByGiver.get(g.auth_user_id) },
+      })));
+    }
+
     // Send push notifications to all holders
-    const holderUserIds = holds.filter(h => !unpaidHoldIds.has(h.id)).map(h => h.user_id);
+    const holderUserIds = holds.filter(h => !unpaidHoldIds.has(h.id) && h.user_id).map(h => h.user_id as string);
     await sendPushToUsers(holderUserIds, {
       title: "Final price charged",
       body: `${session.title}: $${finalPrice.toFixed(2)} each. See you soon!`,

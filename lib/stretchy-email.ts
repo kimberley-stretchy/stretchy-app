@@ -241,7 +241,13 @@ export type AttendeeEmailType =
   | "shout_sent"
   | "shout_received"
   | "buddy_intro"
-  | "buddy_solo";
+  | "buddy_solo"
+  | "shout_claimed"
+  | "shout_final"
+  | "shout_called_off"
+  | "shout_released"
+  | "shout_unclaimed_nudge"
+  | "shout_refunded";
 
 export interface AttendeeEmailPayload {
   to: string;
@@ -269,6 +275,17 @@ export interface AttendeeEmailPayload {
   shoutTo?: string;
   shoutNote?: string;
   shoutPaid?: string;
+  /** Shout: "email" (we emailed the mate) or "link" (the giver sends it), and the claim code. */
+  shoutDeliver?: "email" | "link";
+  shoutCode?: string;
+  /** Giver's final-price lines: "Your shout for Sam: final price $14.52. We've sent $8.30 back to your card." */
+  shoutLines?: string[];
+  /** Shout part B: the shout's id (for "Re-book {Name}"), what we refunded, and why. */
+  shoutId?: string;
+  shoutRefund?: string;
+  shoutWhy?: "giver" | "choice" | "expired";
+  /** shout_called_off: "giver" (we called it off) or "mate" (the giver cancelled their shout). */
+  shoutRole?: "giver" | "mate";
   /** Buddy intro: first names + Say hello lines (one for a pair, more for a small group). */
   buddies?: { name: string; hello?: string }[];
   teacherName?: string;

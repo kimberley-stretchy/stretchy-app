@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { sendPushToUsers } from "@/lib/push-server";
 import { sendAttendeeBatch, APP_URL } from "@/lib/stretchy-email";
 import { runBuddyMatching, clearFinishedBuddies } from "@/lib/buddy";
+import { nudgeUnclaimed, expireCalledOff, clearFinishedShouts } from "@/lib/shoutCancel";
+import Stripe from "stripe";
 import { notifyHostRecruit, notifyHQ } from "@/lib/notifyLifecycle";
 import { buildSessionEmailExtras, movementLabel } from "@/lib/sessionEmailContext";
 import {
@@ -107,7 +109,7 @@ export async function GET(request: NextRequest) {
     try {
       if (s.nudge_sent_at) continue; // once-only, but only stamped after a send succeeds (below)
 
-      const { count, userIds, compUserIds, spotsByUser } = await getHoldSummary(admin, s.id);
+      const { count, userIds, compUserIds, spotsByUser, shoutFromByUser } = await getHoldSummary(admin, s.id);
       const due = stepsDue({
         hoursUntil: hoursUntil(s.starts_at, now),
         held: count,
@@ -140,6 +142,7 @@ export async function GET(request: NextRequest) {
           sessionId: s.id,
           isHolder: true,
           isComp: compUserIds.has(a.auth_user_id),
+          shoutFrom: shoutFromByUser.get(a.auth_user_id),
           cancelUrl: `${APP_URL}/hold/${s.id}`,
           spots: spotsByUser.get(a.auth_user_id),
           socialStretchVenue: s.social_stretch_venue ?? undefined,
@@ -350,5 +353,26 @@ export async function GET(request: NextRequest) {
     console.error("Buddy me up error:", e);
   }
 
-  return NextResponse.json({ nudged, checked: (sessions ?? []).length, results, cards, followUps, venueHolds, buddies });
+  // ── H) SHOUT A MATE ─────────────────────────────────────────────────────────
+  // Still unclaimed 48 hrs out: one nudge to the giver. Called off a week ago
+  // and the giver hasn't chosen re-book or refund: refunded in full.
+  // A week after the session, the mate's email and the note are deleted.
+  const shouts = { nudged: 0, refunded: 0, cleared: 0 };
+  try {
+    shouts.nudged = await nudgeUnclaimed(admin, now);
+  } catch (e) {
+    console.error("Shout nudge error:", e);
+  }
+  try {
+    shouts.refunded = await expireCalledOff(admin, new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-04-10" }), now);
+  } catch (e) {
+    console.error("Shout expiry refund error:", e);
+  }
+  try {
+    shouts.cleared = await clearFinishedShouts(admin, now);
+  } catch (e) {
+    console.error("Shout clear-up error:", e);
+  }
+
+  return NextResponse.json({ nudged, checked: (sessions ?? []).length, results, cards, followUps, venueHolds, buddies, shouts });
 }

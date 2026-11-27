@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
+import { finaliseShout } from "@/lib/shout";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-04-10",
@@ -39,6 +41,14 @@ export async function POST(request: NextRequest) {
 
   switch (event.type) {
     case "payment_intent.succeeded":
+      // Shout a mate: the page normally finishes this, but if they closed it
+      // straight after paying, this makes sure the place is still held.
+      if (paymentIntent.metadata?.kind === "shout" && paymentIntent.metadata.shout_id) {
+        const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+        const r = await finaliseShout(admin, stripe, paymentIntent.metadata.shout_id);
+        if ("error" in r) console.error(`Shout ${paymentIntent.metadata.shout_id} webhook:`, r.error);
+        break;
+      }
       console.log(`✅ Payment captured for session ${sessionId}, attendee ${attendeeId}`);
       // TODO: Update holds table → status = 'charged', price_paid = amount_received
       // TODO: Send confirmation email via Resend

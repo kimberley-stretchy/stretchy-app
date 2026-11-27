@@ -10,7 +10,7 @@ import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailCont
 
 // No direct getByEmail in supabase-js; page through the admin list. Fine for
 // the low volume of comps.
-async function findAuthUserIdByEmail(admin: SupabaseClient, email: string): Promise<string | null> {
+export async function findAuthUserIdByEmail(admin: SupabaseClient, email: string): Promise<string | null> {
   const target = email.toLowerCase();
   for (let page = 1; page <= 20; page++) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });

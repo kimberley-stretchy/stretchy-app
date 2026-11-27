@@ -9,6 +9,7 @@ import { goNoGo, finalCharge, formatDayTime, phase } from "@/lib/sessionTimes";
 import { sendAttendeeEmail } from "@/lib/stretchy-email";
 import { buildSessionEmailExtras, isFirstStretchy } from "@/lib/sessionEmailContext";
 import { recordInvite } from "@/lib/invites";
+import { mateCancelsClaimed } from "@/lib/shoutCancel";
 
 // Age in whole years from a YYYY-MM-DD date-of-birth string.
 function ageFromDob(dob: string): number | null {
@@ -367,7 +368,7 @@ export async function DELETE(request: NextRequest) {
   // Find the active hold for this user + session (one row, quantity holds the spot count)
   const { data: hold } = await admin
     .from("holds")
-    .select("id, stripe_pi_id, quantity")
+    .select("id, stripe_pi_id, quantity, shout_id")
     .eq("session_id", sessionId)
     .eq("user_id", user.id)
     .eq("state", "active")
@@ -375,6 +376,14 @@ export async function DELETE(request: NextRequest) {
 
   if (!hold) {
     return NextResponse.json({ error: "No active hold found" }, { status: 404 });
+  }
+
+  // A place a mate shouted you was paid for by them: cancelling it lets the
+  // place go and refunds them, and they're told (SOCIAL_BOOKING_BRIEF.md 4).
+  if (hold.shout_id) {
+    const r = await mateCancelsClaimed(admin, stripe, hold.shout_id, user.id);
+    if ("error" in r) return NextResponse.json({ error: r.error }, { status: r.status });
+    return NextResponse.json({ ok: true, cancelledSpots: 1, remainingSpots: 0 });
   }
 
   const remainingQty = cancelQty !== null ? hold.quantity - cancelQty : 0;
