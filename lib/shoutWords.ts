@@ -2,11 +2,11 @@
 // switch, shared by pages, emails and the server. No server code in here.
 
 /**
- * Off until Part B (cancelling) is built and Kimberley's DIA check is clear.
- * While off, no button links to Shout (site or emails); the pages still work
- * by direct link so they can be previewed.
+ * On: switched on by Kimberley, 27 Nov 2026, after Part B, her DIA check and
+ * the privacy & terms wording. Set to false to hide every Shout button (site
+ * and emails) again; the pages still work by direct link.
  */
-export const SHOUT_LIVE = false;
+export const SHOUT_LIVE = true;
 
 /** One shout = one place. */
 /**
