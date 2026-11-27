@@ -20,6 +20,7 @@ import { calculatePrice, maxPriceToPromise, priceRightNow, priceHasDropped } fro
 import { venueLine, meetLine } from "@/lib/sessionDisplay";
 import { generalShareMessage } from "@/lib/shareMessage";
 import { SHOUT_LIVE, shoutPath, claimPath, againPath } from "@/lib/shoutWords";
+import { sessionShareMessage } from "@/lib/shareMessage";
 import { placeCount, yourPlaces, youOrCrew, bringNote, moreToGoAhead, inAndRoom, untilPriceDrops } from "@/lib/places";
 
 const MONO = "'JetBrains Mono',ui-monospace,Menlo,monospace";
@@ -233,20 +234,31 @@ function pillRow(sc: Scheme, items: { href: string; text: string }[], margin?: s
 }
 
 /**
- * "Who's coming with you?" + Share with a mate · Shout a mate · Buddy Me Up,
- * each opening the hold page with that step open. Hidden for people who
- * turned share prompts off.
+ * "Who's coming with you?": share this session straight from the email (the
+ * session link, plus WhatsApp · Text · Email · Facebook, each with the message
+ * filled in), then Shout a mate · Buddy Me Up. Instagram and TikTok have no
+ * share links, so we say to copy the link into a story or DM. Hidden for
+ * people who turned share prompts off.
  */
 function whoCard(sc: Scheme, p: AttendeeEmailPayload, c: Ctx) {
   if (p.sharePromptsOff) return "";
   const base = c.manageUrl;
   const join = base.includes("?") ? "&" : "?";
+  const link = c.sessionUrl;
+  const share = p.startsAt ? sessionShareMessage({ starts_at: p.startsAt, location_name: p.venue }, link) : null;
+  const text = share ? share.body : `Keen to join me at Stretchy? ${link}`;
+  const shareItems = [
+    { href: `https://wa.me/?text=${encodeURIComponent(text)}`, text: "WhatsApp" },
+    { href: `sms:?&body=${encodeURIComponent(text)}`, text: "Text" },
+    { href: `mailto:?subject=${encodeURIComponent(share?.subject ?? "Keen to join me at Stretchy?")}&body=${encodeURIComponent(text)}`, text: "Email" },
+    { href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, text: "Facebook" },
+  ];
   const items = [
-    { href: c.shareUrl, text: "Share with a mate" },
-    (SHOUT_LIVE || previewAll()) && { href: p.sessionId ? `${APP_URL}${shoutPath(p.sessionId)}` : `${APP_URL}/sessions`, text: "Shout a mate" },
-    (BUDDY_LIVE || previewAll()) && { href: `${base}${join}buddy=1`, text: "Buddy Me Up" },
+    (SHOUT_LIVE || previewAll()) && { href: p.sessionId ? `${APP_URL}${shoutPath(p.sessionId)}` : `${APP_URL}/sessions`, text: "Shout a mate 🎁" },
+    (BUDDY_LIVE || previewAll()) && { href: `${base}${join}buddy=1`, text: "Buddy Me Up 👋" },
   ].filter(Boolean) as { href: string; text: string }[];
-  return `<div style="border:2px solid ${sc.text};border-radius:16px;padding:14px 12px;margin:0 0 12px;"><p style="margin:0 4px 10px;font-family:${CHUBB};font-weight:900;font-size:20px;line-height:1;text-transform:uppercase;color:${sc.text};">Who's coming with you?</p>${pillRow(sc, items)}</div>`;
+  const small = `margin:0 4px 8px;font-size:13px;line-height:1.5;color:${sc.text};`;
+  return `<div style="border:2px solid ${sc.text};border-radius:16px;padding:14px 12px;margin:0 0 12px;"><p style="margin:0 4px 10px;font-family:${CHUBB};font-weight:900;font-size:20px;line-height:1;text-transform:uppercase;color:${sc.text};">Who's coming with you?</p><p style="${small}"><strong>Share with a mate:</strong> <a href="${link}" style="color:${sc.text};font-weight:700;word-break:break-all;">${link.replace(/^https?:\/\//, "")}</a></p>${pillRow(sc, shareItems, "0 0 8px")}<p style="${small}opacity:.75;">Instagram or TikTok? Copy the link into your story or DM.</p>${items.length ? pillRow(sc, items, "6px 0 0") : ""}</div>`;
 }
 
 /** The only links at the bottom of every email. */
