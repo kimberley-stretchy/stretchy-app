@@ -31,7 +31,9 @@ export default function SocialStretchBand() {
         Coming solo or BYO-ing your pals? Either way works for us.
       </p>
 
-      <BuddyExplainer />
+      <p className="m-0 text-sm lg:text-[15px] leading-[1.55] lg:max-w-[820px]">
+        Coming solo? Switch on <strong>Buddy Me Up</strong> when you hold your place, and we&rsquo;ll introduce you to someone else at your session.
+      </p>
 
       <div className="grid grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-[9px] lg:gap-3.5">
         {MOBILE_PHOTOS.map((p) => (
@@ -55,41 +57,6 @@ export default function SocialStretchBand() {
           />
         ))}
       </div>
-    </div>
-  );
-}
-
-// Buddy Me Up, explained (SOCIAL_BOOKING_BRIEF.md section 6): three steps.
-const BUDDY_STEPS = [
-  { icon: "🙋", title: "Switch it on", text: "Hold your place, then switch on Buddy Me Up on your booking page. Add a little hello if you like." },
-  { icon: "✉️", title: "We introduce you", text: "36 hrs out, we email you your buddy: their first name and hello. Uneven numbers? A few of you go together." },
-  { icon: "☕", title: "Find each other", text: "Look out for each other on the day, then grab a coffee or a drink together at the Social Stretch." },
-];
-
-function BuddyExplainer() {
-  return (
-    <div className="bg-white border-2 border-ink rounded-[22px] p-4 lg:p-6 flex flex-col gap-3 lg:gap-4 lg:max-w-[1000px]">
-      <div>
-        <div className="font-mono text-[9px] lg:text-[11px] font-extrabold tracking-[0.14em] lg:tracking-[0.16em]">NEW · BUDDY ME UP 👋</div>
-        <h3 className="font-display text-[26px] lg:text-[36px] leading-[.95] m-0 mt-1.5">Coming solo? We&rsquo;ll buddy you up.</h3>
-        <p className="m-0 mt-2 text-sm lg:text-[15px] leading-[1.55]">
-          Coming solo, or just keen to meet someone new? With <strong>Buddy Me Up</strong>, we&rsquo;ll introduce you to someone else at your session, so you&rsquo;ve got a friendly face to look out for.
-        </p>
-      </div>
-      <ol className="m-0 p-0 list-none grid grid-cols-1 lg:grid-cols-3 gap-2.5 lg:gap-3.5">
-        {BUDDY_STEPS.map((s, i) => (
-          <li key={s.title} className="flex lg:flex-col gap-3 lg:gap-2 items-start rounded-2xl bg-cream border-2 border-ink p-3 lg:p-4">
-            <span className="text-2xl flex-shrink-0" aria-hidden>{s.icon}</span>
-            <div>
-              <p className="m-0 font-bold text-sm lg:text-[15px]">{i + 1}. {s.title}</p>
-              <p className="m-0 text-[13px] lg:text-sm leading-[1.5] text-ink/70">{s.text}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-      <p className="m-0 text-[13px] lg:text-sm leading-[1.5]">
-        We only share first names and a little hello, nothing else. <strong>Come solo, leave with a crew.</strong>
-      </p>
     </div>
   );
 }
