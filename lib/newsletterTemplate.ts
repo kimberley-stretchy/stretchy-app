@@ -49,7 +49,7 @@ function sessionBlock(sc: Scheme, s: NewsletterSession): string {
     ${row(sc, `🗓 ${s.dateStr}`)}
     ${s.venue ? row(sc, `📍 ${s.venue}`) : ""}
     ${row(sc, `🙌 ${status}`)}
-    ${s.price ? row(sc, `💸 Never more than ${s.price} — drops as more join`) : ""}
+    ${s.price ? row(sc, `💸 Never more than ${s.price} · drops once we&rsquo;ve covered the base costs`) : ""}
     ${button(sc, s.url, "Hold my place")}`);
 }
 
