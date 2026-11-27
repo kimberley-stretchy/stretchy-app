@@ -173,7 +173,7 @@ export default function ShoutPage({ params }: { params: { id: string } }) {
     {myShoutsBox}
 
     {closed ? (
-      <p className="m-0 text-sm font-bold">{!info.open ? info.closedReason : "You’ve shouted the most places you can at this one (4). What a legend."}</p>
+      <p className="m-0 text-sm font-bold">{!info.open ? info.closedReason : "What a legend. Shouting more than 10? Email hello@stretchyyoga.co.nz and we’ll sort it."}</p>
     ) : step === 1 ? (
       <div className="border-2 rounded-[22px] p-4 flex flex-col gap-3 bg-white" style={{ borderColor: INK }}>
         <label className="flex flex-col gap-1.5">

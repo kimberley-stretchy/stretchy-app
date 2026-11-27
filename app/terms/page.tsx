@@ -63,7 +63,7 @@ export default function TermsPage() {
 
           <div id="shout" className="scroll-mt-6">
             <h2 className="font-bold mb-2">Shout a mate</h2>
-            <p className="text-muted mb-2">You can pay for a place for someone else: one place per shout, up to 4 at a session. Your mate never pays.</p>
+            <p className="text-muted mb-2">You can pay for a place for someone else: one place per shout. Your mate never pays.</p>
             <ul className="text-muted space-y-1.5 list-disc pl-5">
               <li><strong className="text-ink">You pay today&rsquo;s max, straight away.</strong> 30 minutes before, the final price is charged as usual and any difference comes back to your card.</li>
               <li><strong className="text-ink">One place, claimed once.</strong> Your mate can open the gift link as often as they like, on any device, but the place can only be claimed once. So only send it to the person it&rsquo;s for. Claiming means your mate agrees to these terms.</li>

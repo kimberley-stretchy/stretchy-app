@@ -75,7 +75,7 @@ export async function shoutQuote(admin: SupabaseClient, sessionId: string) {
   return { session, amountCents: Math.round(each * 100), before36: p === "before36" } as const;
 }
 
-/** How many more places this person can shout at this session (max 4). */
+/** How many more places this person can shout at this session (safety net: MAX_SHOUTS). */
 export async function shoutsLeft(admin: SupabaseClient, sessionId: string, giverId: string): Promise<number> {
   const { count } = await admin
     .from("shouts")
@@ -147,7 +147,7 @@ export async function startShout(
     if (old.session_id === input.sessionId) return { error: "Pick another session.", status: 400 };
   }
   if ((await shoutsLeft(admin, input.sessionId, giver.userId)) < 1) {
-    return { error: `You can shout up to ${MAX_SHOUTS} places at one session.`, status: 400 };
+    return { error: `Shouting more than ${MAX_SHOUTS}? Email hello@stretchyyoga.co.nz and we’ll sort it.`, status: 400 };
   }
 
   const { data: shout, error } = await admin

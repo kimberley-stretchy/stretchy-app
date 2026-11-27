@@ -8,8 +8,13 @@
  */
 export const SHOUT_LIVE = false;
 
-/** One shout = one place. At most this many per person per session. */
-export const MAX_SHOUTS = 4;
+/** One shout = one place. */
+/**
+ * Not a limit people should ever meet (shouts are paid upfront): a safety net
+ * against card-testing fraud, or someone filling a session then cancelling.
+ * Decided with Kimberley 27 Nov 2026 (was 4).
+ */
+export const MAX_SHOUTS = 10;
 export const SHOUT_NOTE_MAX = 140;
 
 export const shoutPath = (sessionId: string) => `/sessions/${sessionId}/shout`;
