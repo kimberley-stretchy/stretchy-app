@@ -30,7 +30,7 @@ Use these words on every screen, email, push notification and error message. Fin
 | Who it's for | **Every body welcome** | gentle |
 | Coming alone | **Come solo, leave with a crew** | — |
 | Social Stretch | **coffee and chats** (morning) / **drinks and chats** (evening) | — |
-| The three share actions | **Share with a mate** · **Shout a mate** · **Buddy me up** | Bring a mate, spot |
+| The three share actions | **Share with a mate** · **Shout a mate** · **Buddy Me Up** (always capitalised like this, and bold where the page allows: it's a named thing. Kimberley, 27 Nov 2026) | Bring a mate, spot, Buddy me up |
 
 ## Rules
 - **Keep it short.** One idea per line. No line repeats another nearby.

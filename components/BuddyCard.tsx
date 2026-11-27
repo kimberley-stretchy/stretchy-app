@@ -5,8 +5,9 @@ import { createClient } from "@/lib/supabase/client";
 import { HELLO_MAX, HELLO_PROMPTS, NO_CONTACT_DETAILS } from "@/lib/buddyWords";
 import { formatDay } from "@/lib/sessionTimes";
 import { suburbOf } from "@/lib/sessionDisplay";
+import { socialDrink } from "@/lib/shareMessage";
 
-// "Buddy me up" on someone's booking page (SOCIAL_BOOKING_BRIEF.md section 6).
+// "Buddy Me Up" on someone's booking page (SOCIAL_BOOKING_BRIEF.md section 6).
 // Only the switch shows at first; switching it on reveals the consent line,
 // the Say hello box and how matching works, step by step. Hides itself if
 // it can't load (not signed in, or no place held).
@@ -34,6 +35,9 @@ export default function BuddyCard({
   const [hello, setHello] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  // Signed up and not changing their hello: show "Cheers!" and what's next.
+  const [editing, setEditing] = useState(false);
+  const [justJoined, setJustJoined] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -72,9 +76,10 @@ export default function BuddyCard({
       const ask = new URLSearchParams(window.location.search).get("buddy");
       if (ask === "off" && d.on) {
         const after = await post({ on: false }, auth.access_token);
-        if (after) { setSwitchOn(false); setMsg("Buddy me up is off for this one."); }
+        if (after) { setSwitchOn(false); setMsg("Buddy Me Up is off for this one."); }
       } else if (ask === "1" && d.open) {
         setSwitchOn(true);
+        setEditing(true);
       }
       if (ask) setTimeout(() => cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
     });
@@ -88,13 +93,14 @@ export default function BuddyCard({
   async function toggle() {
     setMsg(null);
     setErr(null);
-    if (!switchOn) { setSwitchOn(true); return; }
+    setJustJoined(false);
+    if (!switchOn) { setSwitchOn(true); setEditing(true); return; }
     setSwitchOn(false);
     if (data?.on) {
       setBusy(true);
       const after = await post({ on: false });
       setBusy(false);
-      if (after) setMsg("Buddy me up is off for this one.");
+      if (after) setMsg("Buddy Me Up is off for this one.");
       else setSwitchOn(true);
     }
   }
@@ -106,7 +112,9 @@ export default function BuddyCard({
     setBusy(false);
     if (!after) return;
     setHello(after.hello);
-    setMsg(after.matched ? "Saved." : goingAhead ? "Saved. We’ll match you up shortly and email you." : "Saved. We’ll match you up at 36 hrs out and email you.");
+    setEditing(false);
+    setJustJoined(true);
+    setTimeout(() => cardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
   }
 
   function addPrompt(p: string) {
@@ -117,20 +125,27 @@ export default function BuddyCard({
   }
 
   const suburb = suburbOf(session);
+  // "coffee" for mornings, "drink" for evenings (the word list's Social Stretch wording).
+  const drink = socialDrink(session.starts_at) === "coffee" ? "coffee" : "drink";
   const dayLine = [formatDay(session.starts_at), suburb].filter(Boolean).join(" · ");
   const dirty = hello.trim() !== (data.hello ?? "").trim();
 
   return (
     <div ref={cardRef} className="border-2 rounded-[22px] p-4 flex flex-col gap-3" style={{ borderColor: INK, background: "#FFFFFF" }}>
       <div>
-        <p className="m-0 font-bold text-[15px]">Up for meeting someone new?</p>
-        <p className="m-0 text-sm" style={{ color: GREY }}>Come solo, leave with a crew.</p>
+        <p className="m-0 font-bold text-[15px]">Coming solo, or keen to meet someone new?</p>
+        <p className="m-0 mt-1 text-sm" style={{ color: GREY }}>
+          Switch on <strong style={{ color: INK }}>Buddy Me Up</strong> and we&rsquo;ll introduce you by email to someone else at this session. Then look out for each other IRL and grab a {drink} together at the Social Stretch.
+        </p>
+        <p className="m-0 mt-1 text-sm" style={{ color: GREY }}>
+          We only share first names and a little hello, nothing else. <strong style={{ color: INK }}>Come solo, leave with a crew.</strong>
+        </p>
       </div>
 
       {data.open && (
         <div className="flex justify-between items-center gap-3 py-1">
           <div>
-            <p className="m-0 font-bold text-sm">Buddy me up</p>
+            <p className="m-0 font-bold text-sm">Buddy Me Up</p>
             <p className="m-0 text-[13px]" style={{ color: GREY }}>{dayLine}</p>
           </div>
           <button
@@ -141,7 +156,7 @@ export default function BuddyCard({
             style={{ background: switchOn ? INK : "rgba(20,17,15,.16)" }}
             role="switch"
             aria-checked={switchOn}
-            aria-label="Buddy me up"
+            aria-label="Buddy Me Up"
           >
             <span className="absolute top-0.5 w-5 h-5 rounded-pill transition-all" style={{ left: switchOn ? "20px" : "2px", background: switchOn ? "#FCBB16" : "#FFFFFF" }} />
           </button>
@@ -157,7 +172,7 @@ export default function BuddyCard({
               {b.hello && <p className="m-0 text-sm" style={{ color: GREY }}>&ldquo;{b.hello}&rdquo;</p>}
             </div>
           ))}
-          <p className="m-0 text-[13px]" style={{ color: GREY }}>Look out for each other, then grab a coffee at the Social Stretch.</p>
+          <p className="m-0 text-[13px]" style={{ color: GREY }}>Look out for each other, then grab a {drink} at the Social Stretch.</p>
         </div>
       )}
 
@@ -165,10 +180,22 @@ export default function BuddyCard({
         <p className="m-0 text-sm" style={{ color: GREY }}>You&rsquo;re our only buddy-upper this time. We&rsquo;ll pair you up next time.</p>
       )}
 
-      {data.open && switchOn && (
+      {data.open && switchOn && data.on && !editing && !data.matched && (
+        <div className="rounded-2xl p-4 flex flex-col gap-2.5 animate-slide-down motion-reduce:animate-none" style={{ background: "#FCBB16" }} role="status">
+          <p className="m-0 font-bold text-[17px]">{justJoined ? "Cheers! You’re buddied up. 🙌" : "You’re buddied up. 🙌"}</p>
+          {data.hello && <p className="m-0 text-sm">Your hello: &ldquo;{data.hello}&rdquo;</p>}
+          <p className="m-0 font-mono text-[10px] font-extrabold tracking-[0.1em] uppercase mt-1">What happens next</p>
+          <div className="flex gap-2.5 items-start text-sm"><span aria-hidden>✉️</span><span><strong>Online:</strong> {goingAhead ? "we’ll match you up shortly" : "36 hrs out we match you up"} and email you your buddy&rsquo;s first name and hello.</span></div>
+          <div className="flex gap-2.5 items-start text-sm"><span aria-hidden>👀</span><span><strong>On the day:</strong> look out for each other. Your GEM can help you find them.</span></div>
+          <div className="flex gap-2.5 items-start text-sm"><span aria-hidden>☕</span><span><strong>After:</strong> grab a {drink} together at the Social Stretch.</span></div>
+          <button type="button" onClick={() => { setEditing(true); setJustJoined(false); }} className="self-start font-bold text-sm underline underline-offset-2 mt-1">{data.hello ? "Change my hello" : "Add a hello"}</button>
+        </div>
+      )}
+
+      {data.open && switchOn && (!data.on || editing) && (
         <div className="flex flex-col gap-3 animate-slide-down motion-reduce:animate-none">
           <p className="m-0 text-sm" style={{ color: GREY }}>
-            We only share your <strong style={{ color: INK }}>first name</strong> and <strong style={{ color: INK }}>Say hello</strong> line. Deleted a week after the session. For over-18s.
+            Your first name and Say hello line are deleted a week after the session. For over-18s.
           </p>
 
           <label className="flex flex-col gap-1.5">
@@ -199,10 +226,11 @@ export default function BuddyCard({
             <strong style={{ color: INK }}>How matching works:</strong> at 36 hrs out we match you up. Usually pairs. Uneven numbers? A few of you go together.
           </p>
 
-          {(!data.on || dirty) && (
-            <button type="button" onClick={save} disabled={busy} className="rounded-pill px-5 py-3 font-bold text-sm disabled:opacity-60" style={{ background: INK, color: "#FCBB16" }}>
-              {busy ? "Saving…" : "Save"}
-            </button>
+          <button type="button" onClick={save} disabled={busy || (data.on && !dirty)} className="rounded-pill px-5 py-3 font-bold text-[15px] disabled:opacity-60" style={{ background: INK, color: "#FCBB16" }}>
+            {busy ? "Saving…" : data.on ? "Save my hello" : "Buddy Me Up 👋"}
+          </button>
+          {data.on && (
+            <button type="button" onClick={() => { setHello(data.hello ?? ""); setEditing(false); }} disabled={busy} className="self-center font-bold text-sm underline underline-offset-2">Cancel</button>
           )}
         </div>
       )}

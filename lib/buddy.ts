@@ -4,7 +4,7 @@ import { sendPushToUsers } from "@/lib/push-server";
 import { finalCharge } from "@/lib/sessionTimes";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Buddy me up (SOCIAL_BOOKING_BRIEF.md section 6).
+// Buddy Me Up (SOCIAL_BOOKING_BRIEF.md section 6).
 //
 // Anyone holding a place can switch it on, with an optional Say hello line.
 // Once a session is going ahead (36 hrs out) we match people up: pairs, and a
@@ -73,7 +73,7 @@ const firstName = (name: string | null | undefined) => (name ?? "").trim().split
 type MatchSession = { id: string; title: string; starts_at: string; state: string };
 
 /**
- * Match everyone who has switched Buddy me up on and isn't matched yet, then
+ * Match everyone who has switched Buddy Me Up on and isn't matched yet, then
  * email (and push) each pair or group. Safe to run again and again: people
  * already matched are left alone, except that one late person on their own
  * joins the smallest existing group (that group gets a fresh intro).

@@ -8,7 +8,7 @@ import { finalCharge } from "@/lib/sessionTimes";
 // GET  /api/buddy?sessionId=…  → { on, hello, open, matched, buddies }
 // POST /api/buddy  { sessionId, on, hello }  → same shape
 //
-// Buddy me up on someone's own booking (SOCIAL_BOOKING_BRIEF.md section 6).
+// Buddy Me Up on someone's own booking (SOCIAL_BOOKING_BRIEF.md section 6).
 // Only for the signed-in person, and only while they hold a place. Switching
 // it off removes them from any match.
 export const dynamic = "force-dynamic";
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     await admin.from("buddy_matches").delete().eq("session_id", body.sessionId).eq("user_id", user.id);
     await admin.from("buddy_optins").delete().eq("session_id", body.sessionId).eq("user_id", user.id);
   } else {
-    if (!before.open) return NextResponse.json({ error: "Joining has closed for this one, so Buddy me up has too." }, { status: 400 });
+    if (!before.open) return NextResponse.json({ error: "Joining has closed for this one, so Buddy Me Up has too." }, { status: 400 });
     const cleaned = cleanHello(body.hello);
     if ("error" in cleaned) return NextResponse.json({ error: cleaned.error }, { status: 400 });
     const { error } = await admin.from("buddy_optins").upsert(

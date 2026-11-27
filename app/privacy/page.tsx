@@ -29,7 +29,7 @@ export default function PrivacyPage() {
               <li>Payment method (held securely by Stripe — we never see or store your card number)</li>
               <li>Session holds and ratings</li>
               <li>Anything you tell us under &ldquo;moving with care&rdquo; — an optional note about an injury, pregnancy, surgery, or anything else you&rsquo;d like your teacher and GEM to know</li>
-              <li>If you switch on <a href="#buddy" className="font-bold text-ink underline">Buddy me up</a>: your optional Say hello line, and who you&rsquo;re matched with</li>
+              <li>If you switch on <a href="#buddy" className="font-bold text-ink underline">Buddy Me Up</a>: your optional Say hello line, and who you&rsquo;re matched with</li>
               <li>If you open a mate&rsquo;s invite link: which link it was, so we can count it if you book</li>
               <li>If you <a href="#shout" className="font-bold text-ink underline">shout a mate</a> a place: their first name, their email (only if you ask us to email them), and any note you add</li>
               <li>If you claim a place someone has gifted or shouted you: the name and email you give us, and which session it&rsquo;s for</li>
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
               <li><strong>Vercel</strong> — app hosting (vercel.com/legal/privacy-policy)</li>
               <li><strong>Google</strong> — if you choose to sign in with your Google account, or once Google Calendar sync is switched on for your sessions</li>
               <li><strong>Your teacher and GEM</strong> — your first name, and any care note, for sessions you hold a place in</li>
-              <li><strong>Your buddy or buddy group</strong> — only if you switch on Buddy me up for a session: your first name and Say hello line, nothing else</li>
+              <li><strong>Your buddy or buddy group</strong> — only if you switch on Buddy Me Up for a session: your first name and Say hello line, nothing else</li>
               <li><strong>The mate who invited you</strong> — they see how many people joined through their link, never who</li>
               <li><strong>The mate who shouted you a place</strong> — we tell them when you claim it, or if you let them know you can&rsquo;t make it, using your first name only</li>
               <li><strong>The mate you shouted</strong> — they see your first name and any note you add, never what you paid</li>
@@ -74,8 +74,8 @@ export default function PrivacyPage() {
           </div>
 
           <div id="buddy" className="scroll-mt-6">
-            <h2 className="font-bold mb-2">Buddy me up</h2>
-            <p className="text-muted">Buddy me up is optional and off unless you switch it on, one session at a time. When the session goes ahead, we match you with one or a few others who switched it on too. We only share your first name and your Say hello line with them. We never share your surname, email, phone number or care note. Your Say hello line can&rsquo;t include phone numbers, emails or social handles: swap those in person if you like. Your Say hello line and match are deleted one week after the session (or straight away if it&rsquo;s called off). You can switch it off any time before joining closes. Buddy me up is for over-18s.</p>
+            <h2 className="font-bold mb-2">Buddy Me Up</h2>
+            <p className="text-muted">Buddy Me Up is optional and off unless you switch it on, one session at a time. When the session goes ahead, we match you with one or a few others who switched it on too. We only share your first name and your Say hello line with them. We never share your surname, email, phone number or care note. Your Say hello line can&rsquo;t include phone numbers, emails or social handles: swap those in person if you like. Your Say hello line and match are deleted one week after the session (or straight away if it&rsquo;s called off). You can switch it off any time before joining closes. Buddy Me Up is for over-18s.</p>
           </div>
 
           <div id="shout" className="scroll-mt-6">
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
               <li>Payment and financial records: 7 years, as required under New Zealand&rsquo;s tax record-keeping rules (Tax Administration Act 1994)</li>
               <li>Your account details: for as long as your account is active. If you delete your account, your name and contact details are removed</li>
               <li>Your booking history (which sessions you came to): kept so we can see how Stretchy is growing year on year, like how many people come and come back. If you delete your account, it&rsquo;s kept without your name or details, as numbers only</li>
-              <li>Buddy me up (Say hello lines and matches): deleted one week after the session</li>
+              <li>Buddy Me Up (Say hello lines and matches): deleted one week after the session</li>
               <li>Gifted and shouted places: emails given for a place are only used for that place, never added to our newsletter. When you shout a mate, their email and your note are deleted one week after the session</li>
               <li>Email 👍 / 👎 answers: kept as counts only, with no name or email</li>
               <li>Care notes: kept only as long as they&rsquo;re useful for your safety in sessions, and removed sooner if you ask us to</li>
@@ -135,7 +135,7 @@ export default function PrivacyPage() {
 
           <div>
             <h2 className="font-bold mb-2">Under 18s</h2>
-            <p className="text-muted">Stretchy is for adults 18 and over. If you&rsquo;re under 18, you can only join a Stretchy session if you&rsquo;re accompanied by a paying parent or legal guardian who attends the session with you — a guardian&rsquo;s permission alone isn&rsquo;t enough, they need to be there and to have paid for you. This doesn&rsquo;t apply to any session or event we specifically host for children or teens — those will always be clearly marketed as such, with their own age guidance. Buddy me up is for over-18s only. Some sessions are held at licensed venues (like bars or restaurants) — those venues have their own rules about where under-18s can go on the premises, even with a guardian present, and those rules apply on top of ours.</p>
+            <p className="text-muted">Stretchy is for adults 18 and over. If you&rsquo;re under 18, you can only join a Stretchy session if you&rsquo;re accompanied by a paying parent or legal guardian who attends the session with you — a guardian&rsquo;s permission alone isn&rsquo;t enough, they need to be there and to have paid for you. This doesn&rsquo;t apply to any session or event we specifically host for children or teens — those will always be clearly marketed as such, with their own age guidance. Buddy Me Up is for over-18s only. Some sessions are held at licensed venues (like bars or restaurants) — those venues have their own rules about where under-18s can go on the premises, even with a guardian present, and those rules apply on top of ours.</p>
           </div>
 
           <div>

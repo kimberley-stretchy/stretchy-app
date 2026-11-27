@@ -64,7 +64,7 @@ function footerFor(type: AttendeeEmailType, p: AttendeeEmailPayload): EmailFoote
         : { type, reason: "you shouted someone a place at Stretchy." };
     case "buddy_intro":
     case "buddy_solo":
-      return { type, reason: "you switched on Buddy me up for this session.", data: "We delete your buddy match a week after the session. We never sell or share your details." };
+      return { type, reason: "you switched on Buddy Me Up for this session.", data: "We delete your buddy match a week after the session. We never sell or share your details." };
     default: return { type, reason: HELD };
   }
 }
@@ -233,7 +233,7 @@ function pillRow(sc: Scheme, items: { href: string; text: string }[], margin?: s
 }
 
 /**
- * "Who's coming with you?" + Share with a mate · Shout a mate · Buddy me up,
+ * "Who's coming with you?" + Share with a mate · Shout a mate · Buddy Me Up,
  * each opening the hold page with that step open. Hidden for people who
  * turned share prompts off.
  */
@@ -244,7 +244,7 @@ function whoCard(sc: Scheme, p: AttendeeEmailPayload, c: Ctx) {
   const items = [
     { href: c.shareUrl, text: "Share with a mate" },
     (SHOUT_LIVE || previewAll()) && { href: p.sessionId ? `${APP_URL}${shoutPath(p.sessionId)}` : `${APP_URL}/sessions`, text: "Shout a mate" },
-    (BUDDY_LIVE || previewAll()) && { href: `${base}${join}buddy=1`, text: "Buddy me up" },
+    (BUDDY_LIVE || previewAll()) && { href: `${base}${join}buddy=1`, text: "Buddy Me Up" },
   ].filter(Boolean) as { href: string; text: string }[];
   return `<div style="border:2px solid ${sc.text};border-radius:16px;padding:14px 12px;margin:0 0 12px;"><p style="margin:0 4px 10px;font-family:${CHUBB};font-weight:900;font-size:20px;line-height:1;text-transform:uppercase;color:${sc.text};">Who's coming with you?</p>${pillRow(sc, items)}</div>`;
 }
@@ -735,12 +735,12 @@ function buddyIntro(p: AttendeeEmailPayload) {
 function buddySolo(p: AttendeeEmailPayload) {
   const manage = p.sessionId ? `${APP_URL}/hold/${p.sessionId}` : `${APP_URL}/sessions`;
   const html = page("blue", (sc) => `
-    ${h1(sc, "Just you this time. 👋")}${hey(sc, esc(p.name))}${msg(sc, `${esc(p.sessionTitle)} is on. You're our only buddy-upper this time, so we'll pair you up next time.`)}${msg(sc, "If someone else switches on Buddy me up before joining closes, we'll match you up and let you know.")}${msg(sc, "👋 Say kia ora to your teacher and GEM. They'll look after you.")}${pillRow(sc, [
+    ${h1(sc, "Just you this time. 👋")}${hey(sc, esc(p.name))}${msg(sc, `${esc(p.sessionTitle)} is on. You're our only buddy-upper this time, so we'll pair you up next time.`)}${msg(sc, "If someone else switches on Buddy Me Up before joining closes, we'll match you up and let you know.")}${msg(sc, "👋 Say kia ora to your teacher and GEM. They'll look after you.")}${pillRow(sc, [
       { href: manage, text: "Manage my booking" },
       { href: `${manage}?buddy=off`, text: "Turn off buddy" },
     ], "0 0 4px")}${signOff(sc)}
   `);
-  return { subject: "Buddy me up: just you this time", html };
+  return { subject: "Buddy Me Up: just you this time", html };
 }
 
 export function renderAttendeeEmail(type: AttendeeEmailType, p: AttendeeEmailPayload): { subject: string; html: string } {
