@@ -260,3 +260,23 @@ export async function resendShout(admin: SupabaseClient, shoutId: string, giverI
   await sendAttendeeEmail("shout_received", { ...(await emailBase(admin, session)), to: s.recipient_email, name: s.recipient_name, shoutFrom: giver.first, shoutNote: s.note ?? undefined, shoutCode: s.code });
   return { ok: true } as const;
 }
+
+// ── Tidying up ───────────────────────────────────────────────────────────────
+
+/** The mate's email and the giver's note go one week after the session (the payment record stays). */
+export const SHOUT_KEEP_MS = 7 * DAY_MS;
+
+export async function clearFinishedShouts(admin: SupabaseClient, now: Date): Promise<number> {
+  const cutoff = new Date(now.getTime() - SHOUT_KEEP_MS).toISOString();
+  const { data } = await admin
+    .from("shouts")
+    .select("id, session:sessions!inner(starts_at)")
+    .in("state", ["settled", "refunded", "released"])
+    .or("recipient_email.not.is.null,note.not.is.null")
+    .lt("session.starts_at", cutoff)
+    .limit(500);
+  const ids = (data ?? []).map((r) => r.id as string);
+  if (ids.length === 0) return 0;
+  await admin.from("shouts").update({ recipient_email: null, note: null }).in("id", ids);
+  return ids.length;
+}

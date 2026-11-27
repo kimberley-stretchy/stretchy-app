@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { sendPushToUsers } from "@/lib/push-server";
 import { sendAttendeeBatch, APP_URL } from "@/lib/stretchy-email";
 import { runBuddyMatching, clearFinishedBuddies } from "@/lib/buddy";
-import { nudgeUnclaimed, expireCalledOff } from "@/lib/shoutCancel";
+import { nudgeUnclaimed, expireCalledOff, clearFinishedShouts } from "@/lib/shoutCancel";
 import Stripe from "stripe";
 import { notifyHostRecruit, notifyHQ } from "@/lib/notifyLifecycle";
 import { buildSessionEmailExtras, movementLabel } from "@/lib/sessionEmailContext";
@@ -356,7 +356,8 @@ export async function GET(request: NextRequest) {
   // ── H) SHOUT A MATE ─────────────────────────────────────────────────────────
   // Still unclaimed 48 hrs out: one nudge to the giver. Called off a week ago
   // and the giver hasn't chosen re-book or refund: refunded in full.
-  const shouts = { nudged: 0, refunded: 0 };
+  // A week after the session, the mate's email and the note are deleted.
+  const shouts = { nudged: 0, refunded: 0, cleared: 0 };
   try {
     shouts.nudged = await nudgeUnclaimed(admin, now);
   } catch (e) {
@@ -366,6 +367,11 @@ export async function GET(request: NextRequest) {
     shouts.refunded = await expireCalledOff(admin, new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-04-10" }), now);
   } catch (e) {
     console.error("Shout expiry refund error:", e);
+  }
+  try {
+    shouts.cleared = await clearFinishedShouts(admin, now);
+  } catch (e) {
+    console.error("Shout clear-up error:", e);
   }
 
   return NextResponse.json({ nudged, checked: (sessions ?? []).length, results, cards, followUps, venueHolds, buddies, shouts });

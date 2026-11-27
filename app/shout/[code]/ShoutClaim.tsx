@@ -162,7 +162,7 @@ export default function ShoutClaim(p: {
       )}
 
       <p className="text-xs text-muted text-center">
-        We only use your email for this place. <NewTabLink href="/privacy">Privacy policy</NewTabLink>
+        We only use your email for this place. <NewTabLink href="/privacy#shout">Privacy policy</NewTabLink>
       </p>
     </>
   );
