@@ -66,7 +66,7 @@ export default function TermsPage() {
             <p className="text-muted mb-2">You can pay for a place for someone else: one place per shout, up to 4 at a session. Your mate never pays.</p>
             <ul className="text-muted space-y-1.5 list-disc pl-5">
               <li><strong className="text-ink">You pay today&rsquo;s max, straight away.</strong> 30 minutes before, the final price is charged as usual and any difference comes back to your card.</li>
-              <li><strong className="text-ink">The gift link works once.</strong> Whoever claims it first gets the place, so only send it to the person it&rsquo;s for. Claiming means your mate agrees to these terms.</li>
+              <li><strong className="text-ink">One place, claimed once.</strong> Your mate can open the gift link as often as they like, on any device, but the place can only be claimed once. So only send it to the person it&rsquo;s for. Claiming means your mate agrees to these terms.</li>
               <li><strong className="text-ink">Up to 36 hours before: free to cancel.</strong> Full refund. If your mate tells us they can&rsquo;t make it in this time, we let the place go and refund you.</li>
               <li><strong className="text-ink">After 36 hours: no free cancelling,</strong> the same as any place. If your mate can&rsquo;t make it, the place is still yours to pass on. If nobody claims it, you pay the final price and the place stays empty.</li>
               <li><strong className="text-ink">If we cancel:</strong> re-book your mate at another session, or get a full refund. Your choice. If you don&rsquo;t choose within 7 days, we refund you in full.</li>

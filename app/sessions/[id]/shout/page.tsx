@@ -333,7 +333,7 @@ function GiftLink({ name, url }: { name: string; url: string }) {
   ];
   return (
     <div className="border-2 rounded-[22px] p-4 flex flex-col gap-3 bg-white" style={{ borderColor: INK }}>
-      <p className="m-0 font-bold text-sm">One-time gift link for {name}:</p>
+      <p className="m-0 font-bold text-sm">Gift link for {name}:</p>
       <p className="m-0 text-sm break-all" style={{ color: GREY }}>{url}</p>
       <div className="flex gap-2">
         {chips.map((c) => (

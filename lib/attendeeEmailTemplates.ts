@@ -617,7 +617,7 @@ function shoutSent(p: AttendeeEmailPayload, c: Ctx) {
   const manageUrl = p.sessionId ? `${APP_URL}${shoutPath(p.sessionId)}` : `${APP_URL}/sessions`;
   const html = page("olive", (sc) => `
     ${h1(sc, "What a treat. 🎁")}${hey(sc, esc(p.name))}${msg(sc, `You've shouted ${to} a place at <strong>${esc(p.sessionTitle)}</strong>.`)}${p.shoutDeliver === "link" && claimUrl
-      ? card(sc, `${cardLabel(sc, `One-time gift link for ${to}`)}<p style="margin:0 0 12px;font-size:14px;line-height:1.5;color:${sc.text};word-break:break-all;"><a href="${claimUrl}" style="color:${sc.text};font-weight:700;">${claimUrl}</a></p>${pillRow(sc, [
+      ? card(sc, `${cardLabel(sc, `Gift link for ${to}`)}<p style="margin:0 0 12px;font-size:14px;line-height:1.5;color:${sc.text};word-break:break-all;"><a href="${claimUrl}" style="color:${sc.text};font-weight:700;">${claimUrl}</a></p>${pillRow(sc, [
           { href: `https://wa.me/?text=${encodeURIComponent(`I've shouted you a place at Stretchy 🎁 Claim it here: ${claimUrl}`)}`, text: "WhatsApp" },
           { href: `sms:?&body=${encodeURIComponent(`I've shouted you a place at Stretchy 🎁 Claim it here: ${claimUrl}`)}`, text: "Text" },
         ], "0 0 4px")}`)
